@@ -7594,8 +7594,14 @@ body.dpr-sidebar-resizing {
 #dpr-sidebar-v2.is-filter-unread .dpr-sidebar-paper[data-read="1"] {
   display: none;
 }
+#dpr-sidebar-v2.is-filter-unread .dpr-sidebar-paper.is-active[data-read="1"] {
+  display: block;
+}
 #dpr-sidebar-v2.is-filter-unread .dpr-sidebar-axis-section.is-all-read {
   display: none;
+}
+#dpr-sidebar-v2.is-filter-unread .dpr-sidebar-axis-section.is-all-read:has(.dpr-sidebar-paper.is-active) {
+  display: block;
 }
 
 /* 暗色模式 */

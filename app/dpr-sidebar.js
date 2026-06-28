@@ -646,23 +646,28 @@
   }
 
   function paperReadStatus(paper, readMap) {
-    var id = (paper && paper.id) || paperIdFromHref(paper && paper.href);
+    var id = paperIdentity(paper);
     return normalizeReadStatus(id && readMap && readMap[id]);
+  }
+  function paperIdentity(paper) {
+    return (paper && paper.id) || paperIdFromHref(paper && paper.href) || '';
   }
 
   function resolveResultOptions(options) {
     var opts = options || {};
+    var currentPaperId = opts.currentPaperId || paperIdFromHref(opts.currentPaperHref || '');
     return {
       keyword: String(opts.keyword || '').trim().toLowerCase(),
       readMap: opts.readMap || {},
       unreadOnly: !!opts.unreadOnly,
+      currentPaperId: currentPaperId || '',
     };
   }
 
   function paperMatchesResult(paper, options) {
     var opts = resolveResultOptions(options);
     if (opts.keyword && paperSearchText(paper).indexOf(opts.keyword) === -1) return false;
-    if (opts.unreadOnly && paperReadStatus(paper, opts.readMap)) return false;
+    if (opts.unreadOnly && paperReadStatus(paper, opts.readMap) && paperIdentity(paper) !== opts.currentPaperId) return false;
     return true;
   }
 
@@ -1167,10 +1172,12 @@
     var map = readMap || vs.readMap || {};
     var axisMode = mode || '';
     var resultMode = axisMode === 'results' || !!vs.search.trim() || vs.filter === 'unread';
+    var currentPaperHref = findCurrentPaperHrefFromModel(model);
     var resultOptions = {
       keyword: vs.search.trim(),
       readMap: map,
       unreadOnly: vs.filter === 'unread',
+      currentPaperId: currentPaperHref ? paperIdFromHref(currentPaperHref) : '',
     };
     if (group === 'conference') {
       if (resultMode) return buildConferenceResultView(model, resultOptions);
@@ -1190,10 +1197,12 @@
     var unreadOnly = vs.filter === 'unread';
     var keyword = vs.search.trim();
     var resultMode = !!keyword || unreadOnly;
+    var currentPaperHref = findCurrentPaperHrefFromModel(model);
     var resultOptions = {
       keyword: keyword,
       readMap: vs.readMap,
       unreadOnly: unreadOnly,
+      currentPaperId: currentPaperHref ? paperIdFromHref(currentPaperHref) : '',
     };
     var summary = computeModelReadSummary(model, vs.readMap);
     var renderedGroups = 0;
@@ -1218,6 +1227,7 @@
           totalCount: conferenceTotal,
           unreadCount: conferenceUnread,
           collapsedAxisSections: vs.collapsedAxisSections,
+          readMap: vs.readMap,
         }));
       }
     }
@@ -1242,6 +1252,7 @@
           totalCount: dailyTotal,
           unreadCount: dailyUnread,
           collapsedAxisSections: vs.collapsedAxisSections,
+          readMap: vs.readMap,
         }));
       }
     }
@@ -1352,7 +1363,7 @@
     html.push('  </button>');
     html.push('  <div class="dpr-sidebar-panel-content">');
     html.push(renderAxisTabs(opts.group, opts.mode, opts.view, opts.toggleLabel));
-    html.push(renderAxisContent(opts.group, axisMode, opts.view, opts.collapsedAxisSections));
+    html.push(renderAxisContent(opts.group, axisMode, opts.view, opts.collapsedAxisSections, opts.readMap));
     html.push('  </div>');
     html.push('</section>');
     return html.join('');
@@ -1381,7 +1392,7 @@
     return html.join('');
   }
 
-  function renderAxisContent(group, mode, view, collapsedAxisSections) {
+  function renderAxisContent(group, mode, view, collapsedAxisSections, readMap) {
     var html = [];
     var collapsed = normalizeSet(collapsedAxisSections);
     html.push('<div class="dpr-sidebar-axis-content" data-axis-content="' + safeAttr(group) + '">');
@@ -1401,7 +1412,7 @@
       html.push('  </button>');
       html.push('  <ul class="dpr-sidebar-axis-papers">');
       (item.papers || []).forEach(function (paper) {
-        html.push(renderPaper(paper));
+        html.push(renderPaper(paper, readMap));
       });
       html.push('  </ul>');
       html.push('</section>');
@@ -1410,16 +1421,17 @@
     return html.join('');
   }
 
-  function renderPaper(p) {
+  function renderPaper(p, readMap) {
     var sectionClass = p.section ? ' dpr-sidebar-paper-' + p.section : '';
     var paperId = p.id || '';
+    var status = paperReadStatus(p, readMap || {});
     var dataAttrs = [
       'data-paper-id="' + safeAttr(paperId) + '"',
       'data-href="' + safeAttr(p.href) + '"',
       'data-section="' + safeAttr(p.section || '') + '"',
       'data-search="' + safeAttr(paperSearchText(p)) + '"',
-      'data-read="0"',
-      'data-read-status=""',
+      'data-read="' + (status ? '1' : '0') + '"',
+      'data-read-status="' + safeAttr(status) + '"',
     ].join(' ');
     var stars = starHtmlFromScore(p.score);
     var tagBits = tagsHtml(p.tags);
@@ -1428,7 +1440,7 @@
       : '';
     var actions = MARK_STATUSES.map(function (item) {
       return (
-        '<button type="button" class="dpr-sidebar-paper-status-btn dpr-sidebar-paper-status-' + safeAttr(item.key) + '" ' +
+        '<button type="button" class="dpr-sidebar-paper-status-btn dpr-sidebar-paper-status-' + safeAttr(item.key) + (item.key === status ? ' is-active' : '') + '" ' +
         'data-paper-id="' + safeAttr(paperId) + '" data-paper-status="' + safeAttr(item.key) + '" title="' + safeAttr(item.title) + '">' +
         safeText(item.label) +
         '</button>'

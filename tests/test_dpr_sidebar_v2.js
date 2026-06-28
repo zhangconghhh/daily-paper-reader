@@ -466,6 +466,8 @@ function testSidebarPaperVisualStateCssContract() {
   assert.ok(/\.dpr-sidebar-paper\[data-read="0"\]::after\s*{[^}]*height:\s*8px/i.test(css));
   assert.ok(/\.dpr-sidebar-paper\[data-read="0"\]::after\s*{[^}]*box-shadow:\s*0 0 0 2px #ffffff,\s*0 0 5px rgba\(239,\s*68,\s*68,\s*\.45\)/i.test(css));
   assert.ok(/\.dpr-sidebar-paper\[data-read="0"\]::after\s*{[^}]*z-index:\s*6/i.test(css));
+  assert.ok(/#dpr-sidebar-v2\.is-filter-unread\s+\.dpr-sidebar-paper\.is-active\[data-read="1"\]\s*{[^}]*display:\s*block/i.test(css));
+  assert.ok(/#dpr-sidebar-v2\.is-filter-unread\s+\.dpr-sidebar-axis-section\.is-all-read:has\(\.dpr-sidebar-paper\.is-active\)\s*{[^}]*display:\s*block/i.test(css));
 
   const mainRule = cssRule(css, '.dpr-sidebar-paper-main');
   assert.ok(/display:\s*block/i.test(mainRule));
@@ -760,6 +762,43 @@ function testUnreadResultsComeFromFullModel() {
   assert.deepEqual(view.groups[0].papers.map((paper) => paper.title), ['Paper D']);
 }
 
+function testUnreadResultsKeepCurrentReadPaperVisible() {
+  const sidebar = loadSidebarForTest('#/202606/24/paper-a');
+  const tools = sidebar.__test;
+  const model = tools.parseSidebar(sampleSidebar);
+
+  const view = tools.buildDailyResultView(model, {
+    keyword: '',
+    readMap: {
+      '202606/24/paper-a': 'read',
+      '202606/24/paper-b': 'read',
+    },
+    unreadOnly: true,
+    currentPaperId: '202606/24/paper-a',
+  });
+
+  assert.deepEqual(view.groups.map((group) => group.label), ['2026-06-24', '2026-06-23']);
+  assert.deepEqual(view.groups[0].papers.map((paper) => paper.title), ['Paper A']);
+  assert.equal(view.groups[0].unreadCount, 0);
+  assert.equal(view.tabs[0].unreadCount, 1);
+
+  const html = tools.renderBodyHtml(model, {
+    expandedGroups: { conference: true, daily: true },
+    conferenceViewMode: 'conf',
+    dailyViewMode: 'date',
+    activeConference: 'neurips-2024',
+    activeDailyDate: '20260624',
+    filter: 'unread',
+    readMap: {
+      '202606/24/paper-a': 'read',
+      '202606/24/paper-b': 'read',
+    },
+  });
+  assert.ok(html.includes('Paper A'));
+  assert.ok(html.includes('data-paper-id="202606/24/paper-a"'));
+  assert.ok(html.includes('data-read="1"'));
+}
+
 function testReadStatusNormalization() {
   const sidebar = loadSidebarForTest('#/202606/24/paper-a');
   const tools = sidebar.__test;
@@ -792,6 +831,7 @@ testPanelCountsUseFullModel();
 testSearchResultsComeFromFullModel();
 testSearchNoResultsShowsEmptyState();
 testUnreadResultsComeFromFullModel();
+testUnreadResultsKeepCurrentReadPaperVisible();
 testReadStatusNormalization();
 
 console.log('dpr sidebar v2 tests passed');
