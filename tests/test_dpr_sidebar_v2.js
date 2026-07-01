@@ -64,13 +64,37 @@ function loadSidebarForTest(hash) {
 }
 
 function cssRule(css, selector) {
-  const marker = selector + ' {';
-  const index = css.indexOf(marker);
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = new RegExp('(^|\\n)\\s*' + escaped + '\\s*\\{').exec(css);
+  const index = match ? match.index + match[1].length : -1;
   assert.notEqual(index, -1, selector + ' CSS rule should exist');
   const start = css.indexOf('{', index);
   const end = css.indexOf('}', start);
   assert.ok(start >= 0 && end > start, selector + ' CSS rule should be complete');
   return css.slice(start + 1, end);
+}
+
+function createClassList(initial = []) {
+  const values = new Set(initial);
+  return {
+    add: (...items) => items.forEach((item) => values.add(item)),
+    remove: (...items) => items.forEach((item) => values.delete(item)),
+    contains: (item) => values.has(item),
+    toggle(item, force) {
+      if (typeof force === 'boolean') {
+        if (force) values.add(item);
+        else values.delete(item);
+        return force;
+      }
+      if (values.has(item)) {
+        values.delete(item);
+        return false;
+      }
+      values.add(item);
+      return true;
+    },
+    toString: () => Array.from(values).join(' '),
+  };
 }
 
 const sampleSidebar = `
@@ -338,7 +362,10 @@ function testSidebarFooterControlsReplaceRefresh() {
 
   const css = fs.readFileSync('app/app.css', 'utf8');
   const bodyRule = cssRule(css, 'body.dpr-sidebar-v2');
-  assert.ok(/--dpr-sidebar-collapsed-width:\s*96px/i.test(bodyRule));
+  assert.ok(/--dpr-sidebar-collapsed-width:\s*0px/i.test(bodyRule));
+  const contentRule = cssRule(css, 'body.dpr-sidebar-v2 .content');
+  assert.ok(/left:\s*var\(--dpr-sidebar-width,\s*280px\)\s*!important/i.test(contentRule));
+  assert.ok(/transition:\s*left \.24s ease,\s*width \.24s ease/i.test(contentRule));
   const footerRule = cssRule(css, '.dpr-sidebar-footer');
   assert.ok(/display:\s*flex/i.test(footerRule));
   assert.ok(/gap:\s*8px/i.test(footerRule));
@@ -352,8 +379,19 @@ function testSidebarFooterControlsReplaceRefresh() {
 
   const collapsedRootRule = cssRule(css, '#dpr-sidebar-v2.is-collapsed');
   assert.ok(/width:\s*var\(--dpr-sidebar-collapsed-width\)/i.test(collapsedRootRule));
+  assert.ok(/border-right-color:\s*transparent/i.test(collapsedRootRule));
+  assert.ok(/border-right-width:\s*0/i.test(collapsedRootRule));
+  assert.ok(/overflow:\s*visible/i.test(collapsedRootRule));
+  assert.ok(/pointer-events:\s*none/i.test(collapsedRootRule));
   const collapsedContentRule = cssRule(css, 'body.dpr-sidebar-v2.dpr-sidebar-v2-collapsed .content');
-  assert.ok(/left:\s*var\(--dpr-sidebar-collapsed-width\)\s*!important/i.test(collapsedContentRule));
+  assert.ok(/left:\s*0\s*!important/i.test(collapsedContentRule));
+  const collapsedFooterRule = cssRule(css, '#dpr-sidebar-v2.is-collapsed .dpr-sidebar-footer');
+  assert.ok(/position:\s*fixed/i.test(collapsedFooterRule));
+  assert.ok(/left:\s*12px/i.test(collapsedFooterRule));
+  assert.ok(/pointer-events:\s*auto/i.test(collapsedFooterRule));
+  assert.ok(/@media \(max-width:\s*1023px\)/i.test(css));
+  assert.ok(/@media \(max-width:\s*1023px\)[\s\S]*body\.dpr-sidebar-v2 \.content\s*{[^}]*left:\s*0\s*!important/i.test(css));
+  assert.ok(/@media \(max-width:\s*1023px\)[\s\S]*#dpr-sidebar-v2\s*{[^}]*transform:\s*translateX\(-100%\)/i.test(css));
   assert.ok(/\.dpr-sidebar-refresh/.test(css) === false, 'refresh button CSS should be removed');
 
   const uiScript = fs.readFileSync('app/ui.layout-and-subscriptions-entry.js', 'utf8');
@@ -361,6 +399,34 @@ function testSidebarFooterControlsReplaceRefresh() {
   assert.ok(/function shouldUseDprSidebarInternalSettings\(\)/.test(uiScript));
   assert.ok(/window\.matchMedia\('\(min-width:\s*1024px\)'\)\.matches/i.test(uiScript));
   assert.ok(/if\s*\(shouldUseDprSidebarInternalSettings\(\)\)\s*return;/i.test(uiScript));
+}
+
+function testResponsiveModeClearsDesktopCollapsedStateOnOverlayViewports() {
+  const sidebar = loadSidebarForTest('#/');
+  const tools = sidebar.__test;
+  assert.equal(typeof tools.syncResponsiveSidebarMode, 'function');
+
+  const rootClassList = createClassList(['is-collapsed']);
+  const bodyClassList = createClassList(['dpr-sidebar-v2', 'dpr-sidebar-v2-collapsed']);
+  const collapseButton = {
+    attrs: {},
+    setAttribute(key, value) {
+      this.attrs[key] = value;
+    },
+  };
+
+  document.body.classList = bodyClassList;
+  document.querySelector = (selector) => {
+    if (selector === '#dpr-sidebar-v2') return { classList: rootClassList, querySelector: () => collapseButton };
+    return null;
+  };
+  window.matchMedia = (query) => ({ matches: query.includes('max-width: 1023px') });
+
+  tools.syncResponsiveSidebarMode();
+
+  assert.equal(rootClassList.contains('is-collapsed'), false);
+  assert.equal(bodyClassList.contains('dpr-sidebar-v2-collapsed'), false);
+  assert.equal(collapseButton.attrs['aria-label'], '收起侧边栏');
 }
 
 function testSidebarSortsByNewestTimeFirst() {
@@ -932,6 +998,7 @@ testPaperEvidenceAndActionButtonsRender();
 testPaperMetaOrderKeepsEvidenceBetweenTitleAndStars();
 testQuickLinksCenterTextAndDetachIcon();
 testSidebarFooterControlsReplaceRefresh();
+testResponsiveModeClearsDesktopCollapsedStateOnOverlayViewports();
 testSidebarSortsByNewestTimeFirst();
 testSidebarUtilityHelpers();
 testEvidenceCssIsPersistent();

@@ -6798,7 +6798,7 @@ body.dpr-sidebar-v2 .sidebar-toggle {
   display: none !important;
 }
 body.dpr-sidebar-v2 {
-  --dpr-sidebar-collapsed-width: 96px;
+  --dpr-sidebar-collapsed-width: 0px;
 }
 body.dpr-sidebar-v2 #sidebar-resizer {
   display: none !important;
@@ -6813,12 +6813,12 @@ body.dpr-sidebar-v2 .content {
   left: var(--dpr-sidebar-width, 280px) !important;
   margin: 0 !important;
   width: auto !important;
-  transition: none !important;
+  transition: left .24s ease, width .24s ease !important;
 }
 body.dpr-sidebar-v2.dpr-sidebar-v2-collapsed .content {
-  left: var(--dpr-sidebar-collapsed-width) !important;
+  left: 0 !important;
 }
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   body.dpr-sidebar-v2 .content {
     left: 0 !important;
     width: 100% !important;
@@ -6828,7 +6828,7 @@ body.dpr-sidebar-v2.dpr-sidebar-v2-collapsed .content {
 /* root 容器 */
 #dpr-sidebar-v2 {
   --dpr-sidebar-surface: #ffffff;
-  --dpr-sidebar-collapsed-width: 96px;
+  --dpr-sidebar-collapsed-width: 0px;
   --dpr-sidebar-sticky-panel-top: 0px;
   --dpr-sidebar-sticky-axis-top: 36px;
   --dpr-sidebar-sticky-section-top: 74px;
@@ -6845,17 +6845,29 @@ body.dpr-sidebar-v2.dpr-sidebar-v2-collapsed .content {
   z-index: 30;
   font-family: var(--dpr-sidebar-font, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif);
   color: #1f2937;
+  box-sizing: border-box;
+  overflow: hidden;
+  will-change: width, transform;
+  transition: width .24s ease, transform .24s ease, border-color .24s ease, box-shadow .24s ease;
 }
 #dpr-sidebar-v2.is-collapsed {
   width: var(--dpr-sidebar-collapsed-width);
+  border-right-color: transparent;
+  border-right-width: 0;
+  box-shadow: none;
+  overflow: visible;
+  pointer-events: none;
 }
 #dpr-sidebar-v2.is-collapsed .dpr-sidebar-header,
 #dpr-sidebar-v2.is-collapsed .dpr-sidebar-toolbar,
 #dpr-sidebar-v2.is-collapsed .dpr-sidebar-body {
-  display: none !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 #dpr-sidebar-v2.is-collapsed .dpr-sidebar-resizer {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
 }
 .dpr-sidebar-resizer {
   position: absolute;
@@ -6887,16 +6899,31 @@ body.dpr-sidebar-resizing {
 .dpr-sidebar-mobile-toggle {
   display: none;
 }
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   #dpr-sidebar-v2 {
     transform: translateX(-100%);
     transition: transform .25s ease;
     width: 84vw;
     max-width: 320px;
     box-shadow: 4px 0 20px rgba(0,0,0,0.14);
+    overflow: visible;
   }
   #dpr-sidebar-v2.is-open {
     transform: translateX(0);
+  }
+  #dpr-sidebar-v2.is-collapsed {
+    width: 84vw;
+    max-width: 320px;
+    border-right-color: #e5e7eb;
+    border-right-width: 1px;
+    pointer-events: auto;
+  }
+  #dpr-sidebar-v2.is-collapsed .dpr-sidebar-header,
+  #dpr-sidebar-v2.is-collapsed .dpr-sidebar-toolbar,
+  #dpr-sidebar-v2.is-collapsed .dpr-sidebar-body {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
   .dpr-sidebar-mobile-toggle {
     display: flex;
@@ -6913,6 +6940,12 @@ body.dpr-sidebar-resizing {
     border-radius: 6px;
     padding: 6px 8px;
     cursor: pointer;
+  }
+  #dpr-sidebar-v2:not(.is-open) .dpr-sidebar-mobile-toggle {
+    left: calc(100% + 12px);
+  }
+  #dpr-sidebar-v2.is-open .dpr-sidebar-mobile-toggle {
+    left: calc(100% - 48px);
   }
   .dpr-sidebar-mobile-toggle span {
     display: block;
@@ -7624,6 +7657,32 @@ body.dpr-sidebar-resizing {
   border-top: 1px solid #f1f5f9;
   background: var(--dpr-sidebar-surface);
   flex-shrink: 0;
+}
+#dpr-sidebar-v2.is-collapsed .dpr-sidebar-footer {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  width: auto;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
+  pointer-events: auto;
+}
+@media (max-width: 1023px) {
+  #dpr-sidebar-v2.is-collapsed .dpr-sidebar-footer {
+    position: static;
+    left: auto;
+    bottom: auto;
+    width: auto;
+    margin-top: auto;
+    padding: 8px 10px;
+    border: 0;
+    border-top: 1px solid #f1f5f9;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 .dpr-sidebar-footer-btn {
   width: 34px;

@@ -24,6 +24,7 @@
   var DEFAULT_SIDEBAR_WIDTH = 280;
   var MIN_SIDEBAR_WIDTH = 240;
   var MAX_SIDEBAR_WIDTH = 520;
+  var OVERLAY_SIDEBAR_QUERY = '(max-width: 1023px)';
   var MARK_STATUSES = [
     { key: 'good', label: '1', title: '标记 1：重点 / 好' },
     { key: 'blue', label: '2', title: '标记 2：蓝色' },
@@ -1706,6 +1707,18 @@
     return root.classList.contains('is-open');
   }
 
+  function isOverlaySidebarViewport() {
+    return !!(window.matchMedia && window.matchMedia(OVERLAY_SIDEBAR_QUERY).matches);
+  }
+
+  function updateCollapseButtonLabel(root) {
+    var btn = root && $('.dpr-sidebar-collapse-btn', root);
+    if (!btn) return;
+    var label = state.sidebarCollapsed ? '展开侧边栏' : '收起侧边栏';
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+  }
+
   function applySidebarCollapsed(collapsed) {
     var root = state.rootEl || $('#dpr-sidebar-v2');
     state.sidebarCollapsed = !!collapsed;
@@ -1715,17 +1728,33 @@
     if (document.body && document.body.classList) {
       document.body.classList.toggle('dpr-sidebar-v2-collapsed', state.sidebarCollapsed);
     }
-    var btn = root && $('.dpr-sidebar-collapse-btn', root);
-    if (btn) {
-      var label = state.sidebarCollapsed ? '展开侧边栏' : '收起侧边栏';
-      btn.setAttribute('aria-label', label);
-      btn.setAttribute('title', label);
-    }
+    updateCollapseButtonLabel(root);
     return state.sidebarCollapsed;
   }
 
   function toggleSidebarCollapsed() {
     return applySidebarCollapsed(!state.sidebarCollapsed);
+  }
+
+  function syncResponsiveSidebarMode() {
+    var root = state.rootEl || $('#dpr-sidebar-v2');
+    if (!root || !root.classList) return state.sidebarCollapsed;
+    if (isOverlaySidebarViewport()) {
+      state.sidebarCollapsed = false;
+      root.classList.remove('is-collapsed');
+      if (document.body && document.body.classList) {
+        document.body.classList.remove('dpr-sidebar-v2-collapsed');
+      }
+      updateCollapseButtonLabel(root);
+      return false;
+    }
+    root.classList.remove('is-open');
+    if (document.body && document.body.classList) {
+      document.body.classList.toggle('dpr-sidebar-v2-collapsed', state.sidebarCollapsed);
+    }
+    root.classList.toggle('is-collapsed', state.sidebarCollapsed);
+    updateCollapseButtonLabel(root);
+    return state.sidebarCollapsed;
   }
 
   // ---------- 事件 ----------
@@ -1898,6 +1927,7 @@
     }, SEARCH_DEBOUNCE_MS));
 
     window.addEventListener('hashchange', function () { syncActive(); });
+    window.addEventListener('resize', syncResponsiveSidebarMode);
     document.addEventListener('dpr-paper-read-state-changed', function () {
       rerenderSidebarBody(rerenderOptionsForReadStateEvent());
     });
@@ -1941,6 +1971,7 @@
         }
         applySidebarWidth(state.sidebarWidth || loadPersistedSidebarWidth());
         renderShell(state.rootEl);
+        syncResponsiveSidebarMode();
         if (!state._eventsBound) {
           bindEvents(state.rootEl);
           state._eventsBound = true;
@@ -1993,6 +2024,7 @@
     toggleMobile: function () { return toggleMobile(); },
     toggleCollapsed: function () { return toggleSidebarCollapsed(); },
     setCollapsed: function (collapsed) { return applySidebarCollapsed(collapsed); },
+    syncResponsiveSidebarMode: syncResponsiveSidebarMode,
     openSettingsPanel: openSettingsPanel,
   };
 
@@ -2036,6 +2068,7 @@
         renderSidebarFooterControls: renderSidebarFooterControls,
         applySidebarCollapsed: applySidebarCollapsed,
         toggleSidebarCollapsed: toggleSidebarCollapsed,
+        syncResponsiveSidebarMode: syncResponsiveSidebarMode,
         openSettingsPanel: openSettingsPanel,
       },
     };
