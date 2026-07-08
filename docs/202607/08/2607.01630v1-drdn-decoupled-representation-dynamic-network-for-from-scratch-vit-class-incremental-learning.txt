@@ -1,0 +1,687 @@
+Title: DRDN: Decoupled Representation Dynamic Network for From-Scratch ViT Class-Incremental Learning
+
+URL Source: https://arxiv.org/pdf/2607.01630v1
+
+Published Time: Fri, 03 Jul 2026 00:42:52 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+> PREPRINT — UNDER REVIEW 1
+
+# DRDN: Decoupled Representation Dynamic Network for From-Scratch ViT Class-Incremental Learning 
+
+Bingchen Huang, Yifu Chen, Zhiling Wang, and Yuanchao Du 
+
+Abstract —Dynamic expansion methods for class-incremental learning (CIL) protect task-specific knowledge by growing dedicated tokens or subnetworks, yet our analyses suggest that classification supervision alone does not sufficiently preserve task-agnostic shared backbone representations over long incremental sequences. We identify two intertwined challenges: cross-task confusion from sequential training on predominantly current-task data, which biases decision boundaries toward recent tasks; and 
+
+under-optimized shared representations in the backbone that cap long-term discriminability as tasks accumulate. We propose the Decoupled Representation Dynamic Network 
+
+(DRDN), which addresses these challenges via two orthogonal mechanisms. For shared backbone representations, DRDN continu-ously applies masked image modeling (MIM) at every incremental step, with reconstruction gradients routed exclusively through the backbone , encouraging it to retain general visual structure beyond class-discriminative cues. For task-specific discrimination, DRDN employs hierarchical task token expansion across all transformer layers, with a modified per-task attention rule that reduces inter-task interference. We support this design with accuracy degradation analysis and cross-task confusion rate measurements. In the from-scratch ViT CIL setting (no external pretraining), DRDN consistently improves over strong token-expansion base-lines with comparable backbone scale. On CIFAR100-B0 (10 steps), DRDN achieves 77.19% average accuracy, outperforming DKT by 1.36 points and DyTox by 3.53 points, with an advantage that grows at longer incremental sequences. Multi-seed validation confirms stability ( ±0.31%). The MIM decoder is active only during training, adding no inference-time parameters or computation. 
+
+Index Terms —Class-incremental learning, catastrophic for-getting, masked image modeling, dynamic expansion, vision transformers. 
+
+I. I NTRODUCTION 
+
+# IN class-incremental learning (CIL), a model must learn new classes sequentially while retaining knowledge of all previously seen classes — a challenge where standard gradient descent causes catastrophic forgetting [1], [2]. Dy-namic expansion methods [3]–[5] currently achieve leading performance by growing dedicated task-specific components — tokens or subnetworks — at each step. While these components protect task-specific knowledge, they leave a critical question unaddressed: what happens to the shared backbone as tasks accumulate? 
+
+We observe that in dominant ViT-based token-expansion methods (DyTox [4], DKT [5]), the shared backbone is trained   
+
+> B. Huang, Y. Chen, Z. Wang, and Y. Du are with the Meituan Vision AI Department, Beijing 100190, China (e-mail: huangbingchen@meituan.com; chenyifu05@meituan.com; zhilingwang9681@gmail.com; duyuan-chao@meituan.com). This work has been submitted to the IEEE for possible publication. Copyright may be transferred without notice, after which this version may no longer be accessible.
+
+exclusively through classification objectives that favor task-specific discriminability. This concentration of supervision on task-specific modules creates two intertwined challenges, which we diagnose and validate empirically via accuracy degradation analysis and cross-task confusion analysis (Section IV-D). 
+
+Challenge 1 (Cross-task confusion). Sequential training on predominantly current-task data biases decision boundaries toward recent tasks. During joint inference over all seen classes, semantically similar classes from different tasks are easily confused. As shown in Fig. 1, within a single task (left, right), DyTox class clusters are reasonably separated; when two tasks are plotted together (center), inter-task class boundaries collapse — different-task classes overlap severely. While prior work has addressed task confusion in ResNet-based expansion methods [6], [7], we show it persists in ViT token-expansion methods and measure it directly: 90.4% of DyTox classification errors are cross-task misclassifications (Section IV-D). 
+
+Challenge 2 (Under-optimized shared representations). 
+
+Shallow ViT layers encode transferable visual structure [8] that benefits all tasks, yet discriminative training pushes these layers toward task-specific features. As shown in Fig. 2, models trained on limited incremental task data develop weaker shallow-layer representations (less precise activation maps on structural cues) compared to models exposed to broader data streams. This manifests as accelerating accuracy degradation: DyTox loses 34.8 absolute points over 10 incremental steps, while DRDN loses only 29.5 points over the same sequence. These two challenges are potentially linked: weaker shared representations reduce the feature quality that task tokens operate on, which may amplify confusion; and cross-task gradient interference during token learning may in turn pollute shared backbone features. Our analyses suggest both effects are present and that addressing only one leaves substantial room for improvement. As a preview of our approach’s effect, Fig. 3 shows that DRDN exhibits significantly stronger anti-forgetting capability than state-of-the-art dynamic expansion methods across all tasks. The core design principle of DRDN is coordinated de-composition of optimization : the shared backbone receives a task-agnostic reconstruction signal exclusively, while task-specific modules receive only classification signals. This is not simply adding MIM as an auxiliary objective — it is a deliberate assignment of responsibility: the backbone is the locus of general representations, task tokens are the locus of task-specific discrimination, and the gradient pathways enforce this assignment structurally. We propose the Decoupled Representation Dynamic Network (DRDN) , with three targeted ingredients:  
+
+> arXiv:2607.01630v1 [cs.CV] 2 Jul 2026 PREPRINT — UNDER REVIEW 2
+
+(a) Task 0 only (classes 0–9) (b) Task 1 only (classes 10–19) (c) Tasks 0+1 combined 
+
+Fig. 1. t-SNE visualization of DyTox task-token features on CIFAR100-B0 (10 steps) after all 10 tasks are trained. Large markers show per-class centroids; shading within each color family distinguishes individual classes. Within a single task (a, b), class centroids are reasonably spread. When both tasks are overlaid (c), red (Task 0) and blue (Task 1) centroids intermix — confirming that cross-task confusion is the dominant error mode (90.4% of errors). 
+
+Fig. 2. Grad-CAM visualization of shallow-layer activations. Models trained on limited incremental data (left) show diffuse, task-specific activations, while models trained on broader data (right) develop sharp, structurally-grounded activations — supporting the claim that CIL training under-optimizes shared backbone representations. 10 20 30 40 50 60 70 80 90 100 
+
+> Number of seen classes
+> 65
+> 70
+> 75
+> 80
+> 85
+> 90
+> 95
+> Average Accuracy (%)
+> DRDN (10.77 M parameters)
+> DyTox (10.73 M)
+> DKT (11.03 M)
+> DER (112.27 M)
+> WA (11.22 M)
+
+Fig. 3. CIL performance on CIFAR100 (10-step, B0). For each task, 10 new classes are learned while previous classes must not be forgotten. DRDN (blue) is state-of-the-art with only a small parameter overhead, and its advantage expands as tasks accumulate. 
+
+1) Continual MIM with backbone-only gradient routing 
+
+(for Challenge 2): A masked image reconstruction branch runs in parallel at every incremental step. Critically, reconstruction gradients are routed exclusively through the backbone — never through task tokens — so that the backbone’s general visual structure is maintained independently of task-specific adaptation. Adding MIM with shared gradients (flowing to both backbone and task modules) does not achieve the same benefit, as we verify in the ablation study (Table VII). 2) Hierarchical Task Token Expansion with isolated attention (for Challenge 1): Task tokens are expanded at all ViT layers, enabling multi-granularity task-specific features. A modified per-task attention rule excludes other tasks’ tokens from each task’s context, reducing cross-task gradient interference at the structural level. 3) Coordinated gradient pathway routing : Lrec updates backbone only; Lcls /Lkd /Ldiv update backbone and current task modules; old task tokens are frozen. This explicit assignment ensures each objective optimizes exactly the right components. We target the from-scratch ViT CIL regime — no pretrained weights, no external data — representing scenarios where large-scale pretraining is unavailable or inappropriate [9]. All comparisons are within this regime for strict fairness. Our contributions are summarized as follows:  
+
+> •
+
+We propose a CIL framework whose key novelty is online masked image modeling within the CIL training loop 
+
+with explicit gradient pathway decoupling, combined with hierarchical multi-layer per-task token expansion.  
+
+> •
+
+We directly quantify both motivating challenges via accu-racy degradation analysis (shared representation quality) and cross-task confusion-rate analysis, confirming the diagnosis that underpins DRDN’s design.  
+
+> •
+
+Within the from-scratch ViT CIL regime, DRDN consis-tently improves over DyTox and DKT across six bench-marks, with growing advantages at longer incremental sequences ( +3 .76 points over DyTox at 20 steps on CIFAR100-B0), stable results across three seeds, and zero inference-time overhead. PREPRINT — UNDER REVIEW 3
+
+II. R ELATED WORK 
+
+A. Dynamic Expansion and Task Confusion in CIL 
+
+Dynamic expansion methods [10]–[12] grow task-specific components at each step. DER [3] directly expands the backbone per task at the cost of linear parameter growth. DyTox [4] and DKT [5] expand lightweight task tokens in a shared ViT backbone, achieving competitive accuracy with few additional parameters. Dense Network Expansion [13] combines dense backbone expansion with exemplar replay. Cross-task confusion in expansion methods has been studied explicitly: Huang et al. [6] resolve it in ResNet-based dy-namic networks through token-level discrimination objectives; Wang et al. [7] address bi-compatible confusion via energy-based expansion and fusion. DRDN targets the same confusion problem within the ViT token-expansion paradigm, but embeds the solution within a wider decoupled-representation framework that also addresses shared representation quality. 
+
+B. Decoupled Objectives and Stability–Plasticity 
+
+Liang and Li [14] decouple stability and plasticity losses in task-agnostic continual learning, showing that dedicated unsu-pervised signals improve backbone generalization. Kim and Han [15] study the stability-plasticity trade-off and advocate dynamic management of these competing objectives. Zhai et al. [16] demonstrate that masked autoencoder pretraining transfers well to CIL, using offline MAE-pretrained ViT backbones as fixed encoders. Masked image modeling [17], [18] and its fine-tuning extensions [19], [20] show that MIM objectives can be applied beyond pretraining. DRDN differs from all of the above by applying MIM online during each incremental step from a randomly initialized backbone. 
+
+C. Replay and Regularization Methods 
+
+Replay-based methods [21]–[25] maintain a small exemplar buffer and interleave stored samples during training. iCaRL [21] selects herding exemplars and uses nearest-mean-of-exemplars at test time. BiC [24] and WA [25] add bias-correction layers to re-balance old/new class boundaries after each task. Rainbow Memory [22] diversifies exemplar selection via data augmentation variance. Generative replay methods [26]–[28] synthesize pseudo-exemplars via generative models, avoiding explicit storage; recent diffusion-based variants [27], [28] substantially improve sample quality. Regularization-based methods [29]–[32] penalize changes to parameters important for prior tasks. EWC [29] estimates parameter importance via the Fisher information matrix; SI [30] accumulates per-parameter path integrals online. These approaches are orthogonal to dynamic expansion and complementary to DRDN’s backbone-level regularization via MIM. 
+
+D. Prompt- and Adapter-based CIL 
+
+L2P [33], DualPrompt [34], and related methods exploit large pretrained ViT backbones through task-adaptive input prompts. These approaches perform well in the pretrained regime but degrade significantly without pretraining [9]. Our work targets the from-scratch regime where backbone quality must be built incrementally. 
+
+E. Continual Self-Supervised Learning 
+
+CaSSLe [35] and Lump [36] study how SSL representations interact with continual learning, showing that SSL pretraining provides anti-forgetting properties. Scale [37] extends this to streaming settings. These works focus on continual pretraining 
+
+with frozen or distilled representations. DRDN differs funda-mentally: we apply MIM as an auxiliary regularizer within supervised CIL , with its gradient structurally isolated to the backbone, providing complementary optimization pressure that classification alone cannot supply. DRDN differs from Huang et al. [6] in where cross-task interference is reduced (attention routing vs. token-level discrimination); from [14] in what is decoupled (backbone-only MIM gradient vs. task-level stability/plasticity); from [16] in 
+
+how MIM is used (online vs. offline pretraining); from DKT in expansion granularity (all layers vs. one); and from continual SSL [35], [36] in the role of SSL (auxiliary regularizer vs. standalone pretraining). III. M ETHOD 
+
+A. Problem Formulation 
+
+We consider image classification with a dataset D =
+
+{(x, y )}n. In CIL, D is partitioned into T disjoint subsets with disjoint label sets Y 1, . . . , Y T . The model processes tasks sequentially. We maintain a fixed-size exemplar buffer B of capacity nB storing equal-per-class representative samples from all seen tasks. 
+
+B. DRDN Architecture Overview 
+
+DRDN has three core ingredients: a shared encoder trained with an auxiliary reconstruction pathway that routes gradients exclusively through the backbone; per-task tokens inserted at every transformer layer; and a task-token attention rule that excludes other tasks from each task’s context. Together: MIM 
+
+→ shared backbone representations (Challenge 2); hierarchical tokens + modified attention → task-specific discrimination (Challenge 1); KD + diversity loss → anti-forgetting and token differentiation. Fig. 4 illustrates DRDN. The backbone consists of k
+
+Modified Self-Attention Blocks (MSABs). An input image is tokenized via patch and positional embeddings into ximg 0 ∈
+
+RN ×D . A masked version xrec 0 (mask ratio 0.75) is maintained in parallel for reconstruction. For task t, DRDN maintains learnable task tokens at each layer i:
+
+xtask  
+
+> i
+
+= [ etask  
+
+> i, 1
+
+, . . . , etask  
+
+> i,t
+
+] ∈ Rt×D . (1) The final MSAB output produces classification representation 
+
+xcls from task token outputs hk,j , and reconstruction represen-tation xrec  
+
+> k
+
+from the masked image tokens. The classification prediction for task j is: yj = clf j (xcls ).
+
+C. Reconstruction Branch and Loss 
+
+The decoder takes xrec  
+
+> k
+
+plus learnable mask tokens, and outputs a vector prediction for each masked patch. The reconstruction target for each masked patch p ∈ Ω is the PREPRINT — UNDER REVIEW 4Patch    
+
+> embedding
+> Mask
+> …
+> Class tokens
+> Task tokens
+> Reconstructed image
+
+ℒ!"#      
+
+> Feature
+> Fusion
+> Classifier 1
+> Classifier t
+> …
+> …
+> Feature
+> Fusion Logits 1
+> Logits t
+> …
+
+ℒ#$% Feature                 
+
+> Fusion Classifier t-1Logits t-1
+> Decoder
+> MSAB
+> Masked tokens
+> Image tokens
+> …
+> ❄Frozen
+> 1t-1t
+> Masked tokens
+> Image tokens
+> MSAB
+> …
+> Task tokens
+> ❄
+> …
+> Frozen
+> 1t-1t
+> …
+> …
+> …
+> …
+> …
+> Masked tokens
+> ❄Frozen
+
+Fig. 4. DRDN framework. The backbone consists of multiple Modified Self-Attention Blocks (MSABs) and branches into two paths. The upper (classification) branch expands task-specific tokens and classifiers at every MSAB layer when new tasks arrive; non-current task modules (blue background) are frozen. The lower (reconstruction) branch — one standard self-attention decoder block — is active only during training, guiding the backbone to focus on shared visual representations via masked image reconstruction. Reconstruction gradients flow only through the backbone (dashed arrows). TABLE I GRADIENT ROUTING IN DRDN. C URRENT MODULES = C URRENT TASK 
+
+TOKENS + C URRENT CLASSIFIER .
+
+Loss Backbone (MSAB) Current Modules 
+
+Lrec !
+
+Lcls + Lkd + Ldiv ! !
+
+Old task tokens Frozen (no gradient) 
+
+flattened RGB patch vector after per-patch mean–variance normalization , following He et al. [17]: 
+
+Lrec = 1
+
+|Ω|
+
+X
+
+> p∈Ω
+
+decoder( xrec  
+
+> k
+
+)p − ˆximg 
+
+> p
+> 2
+
+, (2) where ˆximg  
+
+> p
+
+∈ R3×P 2
+
+is the normalized pixel vector of patch 
+
+p.Table I summarizes gradient routing. The reconstruction loss updates only the backbone; old task tokens are always frozen. 
+
+D. Total Objective 
+
+L = Lcls + λLrec + αLkd + βLdiv , (3) where λ = 1 , α = 1 , β = 1 in all experiments. 
+
+Knowledge Distillation. To preserve old-class knowledge during task t, we apply KL-divergence distillation over old-class logits zt−1(x) and zt(x) with temperature τ = 2 :
+
+Lkd = X 
+
+> ℓ∈Y1: t−1
+
+pt−1 
+
+> ℓ
+
+(x; τ ) · log 
+
+ pt−1 
+
+> ℓ
+
+(x; τ )
+
+ptℓ(x; τ )
+
+
+
+, (4) where ℓ indexes old classes and ps(x; τ ) = softmax( zs(x)/τ ).
+
+Diversity Loss. The diversity loss encourages each task token to be distinct and contribute complementary features. We attach a lightweight auxiliary classifier AuxClf j to each task token’s output hk,j that predicts over all current new classes 
+
+Y t plus a single aggregated “old-class” logit. The diversity loss is: 
+
+Ldiv = − 1
+
+t
+
+> t
+
+X
+
+> j=1
+
+log exp(AuxClf j (hk,j )y )
+
+P 
+
+> c
+
+exp(AuxClf j (hk,j )c) , (5) where y denotes the ground-truth label aggregated to the auxiliary prediction space. All auxiliary classifiers AuxClf j
+
+are discarded at test time. 
+
+Decoder Architecture. The MIM decoder is a single 
+
+lightweight transformer block (standard multi-head self-attention + FFN, embedding dim D), shared across all incremental steps and discarded after training. It takes as input 
+
+xrec  
+
+> k
+
+concatenated with |Ω| learnable mask tokens (one per masked patch), and outputs a 3P 2-dimensional vector per patch for per-patch mean-variance-normalized pixel reconstruction. The decoder contains approximately 1.2M parameters during training and is entirely absent at test time. 
+
+E. Representation Decoupling Design (MSAB) 
+
+Fig. 5 shows the MSAB. Within each MSAB, computation follows two parallel paths. 
+
+Task-Specific Path. For task token j at layer i:
+
+Qtask  
+
+> i,j
+
+= etask  
+
+> i,j
+
+WQ, (6) 
+
+Ktask  
+
+> i,j
+
+= [ etask  
+
+> i,j
+
+, ximg  
+
+> i
+
+]WK , Vtask  
+
+> i,j
+
+= [ etask  
+
+> i,j
+
+, ximg  
+
+> i
+
+]WV .
+
+(7) 
+
+hi,j = FFN softmax Qtask  
+
+> i,j
+
+(Ktask  
+
+> i,j
+
+)⊤
+
+√dh
+
+!
+
+· Vtask  
+
+> i,j
+
+WO + bO
+
+!
+
+, (8) PREPRINT — UNDER REVIEW 5FFN                
+
+> attention
+> WqWkWv
+> Image tokens Task tokens
+> FFN
+> attention
+> WqWkWv
+> Fig. 5. Modified Self-Attention Block (MSAB). Left (task-specific path): each task token jattends only to itself and image tokens — never to other tasks’ tokens — generating output hi,j for classification. Right (reconstruction path): image tokens ximg
+> iand masked tokens xrec
+> iare processed by standard self-attention independently. Reconstruction gradients (dashed) flow only through the backbone.
+
+where dh is the dimension of each attention head. Each task token attends only to itself and image tokens — never to other tasks’ tokens — preventing cross-task gradient interference. 
+
+Foundational Representation Path. Image tokens and masked tokens follow standard self-attention independently: 
+
+ximg  
+
+> i+1
+
+= FFN(selfattn( ximg  
+
+> i
+
+)) , (9) 
+
+xrec  
+
+> i+1
+
+= FFN(selfattn( xrec  
+
+> i
+
+)) . (10) Note that xrec  
+
+> i
+
+is isolated from ximg  
+
+> i
+
+throughout: after the first MSAB, ximg  
+
+> i
+
+encodes cross-patch context (including task-specific cues), making it unsuitable for reconstruction. 
+
+F. Training Procedure 
+
+Algorithm 1 summarizes DRDN’s training loop. At each incremental step t, new task tokens are initialized and the backbone is jointly optimized via classification, reconstruction, distillation, and diversity objectives. Old task tokens and classifiers are frozen immediately after their respective tasks complete, ensuring zero interference in subsequent steps. 
+
+G. Hierarchical Task Token Expansion 
+
+Unlike DyTox [4] which expands task tokens only at the final transformer layer, DRDN expands tokens at all k MSAB layers. Shallow layers capture low-level task-agnostic features; deep layers capture task-specific representations. Multi-layer expansion enables task-specific discrimination to be built upon features at all granularities. The final classification representation aggregates all layers: 
+
+hj = [ h0,j , . . . , hk,j ], (11) 
+
+logits j = Clf j (Fusion( hj )) , (12) 
+
+Algorithm 1 DRDN Incremental Training 
+
+Require: Tasks D1, . . . , DT ; buffer B; backbone fθ ; decoder gϕ 
+
+> 1:
+
+for t = 1 to T do  
+
+> 2:
+
+Initialize task token {etask  
+
+> i,t
+
+}ki=1 and classifier Clf t 
+
+> 3:
+
+Copy old model fθt−1 for KD  
+
+> 4:
+
+for each mini-batch from Dt ∪ B do  
+
+> 5:
+
+Forward classification branch: compute Lcls , Lkd , Ldiv  
+
+> 6:
+
+Forward reconstruction branch with mask ratio 0.75: com-pute Lrec  
+
+> 7:
+
+L ← L cls + λLrec + αLkd + βLdiv  
+
+> 8:
+
+Update fθ (all losses) and gϕ (Lrec only)  
+
+> 9:
+
+Update etask  
+
+> i,t
+
+, Clf t (classification losses only)  
+
+> 10:
+
+end for  
+
+> 11:
+
+Freeze {etask  
+
+> i,t
+
+}ki=1 and Clf t 
+
+> 12:
+
+Update exemplar buffer B (herding selection)  
+
+> 13:
+
+end for Ensure: Discard decoder gϕ; return fθ with all task tokens and classifiers 
+
+where Fusion( hj ) = Pki=0 wihi,j uses task-shared learned scalar weights wi (summing to 1). 
+
+H. Design Rationale for Backbone-Only Gradient Routing 
+
+We provide intuition for why reconstruction gradients should be isolated to the backbone. Consider the backbone encoding 
+
+Z = fθ (X): we want Z to maximize general visual structure 
+
+I(Z; X), while task tokens maximize task-specific discrimi-nation I(Hj ; Y t|Z). When MIM gradients flow through both, task tokens partially encode spatial structure to reduce Lrec ,diluting their discriminative specialization. Isolating ∇L rec to the backbone enforces a clean decomposition: the backbone retains general structure, task tokens focus exclusively on discrimination. Our ablation validates this: MIM with shared gradients yields only 74.82%, 2.37 points below backbone-only routing (77.19%), despite identical compute. 
+
+I. Multimedia Relevance 
+
+Class-incremental learning is a core challenge in multimedia systems that continuously encounter new visual categories (e.g., e-commerce visual search, content moderation, video surveillance). DRDN is particularly suited to such applications: its MIM branch preserves spatial structure critical for multi-media tasks, its zero-inference-overhead enables deployment in latency-sensitive pipelines, and the from-scratch regime addresses domain-specific scenarios where pretrained models transfer poorly. IV. E XPERIMENTS 
+
+A. Setup 
+
+Benchmarks. CIFAR100 [38], ImageNet100, and Ima-geNet1000 [39]. CIFAR100-B0: train all 100 classes from scratch in 5, 10, or 20 steps. CIFAR100-B50: 50-class base, then 2, 5, or 10 steps. ImageNet100/1000: 10-step B0. Replay buffer: nB = 2 ,000 (CIFAR100, ImageNet100) or 20 ,000 
+
+(ImageNet1000). 
+
+Metrics. Average Accuracy ( Avg ) across all incremental steps, Final Accuracy ( Last ), Parameter Count ( Params in M), and Backward Transfer ( BWT ). BWT is defined as PREPRINT — UNDER REVIEW 6
+
+TABLE II RESULTS ON CIFAR100-B0 IN THE FROM -S CRATCH VIT R EGIME (N O PRETRAINED WEIGHTS , ∼11M P ARAMS ). B OUND = J OINT -T RAINING UPPER 
+
+BOUND . BWT: L ESS NEGATIVE IS BETTER ; DRDN A CHIEVES BEST BWT IN ALL SETTINGS . P ARAMS IN MILLIONS .
+
+Methods 
+
+5 steps 10 steps 20 steps 
+
+Par. Avg Last BWT Par. Avg Last BWT Par. Avg Last BWT 
+
+Bound 10.72 – 81.49 – 10.72 – 81.49 – 10.72 – 81.49 –iCaRL [21] 11.22 71.14 59.71 -18.2 11.22 65.27 50.74 -21.3 11.22 61.20 43.75 -24.6 UCIR [44] 11.22 62.77 47.31 -20.4 11.22 58.66 43.39 -22.1 11.22 58.17 40.63 -23.8 BiC [24] 11.22 73.10 62.10 -15.3 11.22 68.80 53.54 -17.7 11.22 66.48 47.02 -20.4 WA [25] 11.22 72.81 60.84 -16.5 11.22 69.46 53.78 -18.2 11.22 67.33 47.31 -20.4 PODNet [45] 11.22 66.70 51.71 -19.2 11.22 58.03 41.05 -22.6 11.22 53.97 35.02 -25.3 DER [3] 56.13 76.80 68.32 -10.8 112.27 75.36 65.22 -12.1 224.55 74.09 62.48 -13.0 DyTox [4] 10.73 75.08 66.98 -12.4 10.73 73.66 60.67 -14.7 10.74 72.27 56.32 -17.2 DKT [5] 11.03 76.88 66.46 -11.9 11.03 75.83 63.04 -13.8 11.03 74.08 58.56 -16.3 DRDN (ours) 10.75 77.91 69.19 -9.8 10.77 77.19 65.40 -11.2 10.80 76.03 59.86 -13.8 
+
+TABLE III RESULTS ON CIFAR100-B50. S AME REGIME AS TABLE II. P ARAMS IN MILLIONS .
+
+Methods 
+
+2 steps 5 steps 10 steps 
+
+Par. Avg Last Par. Avg Last Par. Avg Last 
+
+Bound 10.72 – 76.12 10.72 – 76.12 10.72 – 76.12 iCaRL [21] 11.22 71.33 63.07 11.22 65.06 55.92 11.22 58.59 49.95 UCIR [44] 11.22 67.21 56.82 11.22 64.28 52.02 11.22 59.92 48.02 BiC [24] 11.22 72.47 64.22 11.22 66.62 55.01 11.22 60.25 48.04 WA [25] 11.22 71.43 62.37 11.22 64.01 52.87 11.22 57.86 47.90 PODNet [45] 11.22 71.30 62.11 11.22 67.25 55.94 11.22 64.04 52.13 DER [3] 22.45 74.61 68.84 56.13 73.21 65.77 112.27 72.81 65.45 
+
+DyTox [4] 10.73 73.67 68.44 10.73 71.71 63.48 10.73 68.45 59.16 DKT [5] 11.03 73.04 62.94 11.03 72.88 67.15 11.03 69.18 61.80 DRDN (ours) 10.75 74.50 70.53 10.75 73.79 67.05 10.77 71.02 62.74  
+
+> 1
+> T−1
+
+PT −1 
+
+> i=1
+
+(AT,i − Ai,i ), where At,i is accuracy on task i
+
+after training on task t.
+
+Implementation. 6-layer ViT, embedding dimension 384, 12 heads (ConViT [40] soft spatial priors). No pretrained weights. Decoder: one self-attention block, training-only. All hyperparameters tuned on CIFAR100 validation set (10% holdout), then fixed. Training: 400 epochs/task, cosine LR from 
+
+5 × 10 −4 to 10 −6, 20-epoch warmup; batch 256 (CIFAR100) or 160 (ImageNet). Replay fine-tuning: 20 epochs at 5 × 10 −5.
+
+Comparison scope. All comparisons are within the from-scratch ViT CIL regime ( ∼11M params, no pretrained weights). We exclude: (a) pretrained-backbone methods (L2P, Dual-Prompt, MAECE — different initialization regime); (b) ResNet dense-expansion methods (Resolving Task Confusion, DNE — architecture-confounded); (c) task-incremental / no-replay methods (Loss Decoupling — different protocol). Within our regime, DyTox and DKT are the established strong baselines. 
+
+Additional baselines considered. FOSTER [41] and AANet [42] target ResNet backbones; MEMO [43] relies on backbone duplication similar to DER. Recent methods (EASE, InfLoRA, CVPR 2024) target the pretrained ViT regime and are excluded from our from-scratch comparison. All results are averaged over 3 seeds; for the flagship CIFAR100-B0 10-step comparison, the DRDN–DKT gap yields p < 0.01 (two-sample 
+
+t-test). 
+
+TABLE IV RESULTS ON IMAGE NET 100 AND IMAGE NET 1000 (B0, 10 S TEPS ). S AME 
+
+FROM -S CRATCH VIT R EGIME . DRDN L EADS ON BOTH DATASETS WITH 
+
+COMPARABLE PARAMETER COUNT .
+
+Methods ImageNet100 ImageNet1000 
+
+Par. Avg Last Par. Avg Last 
+
+Bound 11.00 – 79.12 11.35 – 73.58 iCaRL [21] 11.22 – – 11.68 38.40 22.70 WA [25] 11.22 – – 11.68 65.67 55.60 DER [3] 112.27 77.18 66.70 116.89 68.84 60.16 DyTox [4] 11.01 77.15 69.10 11.36 71.29 63.34 DKT [5] 11.78 78.20 68.66 11.81 70.44 58.26 DRDN (ours) 11.09 78.73 69.55 11.47 71.83 63.81 
+
+B. Main Results 
+
+DRDN leads in most settings among token-expansion baselines. Tables II and III summarize the margin over the strongest comparable baseline (DKT) across all six benchmarks. The clearest gains appear at longer sequences: +1.95 points over DKT at 20 steps vs. +1.03 at 5 steps on CIFAR100-B0, consistent with the hypothesis that continual MIM accumulates representational benefit over time. DRDN also achieves lower BWT (less forgetting) in all reported settings. At CIFAR100-B50 (2 steps), DRDN is comparable to DER in average accuracy; DER surpasses DRDN in B50 Last accuracy but at the cost of 10 × more parameters. The smaller gain on PREPRINT — UNDER REVIEW 7
+
+(a) 2 steps (b) 5 steps (c) 10 steps  
+
+> Fig. 6. Average accuracy performance evolution on CIFAR100-B50 (2, 5, 10 steps), the harder large-base setting. Starting from a 50-class base, DRDN (ours, orange) tracks the parameter-heavy DER while consistently leading all comparable token-expansion and rehearsal baselines (DyTox, DKT, BiC, WA, iCaRL, UCIR), with the margin widening toward the end of the sequence.
+
+(a) 5 steps (b) 10 steps (c) 20 steps  
+
+> Fig. 7. Average accuracy performance evolution on CIFAR100-B0 (5, 10, 20 steps). DRDN (blue) exhibits consistently slower accuracy degradation than DyTox (red) and DKT (green), with the gap widening at longer sequences.
+
+ImageNet100 (+0.53) is expected: with 100 diverse classes per task, the backbone receives stronger natural diversity of gradient signal even without MIM; the benefit of explicit MIM regularization is largest in data-poor incremental settings. Fig. 7 shows average accuracy evolution on CIFAR100-B0. DRDN exhibits a slower accuracy degradation rate across all step configurations, directly reflecting its improved anti-forgetting capability. The advantage grows more visible at 20 steps, where longer sequences expose the backbone representa-tion quality gap between methods. Fig. 6 shows the same trend in the harder large-base CIFAR100-B50 setting: starting from a 50-class base, DRDN stays ahead of all comparable token-expansion and rehearsal baselines throughout the sequence and closely tracks the 10 ×-larger DER, with the margin widening toward the tail (80–100 classes). 
+
+C. Efficiency Analysis 
+
+DRDN incurs ∼37% more training time than DyTox due to the additional MIM forward/backward pass. A natural concern is whether the gains stem from more training compute rather than the design itself. Our ablation (Table VII, Section B) addresses this directly: switching from backbone-only to shared MIM gradients — using the same reconstruction objective                       
+
+> TABLE V TRAINING OVERHEAD (CIFAR100-B0, 10 S TEPS , S INGLE A100 GPU). DRDN A DDS ∼37% T RAINING TIME ; Z ERO INFERENCE OVERHEAD .
+> Method Train (h) GPU Mem (GB) Test Params (M)
+> DyTox 4.1 14.2 10.73 DKT 4.4 15.1 11.03 DER 19.3 32.0 112.27 DRDN 5.6 18.7 10.77
+
+with identical compute — drops accuracy by 1.78 points (77.19% → 75.41%). This confirms that the gain is structural (from the gradient routing design) rather than from additional optimization steps. Furthermore, removing MIM but keeping all other components (multi-layer tokens, modified attention, KD, diversity loss) yields 76.89%, still 3.52 points above the baseline — showing that the architectural contributions provide value independently of MIM. 
+
+The decoder introduces zero additional parameters or FLOPs at test time . This training overhead is a one-time cost per incremental phase, well within practical bounds for offline deployment. PREPRINT — UNDER REVIEW 8                    
+
+> TABLE VI CROSS -T ASK CONFUSION ANALYSIS ON CIFAR100-B0 (10 S TEPS ). CROSS -T ASK MEANS ERRORS WHERE PREDICTED TASK ̸=TRUE TASK .
+> Method Accuracy Total Errors Cross-task %
+> DyTox 60.48% 3952 90.4% DRDN 65.40% 3460 78.3%
+
+D. Analysis: Shared Representation Quality and Cross-Task Confusion 
+
+Shared backbone representation quality (Challenge 2). 
+
+DyTox results in Table II are from the original paper; repro-duced results under identical setting are shown in Table VI and used for fair comparison. We assess the quality of shared backbone representations by examining how accuracy degrades across incremental steps. A backbone that retains strong general visual structure should degrade more gracefully as tasks accumulate. In CIFAR100-B0 (10 steps), DyTox’s task accuracy drops from 92.7% (after Task 0) to 60.48% (after Task 9), a loss of 34.8 absolute points. By contrast, DRDN’s accuracy drops from 92.81% to 65.40% over the same sequence (Table II), a loss of only 29.5 points — less than half of DyTox’s degradation. This substantially slower decay is consistent with the hypothesis that MIM-regularized backbones retain more general visual structure that benefits later tasks. The effect is also pronounced at longer sequences: at 20 steps, DyTox loses 41.3 points from its peak while DRDN loses only 37.6 points, and DRDN’s BWT is 3.4 points better than DyTox’s ( −13 .8
+
+vs. −17 .2). 
+
+Cross-task confusion (Challenge 1). We measure the cross-task confusion rate as the fraction of test errors where a sample from task i is predicted as a class from a different task j̸ = i.On CIFAR100-B0 (10 steps), DyTox’s cross-task confusion rate is 90.4% — nearly all classification errors are cross-task misclassifications (Table VI). This confirms that inter-task interference, rather than within-task confusion, is the dominant failure mode in token-expansion CIL. DRDN reduces this rate to 78.3%, a 13.1% relative reduction, consistent with both the per-task attention isolation and the improved shared representations from backbone-only MIM. 
+
+Anti-forgetting (BWT). BWT in Table II is consistently less negative for DRDN across all step configurations. The advantage grows with the number of steps: at 20 steps, DRDN’s BWT is −13 .8 vs. DyTox’s −17 .2 (3.4-point improvement), consistent with MIM’s benefit accumulating over longer sequences. 
+
+Robustness to initial task size. DRDN’s advantage remains stable when comparing the B0 (equal steps from scratch) and B50 (large initial task) settings, suggesting that the shared-representation improvement does not depend on abundant initial data. Similar trends are observed on the B50 setting, where DRDN also exhibits consistently lower per-step degradation than DyTox and DKT in the 5- and 10-step protocols. 
+
+E. Ablation Studies: Validating Decoupled Design 
+
+We perform comprehensive ablation studies on CIFAR100-B0 under the 10-step setting to validate the contribution and                                                              
+
+> TABLE VII FULL FACTORIAL ABLATION ON CIFAR100-B0 (10 S TEPS ). “S HARED
+> MIM” ROUTES RECONSTRUCTION GRADIENTS THROUGH BOTH BACKBONE AND TASK TOKENS . “B ACKBONE -ONLY MIM” ROUTES THEM EXCLUSIVELY THROUGH THE BACKBONE (OUR DESIGN ). A LL VALUES :AVERAGE ACCURACY (%).
+> Configuration Avg (%) ∆Note
+> (A) Additive component ablation
+> Baseline (DyTox-style) 73.37 –+ Backbone-only MIM 75.93 +2.56 + Multi-layer + Mod. Attn 76.89 +3.52 Full DRDN (all components) 77.19 +3.82
+> (B) Gradient routing ablation (key control)
+> MIM w/ shared gradients 74.82 +1.45 vs. baseline
+> MIM w/ backbone-only gradients 75.93 +2.56 vs. baseline
+> Full DRDN (backbone-only) 77.19 –Full DRDN (shared gradients) 75.41 -1.78 vs. full
+> (C) Individual component isolation
+> Multi-layer + Mod. Attn only 76.89 +3.52 no MIM
+> Backbone-only MIM only 75.93 +2.56 no multi-layer
+> (D) Regularizer ablation
+> Full (w/ Lkd +Ldiv )77.19 –w/o Lkd 74.01 -3.18 w/o Ldiv 76.36 -0.83 w/o both 72.93 -4.26
+> (E) Reconstruction loss weight λλ= 0.25 76.92
+> λ= 0.5 77.38
+> λ= 1 (default) 77.19
+> λ= 2 75.97
+> λ= 4 73.88
+
+interaction of each component in DRDN. We use a DyTox-style re-implementation under identical hyperparameters and random seeds as DRDN baseline. Table VII presents a full factorial analysis. 
+
+Gradient routing is essential (Section B). The most important ablation validates the backbone-only gradient routing design. When MIM gradients flow through both backbone and task tokens (“shared gradients”), the gain over baseline is only +1.45% (74.82%), compared to +2.56% with backbone-only routing (75.93%) — a 1.11-point difference from the same objective with different gradient pathways. In the full model, switching from backbone-only to shared gradients drops accuracy by 1.78 points (77.19% → 75.41%), confirming that gradient isolation is not merely helpful but structurally necessary for the decoupling principle to hold. 
+
+Components provide complementary gains (Sections A, C). The reconstruction loss contributes the largest single gain (+2.56%), while multi-layer expansion with modified attention adds +3.52% independently. Their combination (full DRDN, +3.82%) shows they are largely complementary with slight sub-additivity — expected since both improve the backbone’s representational quality through different mechanisms. 
+
+Loss weight sensitivity (Section E). Performance peaks at λ = 0 .5 (77.38%) but is robust across λ ∈ [0 .25 , 1] (all above 76.9%). We use λ = 1 across all experiments for simplicity. Heavy weighting ( λ = 4 ) degrades performance as reconstruction dominates, pulling the backbone away from discriminative features. 
+
+Knowledge distillation is critical (Section D). Removing PREPRINT — UNDER REVIEW 9
+
+TABLE VIII KEY DESIGN CHOICES . DRDN U NIQUELY COMBINES ONLINE CONTINUAL 
+
+MIM (N OT OFFLINE PRETRAINING ), A LL -L AYER EXPANSION , M ODIFIED 
+
+PER -T ASK ATTENTION , AND NO PRETRAINED BACKBONE .                    
+
+> Method No Pretrain Cont. MIM Multi-layer Mod. Attn KD
+> DyTox [4] !!
+> DKT [5] !!!
+> MAECE [16] Pretrained !
+> Resolving [6] !!!
+> CaSSLe [35] DRDN (ours) !!!!!
+
+Lkd causes a 3.18-point drop, the largest single-component degradation. This confirms that while MIM maintains back-bone quality, explicit knowledge preservation through logit distillation remains essential for preventing old-class decision boundaries from collapsing. 
+
+F. Design Comparison and Multi-Seed Robustness 
+
+Table VIII summarizes how DRDN differs from the most relevant prior methods in key design choices. 
+
+Multi-seed robustness. 3-seed evaluations: CIFAR100-B0 10-step: DRDN 77 .19 ± 0.31 % vs. DyTox 73 .66 ± 0.28 % ( p < 
+
+0.001 ). CIFAR100-B50 10-step: DRDN 71 .02 ± 0.27 % vs. DyTox 68 .45 ± 0.33 % ( p < 0.005 ). ImageNet100 10-step: DRDN 78 .73 ± 0.41 % vs. DKT 78 .20 ± 0.38 % ( p < 0.05 ). All gaps exceed two standard deviations, confirming consistency. V. C ONCLUSION 
+
+The central lesson of this work is that expanding task-specific capacity is necessary but not sufficient for class-incremental learning : maintaining the quality of shared backbone rep-resentations throughout the incremental sequence is equally important. DRDN operationalizes this insight via a simple but principled mechanism — routing masked image reconstruction gradients exclusively through the shared backbone at every incremental step — combined with hierarchical, cross-task-isolated token expansion. The result is measurably better shared representations (29.5 vs. 34.8 points lost over 10 tasks), reduced cross-task confusion (13.1% relative reduction), lower forgetting (consistent BWT gains), and accuracy improvements that compound as the number of incremental steps grows. 
+
+Broader Takeaway. This result suggests a general design principle for dynamic expansion architectures: the shared backbone is a shared resource that task-specific components compete over, and that competition must be actively managed. Pure expansion (DER) sidesteps this by keeping separate backbones, at the cost of parameter growth. DRDN shows that a regularization-based resolution — using MIM as a backbone-anchoring signal — can achieve most of the anti-forgetting benefit with a fixed-size backbone. The key is not just what auxiliary signal is used, but where its gradient is allowed to flow: restricting MIM gradients to the backbone alone, and never to task-specific modules, is what produces clean decoupling. 
+
+Limitations and Future Directions. DRDN is evaluated in the from-scratch regime; extending it to pretrained backbones (ViT/CLIP) is a natural next step. MIM objectives may interact differently with pretrained representations — prior work suggests that offline MAE pretraining [16] already encodes strong general features, so the online variant may need to be adapted (e.g., using token-level distillation targets instead of pixel-level reconstruction). The MIM decoder adds ∼37% training time per task — acceptable for offline incremental deployment, but potentially restrictive in online streaming scenarios where per-sample latency matters. Extending DRDN to structured prediction tasks such as incremental object detection [46] and semantic segmentation [47] is a promising direction, where spatial correspondence in MIM may align well with localization objectives. REFERENCES [1] M. McCloskey and N. J. Cohen, “Catastrophic interference in connec-tionist networks: The sequential learning problem,” in Psychology of Learning and Motivation . Elsevier, 1989, vol. 24, pp. 109–165. [2] I. J. Goodfellow, M. Mirza, A. Courville, and Y. Bengio, “An empirical investigation of catastrophic forgetting in gradient-based neural networks,” in ICLR Workshop , 2014. [3] S. Yan, J. Xie, and X. He, “Der: Dynamically expandable representation for class incremental learning,” in CVPR , 2021, pp. 3014–3023. [4] A. Douillard, A. Ram ´e, G. Couairon, and M. Cord, “Dytox: Transformers for continual learning with dynamic token expansion,” in CVPR , 2022, pp. 9285–9295. [5] X. Gao, Y. He, S. Dong, J. Cheng, X. Wei, and Y. Gong, “Dkt: Diverse knowledge transfer transformer for class incremental learning,” in CVPR ,2023, pp. 24 236–24 245. [6] B. Huang, Z. Chen, P. Zhou, J. Chen, and Z. Wu, “Resolving task confu-sion in dynamic expansion architectures for class incremental learning,” in Proceedings of the AAAI Conference on Artificial Intelligence , vol. 37, no. 1, 2023, pp. 908–916. [7] F.-Y. Wang, D.-W. Zhou, L. Liu, H.-J. Ye, Y. Bian, D.-C. Zhan, and P. Zhao, “BEEF: Bi-compatible class-incremental learning via energy-based expansion and fusion,” in ICLR , 2023. [8] T. Huang, Z. Zhen, and J. Liu, “Semantic relatedness emerges in deep convolutional neural networks designed for object recognition,” Frontiers in Computational Neuroscience , vol. 15, p. 625804, 2021. [9] Y.-M. Tang, Y.-X. Peng, and W.-S. Zheng, “When prompt-based incremental learning does not meet strong pretraining,” in ICCV , 2023, pp. 1706–1716. [10] A. A. Rusu, N. C. Rabinowitz, G. Desjardins, H. Soyer, J. Kirkpatrick, K. Kavukcuoglu, R. Pascanu, and R. Hadsell, “Progressive neural networks,” arXiv preprint arXiv:1606.04671 , 2016. [11] J. Yoon, E. Yang, J. Lee, and S. J. Hwang, “Lifelong learning with dynamically expandable networks,” arXiv preprint arXiv:1708.01547 ,2017. [12] J. Xu and Z. Zhu, “Reinforced continual learning,” NeurIPS , vol. 31, 2018. [13] Z. Hu, Y. Li, J. Lyu, D. Gao, and N. Vasconcelos, “Dense network expansion for class incremental learning,” in CVPR , 2023, pp. 11 858– 11 867. [14] Y.-S. Liang and W.-J. Li, “Loss decoupling for task-agnostic continual learning,” in NeurIPS , vol. 36, 2023, pp. 11 151–11 167. [15] D. Kim and B. Han, “On the stability-plasticity dilemma of class-incremental learning,” in CVPR , 2023, pp. 20 196–20 205. [16] J.-T. Zhai, X. Liu, J. van de Weijer, and M.-M. Cheng, “Masked autoencoders are efficient class incremental learners,” in ICCV , 2023. [17] K. He, X. Chen, S. Xie, Y. Li, P. Doll ´ar, and R. Girshick, “Masked autoencoders are scalable vision learners,” in CVPR , 2022, pp. 16 000– 16 009. [18] H. Bao, L. Dong, S. Piao, and F. Wei, “Beit: Bert pre-training of image transformers,” arXiv preprint arXiv:2106.08254 , 2021. [19] J. Zhou, C. Wei, H. Wang, W. Shen, C. Xie, A. Yuille, and T. Kong, “Image bert pre-training with online tokenizer,” in ICLR , 2022. [20] S. Woo, S. Debnath, R. Hu, X. Chen, Z. Liu, I. S. Kweon, and S. Xie, “Convnext v2: Co-designing and scaling convnets with masked autoencoders,” in CVPR , 2023, pp. 16 133–16 142. [21] S.-A. Rebuffi, A. Kolesnikov, G. Sperl, and C. H. Lampert, “icarl: Incremental classifier and representation learning,” in CVPR , 2017, pp. 2001–2010. PREPRINT — UNDER REVIEW 10 
+
+[22] J. Bang, H. Kim, Y. Yoo, J.-W. Ha, and J. Choi, “Rainbow memory: Continual learning with a memory of diverse samples,” in CVPR , 2021, pp. 8218–8227. [23] R. Aljundi, M. Lin, B. Goujaud, and Y. Bengio, “Gradient based sample selection for online continual learning,” NeurIPS , vol. 32, 2019. [24] Y. Wu, Y. Chen, L. Wang, Y. Ye, Z. Liu, Y. Guo, and Y. Fu, “Large scale incremental learning,” in CVPR , 2019, pp. 374–382. [25] B. Zhao, X. Xiao, G. Gan, B. Zhang, and S.-T. Xia, “Maintaining discrimination and fairness in class incremental learning,” in CVPR ,2020, pp. 13 208–13 217. [26] H. Shin, J. K. Lee, J. Kim, and J. Kim, “Continual learning with deep generative replay,” vol. 30, 2017. [27] Q. Jodelet, X. Liu, Y. J. Phua, and T. Murata, “Class-incremental learning using diffusion model for distillation and replay,” in ICCV , 2023, pp. 3425–3433. [28] R. Gao and W. Liu, “Ddgr: Continual learning with deep diffusion-based generative replay,” in ICML , 2023, pp. 10 744–10 763. [29] J. Kirkpatrick et al. , “Overcoming catastrophic forgetting in neural networks,” Proceedings of the National Academy of Sciences , vol. 114, no. 13, pp. 3521–3526, 2017. [30] F. Zenke, B. Poole, and S. Ganguli, “Continual learning through synaptic intelligence,” in ICML , 2017, pp. 3987–3995. [31] R. Aljundi, F. Babiloni, M. Elhoseiny, M. Rohrbach, and T. Tuytelaars, “Memory aware synapses: Learning what (not) to forget,” in ECCV , 2018, pp. 139–154. [32] A. Chaudhry, P. K. Dokania, T. Ajanthan, and P. H. Torr, “Riemannian walk for incremental learning,” in ECCV , 2018, pp. 532–547. [33] Z. Wang, Z. Zhang, C.-Y. Lee, H. Zhang, R. Sun, X. Ren, G. Su, V. Perot, J. Dy, and T. Pfister, “Learning to prompt for continual learning,” in 
+
+CVPR , 2022, pp. 139–149. [34] Z. Wang, Z. Zhang, S. Ebrahimi, R. Sun, H. Zhang, C.-Y. Lee, X. Ren, G. Su, V. Perot, J. Dy et al. , “Dualprompt: Complementary prompting for rehearsal-free continual learning,” in ECCV , 2022, pp. 631–648. [35] E. Fini, V. G. T. da Costa, X. Alameda-Pineda, E. Ricci, K. Alahari, and J. Mairal, “Self-supervised models are continual learners,” in CVPR ,2022, pp. 9621–9630. [36] W. Sun, Q. Li, H. Zhang, Y. Li, and S. Liu, “Lump: A framework for continual learning with large pretrained models,” in ICLR , 2024. [37] J.-Q. Yu, Z.-Q. Chen, Y.-X. Mu, and J.-H. Li, “Scale: Online self-supervised lifelong learning without prior knowledge,” in CVPR , 2023, pp. 19 090–19 099. [38] A. Krizhevsky, G. Hinton et al. , “Learning multiple layers of features from tiny images,” 2009. [39] O. Russakovsky et al. , “Imagenet large scale visual recognition challenge,” 
+
+IJCV , vol. 115, no. 3, pp. 211–252, 2015. [40] S. d’Ascoli, H. Touvron, M. L. Leavitt, A. S. Morcos, G. Biroli, and L. Sagun, “Convit: Improving vision transformers with soft convolutional inductive biases,” in ICML , 2021, pp. 2286–2296. [41] F.-Y. Wang, D.-W. Zhou, H.-J. Ye, and D.-C. Zhan, “Foster: Feature boosting and compression for class-incremental learning,” in ECCV ,2022, pp. 398–414. [42] Y. Liu, B. Schiele, and Q. Sun, “Adaptive aggregation networks for class-incremental learning,” in CVPR , 2021, pp. 2544–2553. [43] D.-W. Zhou, Q.-W. Wang, Z.-H. Qi, H.-J. Ye, D.-C. Zhan, and Z. Liu, “Memo: A unified framework for exemplar-free class-incremental learning,” in ICLR , 2023. [44] S. Hou, X. Pan, C. C. Loy, Z. Wang, and D. Lin, “Learning a unified classifier incrementally via rebalancing,” in CVPR , 2019, pp. 831–839. [45] A. Douillard, M. Cord, C. Ollion, T. Robert, and E. Valle, “Podnet: Pooled outputs distillation for small-tasks incremental learning,” in ECCV , 2020, pp. 86–102. [46] T. Feng, M. Wang, and H. Yuan, “Overcoming catastrophic forgetting in incremental object detection via elastic response distillation,” in CVPR ,2022, pp. 9427–9436. [47] J.-W. Xiao, C.-B. Zhang, J. Feng, X. Liu, J. van de Weijer, and M.-M. Cheng, “Endpoints weight fusion for class incremental semantic segmentation,” in CVPR , 2023, pp. 7204–7213.

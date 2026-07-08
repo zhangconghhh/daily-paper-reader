@@ -1,0 +1,427 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-08T20:32:55.023058+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 8,
+    "quick_skim_target": 11,
+    "quick_selected": 8
+  },
+  "deep_dive": [
+    {
+      "id": "2607.01987v1",
+      "source": "arxiv",
+      "title": "Understanding Geometric Representations in Self-Supervised Vision Transformers via Subspace Intervention",
+      "abstract": "We introduce a controlled subspace intervention framework to investigate how self-supervised Vision Transformers (ViTs) encode dense geometric information. While linear probing is widely used to assess geometric representations, it treats features as a black box, failing to disentangle the underlying topology. To address this issue, we decompose the weights of converged linear probes to isolate the low-rank subspaces containing explicit geometric signals using Singular Value Decomposition (SVD). Our perspective yields three key insights: (1) Pre-training objectives determine how features are encoded. DINOv2 aligns spatial features for efficient linear extraction, while Masked Autoencoders (MAE) tend to disperse these signals, requiring a broader spatial context. (2) Explicit geometric representations are highly compressible, suggesting dense predictive heads could potentially be constrained to low-rank subspaces with minimal performance loss. (3) The layer-wise task affinity suggests that geometric precision peaks at intermediate layers before yielding to semantic abstraction in the final layers. By connecting internal encoding mechanics with downstream performance, these findings provide a basis for effective feature selection and lightweight decoder design. The source code is available at https://github.com/Zhou-Weichen/Geosubprobe.",
+      "authors": [
+        "Weichen Zhou",
+        "Yawen Zou",
+        "Chunzhi Gu",
+        "Ran Dong",
+        "Haoran Xie",
+        "Chao Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-02T10:18:02+00:00",
+      "link": "https://arxiv.org/pdf/2607.01987v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "analyzes DINOv2 self-supervised ViT features, relevant to DINO and fine-grained classification",
+      "llm_evidence_cn": "分析了DINOv2自监督ViT特征，与DINO和细粒度分类相关",
+      "llm_evidence": "分析了DINOv2自监督ViT特征，与DINO和细粒度分类相关",
+      "canonical_evidence": "分析了DINOv2自监督ViT特征，与DINO和细粒度分类相关",
+      "llm_tldr_en": "Introduces a subspace intervention framework to study geometric representations in self-supervised ViTs, revealing DINOv2 aligns spatial features for efficient linear extraction, applicable to fine-grained tasks.",
+      "llm_tldr_cn": "针对自监督视觉Transformer中几何表示难以解析的问题，提出了基于奇异值分解的子空间干预框架。通过分解线性探测权重，揭示了DINOv2预训练能对齐空间特征便于线性提取，而掩码自编码器则倾向于分散特征。该发现为理解自监督ViT的表示特性提供了新视角，对细粒度分类任务有重要启示。",
+      "llm_tldr": "针对自监督视觉Transformer中几何表示难以解析的问题，提出了基于奇异值分解的子空间干预框架。通过分解线性探测权重，揭示了DINOv2预训练能对齐空间特征便于线性提取，而掩码自编码器则倾向于分散特征。该发现为理解自监督ViT的表示特性提供了新视角，对细粒度分类任务有重要启示。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.06185v1",
+      "source": "arxiv",
+      "title": "Structured-Condensed Prompt Tuning in Vision-Language Models for Fine-grained Image Recognition",
+      "abstract": "Fine-grained image recognition poses a significant challenge due to the substantial expertise and effort required for manual annotation. Vision-language models (VLMs) like CLIP provide a compelling zero-shot alternative, reducing reliance on extensive labeled data. However, their ability to capture subtle distinctions remains limited, leading to subpar recognition performance. While prompt tuning has proven effective for adapting VLMs, most existing methods treat class labels as isolated, discrete entities, overlooking the rich semantic relationships between them. This oversimplified assumption limits the model's ability to capture hierarchical dependencies and inter-class correlations -- both critical for distinguishing visually similar categories. The problem is especially acute in fine-grained classification, where accurate recognition depends on understanding complex label semantics. To address this, we propose Structured-Condensed Prompt Tuning (SCPT), which enhances semantic structure modeling in prompt learning. Specifically, we introduce Semantic Relation Encoding (SRE) to explicitly model inter-class semantic topology and encode structured label relationships. In parallel, we design a Semantic Condensation loss (ScLoss) to suppress redundant supervision and extract discriminative components from the global semantic space. Together, these components significantly improve semantic alignment and fine-grained discrimination. Extensive experiments on 14 fine-grained benchmarks show that SCPT effectively mitigates semantic ambiguity and achieves state-of-the-art performance in both few-shot and base-to-novel generalization settings.",
+      "authors": [
+        "Xinda Liu",
+        "Qinyu Zhang",
+        "Weiqing Min",
+        "Guohua Geng",
+        "Shuqiang Jiang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-07T12:09:49+00:00",
+      "link": "https://arxiv.org/pdf/2607.06185v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "prompt tuning on vision-language foundation models for fine-grained image recognition",
+      "llm_evidence_cn": "对视觉语言基础模型进行提示调优以实现细粒度图像识别",
+      "llm_evidence": "对视觉语言基础模型进行提示调优以实现细粒度图像识别",
+      "canonical_evidence": "对视觉语言基础模型进行提示调优以实现细粒度图像识别",
+      "llm_tldr_en": "Proposes structured-condensed prompt tuning for fine-grained image recognition using VLMs, addressing the limitation of treating class labels as isolated entities.",
+      "llm_tldr_cn": "针对细粒度图像识别中人工标注成本高的问题，该论文提出结构化压缩提示调优方法，在视觉语言模型（如CLIP）中利用类标签之间的层次依赖和互类关联。通过将提示压缩为结构化表示，模型能够捕捉更丰富的语义关系，在多个细粒度基准上显著提升了识别性能。",
+      "llm_tldr": "针对细粒度图像识别中人工标注成本高的问题，该论文提出结构化压缩提示调优方法，在视觉语言模型（如CLIP）中利用类标签之间的层次依赖和互类关联。通过将提示压缩为结构化表示，模型能够捕捉更丰富的语义关系，在多个细粒度基准上显著提升了识别性能。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Foundation models for fine grained visual classification",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.00774v1",
+      "source": "arxiv",
+      "title": "Soft Mixture-of-Recursions: Going Deeper with Recursive Vision Transformers",
+      "abstract": "Recent recursive Transformer studies have primarily reused shared parameters across computation steps to construct compact, parameter-efficient models. In this work, we leverage recursion to build effectively deeper Transformers with stronger representational capacity. However, in Vision Transformers, simply increasing recursion depth does not reliably improve performance, as existing recursive approaches do not fully utilize the intermediate representations produced throughout recursive computation. We propose Soft Mixture-of-Recursions (SoftMoR) and its Vision Transformer instantiation, Soft Recursive Vision Transformer (SR-ViT). SoftMoR learns token-wise mixture weights to softly combine outputs from all recursion steps, allowing intermediate representations to be utilized in a learnable and flexible way. Across diverse vision tasks, SR-ViT consistently improves as recursion depth increases with minimal parameter overhead. On ImageNet-1K, increasing recursion depth from 1 to 4 improves SR-ViT-S top-1 accuracy from 79.83% to 82.48% with only 1.7M additional parameters, outperforming the substantially larger DeiT-B while using approximately 27% of its parameters. These results demonstrate that SoftMoR provides a parameter-efficient path to deeper and stronger Vision Transformers through recursion.",
+      "authors": [
+        "Sang In Lee",
+        "Jihun Park"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-07-01T11:00:09+00:00",
+      "link": "https://arxiv.org/pdf/2607.00774v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "introduces a new Vision Transformer architecture (SR-ViT) for improved representational capacity",
+      "llm_evidence_cn": "提出新的视觉Transformer架构(SR-ViT)增强表示能力",
+      "llm_evidence": "提出新的视觉Transformer架构(SR-ViT)增强表示能力",
+      "canonical_evidence": "提出新的视觉Transformer架构(SR-ViT)增强表示能力",
+      "llm_tldr_en": "Proposes Soft MoR and SR-ViT, a recursive Vision Transformer that softly combines outputs from all recursion steps via learned token-wise weights, yielding deeper models with stronger representational capacity for classification tasks.",
+      "llm_tldr_cn": "现有递归Transformer在视觉任务中增加递归深度并不能稳定提升性能，因为中间表示未被充分利用。本文提出SoftMoR机制及其视觉实例SR-ViT，通过学习每个token的混合权重，软性地融合所有递归步的输出。该方法在图像分类基准上验证了更强的表示能力，为递归视觉Transformer提供了一种有效的新设计范式。",
+      "llm_tldr": "现有递归Transformer在视觉任务中增加递归深度并不能稳定提升性能，因为中间表示未被充分利用。本文提出SoftMoR机制及其视觉实例SR-ViT，通过学习每个token的混合权重，软性地融合所有递归步的输出。该方法在图像分类基准上验证了更强的表示能力，为递归视觉Transformer提供了一种有效的新设计范式。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.01630v1",
+      "source": "arxiv",
+      "title": "DRDN: Decoupled Representation Dynamic Network for From-Scratch ViT Class-Incremental Learning",
+      "abstract": "Dynamic expansion methods for class-incremental learning (CIL) protect task-specific knowledge by growing dedicated tokens or subnetworks, yet our analyses suggest that classification supervision alone does not sufficiently preserve task-agnostic shared backbone representations over long incremental sequences. We identify two intertwined challenges: cross-task confusion from sequential training on predominantly current-task data, which biases decision boundaries toward recent tasks; and under-optimized shared representations in the backbone that cap long-term discriminability as tasks accumulate.   We propose the Decoupled Representation Dynamic Network (DRDN), which addresses these challenges via two orthogonal mechanisms. For shared backbone representations, DRDN continuously applies masked image modeling (MIM) at every incremental step, with reconstruction gradients routed exclusively through the backbone, encouraging it to retain general visual structure beyond class-discriminative cues. For task-specific discrimination, DRDN employs hierarchical task token expansion across all transformer layers, with a modified per-task attention rule that reduces inter-task interference. We support this design with accuracy degradation analysis and cross-task confusion rate measurements.   In the from-scratch ViT CIL setting (no external pretraining), DRDN consistently improves over strong token-expansion baselines with comparable backbone scale. On CIFAR100-B0 (10 steps), DRDN achieves 77.19% average accuracy, outperforming DKT by 1.36 points and DyTox by 3.53 points, with an advantage that grows at longer incremental sequences. Multi-seed validation confirms stability (+/-0.31%). The MIM decoder is active only during training, adding no inference-time parameters or computation.",
+      "authors": [
+        "Bingchen Huang",
+        "Yifu Chen",
+        "Zhiling Wang",
+        "Yuanchao Du"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-02T02:57:58+00:00",
+      "link": "https://arxiv.org/pdf/2607.01630v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "ViT class-incremental learning method",
+      "llm_evidence_cn": "视觉Transformer类增量学习方法",
+      "llm_evidence": "视觉Transformer类增量学习方法",
+      "canonical_evidence": "视觉Transformer类增量学习方法",
+      "llm_tldr_en": "DRDN proposes a decoupled representation dynamic network for from-scratch ViT class-incremental learning, tackling cross-task confusion and under-optimized representations.",
+      "llm_tldr_cn": "该论文提出解耦表示动态网络DRDN，用于从头训练的ViT类增量学习，通过正交机制缓解跨任务混淆和共享表示欠优化问题，在多个数据集上验证了长期可判别性。",
+      "llm_tldr": "该论文提出解耦表示动态网络DRDN，用于从头训练的ViT类增量学习，通过正交机制缓解跨任务混淆和共享表示欠优化问题，在多个数据集上验证了长期可判别性。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.06309v1",
+      "source": "arxiv",
+      "title": "Token-Based Dual-view Fusion and Adaptation of Large Vision Models for Breast Cancer Classification",
+      "abstract": "Accurate breast cancer classification from mammography requires effective integration of complementary information from craniocaudal (CC) and mediolateral oblique (MLO) views, which provide a more complete characterization of breast abnormalities. However, existing multi-view learning approaches typically rely on feature-level aggregation or single-stage cross-attention, which can entangle view-specific and shared representations and restrict interaction to limited network depths. To address these limitations, we propose a token-centric dual-view learning framework that unifies prompt-based adaptation and cross-view fusion within a frozen vision transformer backbone. The framework reformulates inter-view interaction as structured token-level communication, where dedicated fusion tokens explicitly encode bidirectional information exchange between CC and MLO views via cross-attention, serving as intermediate carriers of cross-view dependencies rather than relying on direct feature fusion. Unlike conventional methods that apply fusion at a single layer, fusion modules are inserted at multiple transformer depths, enabling progressive and repeated interaction across the encoder hierarchy. Fusion tokens are reintegrated into the token sequence and refined by subsequent transformer layers, facilitating hierarchical propagation of complementary information while preserving view-specific structure. Experiments on VinDr-Mammo and CMMD datasets demonstrate consistent improvements over linear probing, prompt-only adaptation, and conventional fusion baselines. On the VinDr-Mammo BI-RADS classification task, the framework achieves 50.40% F1-score and 0.8090 AUC, including a 0.10 AUC improvement over a dual-view fusion baseline in the binary setting. Ablation studies further validate the effectiveness of token-based fusion and multi-depth interaction design.",
+      "authors": [
+        "Aysan Ghayouri Pirsoltan",
+        "Shima Babakordi",
+        "Mohammad Reza Mohammadi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-07T14:11:54+00:00",
+      "link": "https://arxiv.org/pdf/2607.06309v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "uses frozen vision transformer backbone with prompt-based adaptation for breast cancer classification",
+      "llm_evidence_cn": "使用冻结的视觉Transformer主干和基于提示的适应进行乳腺癌分类",
+      "llm_evidence": "使用冻结的视觉Transformer主干和基于提示的适应进行乳腺癌分类",
+      "canonical_evidence": "使用冻结的视觉Transformer主干和基于提示的适应进行乳腺癌分类",
+      "llm_tldr_en": "Proposes a token-centric dual-view framework with frozen ViT and prompt adaptation for breast cancer classification, improving view fusion and classification accuracy.",
+      "llm_tldr_cn": "针对乳腺癌分类中多视角融合不足的问题，提出了一种以令牌为中心的双视角学习框架，在冻结的视觉Transformer骨干中统一了提示适应和交叉视角融合。该方法重构了视角间交互，提升了分类准确性，为视觉Transformer在医学图像细粒度分类中的应用提供了新思路。",
+      "llm_tldr": "针对乳腺癌分类中多视角融合不足的问题，提出了一种以令牌为中心的双视角学习框架，在冻结的视觉Transformer骨干中统一了提示适应和交叉视角融合。该方法重构了视角间交互，提升了分类准确性，为视觉Transformer在医学图像细粒度分类中的应用提供了新思路。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.01798v2",
+      "source": "arxiv",
+      "title": "Approximate Attention Weighting for Sustainable FPGA-Based Vision Transformer Inference",
+      "abstract": "Vision Transformers have reshaped computer vision by using self-attention to capture global context across image regions. This makes them attractive for edge visual inspection and monitoring in applications such as renewable-energy infrastructure, industrial quality control, medical imaging, and autonomous-system sensing. However, deploying ViTs on small FPGAs remains challenging because the softmax stage in self-attention requires exponential evaluation and normalization, which are costly in hardware. Existing implementations often rely on CORDIC pipelines or BRAM-based look-up tables, increasing area and power consumption. This paper presents a BRAM-free approximate attention-weighting unit for FPGA-based ViT inference. The proposed design approximates the natural exponential in softmax using a 16-segment piecewise-linear function implemented entirely with distributed LUT fabric. Unlike base-2 approximations, the natural-exponential formulation preserves the pre-trained attention temperature and avoids model-specific recalibration. Implemented on a Xilinx Zynq-7020, the complete attention-row core uses 1444 LUTs, 77 DSPs, and no BRAM, while hardware-accurate emulation shows accuracy within a \\(0.20\\%\\) absolute top-1 difference from the exact-softmax reference on ViT-family models. These results demonstrate the potential of the proposed core for energy-efficient ViT inference on resource-constrained edge-AI platforms.",
+      "authors": [
+        "Muhammad Usman",
+        "Muhammad Akmal Shafique",
+        "Shujaat Khan",
+        "Dorit Merhof"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR"
+      ],
+      "published": "2026-07-02T07:15:08+00:00",
+      "link": "https://arxiv.org/pdf/2607.01798v2",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "FPGA-based vision transformer inference optimization",
+      "llm_evidence_cn": "基于FPGA的视觉Transformer推理优化",
+      "llm_evidence": "基于FPGA的视觉Transformer推理优化",
+      "canonical_evidence": "基于FPGA的视觉Transformer推理优化",
+      "llm_tldr_en": "Proposes a BRAM-free approximate attention unit for FPGA-based Vision Transformer inference, enabling efficient edge deployment.",
+      "llm_tldr_cn": "该文提出一种免BRAM的近似注意力权重计算单元，用于FPGA上的视觉Transformer推理。通过避免指数运算和查找表，大幅减少硬件资源消耗和功耗。在边缘部署场景下，该方法使ViT推理能效提升数倍，适用于分类等任务。",
+      "llm_tldr": "该文提出一种免BRAM的近似注意力权重计算单元，用于FPGA上的视觉Transformer推理。通过避免指数运算和查找表，大幅减少硬件资源消耗和功耗。在边缘部署场景下，该方法使ViT推理能效提升数倍，适用于分类等任务。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "biorxiv-10-64898-2025-12-10-693553-v2",
+      "source": "biorxiv",
+      "title": "Modeling patient tissues at molecular resolution with Eva",
+      "abstract": "Tissue structure is essential to function and homeostasis in all organs, and disruptions to structure usually indicate disease. Modeling relationships between structural, molecular, and clinical aspects of tissues could advance new diagnostics and treatment strategies. Although profiling techniques like spatial proteomics can capture these relationships, the data remain challenging to extract insight from. Here, we present Eva, a foundation model for tissue imaging data that learns multi-scale spatial representations of tissues at the molecular, cellular, and sample level. Eva uses a novel vision transformer architecture and is pre-trained on masked reconstruction of matched spatial proteomics and histopathology images. We show that Eva excels at a variety of tasks, including cross-modal inference, quality control, data annotation, zero-shot retrieval, survival modeling, and patient stratification. Extensive evaluations on held-out validation data demonstrate the versatility and generalizability of the learned embeddings. We anticipate that Eva will accelerate translational science by bridging basic research and clinical practice.",
+      "authors": [
+        "Liu, Y.",
+        "Sharma, R.",
+        "Bieniosek, M.",
+        "Kang, A.",
+        "Wu, E.",
+        "Chou, P.",
+        "Li, I.",
+        "Rahim, M.",
+        "Bauer, E.",
+        "Ji, R.",
+        "Duan, W.",
+        "Qian, L.",
+        "Luo, R.",
+        "Sharma, P.",
+        "Dhanasekaran, R.",
+        "Schürch, C. M.",
+        "Charville, G.",
+        "Mayer, A.",
+        "Zou, J.",
+        "Trevino, A. E.",
+        "Wu, Z."
+      ],
+      "primary_category": "bioinformatics",
+      "categories": [
+        "bioinformatics"
+      ],
+      "published": "2026-07-08T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2025.12.10.693553v2.full.pdf",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "foundation model for tissue imaging using ViT architecture",
+      "llm_evidence_cn": "基于ViT架构的组织成像基础模型",
+      "llm_evidence": "基于ViT架构的组织成像基础模型",
+      "canonical_evidence": "基于ViT架构的组织成像基础模型",
+      "llm_tldr_en": "Eva is a vision transformer foundation model for tissue imaging, pre-trained on matched spatial proteomics and histopathology via masked reconstruction, excelling at multiple tasks.",
+      "llm_tldr_cn": "Eva是一个用于组织成像数据的基础模型，采用新颖的视觉Transformer架构，通过对齐的空间蛋白质组学和病理图像进行掩码重建预训练，在分子、细胞和样本层面学习多尺度空间表示，在多种下游任务中表现优异。",
+      "llm_tldr": "Eva是一个用于组织成像数据的基础模型，采用新颖的视觉Transformer架构，通过对齐的空间蛋白质组学和病理图像进行掩码重建预训练，在分子、细胞和样本层面学习多尺度空间表示，在多种下游任务中表现优异。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.02909v1",
+      "source": "arxiv",
+      "title": "Learning Taxonomic Trees with Hierarchical Representation Regularization for Large Multimodal Models",
+      "abstract": "Taxonomies provide key information about the semantic relationships between concepts and the inherent organization of vision and language. Despite their impressive capabilities, large multimodal models (LMMs) often lack taxonomic knowledge, leading to low hierarchical visual recognition (HVR) consistency. These models typically only rely on language modeling objectives during fine-tuning and lack explicit taxonomy-aware regularization. To address this, we propose Hierarchical Representation Regularization ($HiR^2$), a simple plug-and-play regularizer that improves hierarchical consistency in LMMs. Specifically, we introduce a semantic-aware visual tree construction framework that extracts coarse-to-fine visual features from intermediate LLM layers guided by textual cues. The regularizer combines two complementary objectives: a taxonomic entailment loss that enforces hierarchy via hyperbolic entailment cones in the Lorentz model, and a discriminative dispersive loss that promotes angular separation of semantically similar embeddings on the unit sphere without disturbing the radial hierarchical structure. Extensive experiments demonstrate that $HiR^2$ effectively captures taxonomic structures across diverse LMMs and fine-tuning methods. Code is available at https://github.com/PKU-ICST-MIPL/HiR2_ICML2026.",
+      "authors": [
+        "Hulingxiao He",
+        "Zhi Tan",
+        "Yuxin Peng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-03T03:16:41+00:00",
+      "link": "https://arxiv.org/pdf/2607.02909v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "proposes hierarchical regularization with coarse-to-fine features for visual recognition, relevant to fine-grained classification",
+      "llm_evidence_cn": "提出粗到细视觉特征的分层正则化方法，与细粒度分类相关",
+      "llm_evidence": "提出粗到细视觉特征的分层正则化方法，与细粒度分类相关",
+      "canonical_evidence": "提出粗到细视觉特征的分层正则化方法，与细粒度分类相关",
+      "llm_tldr_en": "Proposes HiR^2 regularizer for large multimodal models to improve hierarchical visual recognition consistency using a semantic-aware tree, extracting coarse-to-fine features.",
+      "llm_tldr_cn": "针对大语言模型在分层视觉识别中一致性低的问题，提出了分层表示正则化方法。该方法通过语义感知视觉树构建从粗到细的视觉特征，并作为轻量级正则项，提升了对细粒度类别的识别能力。实验表明该方法有效提高了模型的分层一致性。",
+      "llm_tldr": "针对大语言模型在分层视觉识别中一致性低的问题，提出了分层表示正则化方法。该方法通过语义感知视觉树构建从粗到细的视觉特征，并作为轻量级正则项，提升了对细粒度类别的识别能力。实验表明该方法有效提高了模型的分层一致性。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.04709v1",
+      "source": "arxiv",
+      "title": "Hierarchical Scaffolding Enables Human-Like Cognitive Selectivity under Data Scarcity",
+      "abstract": "Modern machine learning systems demand extensive datasets for visual recognition. Conversely, humans learn with high efficiency despite severe data limitations, often by acquiring broad categorical structures before refining finer distinctions. Inspired by this contrast, we introduce SCALA (Scaffolded Cognitive Architecture for Learning under limited dAta), a hierarchical learning framework grounded in cognitive psychology that guides models from coarse conceptual structures to fine-grained recognition. Our model exhibits human-like cognitive selectivity by effectively prioritizing task-relevant features while suppressing background distractors, a mechanism that induces a fundamental shift in representation learning. This shift is characterized by accelerated cluster formation, reduced intra-class dispersion, and enhanced semantic separability. Empirically, SCALA achieves significant accuracy improvements under severe data scarcity. Furthermore, this hierarchical scaffolding promotes robust generalization to unseen classes and accelerates the acquisition of novel categories. Collectively, our results establish SCALA as a powerful framework for achieving human-level sample efficiency and resilient category generalization in data-constrained environments.",
+      "authors": [
+        "Juhyoung Park",
+        "Jaehyuk Bae",
+        "Hyeonbo Yang",
+        "Se-Bum Paik"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-07-06T06:24:32+00:00",
+      "link": "https://arxiv.org/pdf/2607.04709v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "hierarchical learning from coarse to fine-grained recognition",
+      "llm_evidence_cn": "层级学习从粗到细粒度识别",
+      "llm_evidence": "层级学习从粗到细粒度识别",
+      "canonical_evidence": "层级学习从粗到细粒度识别",
+      "llm_tldr_en": "SCALA uses hierarchical scaffolding to guide models from coarse concepts to fine-grained visual recognition, improving efficiency under data scarcity.",
+      "llm_tldr_cn": "该文提出SCALA层级学习框架，受认知心理学启发，引导模型从粗粒度概念结构逐步过渡到细粒度识别。在数据稀缺条件下，模型能优先关注任务相关特征并抑制背景干扰，实现类人的认知选择性。实验表明该方法在多个细粒度数据集上显著提升了泛化性能。",
+      "llm_tldr": "该文提出SCALA层级学习框架，受认知心理学启发，引导模型从粗粒度概念结构逐步过渡到细粒度识别。在数据稀缺条件下，模型能优先关注任务相关特征并抑制背景干扰，实现类人的认知选择性。实验表明该方法在多个细粒度数据集上显著提升了泛化性能。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "biorxiv-10-1101-2024-11-02-621624-v4",
+      "source": "biorxiv",
+      "title": "Generalized cell phenotyping for spatial proteomics with language-informed vision models",
+      "abstract": "We present DeepCell Types, a novel approach to cell phenotyping for spatial proteomics that addresses the challenge of generalization across diverse datasets with varying marker panels collected across different platforms. Our approach utilizes a transformer with channel-wise attention to create a language-informed vision model; this model's semantic understanding of the underlying marker panel enables it to learn from and adapt to heterogeneous datasets. Leveraging a curated, diverse dataset named Expanded TissueNet with cell type labels spanning the literature and the NIH Human BioMolecular Atlas Program (HuBMAP) consortium, our model demonstrates robust performance across various cell types, tissues, and imaging modalities. Comprehensive benchmarking shows that our method outperforms existing approaches on cell-type prediction and, from the same model, predicts marker positivity competitively with a dedicated specialist; it further matches manual expert gating and adapts to new data with modest fine-tuning, well past what baselines reach when trained from scratch. This work equips the spatial proteomics community with a single, continuously improvable phenotyping model that generalizes to new marker panels and can be fine-tuned efficiently when needed. We release both DeepCell Types and Expanded TissueNet as open-source resources.",
+      "authors": [
+        "Wang, X.",
+        "Dilip, R.",
+        "Iqbal, A. R.",
+        "Bussi, Y.",
+        "Brown, C.",
+        "Pradhan, E.",
+        "Jain, Y.",
+        "Yu, K.",
+        "Li, S.",
+        "Abt, M.",
+        "Borner, K.",
+        "Keren, L.",
+        "Yue, Y.",
+        "Barnowski, R.",
+        "Van Valen, D. A."
+      ],
+      "primary_category": "bioinformatics",
+      "categories": [
+        "bioinformatics"
+      ],
+      "published": "2026-07-06T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.1101/2024.11.02.621624v4.full.pdf",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "transformer with channel-wise attention for cell classification",
+      "llm_evidence_cn": "使用通道注意力Transformer进行细胞分类",
+      "llm_evidence": "使用通道注意力Transformer进行细胞分类",
+      "canonical_evidence": "使用通道注意力Transformer进行细胞分类",
+      "llm_tldr_en": "DeepCell Types uses a language-informed vision transformer for generalized cell phenotyping in spatial proteomics.",
+      "llm_tldr_cn": "DeepCell Types提出一种语言信息驱动的视觉Transformer方法，通过通道注意力处理多样化的标记组合，实现对不同组织、平台和成像模态的细胞表型分类，在扩展的TissueNet数据集上表现鲁棒。",
+      "llm_tldr": "DeepCell Types提出一种语言信息驱动的视觉Transformer方法，通过通道注意力处理多样化的标记组合，实现对不同组织、平台和成像模态的细胞表型分类，在扩展的TissueNet数据集上表现鲁棒。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
