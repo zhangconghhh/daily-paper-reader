@@ -1,0 +1,1594 @@
+DA-VPT: Semantic-Guided Visual Prompt Tuning for Vision Transformers
+Li Ren, Chen Chen, Liqiang Wang, Kien Hua
+Department of Computer Science
+University of Central Florida, USA
+{Li.Ren, Chen.Chen, Liqiang.Wang, Kien.Hua}@ucf.edu
+Abstract
+Visual Prompt Tuning (VPT) has become a promising
+solution for Parameter-Efficient Fine-Tuning (PEFT) ap-
+proach for Vision Transformer (ViT) models by partially
+fine-tuning learnable tokens while keeping most model pa-
+rameters frozen.
+Recent research has explored modify-
+ing the connection structures of the prompts.
+However,
+the fundamental correlation and distribution between the
+prompts and image tokens remain unexplored. In this paper,
+we leverage metric learning techniques to investigate how
+the distribution of prompts affects fine-tuning performance.
+Specifically, we propose a novel framework, Distribution
+Aware Visual Prompt Tuning (DA-VPT), to guide the dis-
+tributions of the prompts by learning the distance metric
+from their class-related semantic data. Our method demon-
+strates that the prompts can serve as an effective bridge
+to share semantic information between image patches and
+the class token. We extensively evaluated our approach
+on popular benchmarks in both recognition and segmen-
+tation tasks. The results demonstrate that our approach
+enables more effective and efficient fine-tuning of ViT mod-
+els by leveraging semantic information to guide the learn-
+ing of the prompts, leading to improved performance on
+various downstream vision tasks. The code is released on
+https://github.com/Noahsark/DA-VPT.
+1. Introduction
+Recent advances in model scaling and dataset expansion
+[10, 36, 50] have led to powerful vision foundation mod-
+els, particularly those based on Vision Transformer (ViT)
+architectures [11]. These models have demonstrated excep-
+tional performance across various computer vision tasks
+[19, 20, 44]. While fine-tuning these models for downstream
+tasks like visual recognition [11] or semantic segmentation
+[27] has become standard practice, the conventional full fine-
+tuning approach faces significant challenges, including high
+computational costs, overfitting, and catastrophic forgetting
+[28, 39]. These challenges have motivated the development
+Tunable
+Frozen
+Image Token
+Prompt
+Pull
+Push
+CLS Token
+Transformer Block Layer
+CLS
+HEAD
+…
+𝐿𝐶𝐸
+…
+CLS
+Transformer Block Layer
+CLS
+…
+…
+VPT-Deep
+Transformer Block Layer
+CLS
+HEAD
+…
+𝐿𝐶𝐸
+…
+CLS
+Transformer Block Layer
+CLS
+…
+…
+𝐿𝑀𝐿(    ,    )
+𝐿𝑀𝐿(    ,    )
++
++
+DA-VPT (ours)
+Figure 1. Comparison between VPT-Deep and DA-VPT. Left
+(VPT-Deep): Prompts are guided solely by the recognition task,
+leading to unconstrained distributions between prompts and vi-
+sual tokens. This allows prompts to attract features from arbitrary
+classes, potentially hindering the class token’s ability to aggregate
+class-specific information. Right (DA-VPT): Prompts are jointly
+optimized by the main task and semantic metric learning objectives.
+The semantic clustering aligns the distributions of prompts, visual
+tokens, and class tokens, enabling more effective class-specific
+information aggregation through semantically-guided attention.
+of Parameter-Efficient Fine-Tuning (PEFT) methods that se-
+lectively update a small subset of model parameters while
+keeping the majority frozen [3, 23, 25, 28, 32, 42, 47, 63].
+Initially emerging from the NLP domain, Houlsby et al.
+[23] and subsequent works [24, 42] demonstrated that up-
+dating a minimal number of parameters could achieve per-
+formance comparable to full fine-tuning. These techniques
+were later adapted to computer vision by Chen et al. [3], who
+introduced parallel residual networks alongside the ViT back-
+bone. A significant advancement came from Jia et al. [25],
+who proposed Visual Prompt Tuning (VPT). This method
+introduces learnable tokens called visual prompts at the in-
+put level of each ViT layer, effectively aligning downstream
+task distributions with pre-training data distributions through
+learnable data-level representations. Building on this foun-
+This CVPR paper is the Open Access version, provided by the Computer Vision Foundation.
+Except for this watermark, it is identical to the accepted version;
+the final published version of the proceedings is available on IEEE Xplore.
+4353
+
+
+dation, Yoo et al. [62] and Han et al. [17] further enhanced
+VPT by implementing cross-layer prompt connections with
+dynamic gating mechanisms, enabling adaptive control of
+prompt positioning and quantity.
+However, existing VPT approaches primarily focus on
+manipulating prompt connections and structure, while over-
+looking the intrinsic relationship between prompts and data
+representations. Specifically, current VPT and its related
+methods [17, 25, 41, 62] initialize prompts randomly and
+optimize them solely through downstream task objectives.
+Although recent work [60] demonstrates improved learn-
+ing efficiency through data-driven prompt initialization, the
+potential of leveraging discriminative and class-aware in-
+formation remains largely unexplored. To deepen our un-
+derstanding of prompt functionality and distribution, we
+investigate prompt-token relationships by addressing a fun-
+damental question: Could prompts be guided to facilitate
+information flow between image and class tokens to en-
+hance representation learning?
+To address this question, we introduce a novel method
+that guides VPT optimization by leveraging semantic con-
+nections between visual prompts, visual tokens, and class
+tokens. We propose connecting prompts and visual data by
+constructing and learning a semantic metric between them in
+the deep layers of the ViT. For each prompt in these layers,
+we establish a semantic connection with its closest labeled
+class. As illustrated in Figure 1, we construct a semantic
+metric in the latent space by comparing prompts with corre-
+sponding image patches. Specifically, we aim to minimize
+the distance between visual prompts and visual tokens of
+the same class while maximizing separation from the visual
+tokens of different classes. We also apply a similar semantic
+metric between class tokens and prompts.
+Our key insight is to increase the likelihood that prompts
+capture semantic information from same-class visual tokens
+while filtering out unrelated information. Through semantic
+metrics in both visual feature and prompt spaces, we demon-
+strate the effective transfer of relevant semantic information
+from visual tokens to class tokens via class-specific prompts.
+In other words, our framework employs related prompts as
+a bridge to connect class tokens and image patch semantic
+information through guided attention maps.
+Extensive experiments across 24 visual recognition tasks
+in both Fine-Grained Visual Classification (FGVC) [25] and
+Visual Task Adaptation Benchmark (VTAB-1k) [64] demon-
+strate substantial improvements over standard VPT. Our
+method shows consistent effectiveness with both supervised
+and self-supervised pre-trained models, including MoCo and
+MAE. Additional evaluations on segmentation tasks further
+confirm that our approach significantly improves prompt
+learning efficiency and downstream task performance while
+requiring fewer prompts and learnable parameters compared
+to baseline VPT and its related state-of-the-art methods. Our
+main contributions are:
+• We propose Distribution Aware Visual Prompt Tuning
+(DA-VPT), a novel framework that enhances prompt learn-
+ing by constructing semantic metrics between prompts and
+corresponding image feature patches in deep ViT layers.
+• We demonstrate that prompts can effectively bridge seman-
+tic information between image patches and class tokens
+through the attention mechanism, highlighting the impor-
+tance of guided prompt learning.
+• We validate our method’s effectiveness through extensive
+experiments on 24 visual recognition tasks and 2 segmenta-
+tion tasks, showing significant improvements over vanilla
+VPT and its related works for both supervised and self-
+supervised pre-trained vision models.
+2. Related Works
+Parameter-Efficient Fine-Tuning (PEFT)
+Transformers, initially introduced by Vaswani et al. [55],
+have revolutionized various domains through pre-training,
+from natural language processing (e.g., LLaMA [52], GPT
+[1]) to computer vision (e.g., MAE [21], CLIP [43], ViT-
+22b [9]). PEFT approaches have emerged to address the
+computational challenges of fine-tuning these large models
+by selectively updating only a subset of parameters. Early
+work by Kornblith et al. [28] focused on training only the
+classification head, while Zaken et al. [63] demonstrated sig-
+nificant improvements by tuning bias terms alone. Lian et al.
+[33] and Xie et al. [61] further refined these approaches by
+introducing adjustable shifting and scaling factors. Another
+significant direction in PEFT, pioneered by Houlsby et al.
+[23], involves incorporating lightweight adapter modules
+alongside Transformer backbones.
+Visual Prompt Tuning (VPT) As a prominent branch
+of PEFT, prompt tuning introduces learnable tokens along-
+side input data to incorporate task-specific information
+[31, 32, 34, 35]. Jia et al. [25] pioneered the application
+of prompts in Vision Transformers (ViT), introducing VPT-
+Shallow for input layer modification and VPT-Deep for cross-
+layer integration. This foundational work catalyzed numer-
+ous developments in the field: Gao et al. [15] adapted visual
+prompts for test-time domain adaptation, while Gao et al.
+[13] extended the approach to video recognition. Subse-
+quent studies enhanced VPT’s capabilities through dynamic
+mechanisms for optimizing prompt quantity and placement
+[17, 62], direct connections between intermediate layers and
+task-specific heads [54], and spatial selection mechanisms
+for coordinating attention between image patches and visual
+prompts [41].
+Integration of PEFT Approaches While recent compre-
+hensive approaches have demonstrated success in combining
+multiple PEFT methods [2, 66], our work focuses specifi-
+cally on integrating bias optimization with VPT, which we
+empirically found to be sufficiently effective for demonstrat-
+4354
+
+
+ing our method’s capabilities. A comprehensive evaluation
+of combinations with other PEFT methods lies beyond the
+scope of this work.
+Metric Learning (ML) Metric Learning focuses on learn-
+ing representations that effectively capture similarities and
+differences between data samples in the embedding space.
+Early approaches employed contrastive loss to differenti-
+ate between class samples [6, 16]. This evolved into triplet
+loss methods that introduce an anchor point as a proxy to
+simultaneously compare positive and negative samples with
+specified margins [5, 26, 46].
+Advanced metric learning techniques have incorporated
+Neighbourhood Components Analysis (NCA) to better un-
+derstand data distributions and class relationships [26, 38,
+48, 49, 51, 57]. Recent studies have demonstrated particular
+success in applying NCA-based metric learning to Vision
+Transformer architectures [12, 29, 40], emphasizing the cru-
+cial role of data distributions in learning discriminative rep-
+resentations [30, 45, 46, 58]. Further investigations by Tsai
+et al. [53] and Ren et al. [47] have explored the integration
+of visual prompts with robust visual perception and deep
+metric learning.
+Building on metric learning, our work examines the in-
+teractions between visual prompts, visual tokens, and class
+tokens within ViTs. We bridge the gap between traditional
+metric learning techniques and modern visual prompt tun-
+ing methods, offering a more principled way to optimize
+prompt-based transfer learning.
+3. Methodology
+3.1. Preliminary
+The Vision Transformer (ViT) [11] is a fundamental
+model architecture that applies the original Transformer
+model [56] to computer vision tasks. Given an input im-
+age I ∈RH×W ×C, ViT divides it into a sequence of N
+flattened 2D patches, which are then linearly projected into a
+D-dimensional embedding space. A learnable [CLS] (Class)
+token xcls ∈RD is prepended to the patch embeddings,
+serving as a global representation for classification tasks.
+The resulting sequence of embeddings X ∈R(N+1)×D is
+then passed through L Transformer block layers, where l ∈
+{1, . . . , L} denotes the layer index. Each layer consists of a
+Multi-Head Self-Attention (MHSA) mechanism defined as
+MHSA(Xl) = Concat(H1, · · · , Hh), where each head Hi
+computes a scaled dot-product attention softmax( QKT
+√
+d V)
+with subspaces of Query (Q), Key (K), and Value (V) ma-
+trices projected from input embedding Xl−1 in the previous
+layer. The final output is the [CLS] token xL
+cls, used for
+downstream classification tasks.
+Visual Prompt Tuning (VPT) [25] presents a promis-
+ing PEFT technique for ViT that adapts the pre-trained
+model to downstream tasks by introducing a small set of
+learnable parameters, namely visual prompts. In a specific
+ViT block layer, a sequence of M learnable prompt tokens
+P = {p1, . . . , pM} ∈RM×D is concatenated with the
+patch embeddings X = {x1, . . . , xN} ∈RN×D. Jia et al.
+[25] propose two VPT settings: VPT-Shallow where the
+prompts are only inserted into the first ViT layer, and VPT-
+Deep where the prompts are appended into every ViT layer.
+We follow the VPT-Deep setting since it has a higher ca-
+pacity and aligns with our proposed method. The resulting
+sequence of embeddings [xcls, P, X] ∈R(M+N+1)×D is
+then processed by the next ViT encoder layers. For layer l,
+the output of the (l + 1)-th layer can be described as:
+[xl+1
+cls , [
+], xl+1
+1
+. . . xl+1
+N ] = BLK([xl
+cls, pl
+1 . . . pl
+M, xl
+1 . . . xl
+N]),
+(1)
+where pl
+1 . . . pl
+M are the M prompts in layer l, BLK
+represents the transformer block, and [
+] represents the
+position reserved for prompts in the next layer. During fine-
+tuning, only the visual prompts P and the linear classification
+head are updated.
+Metric Learning (ML) aims to learn a distance metric
+that captures semantic similarity between data points. The
+Neighborhood Component Analysis (NCA) [49] encourages
+learned embeddings to have a higher probability of correct
+classification by nearest neighbor classifiers. Given a set of
+N labeled data points {(xi, yi)}N
+i=1, where xi ∈RD is the
+input feature vector and yi ∈{1, . . . , C} is the correspond-
+ing class label from C classes, the NCA objective is:
+LNCA = −
+N
+X
+i=1
+log
+P
+j∈Ni exp(−D(xi, xj)/τ)
+P
+k̸=i exp(−D(xi, xk)/τ) ,
+(2)
+where Ni = {j | yj = yi, j̸ = i} denotes the set of
+neighboring points with the same class, τ > 0 is the temper-
+ature parameter, and D(·, ·) represents the cosine similarity:
+D(xi, xj) = ˆxi · ˆxj where ˆx =
+x
+∥x∥2 represents the L2-
+normalized vector. Following NCA, recent works [26, 51] in-
+troduce learnable class representations P = {pi ∈RD}C
+i=1,
+named proxies, to represent the C classes. In our work, we
+propose using prompts in deep layers as proxies for subsets
+of semantically similar classes.
+3.2. Metric Learning on the Learnable Prompts
+Our objective is to establish a metric in the feature space
+that quantifies the distance between learnable prompts and
+either visual tokens or the [CLS] token. We hypothesize
+that within each layer, a specific prompt should selectively
+capture information from a subset of relevant classes rather
+than searching indiscriminately across the entire class space.
+This targeted approach enables prompts to become more
+discriminative in their feature extraction while optimizing
+the [CLS] token’s ability to aggregate task-specific infor-
+mation from each class effectively. While this structured
+4355
+
+
+Image patches
+V
+CLS Token 
+Prompt
+Attention Map of Prompt
+𝑳𝑴𝑳(𝒙, 𝒑)
+𝑳𝑴𝑳(𝒑, 𝒙𝒄𝒍𝒔)
+CLS Token
+Prompt 1
+Prompt 2
+Prompt M
+…
+Update Semantic Mapping in the next epoch
+Clustering C Classes with M Centroids
+Select Features After Attention Layer
+Block 
+Layer
+…
+Q
+K
+Figure 2. Framework Overview. Our method establishes semantic
+prompt-class mappings by clustering class representations into M
+clusters (M = number of prompts). Prompts are guided through
+a metric space using smoothed proxy NCA loss LML between
+prompts and attention-based output tokens, enabling each prompt
+to capture information from its assigned semantic cluster. A similar
+metric guides [CLS] token-prompt relationships. The semantic
+mapping updates after each epoch, optimizing prompt distribution
+to capture fine-grained class-specific features.
+information capture may differ from the emergent behavior
+of standard visual prompts, our empirical results demonstrate
+that metric learning guidance enhances model transferability,
+particularly when applied to deeper layers.
+For a ViT block BLK l at layer l (l > 0), we regularize
+the learning of prompts Pl by constructing a space metric
+between the normalized prompts ˆpl
+k and normalized visual
+tokens ˆxl
+i. For each prompt ˆpl
+k ∈Pl with assigned class
+label yk, we aim to satisfy the following constraint for visual
+token samples ˆxl
+i and ˆxl
+j in the same batch with class differ-
+ent labels yi and yj respectively, where ˆxl
+i shares the same
+class label yi = yk with ˆpl
+k:
+ˆpl
+k · ˆxl
+i −δ ≥ˆpl
+k · ˆxl
+j + δ
+∀i, j, k, yk = yi̸ = yj,
+(3)
+where · denotes the dot product and δ > 0 is the pre-
+defined margin. This constraint ensures that the cosine sim-
+ilarity between a prompt and tokens of the same class is
+greater than the similarity with tokens of different classes.
+Since cosine similarity naturally aligns with attention map
+comparison between Query and Key vectors, we argue that
+pairs (pk, xi) that are closer in the spherical space will have
+higher probability of matching in the optimized attention
+map.
+To efficiently build a metric space satisfying this con-
+straint, we adopt the ML loss from Kim et al. [26], compar-
+ing learnable prompts with visual tokens using smoothed
+NCA loss (Proxy-Anchor loss). Our metric guidance objec-
+tive between visual tokens Xl and prompts Pl is:
+LML(X, P) =
+1
+|P+|
+X
+pk∈P+
+"
+LSE+
+0
+xi∈X +
+p
+(−(ˆpk · ˆxi −δ) /τ)
+#
++
+1
+|P|
+X
+pk∈P
+"
+LSE+
+0
+xj∈X −
+p
+((ˆpk · ˆxj + δ) /τ)
+#
+,
+(4)
+where LSE+
+0 (x) = log(1 + PN
+i=1 exi) is the smoothed
+LogSumExp with first argument set to 1, P denotes the set
+of all prompts, P+ denotes the set of positive prompts where
+same-class data exists in the minibatch, X +
+p denotes the set
+of visual tokens with the same label as the selected prompt
+p, and X −
+p is its complement set. In practice, we found
+that comparing the projected Query vector Q = PlWl
+Q
+yields better performance, where Wl
+Q ∈RD×D is the Query
+projection matrix at layer l.
+We also propose a similar loss LML(P, xcls) that pulls the
+[CLS] token closer to corresponding prompts while pushing
+it away from prompts of different classes. The overall loss
+becomes:
+L = LCE + βLML(X, P) + λLML(P, xcls),
+(5)
+where β, λ > 0 are hyperparameters. By jointly optimizing
+both metric learning terms, our method encourages prompts
+to capture class-specific information and aligns the [CLS]
+token with relevant prompts.
+3.3. Projection and Saliency Patch Selection
+To ensure prompts effectively focus on critical image in-
+formation while filtering out false positive visual tokens,
+we propose selecting saliency information from visual to-
+kens as positive and negative samples for prompt compari-
+son in LML(X, P). While extracting saliency patches di-
+rectly from attention maps is straightforward, it can be
+computationally intensive, especially with optimized atten-
+tion mechanisms like Flash Attention. Instead, as shown
+in Figure 2, we use the output representation immediately
+following the attention layer. The output representation
+Xl = MHSA(Xl) ∈RN×D then concatenates representa-
+tions from each head, serving as a saliency aggregation of
+visual tokens.
+3.4. Dynamically Mapping Classes and Prompts
+We set M learnable prompts in each layer where M ≪
+C to avoid optimization difficulties and unequal training
+opportunities. We develop a semantic mapping strategy to
+map C classes to M prompts. Before training, we run an
+additional epoch to obtain class representations S ∈RC×D
+by mean-pooling the [CLS] token for each class using the
+pre-trained ViT. We then use k-means clustering to group
+these representations into M clusters, assigning classes to
+prompts based on cluster membership, as shown in Figure 2.
+4356
+
+
+To maintain semantic mapping accuracy, we update the
+mapping after each epoch. During training, we collect and
+calculate updated class representations S, then update k-
+means using previous epoch centroids as initialization to
+adjust the class-prompt mapping.
+3.5. Efficient Bias Tuning
+To further improve the flexibility in the distribution of visual
+tokens, we investigate the partial release of ViT backbone
+bias terms as suggested by Zaken et al. [63]. We found
+that fine-tuning performance significantly improves when
+bias terms are partially enabled with our metric guidance
+loss. The most efficient components are the bias terms
+bK, bV ∈RD in the Key and Value linear projections of
+the self-attention mechanism (Figure 4b). This observation
+aligns with findings from Zaken et al. [63] and Cordonnier
+et al. [7]. Partially allowing bias terms to adapt provides ad-
+ditional flexibility in adjusting visual token distributions and
+capturing task-specific information under metric guidance.
+4. Technical Discussion
+4.1. Connection Between Similarity and Attention
+In this section, we analyze how changes in token similarity
+influence attention weights through gradient updates. Specif-
+ically, we examine how a small change in the similarity
+between a prompt p and a visual token xi affects the cor-
+responding attention weight ai. Let ∆p represent a small
+perturbation that brings p closer to xi in the embedding
+space. We formalize this relationship in the following theo-
+rem:
+Theorem 1 (Attention-Similarity Relationship). For an at-
+tention weight perturbation ∆ai computed using the softmax
+function, the following approximation holds:
+∆ai ≈ai(1 −ai)∆si,
+(6)
+where ∆si represents the change in attention score si, given
+by ∆si = ∆p⊤xi
+√
+d
+, and d is the dimension of the attention
+head.
+This approximation reveals that a positive gradient change
+in attention weight (∆ai > 0) occurs when:
+ai(1 −ai)∆si = ai(1 −ai)∆p⊤xi
+√
+d
+> 0
+(7)
+This condition is satisfied when p moves closer to xi in
+the embedding space. Conversely, when p moves away
+from xi, ∆ai decreases. This theorem establishes a direct
+connection between token similarity and attention mapping,
+demonstrating how our metric learning guidance influences
+attention through token distribution. The complete proof is
+provided in the Appendix.
+4.2. Analysis of Guided Attention Maps
+To further analyze the impact of our metric guidance loss
+on fine-tuning, we visualize attention maps between visual
+tokens and prompts across different layers (Figure 3a). Our
+analysis reveals distinct patterns:
+(1) In Shallow Layers:
+• Both VPT-Deep and our method show prompts attending
+to different object subregions
+• Our method demonstrates enhanced diversity and preci-
+sion in information capture
+(2) In Deep Layers:
+• Attention maps become sparser as token representations
+become more abstract
+• Standard VPT-Deep prompts show limited information
+selection compared to the [CLS] token
+• Our positive prompt (∗p) successfully identifies informa-
+tive patches that are subsequently selected by the [CLS]
+token
+These visualizations demonstrate that positively labeled
+prompts serve as effective "bridges" for semantic informa-
+tion flow to the [CLS] token in deep layers. As shown in
+Figure 3b, our DA-VPT enables prompts to aggregate dis-
+criminative features from same-class data, resulting in more
+fine-grained attention patterns compared to the baseline.
+This enhanced information routing significantly improves
+the model’s discriminative capability during fine-tuning.
+Artifact Consideration: Recent work by Darcet et al.
+[8] revealed the existence of attention artifacts in vision
+transformers, which we also observe in our prompt attention
+maps (Figure 3a). While they demonstrate that training with
+registers (analogous to learnable prompts) from scratch can
+eliminate these artifacts, both standard VPT and our method
+exhibit them due to prompt introduction during fine-tuning
+rather than pre-training. Nevertheless, our comparative anal-
+ysis shows that the proposed guidance mechanism reduces
+both the frequency and spread of artifacts, constraining them
+more effectively within semantic object boundaries. While
+our method achieves better alignment between attention pat-
+terns and object semantics, the nature and impact of these
+artifacts on model performance presents an intriguing avenue
+for future investigation.
+4.3. Compatibility with Metric Learning Methods
+Our selection of the Proxy-Anchor method [26] is motivated
+by its natural alignment with our hypothesized role of vi-
+sual prompts, where both proxies and prompts serve as class
+representatives and comparative anchors for data tokens. Al-
+ternative metric learning approaches, such as Proxy-NCA
+[51] and conventional triplet loss [5, 22], treat all repre-
+sentations as equal data points. These approaches are less
+suitable for our framework because the significant dispar-
+ity between the number of visual prompts (M) and data
+tokens (N, where M ≪N) creates an unbalanced opti-
+4357
+
+
+[CLS]
+[CLS]
+Layer 3
+Layer 11
+[CLS]
+[CLS]
+VPT-Deep
+Ours
+VPT-Deep
+Ours
+𝒑𝟏
+𝒑𝟐
+𝒑𝟑
+𝒑𝟏
+𝒑𝟐
+𝒑𝟑
+𝒑𝟏
+𝒑𝟐
+𝒑𝟑
+𝒑𝟏
+∗𝒑𝟐
+𝒑𝟑
+(a)
+VPT-Deep
+…
+…
+CLS
+DA-VPT (ours)
+…
+…
+CLS
+Attention Map of
+Prompts and Image Tokens
+Attention Map of
+Prompts and CLS Token
+(b)
+Figure 3. Comparison of attention patterns between VPT-Deep and our method on CUB dataset samples. (a) Attention maps in shallow
+(layer 3) and deep (layer 11) layers, showing CLS token and sampled prompt attention patterns. In layer 11, ∗p indicates the prompt guided
+as positive to the CLS token, while others represent negative prompts. Additional visualization examples are provided in Appendix. (b)
+Information flow comparison between baseline VPT-Deep and our DA-VPT. Our method enables selected prompts to aggregate and transfer
+fine-grained details from same-class visual tokens to the [CLS] token more effectively.
+mization problem. Our empirical studies further confirm this
+theoretical intuition: attempting to fine-tune with conven-
+tional metric learning methods leads to training instability,
+whereas the Proxy-Anchor formulation maintains stable opti-
+mization by explicitly accounting for the asymmetric nature
+of prompt-token relationships.
+5. Experiments
+5.1. Experimental Setup
+Datasets. We evaluate our method on three types of visual
+transfer learning tasks. For visual recognition, we use the
+Fine-Grained Visual Classification (FGVC) benchmark [25]
+comprising 5 datasets. For few-shot transfer learning, we
+employ the Visual Task Adaptation Benchmark (VTAB-1K)
+[64] containing 19 datasets. Additionally, we evaluate dense
+prediction tasks on ADE20K [67] and PASCAL Context [37].
+Detailed dataset characteristics and experimental settings are
+provided in the Appendix.
+Model Architecture. We employ Vision Transformer
+(ViT) [11] as our backbone, using the base model ViT-B (12
+layers) for visual classification tasks and the large model
+ViT-L (24 layers) for semantic segmentation. To evaluate
+generalization, we initialize the backbone using either super-
+vised pre-training on ImageNet-21K [10] or self-supervised
+pre-training on ImageNet-1K using methods such as MoCo
+v3 [4] and MAE [20].
+Method Variants. We evaluate two versions of our ap-
+proach. Our primary method, DA-VPT, builds on VPT-Deep
+[25] while incorporating our proposed metric learning losses
+LML(X, P) and LML(P, xcls). The enhanced version, DA-
+VPT+, further incorporates efficient bias tuning as detailed
+in Section 3.5.
+Implementation Details. For all experiments, we con-
+duct extensive hyperparameter optimization, including learn-
+ing rate, parameter decays, and the number of visual prompts
+for layers both with and without our metric learning guid-
+ance. Through this empirical investigation, we identified
+that the optimal number of prompts for most downstream
+tasks is approximately 20. For metric learning parameters,
+we adopt the Proxy-Anchor defaults with margin δ = 32
+and temperature τ = 10. Extended experimental details,
+including hyperparameter studies and ablation analyses, are
+provided in the Appendix.
+5.2. Result Comparison with the State-of-the-Art
+We evaluate our method against existing VPT-based and re-
+cent related approaches across 24 vision tasks. As shown
+in Table 1, our DA-VPT+ consistently achieves superior
+performance over VPT-related methods on both supervised
+ViT and self-supervised backbones. On ViT-B, DA-VPT+
+improves over the VPT-Deep baseline by 2.83 and 4.18
+percentage points (pp) on FGVC and VTAB-1K, respec-
+tively, and outperforms E2VPT by 2.72 pp and 2.20 pp on
+these tasks. Notably, even without bias tuning, DA-VPT
+maintains strong results across major benchmarks. The im-
+provements are particularly pronounced with self-supervised
+backbones, where our method also surpasses full fine-tuning
+on all backbones while using fewer parameters. These re-
+sults highlight the effectiveness and generalizability of our
+approach across diverse downstream tasks compared to other
+VPT-based methods.
+Table 2 demonstrates our proposed methods, DA-VPT
+and DA-VPT+, achieve significant improvements over ex-
+isting baselines and recent competitive methods in semantic
+segmentation tasks on both the ADE20K and PASCAL Con-
+4358
+
+
+Mean
+FGVC
+VTAB-1K
+Methods
+Param (M) Mean Acc (5) Natural (7) Specialized (4) Structured (8) Mean Acc
+ViT-B with Supervised pretrained on ImageNet-21k
+Full
+85.98
+88.54
+75.88
+83.36
+47.64
+68.96
+VPT-Shallow
+0.11
+84.62
+76.81
+79.68
+46.98
+67.82
+VPT-Deep
+0.64
+89.11
+78.48
+82.43
+54.98
+71.96
+E2VPT [17]
+0.33
+89.22
+80.01
+84.43
+57.39
+73.94
+DA-VPT (ours)
+0.21
+91.22
+80.25
+85.12
+58.71
+74.69
+DA-VPT+ (ours)
+0.24
+91.94
+81.98
+86.47
+59.96
+76.14
+ViT-B with MAE pretrained on ImageNet-1K
+Full
+85.8
+82.80
+59.31
+79.68
+53.82
+64.27
+VPT-Shallow
+0.10
+57.84
+39.96
+69.65
+27.50
+45.70
+VPT-Deep
+0.20
+72.02
+36.02
+60.61
+26.57
+41.73
+GateVPT [62]
+0.17
+73.39
+47.61
+76.86
+36.80
+53.09
+E2VPT [17]
+0.06
+–
+59.52
+77.80
+44.65
+60.66
+DA-VPT (ours)
+0.20
+82.17
+62.14
+79.14
+54.31
+65.19
+DA-VPT+ (ours)
+0.22
+83.20
+66.59
+82.96
+59.28
+69.61
+ViT-B with MoCo-V3 pretrained on ImageNet-1K
+Full
+85.8
+84.25
+71.95
+84.72
+51.98
+69.55
+VPT-Shallow
+0.11
+79.26
+67.34
+82.26
+37.55
+62.38
+VPT-Deep
+0.20
+83.12
+70.27
+83.04
+42.38
+65.90
+GateVPT [62]
+0.17
+83.00
+74.84
+83.38
+49.10
+69.11
+E2VPT [17]
+0.11
+–
+76.47
+87.28
+54.91
+72.88
+DA-VPT (ours)
+0.21
+85.02
+74.24
+83.21
+55.23
+70.90
+DA-VPT+ (ours)
+0.24
+86.16
+76.86
+84.71
+58.98
+73.53
+Table 1. Comparison of Fine-tuning Methods. Performance
+evaluation across 24 vision tasks (5 FGVC and 19 VTAB-1K)
+using supervised ViT and self-supervised backbones (MAE [20],
+MoCo-v3 [4]). Detailed per-task results for VTAB-1K are provided
+in Appendix.
+Method
+#Param
+ADE20K
+PASCAL Context
+mIoU-SS
+mIoU-Ms
+mIoU-SS
+mIoU-Ms
+Full-Tuning
+317.3M
+47.60
+49.18
+53.69
+55.21
+Linear
+13.1M
+38.09
+39.16
+46.06
+48.13
+Bias
+13.2M
+43.61
+45.73
+45.15
+46.47
+VPT (baseline)
+13.6M
+44.08
+46.01
+49.51
+50.46
+SPT-LoRA [18]
+14.6M
+45.40
+47.50
+–
+–
+SPT-Adapter [18]
+14.6M
+45.20
+47.20
+–
+–
+DA-VPT (ours)
+13.6M
+45.10
+47.07
+50.15
+51.04
+DA-VPT+ (ours)
+13.7M
+46.47
+47.21
+50.40
+51.28
+Table 2. Results of Semantic Segmentation on ADE20K and
+PASCAL Context. We report mIoU-SS (single-scale inference)
+and mIoU-MS (multi-scale inference). All experiments use the
+ViT-L backbone pre-trained on ImageNet-21K. The #Param col-
+umn indicates the total number of tunable parameters in the entire
+framework. For SPT [18], we report the results from the original
+paper, while for other settings and our baseline, we provide our
+reproduced results. We highlight the best results other than the full
+fine-tuning.
+text datasets. Compared to classification tasks, dense predic-
+tion tasks such as segmentation are much more challenging.
+Notably, lightweight PEFT methods like Linear or Bias ex-
+hibit low efficiency compared to full fine-tuning. In such
+challenging tasks, our proposed DA-VPT+ still achieves
+comparable performance while using only 4.3% of the tun-
+able parameters, demonstrating both high parameter effi-
+ciency and effectiveness across both datasets.
+Table 3 compares state-of-the-art PEFT methods on
+FGVC [25] using ImageNet-21K pre-trained ViT-B. Our
+DA-VPT+ achieves the highest mean accuracy of 91.94%
+across all datasets, surpassing previous SOTA methods SNF
+[59] and MoSA [65] on FGVC. Notable improvements in-
+clude gains of 0.6 and 1.8 percentage points on CUB and
+Cars datasets respectively. Both DA-VPT and DA-VPT+
+Method
+Dataset
+CUB-200
+NABirds
+Oxford
+Stanford
+Stanford
+Mean
+Mean
+-2011
+Flowers
+Dogs
+Cars
+Acc (%)
+Params (M)
+Full fine-tuning [25]
+87.3
+82.7
+98.8
+89.4
+84.5
+88.54
+85.98
+Linear Probing [25]
+85.3
+75.9
+97.9
+86.2
+51.3
+79.32
+0.18
+Adapter [23]
+87.1
+84.3
+98.5
+89.8
+68.6
+85.67
+0.41
+Bias [63]
+88.4
+84.2
+98.8
+91.2
+79.4
+88.41
+0.28
+AdaptFormer [3]
+87.4
+84.8
+99.0
+90.7
+81.0
+88.58
+1.54
+VPT-Shallow [25]
+86.7
+78.8
+98.4
+90.7
+68.7
+84.62
+0.25
+VPT-Deep [25]
+88.5
+84.2
+99.0
+90.2
+83.6
+89.11
+0.85
+SSF [33]
+89.5
+85.7
+99.6
+89.6
+89.2
+90.72
+0.39
+SNF [59]
+90.2
+87.4
+99.7
+89.5
+86.9
+90.74
+0.25
+MP[14]
+89.3
+84.9
+99.6
+89.5
+83.6
+89.38
+1.20
+E2VPT [17]
+89.1
+84.6
+99.1
+90.5
+82.8
+89.22
+0.65
+MoSA [65]
+89.3
+85.7
+99.2
+91.9
+83.4
+89.90
+1.54
+VPT (Baseline)
+88.6
+85.7
+99.2
+89.0
+87.4
+90.14
+0.36
+DA-VPT (Ours)
+90.2
+87.4
+99.4
+89.4
+89.7
+91.22
+0.30
+DA-VPT+ (Ours)
+90.8
+88.3
+99.8
+89.8
+91.0
+91.94
+0.32
+Table 3. Comparison of various fine-tuning methods on different
+downstream tasks. The ViT-B model pre-trained on ImageNet-
+21K is used as basic backbone. Top-1 accuracy (%) is reported and
+the best result is in bold.
+outperform the VPT baseline and full fine-tuning with signif-
+icant margin while using fewer parameters, demonstrating
+superior accuracy-efficiency trade-off compared to full fine-
+tuning and existing PEFT methods.
+5.3. Ablation Studies and Discussion
+5.3.1. Ablation Study
+The ablation study demonstrates the individual and collective
+contributions of each component in our proposed DA-VPT
+method on the CUB dataset from the FGVC benchmark and
+the Natural task category from the VTAB-1k benchmark.
+The metric learning losses, LML(x, p) and LML(p, xcls),
+lead to accuracy improvements of 1.08 pp on VTAB-1k
+Natural and 1.22 pp on CUB over the baseline. The inte-
+gration of Efficient Bias further enhances the performance,
+contributing to an additional 0.97 pp and 1.03 pp improve-
+ment on the respective datasets. When all three components
+are combined, our DA-VPT method achieves the highest
+performance, with total accuracy improvements of 2.05 pp
+on VTAB-1k Natural and 2.25 pp on CUB.
+While the incorporation of these components introduces
+a minimal increase in latency and memory usage, the gained
+accuracy far outweighs this slight trade-off. Note that the
+combination of LML(x, p), LML(p, xcls) and Efficient Bias
+yields substantial improvements with only a modest increase
+in parameters. This highlights the efficiency of our method
+in achieving significant performance gains with minimal
+parameter overhead.
+5.3.2. Analysis of Parameter Impacts
+Layer-wise Impact. We first examine the effectiveness of
+our metric learning loss when applied to different layers. As
+shown by the blue line in Figure 4a, applying the loss to the
+final layer yields optimal results in most cases, likely due
+to the presence of higher-level semantic features in deeper
+layers. We further investigate the effect of applying our
+loss across multiple consecutive layers, represented by the
+4359
+
+
+Table 4. Ablation study on different components in our DA-VPT on two datasets: CUB-200-2011 in FGVC and Natural in VTAB-1k.
+For each LML component, we also search for its optimal hyperparameter. The learnable [CLS] token is combined with Efficient Bias for
+simplicity. The latency and memory are tested in the same server with RTX4090 GPU.
+Components of our Techniques
+VTAB-1k Natural (7)
+FGVC CUB-200
+Latency
+Memory
+LML(x, p)
+LML(p, xcls)
+Efficient Bias
+Param
+Accuracy
+Param
+Accuracy
+(ms/img)
+(GB)
+0.14M
+(0.16%)
+79.45 (base)
+0.20M
+(0.24%)
+88.64 (base)
+1.41
+2.41
+✓
+79.47 (+0.02)
+89.24 (+0.60)
+1.51
+2.41
+✓
+79.51 (+0.06)
+89.06 (+0.42)
+1.52
+2.41
+✓
+✓
+80.53 (+1.08)
+89.86 (+1.22)
+1.54
+2.41
+✓
+0.16M
+(0.19%)
+80.06 (+0.61)
+0.23M
+(0.27%)
+89.55 (+0.91)
+1.45
+2.76
+✓
+✓
+81.02 (+1.57)
+90.41 (+1.77)
+1.53
+2.76
+✓
+✓
+81.50 (+2.05)
+90.54 (+1.90)
+1.53
+2.76
+✓
+✓
+✓
+81.98 (+2.53)
+90.89 (+2.25)
+1.56
+2.76
+0
+2
+4
+6
+8
+10
+Block Index
+0.620
+0.640
+0.660
+0.680
+0.700
+0.720
+top-1 Acc
+Supervised pre-trained ViT-B
+Single-Layer Regularization
+Multi-Layer Regularization
+(a)
+bqkv
+bfc1
+bfc2
+bproj
+bnorm1
+bnorm2
+xcls
+Categories
+0.1
+0.0
+0.1
+0.2
+0.3
+0.4
+0.5
+0.6
+Bias Category
+Effecient of different Bias in Supervised pre-trained ViT-B
+(b)
+0
+20
+40
+60
+80
+Epoch
+5
+10
+15
+20
+25
+30
+35
+40
+K-Means Latency (ms)
+K-Means Latency in each Epochs
+(c)
+CUB200
+CARS196
+NABirds
+VTAB-Natural
+Settings Grouped by Tasks
+80
+82
+84
+86
+88
+90
+92
+Top-1 Accuracy (%)
+89.2
+88.4
+86.3
+80.4
+90.2
+89.7
+87.4
+81.9
+89.7
+89.4
+87.2
+81.0
+Impact of Prompts Initialization
+Initial Prompts
+DA-VPT(ours)
+DA-VPT(ours) + Initial Prompts
+(d)
+Figure 4. 4a Illustrates the impact of the number and position of the layers to which the proposed metric learning loss is applied. 4c This
+figure shows the latency of the k-means calculation in each epoch. 4b Illustrates the importance of each category of efficient bias measured
+on the CUB-200-2011 dataset. 4d This figure shows the comparison of the performance with or without the prompts initialization with data
+mean value.
+red line, which shows the performance when applying the
+loss from a specific layer through to the final layer. The
+impact varies notably across different pre-trained models,
+with detailed results for MAE and MoCo provided in the
+Appendix.
+Efficient Bias Components. Figure 4b demonstrates
+that specific categories of efficient bias contribute dispropor-
+tionately to performance improvements. This observation
+underscores the importance of selective optimization of bias
+components rather than uniform adjustment across all pa-
+rameters.
+Semantic Mapping Updates. The computational cost
+of k-means clustering for semantic mapping updates is illus-
+trated in Figure 4c. Notably, while the initial epochs incur
+higher computational overhead, the latency decreases sig-
+nificantly in later epochs as class representations stabilize.
+This suggests that the computational cost of maintaining dy-
+namic class-prompt mappings becomes negligible as training
+progresses.
+Prompt Initialization. We investigate the impact of
+prompt initialization by comparing mean value initialization
+on both baseline VPT and our proposed DA-VPT, follow-
+ing the methodology of Wang et al. [60], where prompts
+are initialized with mean pooling values from the dataset
+at each layer. As shown in Figure 4d, our analysis reveals
+that such initialization actually impedes our method’s ef-
+fectiveness. We attribute this to the increased difficulty in
+guiding prompts to capture discriminative information when
+initialized with homogeneous content from the mean value.
+Additional parameter impact analyses are provided in the
+Appendix.
+6. Conclusion
+This paper introduces Distribution-Aware Visual Prompt
+Tuning (DA-VPT), a novel framework that improves vi-
+sual prompt learning in Vision Transformers (ViT) through
+semantic metric construction between prompts and image
+features. Our method guides prompts to serve as effec-
+tive bridges for semantic information flow between image
+patches and class tokens via the attention mechanism. Ex-
+tensive evaluations across 24 visual recognition and 2 seg-
+mentation tasks demonstrate that DA-VPT significantly out-
+performs vanilla VPT and other related methods while us-
+ing fewer prompts and parameters. Our results highlight
+the importance of considering the intrinsic connection be-
+tween visual prompts and data samples and showcase the
+potential of our approach to enhance the transfer learning
+capabilities of pre-trained vision models. We believe that our
+findings can inspire further research on parameter-efficient
+fine-tuning strategies and contribute to the development of
+more effective and efficient vision foundation models.
+4360
+
+
+References
+[1] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Sub-
+biah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan,
+Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language
+models are few-shot learners. NeurIPS, 33:1877–1901, 2020.
+2
+[2] Arnav Chavan, Zhuang Liu, Deepak Gupta, Eric Xing, and
+Zhiqiang Shen. One-for-all: Generalized lora for parameter-
+efficient fine-tuning. arXiv preprint arXiv:2306.07967, 2023.
+2
+[3] Shoufa Chen, Chongjian Ge, Zhan Tong, Jiangliu Wang, Yib-
+ing Song, Jue Wang, and Ping Luo. Adaptformer: Adapting
+vision transformers for scalable visual recognition. NeurIPS,
+2022. 1, 7
+[4] Xinlei Chen, Saining Xie, and Kaiming He.
+An empiri-
+cal study of training self-supervised vision transformers. In
+CVPR, pages 9640–9649, 2021. 6, 7
+[5] De Cheng, Yihong Gong, Sanping Zhou, Jinjun Wang, and
+Nanning Zheng. Person re-identification by multi-channel
+parts-based cnn with improved triplet loss function. In CVPR,
+pages 1335–1344, 2016. 3, 5
+[6] Sumit Chopra, Raia Hadsell, and Yann LeCun. Learning a
+similarity metric discriminatively, with application to face
+verification. In CVPR. IEEE, 2005. 3
+[7] Jean-Baptiste Cordonnier, Andreas Loukas, and Martin Jaggi.
+Multi-head attention: Collaborate instead of concatenate.
+arXiv preprint arXiv:2006.16362, 2020. 5
+[8] Timothée Darcet, Maxime Oquab, Julien Mairal, and Piotr
+Bojanowski. Vision transformers need registers. ICLR, 2024.
+5
+[9] Mostafa Dehghani, Josip Djolonga, Basil Mustafa, Piotr
+Padlewski, Jonathan Heek, Justin Gilmer, Andreas Peter
+Steiner, Mathilde Caron, Robert Geirhos, Ibrahim Alabdul-
+mohsin, et al. Scaling vision transformers to 22 billion pa-
+rameters. In ICML, pages 7480–7512. PMLR, 2023. 2
+[10] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li
+Fei-Fei. Imagenet: A large-scale hierarchical image database.
+In CVPR, pages 248–255. Ieee, 2009. 1, 6
+[11] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov,
+Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner,
+Mostafa Dehghani, Matthias Minderer, Georg Heigold, Syl-
+vain Gelly, et al. An image is worth 16x16 words: Trans-
+formers for image recognition at scale.
+arXiv preprint
+arXiv:2010.11929, 2020. 1, 3, 6
+[12] Aleksandr Ermolov, Leyla Mirvakhabova, Valentin Khrulkov,
+Nicu Sebe, and Ivan Oseledets. Hyperbolic vision transform-
+ers: Combining improvements in metric learning. In CVPR,
+pages 7409–7419, 2022. 3
+[13] Kaifeng Gao, Long Chen, Hanwang Zhang, Jun Xiao, and
+Qianru Sun. Compositional prompt tuning with motion cues
+for open-vocabulary video relation detection. ICLR, 2023. 2
+[14] Mingze Gao, Qilong Wang, Zhenyi Lin, Pengfei Zhu,
+Qinghua Hu, and Jingbo Zhou. Tuning pre-trained model
+via moment probing. In CVPR, pages 11803–11813, 2023. 7
+[15] Yunhe Gao, Xingjian Shi, Yi Zhu, Hao Wang, Zhiqiang
+Tang, Xiong Zhou, Mu Li, and Dimitris N Metaxas. Vi-
+sual prompt tuning for test-time domain adaptation. arXiv
+preprint arXiv:2210.04831, 2022. 2
+[16] Raia Hadsell, Sumit Chopra, and Yann LeCun. Dimension-
+ality reduction by learning an invariant mapping. In CVPR.
+IEEE, 2006. 3
+[17] Cheng Han, Qifan Wang, Yiming Cui, Zhiwen Cao, Wenguan
+Wang, Siyuan Qi, and Dongfang Liu. Eˆ 2vpt: An effec-
+tive and efficient approach for visual prompt tuning. arXiv
+preprint arXiv:2307.13770, 2023. 2, 7
+[18] Haoyu He, Jianfei Cai, Jing Zhang, Dacheng Tao, and Bohan
+Zhuang. Sensitivity-aware visual parameter-efficient fine-
+tuning. In CVPR, pages 11825–11835, 2023. 7
+[19] Kaiming He, Haoqi Fan, Yuxin Wu, Saining Xie, and Ross
+Girshick. Momentum contrast for unsupervised visual repre-
+sentation learning. In CVPR, pages 9729–9738, 2020. 1
+[20] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr
+Dollár, and Ross Girshick. Masked autoencoders are scalable
+vision learners. In CVPR, pages 16000–16009, 2022. 1, 6, 7
+[21] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr
+Dollár, and Ross Girshick. Masked autoencoders are scalable
+vision learners. In CVPR, pages 16000–16009, 2022. 2
+[22] Alexander Hermans, Lucas Beyer, and Bastian Leibe. In
+defense of the triplet loss for person re-identification. arXiv
+preprint arXiv:1703.07737, 2017. 5
+[23] Neil Houlsby, Andrei Giurgiu, Stanislaw Jastrzebski, Bruna
+Morrone, Quentin De Laroussilhe, Andrea Gesmundo, Mona
+Attariyan, and Sylvain Gelly. Parameter-efficient transfer
+learning for nlp. In ICML, pages 2790–2799. PMLR, 2019.
+1, 2, 7
+[24] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu,
+Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. Lora:
+Low-rank adaptation of large language models. arXiv preprint
+arXiv:2106.09685, 2021. 1
+[25] Menglin Jia, Luming Tang, Bor-Chun Chen, Claire Cardie,
+Serge Belongie, Bharath Hariharan, and Ser-Nam Lim. Visual
+prompt tuning. In ECCV, pages 709–727. Springer, 2022. 1,
+2, 3, 6, 7
+[26] Sungyeon Kim, Dongwon Kim, Minsu Cho, and Suha Kwak.
+Proxy anchor loss for deep metric learning. In CVPR, pages
+3238–3247, 2020. 3, 4, 5
+[27] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao,
+Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer White-
+head, Alexander C Berg, Wan-Yen Lo, et al. Segment any-
+thing. In CVPR, pages 4015–4026, 2023. 1
+[28] Simon Kornblith, Jonathon Shlens, and Quoc V Le. Do better
+imagenet models transfer better? In CVPR, pages 2661–2671,
+2019. 1, 2
+[29] Dmytro Kotovenko, Pingchuan Ma, Timo Milbich, and Björn
+Ommer. Cross-image-attention for conditional embeddings
+in deep metric learning. In CVPR, pages 11070–11081, 2023.
+3
+[30] Issam H Laradji and Reza Babanezhad. M-adda: Unsuper-
+vised domain adaptation with deep metric learning. Domain
+adaptation for visual understanding, pages 17–31, 2020. 3
+[31] Brian Lester, Rami Al-Rfou, and Noah Constant. The power
+of scale for parameter-efficient prompt tuning. arXiv preprint
+arXiv:2104.08691, 2021. 2
+4361
+
+
+[32] Xiang Lisa Li and Percy Liang.
+Prefix-tuning: Optimiz-
+ing continuous prompts for generation.
+arXiv preprint
+arXiv:2101.00190, 2021. 1, 2
+[33] Dongze Lian, Daquan Zhou, Jiashi Feng, and Xinchao Wang.
+Scaling & shifting your features: A new baseline for efficient
+model tuning. Neurips, 35:109–123, 2022. 2, 7
+[34] Pengfei Liu, Weizhe Yuan, Jinlan Fu, Zhengbao Jiang, Hi-
+roaki Hayashi, and Graham Neubig. Pre-train, prompt, and
+predict: A systematic survey of prompting methods in natural
+language processing. ACM Computing Surveys, 55(9):1–35,
+2023. 2
+[35] Xiao Liu, Kaixuan Ji, Yicheng Fu, Weng Lam Tam, Zhengx-
+iao Du, Zhilin Yang, and Jie Tang. P-tuning v2: Prompt
+tuning can be comparable to fine-tuning universally across
+scales and tasks. arXiv preprint arXiv:2110.07602, 2021. 2
+[36] Dhruv Mahajan, Ross Girshick, Vignesh Ramanathan, Kaim-
+ing He, Manohar Paluri, Yixuan Li, Ashwin Bharambe, and
+Laurens Van Der Maaten. Exploring the limits of weakly
+supervised pretraining. In ECCV, pages 181–196, 2018. 1
+[37] Roozbeh Mottaghi, Xianjie Chen, Xiaobai Liu, Nam-Gyu
+Cho, Seong-Whan Lee, Sanja Fidler, Raquel Urtasun, and
+Alan Yuille. The role of context for object detection and
+semantic segmentation in the wild. In CVPR, pages 891–898,
+2014. 6
+[38] Yair Movshovitz-Attias, Alexander Toshev, Thomas K Leung,
+Sergey Ioffe, and Saurabh Singh. No fuss distance metric
+learning using proxies. In CVPR, pages 360–368, 2017. 3
+[39] Cuong V Nguyen, Alessandro Achille, Michael Lam, Tal Has-
+sner, Vijay Mahadevan, and Stefano Soatto. Toward under-
+standing catastrophic forgetting in continual learning. arXiv
+preprint arXiv:1908.01091, 2019. 1
+[40] Yash Patel, Giorgos Tolias, and Jiˇrí Matas. Recall@ k surro-
+gate loss with large batches and similarity mixup. In CVPR,
+pages 7502–7511, 2022. 3
+[41] Wenjie Pei, Tongqi Xia, Fanglin Chen, Jinsong Li, Jiandong
+Tian, and Guangming Lu. Sa2vp: Spatially aligned-and-
+adapted visual prompt. In AAAI, 2024. 2
+[42] Jonas Pfeiffer, Andreas Rücklé, Clifton Poth, Aishwarya Ka-
+math, Ivan Vuli´c, Sebastian Ruder, Kyunghyun Cho, and
+Iryna Gurevych. Adapterhub: A framework for adapting
+transformers. arXiv preprint arXiv:2007.07779, 2020. 1
+[43] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya
+Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry,
+Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning
+transferable visual models from natural language supervision.
+In ICML, pages 8748–8763. PMLR, 2021. 2
+[44] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya
+Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry,
+Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning
+transferable visual models from natural language supervision.
+In ICML, pages 8748–8763. PMLR, 2021. 1
+[45] Li Ren, Kai Li, LiQiang Wang, and Kien Hua. Beyond the
+deep metric learning: enhance the cross-modal matching with
+adversarial discriminative domain regularization. In ICPR,
+pages 10165–10172. IEEE, 2021. 3
+[46] Li Ren, Chen Chen, Liqiang Wang, and Kien Hua.
+To-
+wards improved proxy-based deep metric learning via data-
+augmented domain adaptation. In AAAI, 2024. 3
+[47] Li Ren, Chen Chen, Liqiang Wang, and Kien A. Hua. Learn-
+ing semantic proxies from visual prompts for parameter-
+efficient fine-tuning in deep metric learning. In ICLR, 2024.
+1, 3
+[48] Karsten Roth, Oriol Vinyals, and Zeynep Akata. Non-isotropy
+regularization for proxy-based deep metric learning. In CVPR,
+pages 7420–7430, 2022. 3
+[49] Sam Roweis, Geoffrey Hinton, and Ruslan Salakhutdinov.
+Neighbourhood component analysis. NeurIPS, 2004. 3
+[50] Chen Sun, Abhinav Shrivastava, Saurabh Singh, and Abhinav
+Gupta. Revisiting unreasonable effectiveness of data in deep
+learning era. In ICCV, pages 843–852, 2017. 1
+[51] Eu Wern Teh, Terrance DeVries, and Graham W Taylor. Prox-
+ynca++: Revisiting and revitalizing proxy neighborhood com-
+ponent analysis. In ECCV, pages 448–464. Springer, 2020. 3,
+5
+[52] Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Am-
+jad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya
+Batra, Prajjwal Bhargava, Shruti Bhosale, et al. Llama 2:
+Open foundation and fine-tuned chat models. arXiv preprint
+arXiv:2307.09288, 2023. 2
+[53] Yun-Yun Tsai, Chengzhi Mao, and Junfeng Yang. Convolu-
+tional visual prompt for robust visual perception. Advances
+in Neural Information Processing Systems, 36, 2024. 3
+[54] Cheng-Hao Tu, Zheda Mai, and Wei-Lun Chao. Visual query
+tuning: Towards effective usage of intermediate representa-
+tions for parameter and memory efficient transfer learning. In
+CVPR, pages 7725–7735, 2023. 2
+[55] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszko-
+reit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia
+Polosukhin. Attention is all you need. NeurIPS, 30, 2017. 2
+[56] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszko-
+reit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia
+Polosukhin. Attention is all you need. Neurips, 30, 2017. 3
+[57] Shashanka Venkataramanan, Bill Psomas, Yannis Avrithis,
+Ewa Kijak, Laurent Amsaleg, and Konstantinos Karantzalos.
+It takes two to tango: Mixup for deep metric learning. ICLR,
+2022. 3
+[58] Bokun Wang, Yang Yang, Xing Xu, Alan Hanjalic, and
+Heng Tao Shen. Adversarial cross-modal retrieval. In Multi-
+media, pages 154–162, 2017. 3
+[59] Yaoming Wang, Bowen Shi, Xiaopeng Zhang, Jin Li, Yuchen
+Liu, Wenrui Dai, Chenglin Li, Hongkai Xiong, and Qi Tian.
+Adapting shortcut with normalizing flow: An efficient tuning
+framework for visual recognition. In CVPR. IEEE, 2023. 7
+[60] Yuzhu Wang, Lechao Cheng, Chaowei Fang, Dingwen Zhang,
+Manni Duan, and Meng Wang.
+Revisiting the power of
+prompt for visual tuning. arXiv preprint arXiv:2402.02382,
+2024. 2, 8
+[61] Enze Xie, Lewei Yao, Han Shi, Zhili Liu, Daquan Zhou,
+Zhaoqiang Liu, Jiawei Li, and Zhenguo Li. Difffit: Unlocking
+transferability of large diffusion models via simple parameter-
+efficient fine-tuning. In CVPR, pages 4230–4239, 2023. 2
+[62] Seungryong Yoo, Eunji Kim, Dahuin Jung, Jungbeom Lee,
+and Sungroh Yoon. Improving visual prompt tuning for self-
+supervised vision transformers. In ICML, pages 40075–40092.
+PMLR, 2023. 2, 7
+4362
+
+
+[63] Elad Ben Zaken, Shauli Ravfogel, and Yoav Goldberg. Bitfit:
+Simple parameter-efficient fine-tuning for transformer-based
+masked language-models. arXiv preprint arXiv:2106.10199,
+2021. 1, 2, 5, 7
+[64] Xiaohua Zhai, Joan Puigcerver, Alexander Kolesnikov, Pierre
+Ruyssen, Carlos Riquelme, Mario Lucic, Josip Djolonga, An-
+dre Susano Pinto, Maxim Neumann, Alexey Dosovitskiy, et al.
+A large-scale study of representation learning with the visual
+task adaptation benchmark. arXiv preprint arXiv:1910.04867,
+2019. 2, 6
+[65] Qizhe Zhang, Bocheng Zou, Ruichuan An, Jiaming Liu, and
+Shanghang Zhang. Mosa: Mixture of sparse adapters for
+visual efficient tuning.
+arXiv preprint arXiv:2312.02923,
+2024. 7
+[66] Yuanhan Zhang, Kaiyang Zhou, and Ziwei Liu.
+Neural
+prompt search. arXiv preprint arXiv:2206.04673, 2022. 2
+[67] Bolei Zhou, Hang Zhao, Xavier Puig, Tete Xiao, Sanja Fidler,
+Adela Barriuso, and Antonio Torralba. Semantic understand-
+ing of scenes through the ade20k dataset. IJCV, 127:302–321,
+2019. 6
+4363

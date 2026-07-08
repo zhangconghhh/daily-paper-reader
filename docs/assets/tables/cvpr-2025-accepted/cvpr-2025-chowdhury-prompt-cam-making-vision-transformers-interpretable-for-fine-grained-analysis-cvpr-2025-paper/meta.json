@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "extractor": "papercropper",
+  "tables": [
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-chowdhury-prompt-cam-making-vision-transformers-interpretable-for-fine-grained-analysis-cvpr-2025-paper/table-001.webp",
+      "caption": "",
+      "page": 0,
+      "index": 1,
+      "width": 641,
+      "height": 269,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-chowdhury-prompt-cam-making-vision-transformers-interpretable-for-fine-grained-analysis-cvpr-2025-paper/table-002.webp",
+      "caption": "",
+      "page": 0,
+      "index": 2,
+      "width": 635,
+      "height": 162,
+      "label": "Table"
+    }
+  ]
+}

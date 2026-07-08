@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "papercropper",
+  "figures": [
+    {
+      "url": "assets/figures/cvpr-2025-accepted/cvpr-2025-baek-tadformer-task-adaptive-dynamic-transformer-for-efficient-multi-task-learning-cvpr-2025-paper/fig-001.webp",
+      "caption": "",
+      "page": 0,
+      "index": 1,
+      "width": 862,
+      "height": 717,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/cvpr-2025-accepted/cvpr-2025-baek-tadformer-task-adaptive-dynamic-transformer-for-efficient-multi-task-learning-cvpr-2025-paper/fig-002.webp",
+      "caption": "",
+      "page": 0,
+      "index": 2,
+      "width": 853,
+      "height": 478,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/cvpr-2025-accepted/cvpr-2025-baek-tadformer-task-adaptive-dynamic-transformer-for-efficient-multi-task-learning-cvpr-2025-paper/fig-003.webp",
+      "caption": "",
+      "page": 0,
+      "index": 3,
+      "width": 773,
+      "height": 580,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/cvpr-2025-accepted/cvpr-2025-baek-tadformer-task-adaptive-dynamic-transformer-for-efficient-multi-task-learning-cvpr-2025-paper/fig-004.webp",
+      "caption": "",
+      "page": 0,
+      "index": 4,
+      "width": 1788,
+      "height": 875,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/cvpr-2025-accepted/cvpr-2025-baek-tadformer-task-adaptive-dynamic-transformer-for-efficient-multi-task-learning-cvpr-2025-paper/fig-005.webp",
+      "caption": "",
+      "page": 0,
+      "index": 5,
+      "width": 527,
+      "height": 350,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/cvpr-2025-accepted/cvpr-2025-baek-tadformer-task-adaptive-dynamic-transformer-for-efficient-multi-task-learning-cvpr-2025-paper/fig-006.webp",
+      "caption": "",
+      "page": 0,
+      "index": 6,
+      "width": 599,
+      "height": 374,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/cvpr-2025-accepted/cvpr-2025-baek-tadformer-task-adaptive-dynamic-transformer-for-efficient-multi-task-learning-cvpr-2025-paper/fig-007.webp",
+      "caption": "",
+      "page": 0,
+      "index": 7,
+      "width": 771,
+      "height": 492,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/cvpr-2025-accepted/cvpr-2025-baek-tadformer-task-adaptive-dynamic-transformer-for-efficient-multi-task-learning-cvpr-2025-paper/fig-008.webp",
+      "caption": "",
+      "page": 0,
+      "index": 8,
+      "width": 779,
+      "height": 484,
+      "label": "Figure"
+    }
+  ]
+}

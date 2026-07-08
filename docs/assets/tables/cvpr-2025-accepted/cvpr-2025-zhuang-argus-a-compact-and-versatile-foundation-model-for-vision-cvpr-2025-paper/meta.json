@@ -1,0 +1,87 @@
+{
+  "version": 2,
+  "extractor": "papercropper",
+  "tables": [
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-zhuang-argus-a-compact-and-versatile-foundation-model-for-vision-cvpr-2025-paper/table-001.webp",
+      "caption": "",
+      "page": 0,
+      "index": 1,
+      "width": 1799,
+      "height": 708,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-zhuang-argus-a-compact-and-versatile-foundation-model-for-vision-cvpr-2025-paper/table-002.webp",
+      "caption": "",
+      "page": 0,
+      "index": 2,
+      "width": 1800,
+      "height": 433,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-zhuang-argus-a-compact-and-versatile-foundation-model-for-vision-cvpr-2025-paper/table-003.webp",
+      "caption": "",
+      "page": 0,
+      "index": 3,
+      "width": 862,
+      "height": 347,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-zhuang-argus-a-compact-and-versatile-foundation-model-for-vision-cvpr-2025-paper/table-004.webp",
+      "caption": "",
+      "page": 0,
+      "index": 4,
+      "width": 862,
+      "height": 235,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-zhuang-argus-a-compact-and-versatile-foundation-model-for-vision-cvpr-2025-paper/table-005.webp",
+      "caption": "",
+      "page": 0,
+      "index": 5,
+      "width": 858,
+      "height": 350,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-zhuang-argus-a-compact-and-versatile-foundation-model-for-vision-cvpr-2025-paper/table-006.webp",
+      "caption": "",
+      "page": 0,
+      "index": 6,
+      "width": 870,
+      "height": 221,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-zhuang-argus-a-compact-and-versatile-foundation-model-for-vision-cvpr-2025-paper/table-007.webp",
+      "caption": "",
+      "page": 0,
+      "index": 7,
+      "width": 869,
+      "height": 185,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-zhuang-argus-a-compact-and-versatile-foundation-model-for-vision-cvpr-2025-paper/table-008.webp",
+      "caption": "",
+      "page": 0,
+      "index": 8,
+      "width": 863,
+      "height": 211,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-zhuang-argus-a-compact-and-versatile-foundation-model-for-vision-cvpr-2025-paper/table-009.webp",
+      "caption": "",
+      "page": 0,
+      "index": 9,
+      "width": 1786,
+      "height": 227,
+      "label": "Table"
+    }
+  ]
+}

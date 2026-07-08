@@ -1,0 +1,1655 @@
+RADIOv2.5: Improved Baselines for Agglomerative Vision Foundation Models
+Greg Heinrich*
+Mike Ranzinger∗
+Hongxu (Danny) Yin
+Yao Lu
+Jan Kautz
+Andrew Tao
+Bryan Catanzaro
+Pavlo Molchanov
+NVIDIA
+{gheinrich,mranzinger,dannyy,jkautz,atao,bcatanzaro,pmolchanov}@nvidia.com
+Abstract
+Agglomerative models have recently emerged as a power-
+ful approach to training vision foundation models, lever-
+aging multi-teacher distillation from existing models such
+as CLIP, DINO, and SAM. This strategy enables the effi-
+cient creation of robust models, combining the strengths of
+individual teachers while significantly reducing computa-
+tional and resource demands. In this paper, we thoroughly
+analyze state-of-the-art agglomerative models, identifying
+critical challenges including resolution mode shifts, teacher
+imbalance, idiosyncratic teacher artifacts, and an exces-
+sive number of output tokens. To address these issues, we
+propose several novel solutions: multi-resolution training,
+mosaic augmentation, and improved balancing of teacher
+loss functions. Specifically, in the context of Vision Lan-
+guage Models, we introduce a token compression technique
+to maintain high-resolution information within a fixed token
+count. We release our top-performing variants at multiple
+scales (-B, -L, -H, and -g), along with inference code and
+pretrained weights.
+Links: Code (on GitHub) — Models (on Hugging Face)
+1. Introduction
+The rise of specialized Vision Foundation Models (VFMs)
+has created a need for methods to consolidate knowledge
+from multiple models into a unified model.
+SAM-CLIP
+[43] addresses this challenge by combining SAM [22] and
+CLIP [32] to integrate capabilities from both. In another
+approach, AM-RADIO [35] introduces label-free knowl-
+edge distillation from multiple teacher models, enabling
+knowledge transfer without direct supervision. UNIC [37]
+adds intermediate teacher matching projectors and dynamic
+teacher selection. Theia [38] aims to facilitate robot learn-
+ing by distilling insights from multiple vision teachers.
+Meanwhile, PHI-S [34] studies the importance of normal-
+*Equal contribution
+izing the distinct teacher distributions to simplify their bal-
+ancing. Relatedly, Eagle [39] leverages a mixture of vision
+encoders to achieve inference-time knowledge aggregation
+within the context of Vision-Language Models (VLMs).
+Despite these advancements, this growing body of work
+on knowledge agglomeration still leaves open several criti-
+cal challenges:
+• Resolution balancing: Teacher models operate at varying
+resolutions due to different training goals, creating fea-
+ture granularity inconsistencies. Effective techniques are
+needed to balance these resolutions in the student model
+to capture both fine details and broader abstractions.
+• Teacher distribution balancing: Existing models have dif-
+ferent distribution moments and the distillation process
+should account for this to prevent biased learning.
+• Generating multi-resolution features for diverse applica-
+tions: Vision models support various applications requir-
+ing different feature resolutions, from image captioning
+to dense segmentation. A VFM that flexibly produces
+features at any resolution could serve multiple tasks, re-
+ducing the need for separate models and unlocking new
+opportunities.
+In our analysis of existing agglomerative models, we
+study and propose a fix for the notable “mode switch”
+phenomenon in AM-RADIO, where feature distributions
+shift significantly based on input resolution (Section 3.1).
+Specifically, low-resolution inputs yield DINO-like fea-
+tures, while high-resolution inputs produce SAM-like fea-
+tures. We trace this behavior to the student learning from
+different teachers at different resolutions during training.
+In section 4.2, we introduce a solution to stabilize these
+mode switches, achieving strong resolution robustness and
+improved quality scaling.
+Equipped with a high-resolution vision encoder, we now
+focus on Vision-Language Model (VLM) integration. In
+downstream VL tasks, a key challenge is the token/feature
+count. High-resolution processing yields more tokens, ex-
+acerbating the quadratic complexity of attention in VLMs.
+To maintain resolution without escalating this issue, we pro-
+pose using ToMeSD [3] in Section 4.5 to separate vision
+This CVPR paper is the Open Access version, provided by the Computer Vision Foundation.
+Except for this watermark, it is identical to the accepted version;
+the final published version of the proceedings is available on IEEE Xplore.
+22487
+
+
+PixelUnshuffle
+Flatten
+H*W*C
+H*W*C
+(H/r)*(W/r)*C2
+(H*W/r2)*C2
+(H*W-r)*C
+Bipartite Matching
+H*W*C
+Merge
+Problem: Inconsistent accuracy across
+resolutions
+Multi-Res
+Training
+Solution: Global fine-grain token merging
+Ideal
+Actual
+Cause: Student only sees SAM at high 
+resolution
+Solution:Multi-Resolution Training
+Problem: VLM hardly improves at high
+resolution 
+Cause: Standard local pooling with pixel
+unshuffling loses details
+IN1k k-NN
+IN1k Zero-Shot
+COCO
+ADE20k
+TextVQA
+DocVQA
+InfoVQA
+OCRBench
+Depth
+Surface Normals
+84.01
+78.35
+73.77
+50.03
+57.01
+24.19
+28.88
+25.60
+82.63
+59.94
+84.68
+81.01
+74.19
+52.95
+64.42
+45.80
+30.60
+36.00
+84.70
+60.10
+85.81
+82.51
+75.00
+53.97
+68.90
+53.90
+37.00
+44.60
+85.70
+65.50
+S u
+m m
+a r
+y
+D e
+n s
+e
+V L
+L M
+3 D
+RADIOv2.1-L 
+RADIOv2.5-L (ours)
+RADIOv2.5-H (ours)
+Figure 1. Overview of the main contributions: From left to right, we introduce a multi-resolution training framework that enables our
+student model to maintain accuracy across all resolutions; we propose using token merging to better retain fine-grained details while
+merging uninformative tokens; our RADIOv2.5 models improve upon the RADIOv2.1 baseline across all benchmarks, with significant
+gains on VLM tasks.
+encoder resolution from the VLM’s patch count.
+Our main contributions, illustrated in Figure 1, are:
+• A multi-resolution training strategy that fixes mode
+switching and allows for fully flexible input resolution.
+• A comprehensive study of feature selection for a range of
+downstream tasks.
+• A proposal for vision model feature selection within
+VLMs, enabling integration with language models while
+preserving essential information.
+We demonstrate that
+RADIOv2.5 disproportionately benefits from this.
+2. Background
+2.1. Knowledge Agglomeration
+The assumption underlying knowledge agglomeration is
+that multiple foundation models exist, each capable of ex-
+tracting diverse and meaningful representations from a wide
+range of images, and that knowledge from these models can
+be distilled into a single agglomerative model.
+Let x be the input data. The student’s shared backbone
+produces a feature representation:
+  \mat h
+b
+f { z} =
+ f (x) 
+= \ B i g [z_
+s
+,
+\, z_p^{(1)},\, z_p^{(2)},\, \dots ,\, z_p^{(N)}\Big ], \label {eq:backbone} 
+(1)
+where z _ s \in \mathbb {R}^{d} is the summary token, z_p
+^
+{ (i)} \in \mathbb {R}^{d} for
+ i =1 , \ d o ts ,N are the patch tokens, and d is the student’s
+embedding dimension.
+For each teacher t , the student’s model includes two
+adaptor heads: g_s
+^
+{ (t ) }: \mathbb {R}^{d} \to \mathbb {R}^{d_t} , which projects the sum-
+mary token z_s into the teacher’s embedding space, and
+ g_p
+^
+{ (t ) }: \mathbb {R}^{d} \to \mathbb {R}^{d_t} , which projects each patch token z_p
+^{(i)} .
+Adaptor heads, typically simple MLPs, adjust feature di-
+mensions as needed. For teacher t, we define:
+  g^{(t ) }(z) = \m a t
+h
+r m {M L P}^{(
+t)}(z) = \sigma \big (W^{(t)} z + b^{(t)}\big ), \label {eq:mlp} 
+(2)
+where σ(·) is a non-linear activation, and W (t) and b(t) are
+learnable parameters. Projected features per teacher t are:
+  \text {Summ
+a
+r y:} 
+\ , \ha
+t {z}_ s^{(t
+)
+} = g
+_ s^{(t)}(z_s), \quad & \text {Patch:} \, \hat {z}_p^{(t)} = g_p^{(t)}(z_p) .
+(3)
+The training objective aligns student features with
+teacher features using a loss function that measures their
+similarity. For teacher t, the loss Lt is:
+  \ ma
+t
+hcal 
+{ L }_t 
+=
+ 
+\
+e
+l
+l _
+s\
+b
+ig (\ha
+t
+ {z}_s^
+{
+(
+t)}, z_{s}^{(t)}\big ) + \sum _{i=1}^{N} \ell _p\big (\hat {z}_p^{(t,i)}, z_{p}^{(t,i)}\big ), \label {eq:teacher_loss} 
+(4)
+where ℓ·(·, ·) is a similarity/distance metric, and ℓs (sum-
+mary loss) may differ from ℓp (patch loss). The total loss is
+a weighted average of all Lt terms.
+2.2. Baseline Model
+Following AM-RADIO[35], our baseline model consists
+of a Vision Transformer (ViT)[11] backbone, includ-
+ing CPE [21] for multi-resolution support.
+We use
+DFN CLIP [15], OpenAI CLIP [32], DINOv2-g-reg [9]
+22488
+
+
+Configuration
+Goal
+ImageNet1K
+Segmentation
+Probe3D[12]
+Vision-Language (VILA[23])
+SAM [22]
+Zero-shot
+k-NN
+ADE20k
+Depth
+SurfNormals
+TextVQA
+ChartQA
+DocVQA
+InfoVQA
+OCRBench
+COCO
+A: RADIOv2.1-L*
+Baseline
+78.35
+84.01
+50.03
+82.63
+59.94
+57.01
+15.6
+24.19
+28.88
+25.60
+73.77
+B: A + multi-res
+Eliminate modes
+81.21
+84.09
+52.84
+82.39
+61.04
+59.44
+16.6
+33.99
+29.02
+29.40
+75.49
+C: B - OpenAICLIP + SigLIP
+Better VLM
+81.01
+84.68
+52.95
+84.7
+60.1
+64.42
+25.28
+45.80
+30.60
+36.00
+74.19
+D: C + ViT-H
+Bigger backbone
+82.51
+85.81
+53.97
+85.7
+62.5
+65.88
+25.96
+49.74
+35.17
+40.90
+76.14
+E: D + Token Merging
+Improve VLM
+-
+-
+-
+-
+-
+69.74
+30.40
+52.33
+36.24
+42.90
+-
+Table 1. Ablation Results. For Probe3D, Depth and Surface Normals metrics are averaged over the buckets defined in the paper. For SAM
+COCO we use the “instance all” bucket. Each incremental change we introduce leads to improved metrics. *We use a ViT-L instead of the
+ViT-H used in the original AM-RADIO [35] paper.
+and SAM-H [22] as teachers.
+For each teacher to dis-
+till from, we augment the backbone with an adaptor for
+the summarization token, and an adaptor for the patch to-
+kens. Our adaptor is a 2-layer MLP with a LayerNorm[1]
+and a GeLU[18] in between.
+We train the student us-
+ing teacher features generated by inferring images of the
+DataComp1B[16] dataset. For faster iterations, we replicate
+AM-RADIO using a ViT-L backbone instead of the origi-
+nal ViT-H backbone and refer to it as RADIOv2.1-L from
+this point forward. We train the model with a batch size
+of 1024+128 for 600k iterations. Training is split into two
+concurrent partitions: one partition trains the student at a
+resolution of 4322 against CLIP and DINOv2 teachers with
+batch size 1024, while the other partition trains the student
+at a resolution of 10242 against SAM with a batch size of
+128. This baseline is referred to as A in Table 1.
+2.3. Evaluation Framework
+Evaluating foundation model quality across diverse down-
+stream tasks is challenging.
+We use a rigorous frame-
+work to pinpoint improvements and inform design: as-
+sessing ImageNet-1k[36] Top-1 accuracy via zero-shot[32]
+and k-NN[5] classification; probing frozen backbone fea-
+tures for semantic segmentation on ADE20k[50] and
+PascalVOC[13];
+evaluating instance segmentation on
+COCO[21] with EfficientViT[25] protocols and our SAM
+adaptor; testing 3D understanding (depth, normals, cor-
+respondence) per [12]; pairing with an LLM for Vision-
+Language reasoning; and probing dense multi-task quality
+on Pascal Context[30] and NYUDv2[31] as in MLoRE [47].
+3. Challenges
+3.1. Achieving Multi-Resolution Robustness
+Although AM-RADIO [35] supports a wide range of in-
+put resolutions, we noticed poor quality on high-resolution
+benchmarks. As illustrated in Figure 2, Zero-Shot Top-1
+accuracy drops sharply after inputs are larger than roughly
+512px.
+This showcases an undesirable property of this
+model, which is that it doesn’t reliably scale to high-
+resolution images. AM-RADIO hints at this issue in its con-
+clusion: the model exhibits a “mode switching” behavior as
+resolution increases. This prompted us to visualize the fea-
+tures and investigate the effect of a resolution increase. Fig-
+ure 3 illustrates the issue well: at resolutions lower than or
+equal to 5122, the features most closely resemble those of
+DINOv2 and appear to be expressive of depth and semantic
+content. At higher resolutions, the model starts to behave
+more like SAM, with features that show sharp delineations
+around contours and homogeneous contents within. This
+behavior is intuitive given the fact that in the high-resolution
+regime the student only sees SAM features. Table 2 shows a
+quantified measure of feature variance across scales (see im-
+plementation in appendix). DINOv2 exhibits much smaller
+scale variance.
+3.2. Token Count
+Dense downstream tasks, such as pixel-level semantic seg-
+mentation and depth estimation, benefit from receiving
+fine features from a vision encoder. However, for vision-
+language models like LLaVA [24], where visual tokens are
+integrated into a sequence of text embeddings, an excessive
+number of vision tokens can negatively impact speed/qual-
+ity or lead to sequence overflows. Pixel unshuffling, as pro-
+posed in InternVL1.5 [7], addresses this by reducing the
+number of vision tokens, grouping 2 × 2 tokens along the
+channel dimension. However, this approach cannot adapt
+to varying information densities within an image. For in-
+stance, a text document might have large areas of white
+background that should be more strongly compressed than
+areas containing text.
+4. Method
+4.1. Scale Equivariance
+We measure scale equivariance of multi-scale features by
+normalizing and interpolating them to the lowest resolu-
+tion, then computing the spatial average of variance across
+scales (see Appendix F). Table 2 shows our baseline student
+has worse scale equivariance than DINOv2, our only multi-
+resolution teacher for comparison.
+VLMs like LLaVa-
+NeXT[24] and InternVL1.5[7] use tiling to handle high-
+resolution inputs with fixed-resolution encoders, suggest-
+ing scale equivariance may be less critical. However, tiling
+coarsens increases in resolution and, as tile count grows,
+limits the encoder’s view of the full image, hindering con-
+textual reasoning. In Figure 4, we analyze SigLIP[49] (used
+in Cambrian[42]) features across tiling setups, revealing
+22489
+
+
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+Resolution
+0
+20
+40
+60
+80
+Zero-shot Top-1 Accuracy
+Zero-shot Accuracy vs Resolution
+AM-RADIO
+(Ours) Multi-Stage Stage 2
+(Ours) Multi-Stage Stage 3
+(Ours) Multi-Resolution
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+Resolution
+0.0
+0.5
+1.0
+1.5
+2.0
+2.5
+3.0
+Spatial Fidelity
+DFN CLIP Spatial Fidelity vs Resolution
+Student
+AM-RADIO
+(Ours) Multi-Stage Stage 2
+(Ours) Multi-Stage Stage 3
+(Ours) Multi-Resolution
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+Resolution
+0.0
+0.5
+1.0
+1.5
+2.0
+2.5
+3.0
+3.5
+4.0
+Spatial Fidelity
+DINOv2 Spatial Fidelity vs Resolution
+Student
+AM-RADIO
+(Ours) Multi-Stage Stage 2
+(Ours) Multi-Stage Stage 3
+(Ours) Multi-Resolution
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+Resolution
+0
+2
+4
+6
+8
+10
+1
+Spatial Fidelity
+SAM Spatial Fidelity vs Resolution
+Student
+AM-RADIO
+(Ours) Multi-Stage Stage 2
+(Ours) Multi-Stage Stage 3
+(Ours) Multi-Resolution
+Figure 2. Zero-Shot Accuracy and teacher matching fidelity metrics as a function of input resolution. AM-RADIO (aka RADIOv2.1, config
+A), and our “Multi-Stage Stage 3” model exhibit mode switching behavior. “Multi-Stage Stage 2” doesn’t exhibit the behavior, owing to
+all teachers being trained solely at low resolution, however quality at high resolution quickly degrades. “Multi-Resolution” (config B)
+training fixes the mode switch, and allows the model to be strong across a larger range of resolutions compared to Stage 2.
+Figure 3. Visualizations of patch token features across input res-
+olutions. We use PCA to map patch tokens to RGB colors. Top:
+Input image, followed by visualizations of DINOv2, RADIOv2.1
+(config A) at 2562, 5122, 10242 resolutions, and SAM. Bottom:
+RADIOv2.5-H (config D). As resolution increases, RADIOv2.1
+features resemble SAM’s, even showing VitDet windowing ar-
+tifacts, while RADIOv2.5 remains more self-consistent and less
+noisy.
+qualitative inconsistencies and reduced scale equivariance
+(Table 2). Tiling also boosts vision tokens by up to 12× [7],
+increasing VLM latency.
+Figure 4. Qualitative comparison of tiling and high-resolution in-
+ference. Tiling emulates high-res SigLIP inference. Top: From
+left to right: input, SigLIP features using 1, 2 × 2 and 4 × 4 tiles.
+Bottom: Single-pass inference using RADIOv2.5 (ours) at equiv-
+alent image sizes. SigLIP features vary significantly across differ-
+ent tiling arrangements.
+Finding 1. High-resolution inference through tiling
+causes the vision encoder to lose global context and
+exhibit poor scaling equivariance.
+4.2. Multi-Resolution Training
+The previous observations motivate a change in the training
+schedule: with multi-resolution training we enable the stu-
+dent to learn from all teachers across multiple resolutions.
+This is easily achieved with DINOv2, since DINOv2 can
+infer images at any resolution. For CLIP teachers, we feed
+them with images at the teacher’s native resolution, and we
+feed the student with images at multiple resolutions. We
+interpolate student features down to the resolution of the
+teacher’s features before applying the loss function. SAM
+presents an extra challenge, as noted in AM-RADIO[35],
+since interpolating SAM features significantly deteriorates
+their quality. Therefore in order to train our student against
+SAM at lower resolutions than 10242, we pad smaller im-
+ages to 10242, then crop SAM features to the effective size
+of the unpadded image.
+Training the student for 600k iterations with a multi-
+resolution setup is costly. Thus we break down training into
+three stages:
+• In a first stage, we train the student at low resolution
+(2562) for 300k iterations.
+• In a second stage, we train the student at medium resolu-
+tion (4322) for 300k iterations.
+• In the third stage, we train the student simultaneously at
+4322 and 10242 resolutions for 300k iterations.
+Multi-resolution training is illustrated in Figure 5, which
+depicts four training regimes based on whether the teach-
+ers and/or students process low- or high-resolution images.
+When both the student and teachers use either low- or high-
+resolution images, no particular challenge arises. However,
+training a high-resolution student against a low-resolution
+teacher requires downscaling the student’s features to match
+those of the teacher. Conversely, training a low-resolution
+student against a high-resolution teacher necessitates a care-
+ful augmentation technique, as described in Section 4.3.
+22490
+
+
+Equivariance ↓
+Model
+Fine Scale
+Coarse Scale
+DINOv2-g-reg
+0.126
+0.178
+AM-RADIO-L
+0.357
+0.476
+RADIOv2.5-B
+0.102
+0.168
+RADIOv2.5-L
+0.102
+0.165
+RADIOv2.5-H
+0.119
+0.193
+RADIOv2.5-L (tiling)
+N/A
+0.369
+SigLIP (tiling)
+N/A
+0.623
+Table 2. Scale equivariance, computed over a small dataset of nat-
+ural images (shown in Appendix). Fine: we scale image reso-
+lutions from 3842 to 15682 by increments of the model’s patch
+size. Coarse: we scale images from 3842 to 19202 by multiples
+of 3842. For the models that are denoted as “tiling”, we perform
+inference over tiles of 3842) and re-assemble features to produce
+the high-resolution features.
+Figure 5. Illustration of the multi-resolution training setup. The
+student learns from all teachers at all resolutions. High-res stu-
+dent features are downsampled to match the resolution of low-res
+teachers. High-res teachers are provided with mosaics of smaller
+images and their output features are cropped out in order to train a
+low-res student.
+Finding 2. For the student model to be consistently
+accurate across resolutions, it is sufficient to match all
+teachers at all resolutions, and to train at two resolu-
+tions simultaneously in the final training stage.
+4.3. Mosaic Augmentation
+The training schedule described in Section 4.2 involves run-
+ning SAM inference on padded images, using cropped fea-
+tures to train the student against SAM at low resolution.
+This approach incurs a substantial computational cost, as
+SAM is the most resource-intensive teacher.
+To improve efficiency when training a student at a reso-
+lution ≤5122 against SAM, we can instead create a mosaic
+of k × k images, with k =
+ 1024
+x
+
+and x being the student
+resolution, resulting in a single 10242 image. We then per-
+form SAM inference on this mosaic and extract k2 individ-
+ual feature maps to train the student. Mosaic augmentation
+includes padding as needed to maximize efficiency. For ex-
+ample, to train a student at 4322 resolution, we can create a
+2×2 mosaic with 80-pixel padding around each image. Fig-
+ure 6 shows sample mosaic augmentations under 256 and
+432 student resolutions. Qualitatively, we observe cleaner
+features after applying mosaic augmentation, which we be-
+lieve is due to the increased diversity in image positions,
+helping to reduce teacher positional encoding artifacts. We
+also show SAM’s PCA features for these mosaic images in
+figures 12 and 13 in the appendix.
+Figure 6. Sample mosaic augmentations. Grid lines represent 162
+patches (only shown here for visualization purposes). Left: A
+4 × 4 arrangement with a 10242 image comprising 16 × 2562
+sub-images. Right: A 2 × 2 arrangement comprising 4 × 4322
+sub-images, with 80 pixels of padding around each.
+Finding 3.
+Mosaic augmentation greatly reduces
+the training cost associated with learning from high-
+resolution teachers and eliminates the need for feature
+interpolation. Student quality is even improved with
+this optimization.
+4.4. Teacher Loss Balancing
+In PHI-S [34] we highlighted the significant variations in
+activation magnitudes among vision foundation models, ob-
+serving that SAM’s activations tend to overshadow those of
+CLIP and DINOv2 models. We adopt the PCA-Hadamard
+Isotropic Standardization (PHI-S) method, achieving im-
+proved balance among teacher losses. PHI-S rotates teacher
+activations to evenly distribute variance across all channels
+and then uniformly scales them to obtain unit variance. This
+process can be easily inverted by modifying the final lin-
+ear projection of the adaptor MLP after training. PHI-S en-
+hances training stability and overall benchmark scores. For
+a given teacher feature map X with embedding size C, PHI-
+S applies the following transformation:
+22491
+
+
+Figure 7. Visualizations of SigLIP and RADIOv2.5-H model fea-
+tures before and after ToMe compression. From left to right: in-
+put image; PCA visualization of features; merged tokens; PCA
+visualization of unmerged tokens. RADIOv2.5 is better able to
+compress background regions, leaving more tokens available for
+semantically rich features.
+  
+\ m ath
+b f {X}
+_i ' = \
+p h
+i _
+i
+^
+{
+- 1
+}
+ 
+\
+m
+athbf {R}_i\mathbf {X}_i,\quad \mathbf {R}_i = \mathbf {H}_C \mathbf {U}_i^\intercal ,\quad \phi _i = \sqrt {\frac {1}{C} \sum _j^C \lambda _j} 
+(5)
+Where HC is a normalized Hadamard matrix of dimen-
+sion C × C, λj are the eigenvalues of the covariance matrix
+Σ [X], and U are the corresponding eigenvectors. ϕi and
+Ri are specific to the ith teacher. PHI-S is a statistical stan-
+dardization technique, as the expected per-channel variance
+after PHI-S is 1. However, it is different than vanilla stan-
+dardization in that it doesn’t standardize the channels indi-
+vidually, and thus, doesn’t distort the cross-channel varia-
+tion. We briefly review the key results of [34] in appendix
+K, but refer the reader to the original paper for deeper un-
+derstanding.
+Finding 4. PHI Standardization helps balance the en-
+ergy spent learning from each teacher.
+4.5. Token Compression
+Inspired by ToMeSD[3], we evaluate the use of bipartite
+soft matching to merge similar tokens. We apply strided
+partitioning to ensure that each image region retains some
+representation in the compressed features. For evaluation,
+we track merged token indices, enabling us to unmerge to-
+kens and measure the reconstruction error and inform hy-
+perparameter selection. The method is illustrated in Fig-
+ure 8.
+While ToMe recommends using attention keys for
+matching, we found that using the features directly reduces
+reconstruction error. Table 18 in the appendix summarizes
+our findings. Another slight departure from ToMe’s rec-
+ommendation is that we apply merging at the output of the
+vision encoder rather than incrementally. As shown in Ta-
+T0
+S0
+S2
+S3
+T1
+T2
+T3
+S1
+S4
+S6
+S5
+S7
+S8
+S9
+S10 S11
+A
+B
+C
+T0
++
+S7
++
+S9
++
+S11
+T1
++
+S1
+T2
++
+S2
++
+S8
+T3
++
+S3
++
+S4
++
+S6
+S0
+S5
+S10
+M0
+M1
+M2
+M3
+Reconstructed Viz
+T0
+S0
+S2
+S3
+T1
+T2
+T3
+S1
+S4
+S6
+S5
+S7
+S8
+S9
+S10 S11
+.08
+.44
+.18
+.03
+.64
+.90
+.66
+.33
+.78
+.18
+.91
+.04
+.24
+.21
+.19
+.69
+.15
+.27
+.49
+.92
+.47
+.38
+.65
+.56
+.68
+.36
+.31
+.89
+.87
+.25
+.01
+.68
+.98
+.37
+.99
+.44
+.93
+.41
+.40
+.83
+.35
+.16
+.26
+.04
+.73
+.72
+.15
+.31
+M0
+M1
+M2
+M3
+M0
+M0
+M1
+M2
+M2
+M3
+M3
+S0
+S5
+S10
+M0
+M3
+LLM
+D
+Figure 8. Illustration of bipartite matching [3] using 2 × 2 strided
+pattern with r = 9. A: The original tokens, with the red ‘T#’
+squares being assigned as targets, and the green ‘S#’ squares be-
+ing assigned as sources. B: We compute the affinity between each
+source and target. We only consider the maximum affinity for each
+source (shown in yellow). We find the r highest affinity yellow
+squares, and merge those into their respective targets. C: The out-
+put tokens with merged values when a given ‘T#’ was assigned
+one or more sources. D: The final 7 tokens are fed to the LLM.
+Reconstructed Viz: From (C), we can visualize the compressed
+original feature map by broadcasting the merged tokens to all of
+the source locations.
+ble 12, this approach yields an average improvement of +1.4
+on VLM benchmarks.
+We also qualitatively evaluate token merging by visual-
+izing feature and token merging outcomes in Figure 7. To-
+ken merging is assessed within the context of VLMs, with
+results reported in Table 1.
+We further note that token merging can be applied to
+other vision encoders and demonstrate its application on
+SigLIP. Interestingly, token merging yields a greater rela-
+tive improvement on RADIOv2.5 than on SigLIP, a finding
+that aligns with the feature visualizations in Figure 7 and the
+measured reconstruction error in Table 18. We hypothesize
+that SigLIP’s higher feature noise makes clustering more
+error prone.
+Finding 5. Token Merging is very effective at retain-
+ing the most diverse information under high compres-
+sion ratios.
+5. Experiments
+5.1. Evaluation Benchmarks
+For Image classification, we report the ImageNet-1k[36]
+Top-1 classification accuracy using two methods.
+i)
+zero-shot[32] classification using the DFN CLIP language
+model; ii) k-NN[5] classification using the embeddings of
+the shared backbone.
+22492
+
+
+Res
+Method
+Tokens/im
+TextVQA
+ChartQA
+DocVQA
+InfoVQA
+OCRBench
+512
+22 Unshuffle
+256
+65.0
+23.7
+45.7
+32.9
+40.2
+ToMe r=768
+256
+65.7
+25.8
+49.7
+34.9
+41.2
+768
+33 Unshuffle
+256
+65.8
+25.9
+49.7
+35.2
+40.9
+ToMe r=2048
+256
+69.7
+30.4
+52.3
+36.2
+42.9
+1024
+44 Unshuffle
+256
+66.1
+23.8
+46.6
+34.1
+38.9
+ToMe r=3840
+256
+69.3
+28.1
+49.1
+34.6
+42.7
+ToMe r=3584
+512
+68.9
+31.3
+53.9
+37.0
+44.6
+Table 3. VLM benchmarks across various compression methods.
+All configurations produce 256 vision tokens per image, except
+for the last row (512 tokens). Token Merging outperforms Pixel
+Unshuffling on all benchmarks. r = denotes the number of tokens
+being merged.
+For Instance Segmentation, we use the EfficientViT[25]
+implementation of a COCO[21] instance segmenter to mea-
+sure how well our SAM adaptor head can replace SAM.
+For Semantic Segmentation, we use the MMSeg[8]
+framework, and train a linear probe on top of the frozen
+RADIOv2.5 features. We use the ADE20k[50] dataset. We
+train the probe at three resolutions (5122, 7682, and 10242)
+and report the best result (full results in appendix).
+For
+3D
+understanding
+experiments
+we
+use
+the
+Probe3D[12] code base and apply a DPT head on top
+of the frozen backbone features. We train and evaluate on
+the Navi[19] dataset. We resize images to 5122 during both
+training and evaluation.
+For Vision-Language Modeling we follow the same
+framework as in VILA [23].
+We pair our vision en-
+coder with a MN-Minitron-8B[41] LLM. We train all
+alignment/pretraining/SFT and unfreeze the vision encoder
+during SFT. We train the model using ShareGPT4v[6]
+and VFLAN[45] datasets.
+We leverage insights from
+Cambrian[42] to select the benchmarks that are most sen-
+sitive to the quality of visual features report scores on
+TextVQA[40], ChartQA[27], DocVQA[29], InfoVQA[28]
+and OCRBench[26].
+5.2. Ablation Studies
+Ablation studies are summarized in Table 1.
+Our ini-
+tial RADIOv2.1-L baseline (config A) is a reproduction
+of AM-RADIO [35], using a ViT-L backbone and the
+DataComp1B[16] dataset.
+Our hyperparameters are de-
+tailed in the appendix.
+We add multi-resolution training in config B, and notice
+improved results on most dense tasks (+2.8 on ADE20k,
++3.4 on average on VLMs). Multi-score robustness is par-
+ticularly evident in Figure 2, where config B exhibits much
+more consistent results at higher resolutions.
+In config C, we replace the OpenAI CLIP teacher with
+SigLIP [49] and observe a 6.7-point improvement on VLM
+benchmarks.
+In config D, we replace the ViT-L 320M-parameter
+backbone with a 553M-parameter ViT-H backbone, which
+improves all metrics significantly.
+Config E applies only to VLMs, where we replace 22
+pixel unshuffling with Token Merging. This reduces the
+number of vision tokens from 576 to 256 and improves
+VLM scores by an average of 5.9 points. Appendix Ta-
+ble 11 provides a detailed analysis of the trade-off between
+the number of vision tokens and accuracy, highlighting RA-
+DIOv2.5’s comparative advantage over SigLIP in terms of
+token merging effectiveness.
+5.3. Comparative Results
+5.3.1
+Dense Task Evaluation
+We evaluate our models in comparison to other agglomer-
+ative models of similar size (SAM-CLIP [43], Theia [38],
+UNIC [37], UNIT [51]). Following MLoRE [47] we report
+metrics on NYUDv2 and PASCAL Context for our model.
+We train with a learning rate of 1e −3, and use a weight
+of 1 for all tasks. We purposefully don’t tune any hyper-
+parameters. We keep the backbone model frozen, and use
+MLoRE’s “conv” head for each task. The conv head is de-
+fined as follows: \protect \textup  { Conv -
+3x3} \rightarrow \textup {BatchNorm} \rightarrow \textup {GeLU} \rightarrow \textup {Conv-1x1}.
+Results are reported in Table 4. RADIOv2.5 models ex-
+hibit a consistent improvement over previous baselines.
+5.3.2
+VLM Evaluation
+We compare our models against state-of-the-art vision en-
+coders: OpenAI-CLIP [32], RADIOv2.1-H and SigLIP-
+SO400M [49].
+We pair the vision encoders with MN-
+Minitron-8B [41] and train them in VILA [23] using the
+LLaVA1.6 [24] data mixture. For all vision encoders, we
+use Token Merging to compress the visual features to 196
+tokens in order to ensure a fixed cost to the Language
+Model. We report results in Table 5. We observe that RA-
+DIOv2.5 models consistently exceed the accuracy of other
+vision encoders.
+6. Related Work
+AM-RADIO[35] and SAM-CLIP[43] pioneered multi-
+teacher distillation for Vision Foundation Models, though
+AM-RADIO struggles with resolution consistency and
+SAM-CLIP lacks a strong dense model like DINO, reducing
+semantic segmentation accuracy. Theia[38] uses a multi-
+distillation framework for robotics, incorporating teachers
+like DepthAnything[46], while UNIC[37] stabilizes train-
+ing with expandable projectors and teacher-dropping reg-
+ularization.
+Our method, however, employs teacher fea-
+22493
+
+
+Model
+Params
+ADE20k
+NYUd
+Pascal Context
+mIoU↑
+SemSeg mIoU↑
+Depth RMSE↓
+Normal mErr↓
+SemSeg mIoU↑
+Parsing mIoU↑
+Saliency maxF↑
+Normal mErr↓
+SAM-CLIP[43]
+86M
+38.4
+†
+†
+†
+†
+†
+†
+†
+Theia [38]
+86M
+35.55
+38.90
+0.6377
+24.11
+69.84
+60.67
+80.63
+16.94
+UNIC-B[37]
+86M
+39.6
+42.21
+0.6172
+22.78
+75.90
+62.85
+81.84
+15.78
+RADIOv2.5-B (ours)
+98M
+48.94
+57.19
+0.4980
+20.04
+81.75
+71.49
+81.26
+16.10
+UNIC-L[37]
+307M
+48.30
+58.56
+0.4916
+19.34
+81.82
+72.24
+79.21
+17.35
+RADIOv2.5-L (ours)
+320M
+52.95
+61.42
+0.4577
+18.57
+82.87
+74.32
+81.65
+16.15
+UNIT[51]
+632M
+50.19
+61.44
+0.4538
+19.07
+82.36
+73.34
+78.70
+17.98
+RADIOv2.1-H
+653M
+51.36
+62.76
+0.4339
+18.43
+82.78
+74.42
+78.48
+17.53
+RADIOv2.5-H
+653M
+53.97
+63.82
+0.4353
+17.67
+83.43
+75.75
+81.19
+16.16
+UNIT[51]
+1B
+50.63
+61.62
+0.4527
+19.07
+82.20
+73.22
+78.51
+17.96
+RADIOv2.5-g (ours)
+1.1B
+54.56
+63.46
+0.4318
+17.08
+82.65
+75.18
+80.08
+17.06
+Table 4. Comparison of dense task benchmarks against other agglomerative models. † Results unavailable due to lack of access to SAM-
+CLIP model weights. Note: RADIO requires more parameters for a given model class due to a C × 128 × 128 position embedding buffer
+coming from CPE, but does not contribute meaningfully to increased FLOPs or representation capacity.
+Vision Encoder
+Resolution
+Tokens/im
+TextVQA
+ChartQA
+DocVQA
+InfoVQA
+OCRBench
+GQA
+POPE
+MME
+SEED(I)
+MMMU
+AI2D
+Average
+OpenAI-CLIP [32]
+3362
+196
+63.2
+49.2
+43.4
+27.4
+431
+62.4
+85.7
+1517.9
+72.7
+43.4
+77.6
+58.55
+RADIOv2.1-H [35]
+5122
+196
+63.6
+51.7
+40.1
+26.2
+392
+63.4
+87.3
+1570.6
+73.6
+43.9
+78.9
+58.76
+RADIOv2.1-H [35]
+7682
+196
+62.8
+49.9
+36.7
+24.8
+365
+62.7
+87.0
+1517.2
+71.7
+41.9
+73.4
+56.66
+SigLIP-SO400M [49]
+3842
+196
+64.8
+55.7
+47.9
+29.2
+452
+63.1
+85.4
+1632.9
+72.9
+41.1
+80.7
+60.95
+RADIOv2.5-L (ours)
+7682
+196
+66.7
+56.4
+49.2
+29.8
+441
+63.4
+87.6
+1592.4
+74.0
+43.3
+79.2
+61.21
+RADIOv2.5-H (ours)
+7682
+196
+68.8
+61.6
+54.2
+30.8
+498
+63.8
+87.3
+1562.3
+74.1
+44.1
+82.5
+63.19
+RADIOv2.5-g (ours)
+6722
+196
+69.6
+57.0
+53.3
+30.9
+479
+63.4
+87.5
+1606.4
+74.3
+41.3
+80.8
+62.39
+Table 5. Vision Encoder Comparison in VILA[23]. We used MN-Minitron-8B[41] as LLM and the LLaVA1.6[24] data mixture. We use
+Token Merging to compress all visual features down to 196 tokens. From left to right we report: image resolution, number of tokens per
+image, TextVQA (with OCR hints) validation accuracy, ChartQA overall, DocVQA validation accuracy, InfoVQA validation accuracy,
+OCRBench accuracy, GQA (TestDev) accuracy, POPE F1 score, MME perception score, SEED (Image) accuracy, MMMU (validation)
+accuracy, AI2D (no mask) accuracy, average (calculated after dividing MME score by 20 and OCR score by 10).
+ture standardization and multi-resolution training for scale-
+consistent accuracy, enhancing the original ViT[11] inter-
+polation approach. Unlike FlexiViT[2] and NaViT[10], we
+use Cropped Position Embeddings (CPE)[21] and distill
+resolution-robust students from inflexible teachers.
+Cambrian-1 [42] integrates multiple vision encoders
+through a Spatial Vision Aggregator, utilizing learnable la-
+tent queries that interact with several layers of a Large
+Language Model (LLM) via cross-attention.
+Eagle [39]
+combines multiple vision experts by concatenating their vi-
+sual tokens along the channel dimension. BRAVE [20] in-
+troduces the Multi-Encoder Querying Transformer, which
+merges visual features from various encoders into a fixed-
+length representation, subsequently used as a soft prompt
+for a frozen language model. In contrast, our method per-
+forms multi-vision encoder aggregation as a preliminary
+step to develop a single, versatile vision encoder suitable
+for integration into a VLM, but also easily usable outside of
+a VLM context.
+7. Conclusion
+In this paper, we presented RADIOv2.5, a robust frame-
+work for multi-teacher vision model distillation that accom-
+modates variations in teacher resolutions, activation magni-
+tudes, and noise patterns. The key differentiating factor in
+our work is our focus on preserving accuracy across a broad
+range of resolutions. Our multi-resolution training approach
+mitigates resolution-dependent quality degradation (mode
+switching). Our findings show that mosaic augmentation
+and PHI-S effectively balance computational load and loss
+contributions from each teacher.
+Token compression enables efficient integration with
+VLMs by preserving critical visual information, even at
+high compression ratios. Our feature selection study high-
+lighted the advantages of using intermediate activations for
+dense tasks, particularly when non-linear transformations
+are used.
+22494
+
+
+References
+[1] Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E. Hinton.
+Layer normalization, 2016. 3
+[2] Lucas
+Beyer,
+Pavel
+Izmailov,
+Alexander
+Kolesnikov,
+Mathilde Caron, Simon Kornblith, Xiaohua Zhai, Matthias
+Minderer, Michael Tschannen, Ibrahim M. Alabdulmohsin,
+and Filip Pavetic. Flexivit: One model for all patch sizes.
+2023 IEEE/CVF Conference on Computer Vision and Pat-
+tern Recognition (CVPR), pages 14496–14506, 2022. 8
+[3] Daniel Bolya and Judy Hoffman.
+Token merging for fast
+stable diffusion. 2023 IEEE/CVF Conference on Computer
+Vision and Pattern Recognition Workshops (CVPRW), pages
+4599–4603, 2023. 1, 6
+[4] Daniel Bolya, Cheng-Yang Fu, Xiaoliang Dai, Peizhao
+Zhang, Christoph Feichtenhofer, and Judy Hoffman. Token
+merging: Your ViT but faster. In International Conference
+on Learning Representations, 2023. 4
+[5] Mathilde Caron, Hugo Touvron, Ishan Misra, Herv’e J’egou,
+Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerg-
+ing properties in self-supervised vision transformers. 2021
+IEEE/CVF International Conference on Computer Vision
+(ICCV), pages 9630–9640, 2021. 3, 6
+[6] Lin Chen, Jinsong Li, Xiao wen Dong, Pan Zhang, Conghui
+He, Jiaqi Wang, Feng Zhao, and Dahua Lin. Sharegpt4v:
+Improving large multi-modal models with better captions. In
+European Conference on Computer Vision, 2023. 7, 4
+[7] Zhe Chen, Weiyun Wang, Hao Tian, Shenglong Ye, Zhang-
+wei Gao, Erfei Cui, Wenwen Tong, Kongzhi Hu, Jiapeng
+Luo, Zheng Ma, et al. How far are we to gpt-4v? closing
+the gap to commercial multimodal models with open-source
+suites. arXiv preprint arXiv:2404.16821, 2024. 3, 4, 5
+[8] MMSegmentation
+Contributors.
+MMSegmentation:
+Openmmlab
+semantic
+segmentation
+toolbox
+and
+benchmark.
+https : / / github . com / open -
+mmlab/mmsegmentation, 2020. 7
+[9] Timoth´ee Darcet, Maxime Oquab, Julien Mairal, and Piotr
+Bojanowski.
+Vision transformers need registers.
+In Pro-
+ceedings of the 12th International Conference on Learning
+Representations (ICLR), 2024. 2, 6
+[10] Mostafa Dehghani, Basil Mustafa, Josip Djolonga, Jonathan
+Heek, Matthias Minderer, Mathilde Caron, Andreas Steiner,
+Joan Puigcerver, Robert Geirhos, Ibrahim M Alabdul-
+mohsin, et al. Patch n’pack: Navit, a vision transformer for
+any aspect ratio and resolution. Advances in Neural Infor-
+mation Processing Systems, 36, 2024. 8
+[11] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov,
+Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner,
+Mostafa Dehghani, Matthias Minderer, Georg Heigold, Syl-
+vain Gelly, Jakob Uszkoreit, and Neil Houlsby. An image is
+worth 16x16 words: Transformers for image recognition at
+scale, 2021. 2, 8
+[12] Mohamed El Banani, Amit Raj, Kevis-Kokitsi Maninis, Ab-
+hishek Kar, Yuanzhen Li, Michael Rubinstein, Deqing Sun,
+Leonidas Guibas, Justin Johnson, and Varun Jampani. Prob-
+ing the 3D Awareness of Visual Foundation Models.
+In
+CVPR, 2024. 3, 7
+[13] Mark Everingham,
+Luc Van Gool,
+Christopher K. I.
+Williams, John M. Winn, and Andrew Zisserman. The pas-
+cal visual object classes (voc) challenge. Int. J. Comput. Vis.,
+88(2):303–338, 2010. 3
+[14] M. Everingham, S. M. A. Eslami, L. Van Gool, C. K. I.
+Williams, J. Winn, and A. Zisserman. The pascal visual ob-
+ject classes challenge: A retrospective. International Journal
+of Computer Vision, 111(1):98–136, 2015. 5
+[15] Alex Fang, Albin Madappally Jose, Amit Jain, Ludwig
+Schmidt, Alexander Toshev, and Vaishaal Shankar. Data fil-
+tering networks, 2023. 2
+[16] Samir Yitzhak Gadre, Gabriel Ilharco, Alex Fang, Jonathan
+Hayase, Georgios Smyrnis, Thao Nguyen, Ryan Marten,
+Mitchell Wortsman, Dhruba Ghosh, Jieyu Zhang, Eyal Or-
+gad, Rahim Entezari, Giannis Daras, Sarah Pratt, Vivek
+Ramanujan, Yonatan Bitton, Kalyani Marathe, Stephen
+Mussmann, Richard Vencu, Mehdi Cherti, Ranjay Krishna,
+Pang Wei Koh, Olga Saukh, Alexander Ratner, Shuran
+Song, Hannaneh Hajishirzi, Ali Farhadi, Romain Beaumont,
+Sewoong Oh, Alex Dimakis, Jenia Jitsev, Yair Carmon,
+Vaishaal Shankar, and Ludwig Schmidt.
+Datacomp: In
+search of the next generation of multimodal datasets, 2023.
+3, 7
+[17] Pinxue Guo, Zixu Zhao, Jianxiong Gao, Chongruo Wu,
+Tong He, Zheng Zhang, Tianjun Xiao, and Wenqiang Zhang.
+Videosam: Open-world video segmentation, 2024. 2
+[18] Dan Hendrycks and Kevin Gimpel.
+Gaussian error linear
+units (gelus), 2023. 3
+[19] Varun Jampani, Kevis-Kokitsi Maninis, Andreas Engel-
+hardt, Arjun Karpur, Karen Truong, Kyle Sargent, Stefan
+Popov, Andre Araujo, Ricardo Martin-Brualla, Kaushal Pa-
+tel, Daniel Vlasic, Vittorio Ferrari, Ameesh Makadia, Ce
+Liu, Yuanzhen Li, and Howard Zhou.
+NAVI: Category-
+agnostic image collections with high-quality 3d shape and
+pose annotations. In NeurIPS, 2023. 7
+[20] O˘guzhan Fatih Kar, Alessio Tonioni, Petra Poklukar, Achin
+Kulshrestha, Amir Zamir, and Federico Tombari.
+Brave:
+Broadening the visual encoding of vision-language models.
+In European Conference on Computer Vision, pages 113–
+132. Springer, 2024. 8
+[21] Dahun Kim, Anelia Angelova, and Weicheng Kuo. Region-
+aware pretraining for open-vocabulary object detection with
+vision transformers. 2023 IEEE/CVF Conference on Com-
+puter Vision and Pattern Recognition (CVPR), pages 11144–
+11154, 2023. 2, 3, 7, 8
+[22] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao,
+Chlo´e Rolland, Laura Gustafson, Tete Xiao, Spencer White-
+head, Alexander C. Berg, Wan-Yen Lo, Piotr Doll´ar, and
+Ross B. Girshick. Segment anything. 2023 IEEE/CVF In-
+ternational Conference on Computer Vision (ICCV), pages
+3992–4003, 2023. 1, 3, 2
+[23] Ji Lin, Hongxu Yin, Wei Ping, Yao Lu, Pavlo Molchanov,
+Andrew Tao, Huizi Mao, Jan Kautz, Mohammad Shoeybi,
+and Song Han. Vila: On pre-training for visual language
+models. 2024 IEEE/CVF Conference on Computer Vision
+and Pattern Recognition (CVPR), pages 26679–26689, 2023.
+3, 7, 8, 2
+22495
+
+
+[24] Haotian Liu, Chunyuan Li, Yuheng Li, Bo Li, Yuanhan
+Zhang, Sheng Shen, and Yong Jae Lee.
+Llava-next: Im-
+proved reasoning, ocr, and world knowledge, 2024. 3, 7,
+8
+[25] Xinyu Liu, Houwen Peng, Ningxin Zheng, Yuqing Yang,
+Han Hu, and Yixuan Yuan. Efficientvit: Memory efficient
+vision transformer with cascaded group attention. In Pro-
+ceedings of the IEEE/CVF Conference on Computer Vision
+and Pattern Recognition, pages 14420–14430, 2023. 3, 7
+[26] Yuliang Liu, Zhang Li, Mingxin Huang, Biao Yang, Wenwen
+Yu, Chunyuan Li, Xucheng Yin, Cheng lin Liu, Lianwen Jin,
+and Xiang Bai. Ocrbench: On the hidden mystery of ocr in
+large multimodal models, 2024. 7
+[27] Ahmed Masry, Do Xuan Long, Jia Qing Tan, Shafiq Joty,
+and Enamul Hoque. Chartqa: A benchmark for question an-
+swering about charts with visual and logical reasoning, 2022.
+7
+[28] Minesh Mathew, Viraj Bagal, Rub`en P´erez Tito, Dimosthe-
+nis Karatzas, Ernest Valveny, and C. V Jawahar. Infograph-
+icvqa, 2021. 7
+[29] Minesh Mathew, Dimosthenis Karatzas, and C. V. Jawahar.
+Docvqa: A dataset for vqa on document images, 2021. 7
+[30] Roozbeh Mottaghi, Xianjie Chen, Xiaobai Liu, Nam-Gyu
+Cho, Seong-Whan Lee, Sanja Fidler, Raquel Urtasun, and
+Alan Yuille.
+The role of context for object detection and
+semantic segmentation in the wild. In IEEE Conference on
+Computer Vision and Pattern Recognition (CVPR), 2014. 3
+[31] Pushmeet Kohli Nathan Silberman, Derek Hoiem and Rob
+Fergus.
+Indoor segmentation and support inference from
+rgbd images. In ECCV, 2012. 3
+[32] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya
+Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry,
+Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen
+Krueger, and Ilya Sutskever.
+Learning transferable visual
+models from natural language supervision. In International
+Conference on Machine Learning, 2021. 1, 2, 3, 6, 7, 8, 4
+[33] Ren´e Ranftl, Alexey Bochkovskiy, and Vladlen Koltun. Vi-
+sion transformers for dense prediction. In Proceedings of
+the IEEE/CVF international conference on computer vision,
+pages 12179–12188, 2021. 3
+[34] Mike
+Ranzinger,
+Jon
+Barker,
+Greg
+Heinrich,
+Pavlo
+Molchanov, Bryan Catanzaro, and Andrew Tao. Phi-s: Dis-
+tribution balancing for label-free multi-teacher distillation,
+2024. 1, 5, 6, 2, 14, 15, 16
+[35] Mike Ranzinger, Greg Heinrich, Jan Kautz, and Pavlo
+Molchanov.
+Am-radio: Agglomerative vision foundation
+model reduce all domains into one.
+In Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition, pages 12490–12500, 2024. 1, 2, 3, 4, 7, 8, 5
+[36] Olga Russakovsky, Jia Deng, Hao Su, Jonathan Krause, San-
+jeev Satheesh, Sean Ma, Zhiheng Huang, Andrej Karpathy,
+Aditya Khosla, Michael Bernstein, Alexander C. Berg, and
+Li Fei-Fei. Imagenet large scale visual recognition challenge,
+2015. 3, 6
+[37] Mert Bulent Sariyildiz, Philippe Weinzaepfel, Thomas Lu-
+cas, Diane Larlus, and Yannis Kalantidis. Unic: Universal
+classification models via multi-teacher distillation, 2024. 1,
+7, 8, 2, 6
+[38] Jinghuan Shang, Karl Schmeckpeper, Brandon B. May,
+Maria Vittoria Minniti, Tarik Kelestemur, David Watkins,
+and Laura Herlant. Theia: Distilling diverse vision foun-
+dation models for robot learning, 2024. 1, 7, 8, 2, 6
+[39] Min Shi, Fuxiao Liu, Shihao Wang, Shijia Liao, Subhashree
+Radhakrishnan, De-An Huang, Hongxu Yin, Karan Sapra,
+Yaser Yacoob, Humphrey Shi, Bryan Catanzaro, Andrew
+Tao, Jan Kautz, Zhiding Yu, and Guilin Liu.
+Eagle: Ex-
+ploring the design space for multimodal llms with mixture
+of encoders, 2024. 1, 8
+[40] Amanpreet Singh, Vivek Natarajan, Meet Shah, Yu Jiang,
+Xinlei Chen, Dhruv Batra, Devi Parikh, and Marcus
+Rohrbach. Towards vqa models that can read, 2019. 7
+[41] Sharath Turuvekere Sreenivas, Saurav Muralidharan, Raviraj
+Joshi, Marcin Chochowski, Mostofa Patwary, Mohammad
+Shoeybi, Bryan Catanzaro, Jan Kautz, and Pavlo Molchanov.
+Llm pruning and distillation in practice: The minitron ap-
+proach, 2024. 7, 8
+[42] Shengbang Tong, Ellis Brown, Penghao Wu, Sanghyun
+Woo, Manoj Middepogu, Sai Charitha Akula, Jihan Yang,
+Shusheng Yang, Adithya Iyer, Xichen Pan, Austin Wang,
+Rob Fergus, Yann LeCun, and Saining Xie.
+Cambrian-1:
+A fully open, vision-centric exploration of multimodal llms,
+2024. 3, 7, 8, 2
+[43] Haoxiang Wang, Pavan Kumar Anasosalu Vasu, Fartash
+Faghri, Raviteja Vemulapalli, Mehrdad Farajtabar, Sachin
+Mehta, Mohammad Rastegari, Oncel Tuzel, and Hadi
+Pouransari. Sam-clip: Merging vision foundation models to-
+wards semantic and spatial understanding. 2024 IEEE/CVF
+Conference on Computer Vision and Pattern Recognition
+Workshops (CVPRW), pages 3635–3647, 2023. 1, 7, 8
+[44] Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan,
+Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin
+Ge, Yang Fan, Kai Dang, Mengfei Du, Xuancheng Ren, Rui
+Men, Dayiheng Liu, Chang Zhou, Jingren Zhou, and Jun-
+yang Lin. Qwen2-vl: Enhancing vision-language model’s
+perception of the world at any resolution, 2024. 4
+[45] Zhiyang Xu, Chao Feng, Rulin Shao, Trevor Ashby, Ying
+Shen, Di Jin, Yu Cheng, Qifan Wang, and Lifu Huang.
+Vision-flan: Scaling human-labeled tasks in visual instruc-
+tion tuning. arXiv preprint arXiv:2402.11690, 2024. 7, 4
+[46] Lihe Yang, Bingyi Kang, Zilong Huang, Xiaogang Xu, Jiashi
+Feng, and Hengshuang Zhao. Depth anything: Unleashing
+the power of large-scale unlabeled data.
+2024 IEEE/CVF
+Conference on Computer Vision and Pattern Recognition
+(CVPR), pages 10371–10381, 2024. 7
+[47] Yuqi Yang, Peng-Tao Jiang, Qibin Hou, Hao Zhang, Jinwei
+Chen, and Bo Li. Multi-task dense prediction via mixture of
+low-rank experts. In Proceedings of the IEEE/CVF confer-
+ence on computer vision and pattern recognition, 2024. 3, 7,
+6
+[48] Huanjin Yao, Wenhao Wu, Taojiannan Yang, YuXin Song,
+Mengxi Zhang, Haocheng Feng, Yifan Sun, Zhiheng Li,
+Wanli Ouyang, and Jingdong Wang. Dense connector for
+mllms, 2024. 3
+[49] Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and
+Lucas Beyer. Sigmoid loss for language image pre-training.
+22496
+
+
+2023 IEEE/CVF International Conference on Computer Vi-
+sion (ICCV), pages 11941–11952, 2023. 3, 7, 8, 2, 4, 5
+[50] Bolei Zhou, Hang Zhao, Xavier Puig, Sanja Fidler, Adela
+Barriuso, and Antonio Torralba. Semantic understanding of
+scenes through the ade20k dataset. International Journal of
+Computer Vision, 127:302 – 321, 2016. 3, 7, 5
+[51] Yi Zhu, Yanpeng Zhou, Chunwei Wang, Yang Cao, Jianhua
+Han, Lu Hou, and Hang Xu. Unit: Unifying image and text
+recognition in one vision encoder, 2024. 7, 8
+22497

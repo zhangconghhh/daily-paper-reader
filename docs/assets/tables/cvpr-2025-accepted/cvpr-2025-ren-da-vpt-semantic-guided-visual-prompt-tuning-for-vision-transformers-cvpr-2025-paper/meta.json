@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "extractor": "papercropper",
+  "tables": [
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-ren-da-vpt-semantic-guided-visual-prompt-tuning-for-vision-transformers-cvpr-2025-paper/table-001.webp",
+      "caption": "",
+      "page": 0,
+      "index": 1,
+      "width": 848,
+      "height": 634,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-ren-da-vpt-semantic-guided-visual-prompt-tuning-for-vision-transformers-cvpr-2025-paper/table-002.webp",
+      "caption": "",
+      "page": 0,
+      "index": 2,
+      "width": 823,
+      "height": 313,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-ren-da-vpt-semantic-guided-visual-prompt-tuning-for-vision-transformers-cvpr-2025-paper/table-003.webp",
+      "caption": "",
+      "page": 0,
+      "index": 3,
+      "width": 855,
+      "height": 452,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-ren-da-vpt-semantic-guided-visual-prompt-tuning-for-vision-transformers-cvpr-2025-paper/table-004.webp",
+      "caption": "",
+      "page": 0,
+      "index": 4,
+      "width": 1438,
+      "height": 355,
+      "label": "Table"
+    }
+  ]
+}

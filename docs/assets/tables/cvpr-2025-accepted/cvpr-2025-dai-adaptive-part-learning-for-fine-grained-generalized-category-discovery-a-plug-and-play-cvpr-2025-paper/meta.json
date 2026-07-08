@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "extractor": "papercropper",
+  "tables": [
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-dai-adaptive-part-learning-for-fine-grained-generalized-category-discovery-a-plug-and-play-cvpr-2025-paper/table-001.webp",
+      "caption": "",
+      "page": 0,
+      "index": 1,
+      "width": 817,
+      "height": 253,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-dai-adaptive-part-learning-for-fine-grained-generalized-category-discovery-a-plug-and-play-cvpr-2025-paper/table-002.webp",
+      "caption": "",
+      "page": 0,
+      "index": 2,
+      "width": 1670,
+      "height": 774,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-dai-adaptive-part-learning-for-fine-grained-generalized-category-discovery-a-plug-and-play-cvpr-2025-paper/table-003.webp",
+      "caption": "",
+      "page": 0,
+      "index": 3,
+      "width": 617,
+      "height": 279,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/cvpr-2025-accepted/cvpr-2025-dai-adaptive-part-learning-for-fine-grained-generalized-category-discovery-a-plug-and-play-cvpr-2025-paper/table-004.webp",
+      "caption": "",
+      "page": 0,
+      "index": 4,
+      "width": 701,
+      "height": 275,
+      "label": "Table"
+    }
+  ]
+}
