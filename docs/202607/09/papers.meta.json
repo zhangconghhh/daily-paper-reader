@@ -1,0 +1,69 @@
+{
+  "label": "2026-07-09",
+  "date": "2026-07-09",
+  "generated_at": "2026-07-09T20:59:59",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202607/09/2607.00850v1-mirror-fusion-attention-for-reflection-aware-self-supervised-representation-learning",
+      "section": "quick",
+      "title_en": "Mirror-Fusion Attention for Reflection-Aware Self-Supervised Representation Learning",
+      "authors": "Ruixin Li, Jin Liu, Yuling Shi, Stefano Lodi",
+      "date": "2026-07-01",
+      "pdf": "https://arxiv.org/pdf/2607.00850v1",
+      "score": "7.0",
+      "evidence": "自监督ViT方法，具有镜像融合注意力，可能适用于细粒度分类",
+      "tldr": "标准自监督学习（SSL）的严格翻转不变性会抑制医学图像和人脸等近似对称数据中的左右对应信息。本文提出MFASSL，通过估计对称轴构建镜像视图，并设计轻量Mirror-Fusion Attention模块进行自适应token级交互，同时引入反射一致性和中层对齐损失。在CheXpert、BraTS、CelebA-HQ和WFLW上，MFASSL较MoCo-v3、DINO和MAE显著提升下游性能、校准度和反射鲁棒性，仅增加约2.7%参数。结果表明轻量几何先验可有效补充不变性SSL。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Most self-supervised learning (SSL) methods encourage invariance across augmentations, but strict flip invariance can suppress informative left--right correspondences in approximately bilateral data such as medical images and human faces. We propose Mirror-Fusion-Augmented Self-Supervised Learning (MFASSL), a Vision Transformer framework that injects a soft reflection prior into standard SSL without redesigning the backbone. MFASSL constructs mirror-paired views aligned to an estimated symmetry axis and introduces a lightweight Mirror-Fusion Attention (MFA) module for adaptive token-level interaction between mirrored regions while preserving asymmetric cues. The base SSL objective is further coupled with reflection-consistency and mid-layer token-alignment losses. Across CheXpert, BraTS, CelebA-HQ, and WFLW, MFASSL improves downstream performance, calibration, and reflection robustness over MoCo-v3, DINO, and MAE baselines under matched ViT-B/16 settings. It also achieves stronger and more consistent gains than recent equivariant SSL approaches with only approximately 2.7\\% additional parameters. These results show that lightweight geometry-aware priors can effectively complement invariance-based SSL.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/09/2607.02612v1-fusion-a-framework-for-unified-sequential-token-adaptation-in-vision-transformers",
+      "section": "quick",
+      "title_en": "Fusion: A Framework for Unified Sequential Token AdaptatIon in VisiOn TraNsformers",
+      "authors": "Aravind Pradeep, Samira Nazari, Mahdi Taheri, Christian Herglotz",
+      "date": "2026-07-01",
+      "pdf": "https://arxiv.org/pdf/2607.02612v1",
+      "score": "7.0",
+      "evidence": "用于图像分类的Vision Transformer统一自适应推理框架",
+      "tldr": "Vision Transformers 对所有图像区域采用相同计算量，存在冗余。现有自适应方法（如token压缩、早退）组合时导致表示不稳定和精度下降。本文提出Fusion统一框架，通过先合并token、再评估置信度、最后对继续推理样本剪枝的分阶段设计，使三种机制协同工作。轻量路由模块自适应调整压缩强度，支持推理时调节精度-延迟权衡。在ImageNet-1k上，Fusion匹配或超越SOTA自适应ViT方法，校准误差降低4倍，推理能耗降低48%，且在多个数据集和ViT骨干上表现一致。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Vision Transformers achieve strong image classification accuracy but process all image regions with nearly the same computation, even when many regions are redundant or uninformative. Recent adaptive inference methods reduce this cost by selectively compressing tokens or terminating inference early, but combining these mechanisms often causes unstable intermediate representations and accuracy degradation. We introduce Fusion, a unified adaptive inference framework that coordinates token merging, early exiting, and token pruning through a simple staged design: tokens are merged first, confidence is evaluated next, and pruning is applied only to samples that continue inference. This ordering allows the three mechanisms to operate cooperatively rather than competitively. Fusion further includes lightweight routing modules that adapt compression strength to each input and support inference-time adjustment of the accuracy--latency trade-off without retraining. On ImageNet-1k with DeiT-S, Fusion matches or surpasses state-of-the-art adaptive ViT methods at comparable compute budgets while reducing calibration error by up to $4\\times$ and inference energy by $48\\%$. Experiments across ImageNet-100, CIFAR-100, and ImageNette with multiple ViT backbones demonstrate consistent transferability without dataset-specific tuning.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/09/2607.05850v1-breaking-spurious-correlations-via-generative-randomization-and-cross-variant-self-supervised-learning",
+      "section": "quick",
+      "title_en": "Breaking Spurious Correlations via Generative Randomization and Cross-Variant Self-Supervised Learning",
+      "authors": "Suraj Yadav, Anjaneya Sharma, Siddharth Yadav",
+      "date": "2026-07-07",
+      "pdf": "https://arxiv.org/pdf/2607.05850v1",
+      "score": "6.0",
+      "evidence": "提出生成式干预的自监督学习以学习不变表示，与细粒度分类的自监督ViT相关",
+      "tldr": "深度神经网络在分布偏移下常因依赖背景与标签的虚假相关而失败。本文提出两阶段框架，先利用零样本分割和结构保持扩散模型生成前景不变但背景变化的图像，再通过跨变体自监督对比学习对齐前景表示、抑制背景特征，最后用ERM预热和层自适应GroupDRO微调。在Waterbirds、MetaShift和NICO++上分别达到92.5%、81.7%和87.4%的最差组准确率。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Deep neural networks trained with Empirical Risk Minimization (ERM) often fail under distribution shifts because they exploit spurious correlations between object labels and background context. Recent generative approaches address this issue by creating counterfactual images with altered contexts, but typically use these samples as standard data augmentation, leaving the model free to retain background-sensitive representations. We propose a two-stage framework that uses generative intervention to explicitly learn background-invariant visual representations. First, we isolate the foreground object using zero-shot segmentation and generate context-shifted variants with a structure-preserving diffusion model, preserving object identity while varying the surrounding environment. We then introduce Cross-Variant Self-Supervised Learning, where variants of the same object under different backgrounds form positive pairs in a contrastive objective. This encourages the encoder to align object-centric representations while suppressing background-specific cues. Then, we fine-tune the pretrained encoder using an ERM warm-up followed by GroupDRO with layer-wise learning rates. Experiments on distribution-shift benchmarks demonstrate best worst-group performance, achieving 92.5% on Waterbirds, 81.7% on MetaShift, and 87.4% on NICO++. Code: https://github.com/surajyadav-research/GRSSL",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/09/2607.06918v1-loca-spatially-aware-low-rank-convolutional-adaptation-of-vision-foundation-models",
+      "section": "quick",
+      "title_en": "LoCA: Spatially-Aware Low-Rank Convolutional Adaptation of Vision Foundation Models",
+      "authors": "Sojung An, Junha Lee, Sujeong You, Nam Ik Cho, Donghyun Kim",
+      "date": "2026-07-08",
+      "pdf": "https://arxiv.org/pdf/2607.06918v1",
+      "score": "6.0",
+      "evidence": "视觉基础模型的适应方法",
+      "tldr": "预训练视觉基础模型(VFM)参数高效微调面临卷积核空间-通道耦合问题，现有LoRA破坏空间拓扑。本文提出LoCA，通过解耦通道与空间适应：采用低秩通道适应进行密集跨通道混合，并基于SVD细化预训练核的空间基，从而保留空间先验。在细粒度分类、域泛化语义分割和生成任务上达到SOTA。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Pre-trained Vision Foundation Models (VFMs) provide strong visual representations for diverse downstream tasks. The key challenge of VFM adaptation stems from the prohibitive costs of full fine-tuning and catastrophic forgetting. To address this, Low-Rank Adaptation (LoRA) has emerged as the prevailing paradigm for Parameter-Efficient Fine-Tuning (PEFT). However, LoRA is typically designed for transformer self-attention layers parameterized by 2D matrices. Since convolutional kernels inherently couple spatial and channel information within a 4D tensor, forcing them into a monolithic 2D matrix disrupts the inherent spatial topology. In this paper, we propose Low-Rank Convolutional Adaptation (LoCA), a convolution-aware PEFT framework that addresses spatial-channel entanglement by decoupling channel and spatial adaptation. LoCA introduces a low-rank channel adaptation for dense cross-channel mixing and refines spatial bases extracted from pre-trained kernels via Singular Value Decomposition (SVD). Experimental results show that LoCA preserves pre-trained spatial priors and achieves competitive or state-of-the-art performance across fine-grained classification, domain-generalized semantic segmentation, and generative benchmarks.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

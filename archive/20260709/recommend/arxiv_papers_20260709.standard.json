@@ -1,0 +1,176 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-09T20:57:18.221986+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.00850v1",
+      "source": "arxiv",
+      "title": "Mirror-Fusion Attention for Reflection-Aware Self-Supervised Representation Learning",
+      "abstract": "Most self-supervised learning (SSL) methods encourage invariance across augmentations, but strict flip invariance can suppress informative left--right correspondences in approximately bilateral data such as medical images and human faces. We propose Mirror-Fusion-Augmented Self-Supervised Learning (MFASSL), a Vision Transformer framework that injects a soft reflection prior into standard SSL without redesigning the backbone. MFASSL constructs mirror-paired views aligned to an estimated symmetry axis and introduces a lightweight Mirror-Fusion Attention (MFA) module for adaptive token-level interaction between mirrored regions while preserving asymmetric cues. The base SSL objective is further coupled with reflection-consistency and mid-layer token-alignment losses. Across CheXpert, BraTS, CelebA-HQ, and WFLW, MFASSL improves downstream performance, calibration, and reflection robustness over MoCo-v3, DINO, and MAE baselines under matched ViT-B/16 settings. It also achieves stronger and more consistent gains than recent equivariant SSL approaches with only approximately 2.7\\% additional parameters. These results show that lightweight geometry-aware priors can effectively complement invariance-based SSL.",
+      "authors": [
+        "Ruixin Li",
+        "Jin Liu",
+        "Yuling Shi",
+        "Stefano Lodi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-07-01T12:16:36+00:00",
+      "link": "https://arxiv.org/pdf/2607.00850v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Self-supervised ViT method with mirror-fusion attention potentially applicable to fine-grained classification",
+      "llm_evidence_cn": "自监督ViT方法，具有镜像融合注意力，可能适用于细粒度分类",
+      "llm_evidence": "自监督ViT方法，具有镜像融合注意力，可能适用于细粒度分类",
+      "canonical_evidence": "自监督ViT方法，具有镜像融合注意力，可能适用于细粒度分类",
+      "llm_tldr_en": "Proposes Mirror-Fusion-Augmented Self-Supervised Learning (MFASSL), a Vision Transformer framework that injects soft reflection prior into SSL, improving representation learning on bilateral data while preserving asymmetric cues.",
+      "llm_tldr_cn": "针对现有自监督学习在近似对称数据上强制翻转不变性导致信息丢失的问题，提出镜像融合增强自监督学习（MFASSL），基于Vision Transformer框架，通过估计对称轴构造镜像对，并引入轻量级镜像融合注意力模块实现自适应令牌级交互。该方法在保留非对称线索的同时注入软反射先验，在医学图像和脸部数据集上验证了有效性。",
+      "llm_tldr": "针对现有自监督学习在近似对称数据上强制翻转不变性导致信息丢失的问题，提出镜像融合增强自监督学习（MFASSL），基于Vision Transformer框架，通过估计对称轴构造镜像对，并引入轻量级镜像融合注意力模块实现自适应令牌级交互。该方法在保留非对称线索的同时注入软反射先验，在医学图像和脸部数据集上验证了有效性。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.05850v1",
+      "source": "arxiv",
+      "title": "Breaking Spurious Correlations via Generative Randomization and Cross-Variant Self-Supervised Learning",
+      "abstract": "Deep neural networks trained with Empirical Risk Minimization (ERM) often fail under distribution shifts because they exploit spurious correlations between object labels and background context. Recent generative approaches address this issue by creating counterfactual images with altered contexts, but typically use these samples as standard data augmentation, leaving the model free to retain background-sensitive representations. We propose a two-stage framework that uses generative intervention to explicitly learn background-invariant visual representations. First, we isolate the foreground object using zero-shot segmentation and generate context-shifted variants with a structure-preserving diffusion model, preserving object identity while varying the surrounding environment. We then introduce Cross-Variant Self-Supervised Learning, where variants of the same object under different backgrounds form positive pairs in a contrastive objective. This encourages the encoder to align object-centric representations while suppressing background-specific cues. Then, we fine-tune the pretrained encoder using an ERM warm-up followed by GroupDRO with layer-wise learning rates. Experiments on distribution-shift benchmarks demonstrate best worst-group performance, achieving 92.5% on Waterbirds, 81.7% on MetaShift, and 87.4% on NICO++. Code: https://github.com/surajyadav-research/GRSSL",
+      "authors": [
+        "Suraj Yadav",
+        "Anjaneya Sharma",
+        "Siddharth Yadav"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-07T05:13:26+00:00",
+      "link": "https://arxiv.org/pdf/2607.05850v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Proposes self-supervised learning with generative intervention to learn invariant representations, relevant to self-supervised ViTs for fine-grained classification",
+      "llm_evidence_cn": "提出生成式干预的自监督学习以学习不变表示，与细粒度分类的自监督ViT相关",
+      "llm_evidence": "提出生成式干预的自监督学习以学习不变表示，与细粒度分类的自监督ViT相关",
+      "canonical_evidence": "提出生成式干预的自监督学习以学习不变表示，与细粒度分类的自监督ViT相关",
+      "llm_tldr_en": "This paper presents a self-supervised learning framework that uses generative intervention to create background-shifted variants and learn background-invariant representations, improving robustness to distribution shifts.",
+      "llm_tldr_cn": "针对深度网络依赖背景虚假相关性的问题，提出生成随机化和跨变体自监督学习框架。通过零样本分割和扩散模型生成背景变化，并设计对比学习目标学习前景不变的表示。实验表明该方法显著提升分布偏移下的鲁棒性。",
+      "llm_tldr": "针对深度网络依赖背景虚假相关性的问题，提出生成随机化和跨变体自监督学习框架。通过零样本分割和扩散模型生成背景变化，并设计对比学习目标学习前景不变的表示。实验表明该方法显著提升分布偏移下的鲁棒性。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.02612v1",
+      "source": "arxiv",
+      "title": "Fusion: A Framework for Unified Sequential Token AdaptatIon in VisiOn TraNsformers",
+      "abstract": "Vision Transformers achieve strong image classification accuracy but process all image regions with nearly the same computation, even when many regions are redundant or uninformative. Recent adaptive inference methods reduce this cost by selectively compressing tokens or terminating inference early, but combining these mechanisms often causes unstable intermediate representations and accuracy degradation. We introduce Fusion, a unified adaptive inference framework that coordinates token merging, early exiting, and token pruning through a simple staged design: tokens are merged first, confidence is evaluated next, and pruning is applied only to samples that continue inference. This ordering allows the three mechanisms to operate cooperatively rather than competitively. Fusion further includes lightweight routing modules that adapt compression strength to each input and support inference-time adjustment of the accuracy--latency trade-off without retraining. On ImageNet-1k with DeiT-S, Fusion matches or surpasses state-of-the-art adaptive ViT methods at comparable compute budgets while reducing calibration error by up to $4\\times$ and inference energy by $48\\%$. Experiments across ImageNet-100, CIFAR-100, and ImageNette with multiple ViT backbones demonstrate consistent transferability without dataset-specific tuning.",
+      "authors": [
+        "Aravind Pradeep",
+        "Samira Nazari",
+        "Mahdi Taheri",
+        "Christian Herglotz"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.AR",
+        "cs.DC",
+        "cs.LG"
+      ],
+      "published": "2026-07-01T15:51:25+00:00",
+      "link": "https://arxiv.org/pdf/2607.02612v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Unified adaptive inference framework for Vision Transformers in image classification",
+      "llm_evidence_cn": "用于图像分类的Vision Transformer统一自适应推理框架",
+      "llm_evidence": "用于图像分类的Vision Transformer统一自适应推理框架",
+      "canonical_evidence": "用于图像分类的Vision Transformer统一自适应推理框架",
+      "llm_tldr_en": "Proposes Fusion, a unified framework that coordinates token merging, early exiting, and token pruning in Vision Transformers through staged design, improving inference efficiency while maintaining classification accuracy.",
+      "llm_tldr_cn": "针对Vision Transformer处理所有区域计算量相同导致效率低下的问题，提出统一自适应推理框架Fusion。通过分阶段设计依次进行令牌合并、置信度评估和令牌剪枝，三种机制协同工作，在保持分类精度的同时显著降低计算成本。",
+      "llm_tldr": "针对Vision Transformer处理所有区域计算量相同导致效率低下的问题，提出统一自适应推理框架Fusion。通过分阶段设计依次进行令牌合并、置信度评估和令牌剪枝，三种机制协同工作，在保持分类精度的同时显著降低计算成本。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.06918v1",
+      "source": "arxiv",
+      "title": "LoCA: Spatially-Aware Low-Rank Convolutional Adaptation of Vision Foundation Models",
+      "abstract": "Pre-trained Vision Foundation Models (VFMs) provide strong visual representations for diverse downstream tasks. The key challenge of VFM adaptation stems from the prohibitive costs of full fine-tuning and catastrophic forgetting. To address this, Low-Rank Adaptation (LoRA) has emerged as the prevailing paradigm for Parameter-Efficient Fine-Tuning (PEFT). However, LoRA is typically designed for transformer self-attention layers parameterized by 2D matrices. Since convolutional kernels inherently couple spatial and channel information within a 4D tensor, forcing them into a monolithic 2D matrix disrupts the inherent spatial topology. In this paper, we propose Low-Rank Convolutional Adaptation (LoCA), a convolution-aware PEFT framework that addresses spatial-channel entanglement by decoupling channel and spatial adaptation. LoCA introduces a low-rank channel adaptation for dense cross-channel mixing and refines spatial bases extracted from pre-trained kernels via Singular Value Decomposition (SVD). Experimental results show that LoCA preserves pre-trained spatial priors and achieves competitive or state-of-the-art performance across fine-grained classification, domain-generalized semantic segmentation, and generative benchmarks.",
+      "authors": [
+        "Sojung An",
+        "Junha Lee",
+        "Sujeong You",
+        "Nam Ik Cho",
+        "Donghyun Kim"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-08T02:19:01+00:00",
+      "link": "https://arxiv.org/pdf/2607.06918v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "adaptation method for vision foundation models",
+      "llm_evidence_cn": "视觉基础模型的适应方法",
+      "llm_evidence": "视觉基础模型的适应方法",
+      "canonical_evidence": "视觉基础模型的适应方法",
+      "llm_tldr_en": "LoCA proposes a convolution-aware PEFT framework for adapting vision foundation models, preserving spatial topology, and showing strong performance on downstream tasks.",
+      "llm_tldr_cn": "针对视觉基础模型(VFM)微调中卷积核空间拓扑破坏的问题，本文提出LoCA框架，一种卷积感知的参数高效微调方法。它通过保留卷积核的固有空间结构，避免了传统LoRA方法对4D张量强制矩阵化带来的信息损失。实验表明，LoCA在多个下游视觉任务上取得了与全量微调相当的性能，同时大幅降低可训练参数量。该工作为视觉基础模型的高效部署提供了新的思路。",
+      "llm_tldr": "针对视觉基础模型(VFM)微调中卷积核空间拓扑破坏的问题，本文提出LoCA框架，一种卷积感知的参数高效微调方法。它通过保留卷积核的固有空间结构，避免了传统LoRA方法对4D张量强制矩阵化带来的信息损失。实验表明，LoCA在多个下游视觉任务上取得了与全量微调相当的性能，同时大幅降低可训练参数量。该工作为视觉基础模型的高效部署提供了新的思路。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

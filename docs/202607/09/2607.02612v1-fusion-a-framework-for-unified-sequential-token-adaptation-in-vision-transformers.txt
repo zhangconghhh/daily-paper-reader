@@ -1,0 +1,461 @@
+Title: Fusion: A Framework for Unified Sequential Token AdaptatIon in VisiOn TraNsformers
+
+URL Source: https://arxiv.org/pdf/2607.02612v1
+
+Published Time: Tue, 07 Jul 2026 00:03:51 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+© 2026 IEEE. Personal use of this material is permitted. Permission from IEEE must be obtained for all other uses, in any current or future media, including reprinting/republishing this material for advertising or promotional purposes, creating new collective works, for resale or redistribution to servers or lists, or reuse of any copyrighted component of this work in other works. This paper is accepted at the 29th Euromicro Conference Series on Digital System Design (DSD) 2026. 
+
+# Fusion: A Framework for Unified Sequential Token Adaptat Ion in Visi On Tra Nsformers 
+
+Aravind Pradeep 1, Samira Nazari 2, Mahdi Taheri 3,4 , and Christian Herglotz 11Brandenburg University of Technology Cottbus-Senftenberg, Germany 
+
+> 2
+
+University of Zanjan, Iran 
+
+> 3
+
+Humboldt University, Berlin, Germany 
+
+> 4
+
+Tallinn University of Technology, Tallinn, Estonia 
+
+Abstract —Vision Transformers achieve strong image classifica-tion accuracy but process all image regions with nearly the same computation, even when many regions are redundant or uninfor-mative. Recent adaptive inference methods reduce this cost by selectively compressing tokens or terminating inference early, but combining these mechanisms often causes unstable intermediate representations and accuracy degradation. We introduce Fusion, a unified adaptive inference framework that coordinates token merging, early exiting, and token pruning through a simple staged design: tokens are merged first, confidence is evaluated next, and pruning is applied only to samples that continue inference. This ordering allows the three mechanisms to operate cooperatively rather than competitively. Fusion further includes lightweight routing modules that adapt compression strength to each input and support inference-time adjustment of the accuracy–latency trade-off without retraining. On ImageNet-1k with DeiT-S, Fusion matches or surpasses state-of-the-art adaptive ViT methods at comparable compute budgets while reducing calibration error by up to 4× and inference energy by 48% . Experiments across ImageNet-100, CIFAR-100, and ImageNette with multiple ViT backbones demonstrate consistent transferability without dataset-specific tuning. 
+
+Index Terms —Vision Transformer, Token Pruning, Early Exit, Token Merging, Adaptive Inference, Efficient Deep Learning 
+
+I. I NTRODUCTION 
+
+Vision Transformers (ViTs) [1], [2] achieve strong image classification accuracy but incur substantial computational cost due to uniform processing of all tokens across all transformer blocks. A 224 × 224 image produces 196 patch tokens that traverse all twelve layers of a DeiT-S backbone [2] (a 22M-parameter data-efficient Vision Transformer), regardless of whether the input image is simple or highly structured. This design leads to significant redundancy during inference. Dynamic token processing methods address this inefficiency along three complementary axes: token pruning [3], [4] re-moves uninformative tokens, token merging [5] aggregates redundant tokens, and early exit [6], [7], [8] reduces the number of transformer blocks evaluated for a given input, terminating inference once the prediction is sufficiently confi-dent. These mechanisms are typically developed and evaluated independently, each treating the ViT backbone as a fixed computation graph. However, combining these mechanisms does not yield ad-ditive efficiency gains. When pruning, merging, and early exit are applied simultaneously as independently trained modules, their adaptive decisions interfere through shared intermediate representations (the per-block token embeddings produced inside the transformer). On ImageNet-1k with DeiT-S, naïve parallel composition reduces accuracy by 1.62% , relative to the baseline and by 1.58% , relative to a sequential com-position of the same mechanisms (Table VII). The early-exit head suffers the most: at the 8th transformer block, its standalone accuracy drops from 89 .4% to 47 .6% under parallel coupling (Table VII). While prior approaches such as ToFu [9] avoid this issue through joint operator design, the interaction between independently motivated mechanisms remains insufficiently understood. This paper introduces Fusion, a unified framework for adaptive inference in Vision Transformers. Fusion coordinates token merging, early exiting, and token pruning through a staged pipeline: merge → exit-check → prune. This simple ordering reduces cross-mechanism interference and enables stable and efficient adaptive inference. The framework includes three main components:  
+
+> •
+
+Sequential adaptive inference : merging is applied be-fore confidence evaluation, while pruning is performed only for samples that continue inference.  
+
+> •
+
+Inline merge routers : lightweight modules that dynam-ically predict image-specific merge ratios using the class token and token similarity supervision.  
+
+> •
+
+Profile-aware scaling : an inference-time scaling strategy that supports multiple accuracy–latency trade-offs with-out retraining. Fusion improves efficiency, calibration, and accuracy– compute trade-offs while remaining compatible with standard ViT architectures. Experiments on ImageNet-1k, ImageNet-100, CIFAR-100, and ImageNette with DeiT-S and ViT-Tiny demonstrate consistent improvements without dataset-specific tuning. The remainder of the paper is organized as follows. Section II reviews related work, Section III presents the proposed framework, and Section IV reports experimental results and ablation studies. II. R ELATED WORK 
+
+Adaptive inference in Vision Transformers is commonly explored through three mechanisms: token pruning, token 1
+
+> arXiv:2607.02612v1 [cs.CV] 1 Jul 2026
+
+merging, and early exit. These approaches reduce computation from different perspectives and are usually studied indepen-dently. In contrast, Fusion focuses on coordinating them within a unified sequential framework. Token pruning reduces computation by removing tokens with low contribution to the final prediction. DynamicViT [3] introduces lightweight importance predictors between trans-former blocks, while EViT [4] uses class-token attention and aggregates discarded information into a “dustbin” token. A-ViT [6] formulates token reduction as adaptive halting within self-attention. Subsequent methods improve efficiency or deployment characteristics: ATS [10] replaces learned pre-dictors with attention-based scoring, SPViT [11] incorporates latency-aware soft pruning, SaiT [12] adapts pruning ratios to inference budgets, and DToP [13] extends pruning to dense prediction tasks. Unlike these methods, Fusion studies pruning as part of a broader adaptive pipeline, where pruning order directly affects the stability of downstream decisions. Token merging reduces computation by aggregating similar tokens instead of discarding them. ToMe [5] performs bipartite matching within each transformer block and merges highly similar token pairs using averaging, typically with fixed merge ratios. In contrast, Fusion predicts merge ratios dynamically for each image and transformer block using lightweight rout-ing modules trained jointly with the backbone. Moreover, merging is applied before pruning and early exit, reducing interference between adaptive operations. Early-exit methods reduce inference depth by terminat-ing computation once intermediate predictions become suffi-ciently confident. BranchyNet [8] introduces auxiliary classi-fiers for early termination in convolutional networks, a strategy later adapted to Vision Transformers. LGViT [7] employs SpatialPool-based exit heads, while CF-ViT [14] formulates inference as a coarse-to-fine refinement process. MEViT [15] explores multi-exit learning for fine-grained recognition, and related NLP works such as PABEE [16] and PCEE-BERT [17] investigate confidence-based and patience-based exit strate-gies. Unlike prior work that studies adaptive depth in isolation, Fusion integrates early exit into a staged token adaptation pipeline designed to preserve representation stability. Several recent approaches combine multiple adaptive mech-anisms within a single architecture. ToFu [9] and LTMP [18] jointly design pruning and merging through unified operators, while AdaViT [19] learns a shared controller over layers, heads, and tokens. Slimmable Networks [20] provide a related multi-profile paradigm through dynamic width scaling. Unlike these approaches, Fusion does not redesign adaptive mech-anisms into a single coupled operator. Instead, it explicitly studies the interference arising from independently trained modules and mitigates it through sequential composition. III. M ETHOD 
+
+This section presents Fusion, a framework for sequential adaptive inference in Vision Transformers. Fusion coordinates token merging, early exit, and token pruning within a unified inference pipeline designed to minimise interference between adaptive inference framework  
+
+> Input image
+> ViT-family encoder
+> Merge router
+> Exit head
+> confident yes
+> no
+> Prune router
+> Final classifier
+> Continued prediction
+> (hard samples)
+> Early prediction
+> (easy samples)
+
+Fig. 1: Fusion framework. adaptive decisions. Rather than introducing a new transformer architecture, the framework defines a lightweight routing strat-egy that integrates into standard ViT-family backbones. An overview is shown in Figure 1. 
+
+A. Preliminaries 
+
+Let fΘ denote a Vision Transformer with L transformer blocks. Given an input image x ∈ R3×H×W , patch embedding produces an initial token sequence 
+
+z0 ∈ R(N +1) ×d, (1) where N denotes the number of patch tokens and d the em-bedding dimension. The sequence contains one CLS token (a learned classification vector). Each transformer block applies multi-head self-attention followed by a feed-forward network, with residual connections and layer normalisation; block b
+
+computes 
+
+zb = Block b(zb−1), (2) for b ∈ { 1, . . . , L }. The final prediction is produced from the last-layer CLS representation: 
+
+y = head( z[CLS ] 
+
+> L
+
+). (3) Here head( ·) denotes the final linear classifier acting on the last-layer CLS representation. Fusion introduces three adap-tive mechanisms operating over complementary computational dimensions: token merging at layers M, confidence-based early exit at layers E, and token pruning at layers P, with 
+
+M, E, P ⊆ { 1, . . . , L }.For merge layer b ∈ M , a merge router predicts a merge ratio mb ∈ [0 , 1] . For exit layer b ∈ E , an exit head produces confidence score cb ∈ [0 , 1] . For pruning layer b ∈ P , a pruning router predicts token importance scores used to retain a fraction τb ∈ [0 , 1] of tokens. Inference operates under profile θ ∈{BALANCED , POWER _SAVE }, which controls the efficiency– accuracy trade-off through inference-time threshold scaling without retraining. The BALANCED setting matches the training configuration; additional profiles, such as a high-accuracy mode with weaker compression, can be obtained by adjusting the same thresholds. 
+
+B. Sequential Composition of Adaptive Mechanisms 
+
+Token merging, early exit, and token pruning reduce re-dundancy along distinct computational dimensions. Although complementary in principle, independently trained adaptive mechanisms interfere when executed simultaneously on shared intermediate representations. Parallel composition substan-tially degrades both classification accuracy and exit reliability. The degradation is primarily caused by irreversible token removal prior to confidence estimation. To reduce this interference, Fusion enforces the following execution policy: 1) Token merging is applied first to compress redundant representations while preserving information through aggregation; 2) Exit evaluation operates on merged but unpruned repre-sentations; 3) Token pruning is deferred to later stages and applied only to samples that continue inference. Figure 2 illustrates a DeiT-S instantiation of the proposed sequential pipeline. The complete inference process is sum-marised in Algorithm 1. 
+
+C. Adaptive Token Merging 
+
+Token merging reduces computation by aggregating sim-ilar token representations. Unlike fixed-rate merging ap-proaches [5], Fusion predicts merge intensity dynamically for each input and transformer layer. For merge layer b ∈ M, the router is a single linear projection gb : Rd → R with weight vector wb ∈ Rd and bias βb ∈ R. It receives the CLS representation and predicts a per-block merge ratio mb ∈ [0 , 1] , the fraction of token pairs to merge at layer b:
+
+mb = σ
+
+
+
+w⊤ 
+
+> b
+
+z[CLS ] 
+
+> b
+
++ βb
+
+
+
+, (4) where σ(·) denotes the sigmoid function. Each router adds only d + 1 parameters per merge layer (1,155 total for DeiT-S across three merge layers). To support multiple operating profiles using a single checkpoint, merge ratios are rescaled during inference according to the target computational budget: 
+
+˜mb = mb · 1 − τtgt (θ)1 − τtgt (θref ) , (5) 
+
+Algorithm 1 Fusion inference under profile θ.
+
+Require: Image x, profile θ 
+
+> 1:
+
+z0 ← PatchEmbed( x) 
+
+> 2:
+
+for b = 1 , . . . , L do  
+
+> 3:
+
+zb ← Block b(zb−1) 
+
+> 4:
+
+if b ∈ M then  
+
+> 5:
+
+compute ˜mb using Eq. (5)  
+
+> 6:
+
+zb ← Merge( zb, ˜mb) 
+
+> 7:
+
+end if  
+
+> 8:
+
+if b ∈ E then  
+
+> 9:
+
+compute cb using Eq. (7)  
+
+> 10:
+
+if cb ≥ δb(θ) then  
+
+> 11:
+
+return head b(zb) 
+
+> 12:
+
+end if  
+
+> 13:
+
+end if  
+
+> 14:
+
+if b ∈ P then  
+
+> 15:
+
+zb ← Prune( zb, τ b) 
+
+> 16:
+
+end if  
+
+> 17:
+
+end for  
+
+> 18:
+
+return head( z[CLS ] 
+
+> L
+
+)
+
+where τtgt (θ) denotes the target keep ratio associated with profile θ, and θref denotes the reference training profile. Given ˜mb and the current token count Nb at layer b (which may already be reduced by prior merging), bipartite token matching from ToMe [5] is applied: tokens are split into two halves and each token in one half is paired with its most cosine-similar counterpart in the other, yielding Nb/2
+
+candidate pairs. The merge ratio ˜mb ∈ [0 , 1] then selects how many to merge — the top ⌊ ˜mbNb/2⌋ pairs are averaged into single tokens, reducing the layer’s token count by that amount. This step corresponds to Algorithm 1, lines 4–7. 
+
+D. Confidence-Based Early Exit 
+
+Early exit reduces effective inference depth by terminating computation once intermediate representations become suffi-ciently confident. For exit layer b ∈ E , an auxiliary classifier produces 
+
+ˆpb = softmax  head b(zb). (6) Here head b(·) is the auxiliary classifier at exit layer b. Infer-ence terminates at block b if 
+
+cb = max  
+
+> k
+
+ˆp(k) 
+
+> b
+
+≥ δb(θ), (7) where δb(θ) is a profile-dependent confidence threshold selected on a held-out validation set to meet the target FLOPs budget for each profile, without retraining. Exit evaluation precedes pruning so that confidence estimation operates on unreduced token representations. This step corresponds to Algorithm 1, lines 8–13. 1 2 3 4 5 6 7 8 9 10 11 12                               
+
+> Patch Embed
+> CLS Head
+> Transformer blocks
+> Router Merge Merge Merge Exit Prune E+P
+> 63% exit →output 37% continue →prune
+> 197 155 100 ∼50
+> Spatial token footprint along the pipeline — kept (•) vs. removed (•)
+> Detail: Inline Merge Router ( novel ) — applied at blocks 3, 5, 7
+> CLS Linear (C,1)
+> 193 params
+> σ(·)mb∈[0,1]˜mb=mb·1−τkeep
+> 1−0.7Bipartite Match & Merge
+> Overhead: inline routers 1 ,155 params ·total 0 .081% FLOPs
+
+Fig. 2: Example DeiT-S instantiation of Fusion. Merge routers reduce token redundancy at intermediate layers, exit heads enable adaptive depth, and pruning routers remove low-importance tokens for samples that continue inference. The bottom panel illustrates the merge router and profile-aware scaling mechanism. 
+
+E. Progressive Token Pruning 
+
+Samples that do not exit early continue to late-stage to-ken pruning. At deeper transformer layers, token importance becomes increasingly concentrated, enabling aggressive reduc-tion with limited impact on prediction quality. For pruning layer b ∈ P , a pruning router predicts token importance scores 
+
+si = hb(zb,i ), (8) where hb is a lightweight scoring head and zb,i denotes the representation of token i at layer b. The top ⌊τbNb⌋ tokens are retained, while the remaining tokens are discarded. The keep ratio τb ∈ [0 , 1] is a per-layer hyperparameter, selected on a held-out validation set jointly with the exit thresholds δb to meet the target FLOPs budget for each profile (Algorithm 1, lines 14–16). 
+
+F. Training Objective 
+
+All adaptive components are trained jointly using a teacher-distilled multi-objective loss [21]. Let y∗ denote the ground-truth label, p the model’s output class distribution, and pT the temperature-scaled teacher distribution. The overall objective combines a cross-entropy term LCE and a Kullback–Leibler divergence term LKL :
+
+L =LCE (y, y∗) + αT 2LKL (p, pT )+ λexit 
+
+X
+
+> b∈E
+
+h
+
+LCE (yb, y∗) + T 2LKL (pb, pT )
+
+i
+
++ λaux Lrouter + λdiv Ldiv + λbudget Lbudget . (9) Here α is the distillation weight, T the temperature, pb
+
+and yb the exit-head prediction and target at layer b, and 
+
+λexit , λaux , λdiv , λbudget are loss coefficients; a full parameter summary appears in Table I. Lrouter is the MSE between the predicted merge ratio mb and per-block token-similarity statistics; Ldiv is a routing-diversity penalty preventing mb
+
+from collapsing to a constant; and Lbudget is the squared deviation of mean mb from the target keep ratio. Training proceeds in three stages: router warm-up, exit-head pretraining, and joint fine-tuning. This staged optimisation sta-bilises convergence and mitigates premature routing collapse. 
+
+G. Sequential Inference Procedure 
+
+During inference, computation dynamically adapts to input difficulty. Fusion places two exit heads (at blocks 8 and 10 in our DeiT-S configuration); easy samples terminate at the earlier head after token merging, whereas difficult samples continue through later transformer stages with progressive pruning applied. Algorithm 1 summarises the complete inference process. The three conditional blocks correspond to the merge, exit, and prune operators defined in Sections III-C to III-E, respectively. TABLE I: Parameters of Fusion on DeiT-S.                                             
+
+> Parameter Determination Value (DeiT-S, balanced) Backbone weights Trained ∼22M Inline merge routers gbTrained 1,155 (3×(d+1) )Exit heads Trained ∼2.1M total Pruning router hbTrained lightweight head Layer sets M,E,PHeuristic {3,5,7},{8,10 },{9,10 }
+> Reference profile θref Fixed BALANCED
+> Exit thresholds δb(θ)Validation-tuned (0 .8,0.95)
+> Keep ratios τb(θ)Validation-tuned τtgt = 0 .7
+> KD α, T Fixed 0.5,4.0
+> λexit , λ aux , λ div , λ budget Fixed 0.5,0.1,0.01 ,0.1
+
+IV. E XPERIMENTAL RESULTS 
+
+Experiments evaluate four questions: (i) whether Fusion improves the accuracy–efficiency trade-off relative to existing adaptive ViTs, (ii) whether the framework transfers across datasets and backbones, (iii) which design choices are re-sponsible for the observed gains, and (iv) how the framework behaves beyond FLOPs and accuracy, including energy, cali-bration, and latency. Sections IV-B and IV-C address (i); Sec-tions IV-D and IV-E address (ii); Section IV-F addresses (iii); and Sections IV-G to IV-I address (iv). 
+
+A. Experimental Setup a) Datasets: All experiments are single-label image-classification benchmarks: 1000 classes on ImageNet-1k [22], 
+
+100 classes on ImageNet-100, 100 classes on CIFAR-100, and 
+
+10 classes on ImageNette. All inputs are resized to 224 × 224 
+
+and normalised using the default ViT preprocessing pipeline. 
+
+b) Backbones: Results are reported for DeiT-S [2] and ViT-Tiny [1], initialised from ImageNet-1k pretrained check-points provided by the timm library [23] (PyTorch Image Models). The merge layer set M, exit layer set E, and pruning layer set P are specified in Table I. 
+
+c) Baselines: Comparisons include three categories of adaptive ViT methods: token-pruning baselines Dynam-icViT [3] and EViT [4]; the adaptive-halting baseline A-ViT [6]; and the token-merging baseline ToMe [5]. Published ImageNet-1k numbers are reported where available, together with same-session comparisons under identical hardware and preprocessing. 
+
+d) Metrics: We report Top-1 accuracy on each test set; FLOPs reduction as 1 − FLOPs /FLOPs baseline , computed analytically (static per-input); throughput and latency aver-aged over 100 timed runs after 10 warm-up iterations on RTX 3050 (dynamic, depends on per-image early-exit de-cisions); energy per inference integrated from GPU power via nvmlDeviceGetPowerUsage at 100 Hz; and Expected Calibration Error ECE = P
+
+> b
+
+(nb/N ) |acc( b) − conf( b)| over 
+
+15 confidence bins, where nb is the count in bin b.
+
+e) Profiles: Unless stated otherwise, Fusion refers to the  
+
+> BALANCED
+
+profile, which matches the training configuration. The POWER _SAVE profile uses tighter exit thresholds δb(θ)
+
+and a lower target keep ratio τtgt (θ) via the profile-scaling rule (Eq. (5)) at inference time, without retraining; both profiles TABLE II: ImageNet-1k results with DeiT-S. Both Fusion profiles are obtained from a single trained checkpoint.                  
+
+> Method Acc@1 FLOPs ↓
+> DeiT-S 79.85 0.0% DynamicViT 79.30 36.8% EViT 79.50 35.0% A-ViT 78.60 26.0% ToMe ( r=13 )79.40 35.0% Fusion ( BALANCED )79.76 31.8% Fusion ( POWER _SAVE )79.15 40.1%
+
+TABLE III: Apples-to-apples comparison with published base-lines (DynamicViT, EViT, ToMe), all trained under the same 
+
+30 -epoch budget.                             
+
+> Method Operating point Acc@1 FLOPs ↓
+> DeiT-S —79.85 0.0% Fusion balanced 79.62 31.9% Fusion iso-EViT 79.49 34.1% Fusion iso-DynamicViT 79.49 36.9% Fusion power_save 79.25 39.7% EViT reference 79.50 33.0% ToMe ( r=13 )reference 79.40 35.0% DynamicViT reference 79.30 36.8%
+
+were chosen on a held-out validation set to span the practical accuracy–FLOPs operating range. 
+
+B. Main Results on ImageNet-1k 
+
+Table II compares Fusion against representative adaptive ViT baselines on ImageNet-1k with DeiT-S. The BALANCED 
+
+profile preserves baseline accuracy within 0.09 pp while reduc-ing FLOPs by 31 .8% . At comparable or larger FLOPs reduc-tions it exceeds DynamicViT by +0 .46 pp, EViT by +0 .26 pp, ToMe ( r=13 ) by +0 .36 pp, and A-ViT by +1 .16 pp. The 
+
+> POWER
+
+_SAVE profile reaches 40 .1% FLOPs reduction with a 0.70 pp accuracy drop, matching DynamicViT’s accuracy while saving 3.3 pp more FLOPs. 
+
+a) Single-checkpoint operating range.: Unlike prior methods that require a separate trained checkpoint for each compute–accuracy target, Fusion covers a broad range of operating points from one trained checkpoint via inference-time threshold scaling alone. Each profile (e.g., BALANCED ,
+
+> POWER
+
+_SAVE ) selects a specific operating point on the accuracy–FLOPs curve by adjusting the merge/exit/prune thresholds at inference time. Table III shows that this single checkpoint reaches the operating points of EViT and Dynam-icViT while maintaining competitive or higher accuracy. The same checkpoint spans the 31 –40% FLOPs regime with only 0.37 pp accuracy variation, demonstrating stable multi-profile behaviour without retraining. Figure 3 visualises this Pareto frontier against the published baselines: Fusion sits on the upper-left, achieving higher accuracy at every matched FLOPs budget. Fig. 3: Accuracy versus GFLOPs on ImageNet-1k with DeiT-S. Fusion forms the upper-left Pareto frontier across multiple operating points from a single checkpoint. TABLE IV: Same-session comparison on ImageNet-1k under identical hardware and preprocessing.                       
+
+> Method Acc@1 FLOPs ↓Energy (mJ/img) DeiT-S 79.85 0.0% 313.6 DynamicViT 79.23 36.8% 245.4 EViT 79.04 36.8% 246.1 ToMe 79.04 36.8% 243.1 Fusion (BALANCED )79.59 32.1% 255.8 Fusion (POWER _SAVE )79.16 39.8% 163.4
+
+C. Same-Session Comparison 
+
+To eliminate differences in hardware setup and preprocess-ing pipelines across published baselines, DynamicViT, EViT, ToMe, and Fusion are evaluated under identical conditions. Results are shown in Table IV. The BALANCED profile achieves the highest accuracy among all adaptive baselines. The POWER _SAVE profile re-duces inference energy by 47 .9% , substantially exceeding the savings achieved by single-axis adaptive methods. 
+
+D. Cross-Dataset Generalisation 
+
+Table V evaluates transfer across datasets and backbones using a shared training recipe. Fusion matches or exceeds baseline accuracy on all smaller datasets while maintaining substantial FLOPs reduction. The gains on smaller datasets suggest that the auxiliary supervision introduced by multi-exit training and distillation acts as an implicit regulariser. 
+
+E. Multi-Backbone Evaluation 
+
+The framework transfers across different transformer sizes (from 5M-parameter ViT-Tiny to 86 M-parameter DeiT-B) without architectural modification. TABLE V: Cross-dataset evaluation. The training pipeline is unchanged across datasets.                      
+
+> Dataset Backbone Baseline Fusion FLOPs ↓
+> ImageNette ViT-Tiny 95.24 96.61 26.6% CIFAR-100 ViT-Tiny 85.08 86.50 37.0% ImageNet-100 ViT-Tiny 88.60 88.62 33.2% ImageNet-1k DeiT-S 79.85 79.76 31.8%
+
+TABLE VI: ImageNet-1k with ViT-Tiny backbone.               
+
+> Method Acc@1 FLOPs ↓
+> ViT-Tiny 75.46 0.0% DynamicViT-Tiny 71.15 ≈37%
+> Fusion ( BALANCED )71.51 31.3% Fusion ( POWER _SAVE )70.27 41.2%
+> Fusion parallel (interference ref.) 51.44 46.9%
+
+a) ViT-Tiny.: Table VI reports ImageNet-1k results on ViT-Tiny. The balanced profile reaches 71 .51% at 31 .3% 
+
+FLOPs reduction — a 3.95 pp drop from the 75 .46% 
+
+unmodified-backbone baseline. This drop is larger than the DeiT-S one, but Fusion still exceeds DynamicViT-Tiny 1
+
+(71 .15% at ≈ 37% FLOPs reduction) by +0 .36 pp at lower FLOPs reduction, while using fewer joint fine-tuning epochs. The bottom row of Table VI reports a parallel-composition variant (pruning at {3, 6, 9} before exit at {8, 10 }) as an in-terference reference: accuracy collapses to 51 .44% (−20 .07 pp vs. the sequential balanced profile), confirming on this smaller backbone the same interference effect measured on DeiT-S in Table VII. 
+
+b) DeiT-B.: Repeating the same three-phase training schedule (see Section III-F) on the larger 86 M-parameter DeiT-B backbone, Fusion reaches 81 .28% at 32 .2% FLOPs reduction — a 0.70 pp drop from the 81 .98% unmodified-backbone baseline. The POWER _SAVE profile reaches 40 .8% 
+
+FLOPs reduction at a 2.08 pp accuracy drop. This trained vari-ant outperforms a training-free baseline on the same backbone: zero-shot token merging (ToMe with r=8 ) yields only 81 .17% 
+
+at 37 .7% FLOPs reduction — less accuracy preserved at more FLOPs reduction. 
+
+F. Ablation Study 
+
+Table VII isolates the contribution of each design compo-nent. Table VII is grouped into three blocks. Single mechanisms 
+
+(rows 2–4) bound the per-axis cost: pruning, merging, and early exit each contribute small accuracy drops ( ≤ 0.37 pp) for 7–21% FLOPs savings. Composition (rows 5–6) reveals the interference effect: applying pruning and early exit in 
+
+parallel drops accuracy by 1.62 pp and collapses the block-8
+
+exit head from 89 .4% to 47 .6% standalone accuracy, whereas the sequential ordering (exit-check before prune) recovers 
+
+> 1Our in-house training of DynamicViT on the ViT-Tiny backbone, since the published DynamicViT uses DeiT-S; this ensures a same-backbone com-parison.
+
+TABLE VII: Ablation study on ImageNet-1k with DeiT-S.                                  
+
+> Configuration Acc@1 Exit-8 FLOPs ↓
+> DeiT-S 79.85 —0.0% Pruning only 79.83 —7.0% Merging only 79.72 —10.0% Early exit only 79.48 89.4 21.0% Parallel prune + exit 78.23 47.6 41.8% Sequential exit →prune 79.81 89.4 17.9% Full sequential (cascade merge) 79.73 89.4 25.5% + inline merge routers 79.20 88.7 32.5% + profile-aware scaling 79.13 88.5 39.8%
+
+both — a 1.58 pp interference penalty avoided. Full pipeline 
+
+(rows 7–9) layers cascade merging at {3, 5, 7}, learnable inline merge routers, and profile-aware scaling of the merge ratios 
+
+˜mb and exit thresholds δb (Eq. (5)) on top of the sequential composition; each addition trades ∼0.1– 0.5 pp accuracy for 
+
+∼7 pp more FLOPs reduction, reaching 39 .8% FLOPs at only 
+
+0.07 pp accuracy cost on top of the full sequential baseline. 
+
+G. Routing Behaviour 
+
+Figure 4 visualises routing behaviour on ImageNet-1k sam-ples. Merge ratios increase for visually redundant backgrounds and decrease for structurally complex scenes. Exit confidence is similarly correlated with semantic ambiguity. The router output has standard deviation 0.015 around the profile target τtgt = 0 .70 . A non-zero spread is the necessary signature of input-conditional routing: a router collapsed to a fixed schedule would yield std = 0 by construction. The per-image merge-ratio variation visible in Figure 4 reflects this signal. 
+
+H. Energy, Calibration, and Latency 
+
+Figure 5(a) reports energy consumption per inference (lower is better). The POWER _SAVE profile reduces inference energy by 47 .9% relative to the DeiT-S baseline — more than 2×
+
+the savings of any single-axis adaptive baseline (DynamicViT 
+
+21 .8% , EViT 21 .5% , ToMe 22 .5% ). This exceeds the FLOPs reduction because samples that exit early bypass entire trans-former blocks rather than just processing fewer tokens, avoid-ing per-block fixed costs (kernel launches, attention setup, memory traffic) that the analytical FLOPs count does not attribute to inference. Fusion also improves calibration substantially. Figure 5(b) reports Expected Calibration Error (lower is better): Fusion reaches 0.024 , 3.4× better than the DeiT-S baseline ( 0.081 )and roughly 4× better than DynamicViT ( 0.090 ) and ToMe (0.103 ). This improvement is consistent with the auxiliary supervision provided by the early-exit heads during joint fine-tuning: each exit head matches the teacher logits at its own depth, encouraging the backbone to produce well-calibrated predictions at multiple intermediate layers, not only at the final classifier. 
+
+Fig. 4: Per-image routing behaviour on ImageNet-1k validation samples. 
+
+Fig. 5: Energy consumption (a) and Expected Calibration Error (b) on ImageNet-1k — lower is better on both axes. Latency and throughput results are shown in Figure 6. The adaptive overhead dominates at batch size 1, but throughput improves substantially once routing costs are amortised. The 
+
+> POWER
+
+_SAVE profile reaches 1.62 × the baseline throughput at batch size 64 .
+
+I. Parameter and Memory Overhead 
+
+The framework introduces minimal overhead relative to the backbone. Inline merge routers add only 1,155 parameters on DeiT-S, while the two exit heads contribute approximately 
+
+2.1M additional parameters (a SpatialPool head at block 8 and 1 4 8 16 32 64      
+
+> Batch size
+> 0
+> 50
+> 100
+> 150
+> 200
+> Latency per batch (ms)
+> (a) Per-batch latency
+> DeiT-S baseline
+> Fusion balanced
+> Fusion power_save
+> 14816 32 64
+> Batch size
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> 400
+> 450
+> Throughput (images / s)
+> (b) Throughput
+> DeiT-S baseline
+> Fusion balanced
+> Fusion power_save
+
+Fig. 6: Latency and throughput across batch sizes. a CLS-only head at block 10, each a 2-layer MLP). Activation memory remains effectively unchanged relative to the baseline backbone. V. C ONCLUSION 
+
+This paper introduced Fusion, a unified framework for se-quential multi-mechanism adaptation in Vision Transformers. Rather than treating token merging, early exit, and token prun-ing as independent operations, Fusion organises them into a sequential inference pipeline that reduces cross-mechanism in-terference while preserving representation quality. The frame-work combines lightweight merge routing, confidence-based adaptive depth, and profile-aware inference scaling within a backbone-agnostic formulation compatible with standard ViT architectures. A single trained checkpoint matches or exceeds the operating points of DynamicViT, EViT, and ToMe on ImageNet-1k while supporting multiple efficiency–accuracy trade-offs without retraining. More broadly, the results sug-gest that adaptive mechanisms in Vision Transformers are fundamentally interaction-dependent: once ordered correctly, multiple adaptive axes become complementary rather than destructive. ACKNOWLEDGEMENTS 
+
+This work was supported in part by the Estonian Research Council grant PUT PRG1467 "CRASHLESS“, EU Grant Project 101160182 “TAICHIP“, by the Deutsche Forschungsgemeinschaft (DFG, Ger-man Research Foundation) – Project-ID "458578717", and by the Federal Ministry of Research, Technology and Space of Germany (BMFTR) for supporting Edge-Cloud AI for DIstributed Sensing and COmputing (AI-DISCO) project (Project-ID "16ME1127") 
+
+REFERENCES [1] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly, J. Uszkoreit, and N. Houlsby, “An image is worth 16x16 words: Transformers for image recognition at scale,” in International Conference on Learning Representations (ICLR) , 2021. [Online]. Available: https://openreview.net/forum?id=YicbFdNTTy [2] H. Touvron, M. Cord, M. Douze, F. Massa, A. Sablayrolles, and H. Jégou, “Training data-efficient image transformers & distillation through attention,” in International Conference on Machine Learning (ICML) , 2021, pp. 10 347–10 357. [3] Y. Rao, W. Zhao, B. Liu, J. Lu, J. Zhou, and C.-J. Hsieh, “DynamicViT: Efficient vision transformers with dynamic token sparsification,” in 
+
+Advances in Neural Information Processing Systems (NeurIPS) , 2021, pp. 13 937–13 949. [4] Y. Liang, C. Ge, Z. Tong, Y. Song, J. Wang, and P. Xie, “Not all patches are what you need: Expediting vision transformers via token reorganizations,” in International Conference on Learning Representations (ICLR) , 2022. [Online]. Available: https://openreview. net/forum?id=BjyvwnXXVn_ [5] D. Bolya, C.-Y. Fu, X. Dai, P. Zhang, C. Feichtenhofer, and J. Hoffman, “Token merging: Your ViT but faster,” in International Conference on Learning Representations (ICLR) , 2023. [Online]. Available: https://openreview.net/forum?id=JroZRaRw7Eu [6] H. Yin, A. Vahdat, J. M. Alvarez, A. Mallya, J. Kautz, and P. Molchanov, “A-ViT: Adaptive tokens for efficient vision transformer,” in IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2022, pp. 10 809–10 818. [7] G. Xu, J. Hao, L. Shen, H. Hu, Y. Luo, H. Lin, and J. Shen, “LGViT: Dynamic early exiting for accelerating vision transformer,” in ACM International Conference on Multimedia (MM) , 2023, pp. 9103–9114. [8] S. Teerapittayanon, B. McDanel, and H.-T. Kung, “BranchyNet: Fast inference via early exiting from deep neural networks,” in International Conference on Pattern Recognition (ICPR) , 2016, pp. 2464–2469. [9] M. Kim, S. Gao, Y.-C. Hsu, Y. Shen, and H. Jin, “Token fusion: Bridging the gap between token pruning and token merging,” in IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) , 2024, pp. 1383–1392. [10] M. Fayyaz, S. A. Koohpayegani, F. R. Jafari, S. Sengupta, H. R. Vaezi Joze, E. Sommerlade, H. Pirsiavash, and J. Gall, “Adaptive token sampling for efficient vision transformers,” in European Conference on Computer Vision (ECCV) , 2022, pp. 396–414. [11] Z. Kong, P. Dong, X. Ma, X. Meng, W. Niu, M. Sun, X. Shen, G. Yuan, B. Ren, H. Tang, M. Qin, and Y. Wang, “SPViT: Enabling faster vision transformers via latency-aware soft token pruning,” in European Conference on Computer Vision (ECCV) , 2022, pp. 620–640. [12] L. Li, D. Thorsley, and J. Hassoun, “SaiT: Sparse vision transformers through adaptive token pruning,” arXiv preprint arXiv:2210.05832 ,2022. [13] Q. Tang, B. Zhang, J. Liu, F. Liu, and Y. Liu, “Dynamic token pruning in plain vision transformers for semantic segmentation,” in IEEE/CVF International Conference on Computer Vision (ICCV) , 2023, pp. 777– 786. [14] M. Chen, M. Lin, K. Li, Y. Shen, Y. Wu, F. Chao, and R. Ji, “CF-ViT: A general coarse-to-fine method for vision transformer,” in AAAI Conference on Artificial Intelligence , vol. 37, no. 6, 2023, pp. 7042– 7052. [15] T. Shen, C. Lee, and V. Narayanan, “Multi-exit vision transformer with custom fine-tuning for fine-grained image recognition,” in IEEE International Conference on Image Processing (ICIP) , 2023, pp. 2830– 2834. [16] W. Zhou, C. Xu, T. Ge, J. McAuley, K. Xu, and F. Wei, “BERT loses patience: Fast and robust inference with early exit,” in Advances in Neural Information Processing Systems (NeurIPS) , 2020, pp. 18 330– 18 341. [17] Z. Zhang, W. Zhu, J. Zhang, P. Wang, R. Jin, and T.-S. Chung, “PCEE-BERT: Accelerating BERT inference via patient and confident early exiting,” in Findings of the Association for Computational Linguistics: NAACL 2022 , 2022, pp. 327–338. [18] M. Bonnaerens and J. Dambre, “Learned thresholds token merging and pruning for vision transformers,” Transactions on Machine Learning Research , 2023. [Online]. Available: https://openreview.net/forum?id= WYKTCKpImz [19] L. Meng, H. Li, B.-C. Chen, S. Lan, Z. Wu, Y.-G. Jiang, and S.-N. Lim, “AdaViT: Adaptive vision transformers for efficient image recognition,” in IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2022, pp. 12 309–12 318. [20] J. Yu, L. Yang, N. Xu, J. Yang, and T. S. Huang, “Slimmable neural networks,” in International Conference on Learning Representations (ICLR) , 2019. [21] G. Hinton, O. Vinyals, and J. Dean, “Distilling the knowledge in a neural network,” NeurIPS Deep Learning and Representation Learning Workshop , 2015. [22] J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, and L. Fei-Fei, “ImageNet: A large-scale hierarchical image database,” in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2009, pp. 248–255. [23] R. Wightman, “Pytorch image models,” https://github.com/huggingface/ pytorch-image-models, 2019.
