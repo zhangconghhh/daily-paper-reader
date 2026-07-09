@@ -1,0 +1,1810 @@
+{
+  "top_k": 200,
+  "generated_at": "2026-07-09T06:49:53.891935+00:00",
+  "papers": [
+    {
+      "id": "openreview-neurips-2025-9yxk1rnc9o",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "Fuse2Match: Training-Free Fusion of Flow, Diffusion, and Contrastive Models for Zero-Shot Semantic Matching",
+      "abstract": "Recent work shows that features from Stable Diffusion (SD) and contrastively pretrained models like DINO can be directly used for zero-shot semantic correspondence via naive feature concatenation. In this paper, we explore the stronger potential of Stable Diffusion 3 (SD3), a rectified flow-based model with a multimodal transformer backbone (MM-DiT). We show that semantic signals in SD3 are scattered across multiple timesteps and transformer layers, and propose a multi-level fusion scheme to extract discriminative features. Moreover, we identify that naive fusion across models suffers from inconsistent distributions, thus leading to suboptimal performance. To address this, we propose a simple yet effective confidence-aware feature fusion strategy that re-weights each model’s contribution based on prediction confidence scores derived from their matching uncertainties. Notably, this fusion approach is not only training-free but also enables per-pixel adaptive integration of heterogeneous features. The resulting representation, Fuse2Match, significantly outperforms strong baselines on SPair-71k, PF-Pascal, and PSC6K, validating the benefit of combining SD3, SD, and DINO through our proposed confidence-aware feature fusion. Code is available at https://github.com/panda7777777/fuse2match",
+      "authors": [
+        "Jing Zuo",
+        "Jiaqi Wang",
+        "Yonggang Qi",
+        "Yi-Zhe Song"
+      ],
+      "primary_category": "Dense Correspondence",
+      "categories": [
+        "Dense Correspondence",
+        "Diffusion models",
+        "Zero-Shot Semantic Matching"
+      ],
+      "published": "2025-09-18T17:36:14.835+00:00",
+      "link": "https://openreview.net/forum?id=9YXk1RnC9o",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-ou6fxksie0",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "Elastic ViTs from Pretrained Models without Retraining",
+      "abstract": "Vision foundation models achieve remarkable performance but are only available in a limited set of pre-determined sizes, forcing sub-optimal deployment choices under real-world constraints. We introduce SnapViT: single-shot network approximation for pruned Vision Transformers, a new post-pretraining structured pruning method that enables elastic inference across a continuum of compute budgets. Our approach efficiently combines gradient information with cross-network structure correlations, approximated via an evolutionary algorithm, does not require labeled data, generalizes to models without a classification head, and is retraining-free. Experiments on DINO, SigLIPv2, DeIT, and AugReg models demonstrate superior performance over state-of-the-art methods across various sparsities, requiring less than five minutes on a single A100 GPU to generate elastic models that can be adjusted to any computational budget. Our key contributions include an efficient pruning strategy for pretrained Vision Transformers, a novel evolutionary approximation of Hessian off-diagonal structures, and a self-supervised importance scoring mechanism that maintains strong performance without requiring retraining or labels. Code and pruned models are available at: https://elastic.ashita.nl/",
+      "authors": [
+        "Walter Simoncini",
+        "Michael Dorkenwald",
+        "Tijmen Blankevoort",
+        "Cees G. M. Snoek",
+        "Yuki M Asano"
+      ],
+      "primary_category": "Elastic Inference",
+      "categories": [
+        "Elastic Inference",
+        "Elastic ViTs",
+        "Pruning"
+      ],
+      "published": "2025-09-18T17:46:12.8+00:00",
+      "link": "https://openreview.net/forum?id=OU6FXkSIe0",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-gbrvlyvoqh",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "Dataset Distillation for Pre-Trained Self-Supervised Vision Models",
+      "abstract": "The task of dataset distillation aims to find a small set of synthetic images such that training a model on them reproduces the performance of the same model trained on a much larger dataset of real samples. Existing distillation methods focus on synthesizing datasets that enable training randomly initialized models. In contrast, state-of-the-art vision approaches are increasingly building on large, pre-trained self-supervised models rather than training from scratch. In this paper, we investigate the problem of distilling datasets that enable us to optimally train linear probes on top of such large, pre-trained vision models. We introduce a method of dataset distillation for this task called Linear Gradient Matching that optimizes the synthetic images such that, when passed through a pre-trained feature extractor, they induce gradients in the linear classifier similar to those produced by the real data. Our method yields synthetic data that out-perform all real-image baselines and, remarkably, generalize across pre-trained vision models, enabling us, for instance, to train a linear CLIP probe that performs competitively using a dataset distilled via a DINO backbone. Further, we show that distilled datasets provide a valuable tool for model interpretability, predicting, among other things, how similar two model's representations spaces are under the platonic representation hypothesis or whether a model is sensitive to spurious correlations in adversarial datasets.",
+      "authors": [
+        "George Cazenavette",
+        "Antonio Torralba",
+        "Vincent Sitzmann"
+      ],
+      "primary_category": "dataset distillation",
+      "categories": [
+        "dataset distillation",
+        "self-supervised learning",
+        "few-shot learning"
+      ],
+      "published": "2025-09-18T17:33:08.045+00:00",
+      "link": "https://openreview.net/forum?id=GbRVlyVOqH",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-vntj7pglrz",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "Unlabeled Data Improves Fine-Grained Image Zero-shot Classification with Multimodal LLMs",
+      "abstract": "Despite Multimodal Large Language Models (MLLMs) showing promising results on general zero-shot image classification tasks, fine-grained image classification remains challenging. It demands precise attention to subtle visual details to distinguish between visually similar subcategories—details that MLLMs may easily overlook without explicit guidance. To address this, we introduce AutoSEP, an iterative self-supervised prompt learning framework designed to enhance MLLM fine-grained classification capabilities in a fully unsupervised manner. Our core idea is to leverage unlabeled data to learn a description prompt that guides MLLMs in identifying crucial discriminative features within an image, and boost classification accuracy. We developed an automatic self-enhancing prompt learning framework called AutoSEP to iteratively improve the description prompt using unlabeled data, based on instance-level classification scoring function. AutoSEP only requires black-box access to MLLMs, eliminating the need for any training or fine-tuning. We evaluate our approach on multiple fine-grained classification datasets. It consistently outperforms other unsupervised baselines, demonstrating the effectiveness of our self-supervised optimization framework. Notably, AutoSEP in average improves 13\\% over standard zero-shot classification and 3\\% over the best-performing baselines.",
+      "authors": [
+        "Yunqi Hong",
+        "Sohyun An",
+        "Andrew Bai",
+        "Neil Lin",
+        "Cho-Jui Hsieh"
+      ],
+      "primary_category": "Fine-grained image classification",
+      "categories": [
+        "Fine-grained image classification",
+        "unsupervised prompt optimization"
+      ],
+      "published": "2025-09-18T17:34:16.145+00:00",
+      "link": "https://openreview.net/forum?id=VNTj7PGlrz",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-icml-2026-ij2c56ra1a",
+      "source": "ICML-2026-Accepted",
+      "title": "Spatially-Regularized Entropy for Discriminative Token Merging in Fine-Grained Re-Identification",
+      "abstract": "While Vision Transformers (ViTs) offer strong global modeling, their quadratic computational cost limits utility in latency-sensitive applications like person re-identification (ReID). Existing compression strategies, such as token pruning or generic merging, typically rely on coarse-grained criteria tailored for image classification. In fine-grained retrieval, these approaches often discard or smooth out subtle but discriminative local details. To resolve this, we propose SRE-Merge, a training-free framework designed for discriminative token compression. SRE-Merge injects spatial priors into the merging process through three mechanisms: (i) Spatial-Entropy Saliency Assessment (SES-Assess), which quantifies token importance as Spatial-Entropic Mass (SE-Mass) by coupling spatial structure with local attention entropy; (ii) Hybrid Context-Affinity Matching (HCA-Match), which guides precise pair selection by combining feature similarity with mass-derived context; and (iii) Energy-Preserving Weighted Fusion (EPW-Fuse), which incorporates SE-Mass weighting to counteract feature variance reduction. Extensive experiments on standard benchmarks show that SRE-Merge reduces GFLOPs of the base ViT model by about 24\\% while retaining competitive retrieval accuracy, establishing a superior accuracy-efficiency trade-off.",
+      "authors": [
+        "Shangze Li",
+        "Yifan Xu",
+        "Jingmiao Liang",
+        "Yongfei Zhang",
+        "Yuzhuo Ma",
+        "Yingbo Qu"
+      ],
+      "primary_category": "Person re-identification",
+      "categories": [
+        "Person re-identification",
+        "Vision transformer",
+        "Token merging",
+        "Lightweight"
+      ],
+      "published": "2026-04-30T19:22:57.159+00:00",
+      "link": "https://openreview.net/forum?id=IJ2C56ra1a",
+      "pdf_url": "https://openreview.net/pdf/3668f965df6dd49e3e938b8232fd385d75df21ac.pdf",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-gkt3vracu1",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "seq-JEPA: Autoregressive Predictive Learning of Invariant-Equivariant World Models",
+      "abstract": "Joint-embedding self-supervised learning (SSL) commonly relies on transformations such as data augmentation and masking to learn visual representations, a task achieved by enforcing invariance or equivariance with respect to these transformations applied to two views of an image. This dominant two-view paradigm in SSL often limits the flexibility of learned representations for downstream adaptation by creating performance trade-offs between high-level invariance-demanding tasks such as image classification and more fine-grained equivariance-related tasks. In this work, we propose \\emph{seq-JEPA}, a world modeling framework that introduces architectural inductive biases into joint-embedding predictive architectures to resolve this trade-off. Without relying on dual equivariance predictors or loss terms, seq-JEPA simultaneously learns two architecturally separate representations for equivariance- and invariance-demanding tasks. To do so, our model processes short sequences of different views (observations) of inputs. Each encoded view is concatenated with an embedding of the relative transformation (action) that produces the next observation in the sequence. These view-action pairs are passed through a transformer encoder that outputs an aggregate representation. A predictor head then conditions this aggregate representation on the upcoming action to predict the representation of the next observation. Empirically, seq-JEPA demonstrates strong performance on both equivariance- and invariance-demanding downstream tasks without sacrificing one for the other. Furthermore, it excels at tasks that inherently require aggregating a sequence of observations, such as path integration across actions and predictive learning across eye movements.",
+      "authors": [
+        "Hafez Ghaemi",
+        "Eilif Benjamin Muller",
+        "Shahab Bakhtiari"
+      ],
+      "primary_category": "Self-supervised learning",
+      "categories": [
+        "Self-supervised learning",
+        "world models",
+        "computer vision",
+        "equivariance"
+      ],
+      "published": "2025-09-18T17:32:35.253+00:00",
+      "link": "https://openreview.net/forum?id=GKt3VRaCU1",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-my72tmxg6t",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "Deep Taxonomic Networks for Unsupervised Hierarchical Prototype Discovery",
+      "abstract": "Inspired by the human ability to learn and organize knowledge into hierarchical taxonomies with prototypes, this paper addresses key limitations in current deep hierarchical clustering methods. \nExisting methods often tie the structure to the number of classes and underutilize the rich prototype information available at intermediate hierarchical levels. \nWe introduce deep taxonomic networks, a novel deep latent variable approach designed to bridge these gaps.\nOur method optimizes a large latent taxonomic hierarchy, specifically a complete binary tree structured mixture-of-Gaussian prior within a variational inference framework, to automatically discover taxonomic structures and associated prototype clusters directly from unlabeled data without assuming true label sizes.\nWe analytically show that optimizing the ELBO of our method encourages the discovery of hierarchical relationships among prototypes. \nEmpirically, our learned models demonstrate strong hierarchical clustering performance, outperforming baselines across diverse image classification datasets using our novel evaluation mechanism that leverages prototype clusters discovered at all hierarchical levels.\nQualitative results further reveal that deep taxonomic networks discover rich and interpretable hierarchical taxonomies, capturing both coarse-grained semantic categories and fine-grained visual distinctions.",
+      "authors": [
+        "Zekun Wang",
+        "Ethan Haarer",
+        "Tianyi Zhu",
+        "Zhiyi Dai",
+        "Christopher J. MacLellan"
+      ],
+      "primary_category": "unsupervised learning",
+      "categories": [
+        "unsupervised learning",
+        "hierarchical clustering",
+        "representation learning",
+        "latent variable models",
+        "prototype discovery"
+      ],
+      "published": "2025-09-18T17:43:39.515+00:00",
+      "link": "https://openreview.net/forum?id=My72tmxg6t",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-64wevllqjq",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "Multi-Kernel Correlation-Attention Vision Transformer for Enhanced Contextual Understanding and Multi-Scale Integration",
+      "abstract": "Significant progress has been achieved using Vision Transformers (ViTs) in computer vision. However, challenges persist in modeling multi-scale spatial relationships, hindering effective integration of fine-grained local details and long-range global dependencies. To address this limitation, a Multi-Kernel Correlation-Attention Vision Transformer (MK-CAViT) grounded in the Hirschfeld-Gebelein-Rényi (HGR) theory was proposed, introducing three key innovations. A parallel multi-kernel architecture was utilized to extract multi-scale features through small, medium, and large kernels, overcoming the single-scale constraints of conventional ViTs. The cross-scale interactions were enhanced through the Fast-HGR attention mechanism, which models nonlinear dependencies and applies adaptive scaling to weigh connections and refine contextual reasoning. Additionally, a stable multi-scale fusion strategy was adopted, integrating dynamic normalization and staged learning to mitigate gradient variance, progressively fusing local and global contexts, and improving training stability. The experimental results on ImageNet, COCO, and ADE20K validated the superiority of MK-CAViT in classification, detection, and segmentation, surpassing state-of-the-art baselines in capturing complex spatial relationships while maintaining efficiency. These contributions can establish a theoretically grounded framework for visual representation learning and address the longstanding limitations of ViTs.",
+      "authors": [
+        "Hongkang Zhang",
+        "Shao-Lun Huang",
+        "Ercan Engin KURUOGLU",
+        "Yanlong Wang"
+      ],
+      "primary_category": "Multi-Kernel Vision Transformer",
+      "categories": [
+        "Multi-Kernel Vision Transformer",
+        "HGR Correlation Learning",
+        "Dynamic Feature Fusion",
+        "Efficient Attention Mechanism",
+        "Multi-Scale Representation Learning"
+      ],
+      "published": "2025-09-18T17:35:26.155+00:00",
+      "link": "https://openreview.net/forum?id=64WeVllQjq",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-icml-2026-n2rimdibv6",
+      "source": "ICML-2026-Accepted",
+      "title": "REViT: Roto-reflection Equivariant Convolutional Vision Transformer",
+      "abstract": "In this paper, we propose a discrete roto-reflection group equivariant vision transformer with convolutional attention. Roto-reflection equivariant networks preserve the rotational, flip and positional symmetry in feature maps, making them useful for tasks where orientation of the inputs is relevant to the model outputs.  In image classification and object detection, most of the studies on roto-reflection equivariant models have focused on using convolutional neural networks rather than vision transformers. In this paper, we examine the challenges involved in achieving equivariance in vision transformers, and we propose a simpler way to implement a discretized roto-reflection group equivariant vision transformer. The experimental results demonstrate that our approach outperforms the existing approaches for developing discrete roto-reflection group equivariant neural networks for image classification.",
+      "authors": [
+        "Sheir A. Zaheer",
+        "Alexander C. Holston",
+        "Chan Y. Park"
+      ],
+      "primary_category": "Equivariant ML",
+      "categories": [
+        "Equivariant ML",
+        "Roto-reflection equivariance",
+        "Group equivariant ViT"
+      ],
+      "published": "2026-04-30T19:12:40.39+00:00",
+      "link": "https://openreview.net/forum?id=n2RIMdIbv6",
+      "pdf_url": "https://openreview.net/pdf/73267c79b79477b8137a529d05f4e5e4958bc188.pdf",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-icml-2026-lj1qi7fgyb",
+      "source": "ICML-2026-Accepted",
+      "title": "The Extra Tokens Matter: Disentangled Representation Learning with Vision Transformers",
+      "abstract": "Vision Transformers increasingly incorporate extra tokens beyond patch tokens—from class tokens for aggregation to register tokens for artifact mitigation. While effective for their intended purposes, these tokens typically lack semantic structure. We ask a more ambitious question: Can we design regularization constraints that transform extra tokens into disentangled representations, enabling them to decompose images into semantic parts (e.g., heads, bodies, legs) without explicit supervision?\nWe propose XTRA, an intuitive yet powerful framework that augments Vision Transformers with dedicated ``factor tokens'' and enforces disentanglement via a novel Minimum Volume Constraint (MVC). A multi-stage aggregation process further enforces these factor tokens into semantically pure components, preventing token collapse that often occurs when training with MVC alone. On ImageNet-1K, XTRA achieves superior disentanglement (8.4× improvement in SEPIN@1 over DINOv2) \nwhile simultaneously improving representation quality: KNN accuracy improves by 5.8\\% and\nlinear-probe accuracy by 2.3\\%.",
+      "authors": [
+        "Maofeng Tang",
+        "Hairong Qi"
+      ],
+      "primary_category": "representation learning",
+      "categories": [
+        "representation learning",
+        "self supervised learning"
+      ],
+      "published": "2026-04-30T19:09:56.727+00:00",
+      "link": "https://openreview.net/forum?id=lj1Qi7Fgyb",
+      "pdf_url": "https://openreview.net/pdf/9780797600a438b49262be64254fbc78a5c775e6.pdf",
+      "tags": [
+        "keyword:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-pr7vmmtsxc",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "VITRIX-UniViTAR: Unified Vision Transformer with Native Resolution",
+      "abstract": "Conventional Vision Transformer streamlines visual modeling by employing a uniform input resolution, which underestimates the inherent variability of natural visual data and incurs a cost in spatial-contextual fidelity. While preliminary explorations have superficially investigated native resolution modeling, existing works still lack systematic training recipe from the visual representation perspective. To bridge this gap, we introduce Unified Vision Transformer with Native Resolution, i.e. UniViTAR, a family of homogeneous vision foundation models tailored for unified visual modality and native resolution scenario in the era of multimodal. Our framework first conducts architectural upgrades to the vanilla paradigm by integrating multiple advanced components. Building upon these improvements, a progressive training paradigm is introduced, which strategically combines two core mechanisms: (1) resolution curriculum learning, transitioning from fixed-resolution pretraining to native resolution tuning, thereby leveraging ViT’s inherent adaptability to variable-length sequences, and (2) visual modality adaptation via inter-batch image-video switching, which balances computational efficiency with enhanced temporal reasoning. In parallel, a hybrid training framework further synergizes sigmoid-based contrastive loss with feature distillation from a frozen teacher model, thereby accelerating early-stage convergence. Finally, trained exclusively on public accessible image-caption data, our UniViTAR family across multiple model scales from 0.3B to 1B achieves state-of-the-art performance on a wide variety of visual-related tasks. The code and models are available here.",
+      "authors": [
+        "Limeng Qiao",
+        "Yiyang Gan",
+        "Bairui Wang",
+        "Jie Qin",
+        "Shuang Xu",
+        "Siqi Yang",
+        "Lin Ma"
+      ],
+      "primary_category": "Vision Transformer",
+      "categories": [
+        "Vision Transformer",
+        "Multimodal"
+      ],
+      "published": "2025-09-18T17:29:55.646+00:00",
+      "link": "https://openreview.net/forum?id=PR7VmMTsxC",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-91gzt22sef",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "Linear Differential Vision Transformer: Learning Visual Contrasts via Pairwise Differentials",
+      "abstract": "Vision Transformers (ViTs) have become a universal backbone for both image recognition and image generation.  Yet their Multi–Head Self–Attention (MHSA) layer still performs a quadratic query–key interaction for \\emph{every} token pair, spending the bulk of computation on visually weak or redundant correlations.  We introduce \\emph{Visual–Contrast Attention} (VCA), a drop-in replacement for MHSA that injects an explicit notion of discrimination while reducing the theoretical complexity from $\\mathcal{O}(N^{2}C)$ to $\\mathcal{O}(N n C)$ with $n\\!\\ll\\!N$.  VCA first distils each head’s dense query field into a handful of spatially pooled \\emph{visual–contrast tokens}, then splits them into a learnable \\emph{positive} and \\emph{negative} stream whose differential interaction highlights what truly separates one region from another.  The module adds fewer than $0.3$\\,M parameters to a DeiT-Tiny backbone, requires no extra FLOPs, and is wholly architecture-agnostic.  Empirically, VCA lifts DeiT-Tiny top-1 accuracy on ImageNet-1K from $72.2\\%$ to \\textbf{$75.6\\%$} (+$3.4$) and improves three strong hierarchical ViTs by up to $3.1$\\%, while in class-conditional ImageNet generation it lowers FID-50K by $2.1$ to $5.2$ points across both diffusion (DiT) and flow (SiT) models.  Extensive ablations confirm that (i) spatial pooling supplies low-variance global cues, (ii) dual positional embeddings are indispensable for contrastive reasoning, and (iii) combining the two in both stages yields the strongest synergy.  VCA therefore offers a simple path towards faster and sharper Vision Transformers. The source code is available at \\href{https://github.com/LeapLabTHU/LinearDiff}{https://github.com/LeapLabTHU/LinearDiff}.",
+      "authors": [
+        "Yifan Pu",
+        "Jixuan Ying",
+        "Qixiu Li",
+        "Tianzhu Ye",
+        "Dongchen Han",
+        "Xiaochen Wang",
+        "Ziyi Wang",
+        "Xinyu Shao",
+        "Gao Huang",
+        "Xiu Li"
+      ],
+      "primary_category": "vision transformer",
+      "categories": [
+        "vision transformer",
+        "architecture design"
+      ],
+      "published": "2025-09-18T17:29:06.054+00:00",
+      "link": "https://openreview.net/forum?id=91GzT22Sef",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-icml-2026-ltxvohuol2",
+      "source": "ICML-2026-Accepted",
+      "title": "Vision Transformer Finetuning Benefits from Non-Smooth Components",
+      "abstract": "The smoothness of the transformer architecture has been extensively studied in the context of generalization, training stability, and adversarial robustness. However, its role in transfer learning remains poorly understood. In this paper, we analyze the ability of vision transformer components to adapt their outputs to changes in inputs, or, in other words, their *plasticity*. Defined as an average rate of change, it captures the sensitivity to input perturbation; in particular, a high plasticity implies a low smoothness. Our theoretical analysis and extensive experiments -- over $1,000$ finetuning runs on large-scale vision transformers -- showcase that this perspective provides principled guidance in choosing the components to prioritize during adaptation. A key takeaway for practitioners is that the high plasticity of the attention modules and feedforward layers consistently leads to better finetuning performance. Our findings depart from the prevailing assumption that smoothness is desirable, offering a novel perspective on transformers' functional properties. The code is available at \\url{https://github.com/ambroiseodt/vit-plasticity}.",
+      "authors": [
+        "Ambroise Odonnat",
+        "Laetitia Chapel",
+        "Romain Tavenard",
+        "Ievgen Redko"
+      ],
+      "primary_category": "vision transformers",
+      "categories": [
+        "vision transformers",
+        "finetuning",
+        "smoothness",
+        "lipschitz continuity",
+        "distribution shifts",
+        "lipschitz constant"
+      ],
+      "published": "2026-04-30T19:09:53.828+00:00",
+      "link": "https://openreview.net/forum?id=lTXvOhUOl2",
+      "pdf_url": "https://openreview.net/pdf/e6a63e49e266c5d4cc3d4b1231820fe75806ddc5.pdf",
+      "tags": [
+        "keyword:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-72ceg36b0q",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "VESSA: Video-based objEct-centric Self-Supervised Adaptation for Visual Foundation Models",
+      "abstract": "Foundation models have advanced computer vision by enabling strong performance across diverse tasks through large-scale pretraining and supervised fine-tuning. However, they may underperform in domains with distribution shifts and scarce labels, where supervised fine-tuning may be infeasible. While continued self-supervised learning for model adaptation is common for generative language models, this strategy has not proven effective for vision-centric encoder models. To address this challenge, we introduce a novel formulation of self-supervised fine-tuning for vision foundation models, where the model is adapted to a new domain without requiring annotations, leveraging only short multi-view object-centric videos. Our method is referred to as VESSA: **V**ideo-based obj**E**ct-centric **S**elf-**S**upervised **A**daptation for visual foundation models. VESSA's training technique is based on a self-distillation paradigm, where it is critical to carefully tune prediction heads and deploy parameter-efficient adaptation techniques – otherwise, the model may quickly forget its pretrained knowledge and reach a degraded state. VESSA benefits significantly from multi-view object observations sourced from different frames in an object-centric video, efficiently learning robustness to varied capture conditions, without the need of annotations. Through comprehensive experiments with 3 vision foundation models on 2 datasets, VESSA demonstrates consistent improvements in downstream classification tasks, compared to the base models and previous adaptation methods. Code is publicly available at https://github.com/jesimonbarreto/VESSA.",
+      "authors": [
+        "Jesimon Barreto",
+        "Carlos Caetano",
+        "Andre Araujo",
+        "William Robson Schwartz"
+      ],
+      "primary_category": "Vision Foundation Models",
+      "categories": [
+        "Vision Foundation Models",
+        "Self-Supervised Fine-Tuning",
+        "Video-Based Adaptation",
+        "Parameter-Efficient Tuning"
+      ],
+      "published": "2025-09-18T17:35:39.599+00:00",
+      "link": "https://openreview.net/forum?id=72CEG36B0Q",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-reahulrjzr",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "GUIDED: Granular Understanding via Identification, Detection, and Discrimination for Fine-Grained Open-Vocabulary Object Detection",
+      "abstract": "Fine-grained open-vocabulary object detection (FG-OVD) aims to detect novel object categories described by attribute-rich texts. While existing open-vocabulary detectors show promise at the base-category level, they underperform in fine-grained settings due to the semantic entanglement of subjects and attributes in pretrained vision-language model (VLM) embeddings -- leading to over-representation of attributes, mislocalization, and semantic drift in embedding space. We propose GUIDED, a decomposition framework specifically designed to address the semantic entanglement between subjects and attributes in fine-grained prompts. By separating object localization and fine-grained recognition into distinct pathways, GUIDED aligns each subtask with the module best suited for its respective roles. \nSpecifically, given a fine-grained class name, we first use a language model to extract a coarse-grained subject and its descriptive attributes. \nThen the detector is guided solely by the subject embedding, ensuring stable localization unaffected by irrelevant or overrepresented attributes. To selectively retain helpful attributes, we introduce an attribute embedding fusion module that incorporates attribute information into detection queries in an attention-based manner. This mitigates over-representation while preserving discriminative power.\nFinally, a region-level attribute discrimination module compares each detected region against full fine-grained class names using a refined vision-language model with a projection head for improved alignment.\nExtensive experiments on FG-OVD and 3F-OVD benchmarks show that GUIDED achieves new state-of-the-art results, demonstrating the benefits of disentangled modeling and modular optimization.",
+      "authors": [
+        "Jiaming Li",
+        "Zhijia Liang",
+        "Weikai Chen",
+        "Lin Ma",
+        "Guanbin Li"
+      ],
+      "primary_category": "open vocabulary object detection",
+      "categories": [
+        "open vocabulary object detection",
+        "detection transformer",
+        "fine-grained object detection",
+        "vision-language models"
+      ],
+      "published": "2025-09-18T17:28:45.72+00:00",
+      "link": "https://openreview.net/forum?id=REAhulrjzR",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-au2eay2qeu",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "Evolving and Regularizing Meta-Environment Learner for Fine-Grained Few-Shot Class-Incremental Learning",
+      "abstract": "Recently proposed Fine-Grained Few-Shot Class-Incremental Learning (FG-FSCIL) offers a practical and efficient solution for enabling models to incrementally learn new fine-grained categories under limited data conditions. However, existing methods still settle for the fine-grained feature extraction capabilities learned from the base classes. Unlike conventional datasets, fine-grained categories exhibit subtle inter-class variations, naturally fostering latent synergy among sub-categories. Meanwhile, the incremental learning framework offers an opportunity to progressively strengthen this synergy by incorporating new sub-category data over time. Motivated by this, we theoretically formulate the FSCIL problem and derive a generalization error bound within a shared fine-grained meta-category environment. Guided by our theoretical insights, we design a novel Meta-Environment Learner (MEL) for FG-FSCIL, which evolves fine-grained feature extraction to enhance meta-environment understanding and simultaneously regularizes hypothesis space complexity. Extensive experiments demonstrate that our method consistently and significantly outperforms existing approaches.",
+      "authors": [
+        "Li-Jun Zhao",
+        "Zhen-Duo Chen",
+        "Yongxin Wang",
+        "Xin Luo",
+        "Xin-Shun Xu"
+      ],
+      "primary_category": "Fine-grained classification",
+      "categories": [
+        "Fine-grained classification",
+        "Few-shot class-incremental learning"
+      ],
+      "published": "2025-09-18T17:33:35.151+00:00",
+      "link": "https://openreview.net/forum?id=AU2eaY2QEu",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-icml-2026-19wap8lepy",
+      "source": "ICML-2026-Accepted",
+      "title": "Learning Taxonomic Trees with Hierarchical Representation Regularization for Large Multimodal Models",
+      "abstract": "Taxonomies provide key information about the semantic relationships between concepts and the inherent organization of vision and language. Despite their impressive capabilities, large multimodal models (LMMs) often lack taxonomic knowledge, leading to low hierarchical visual recognition (HVR) consistency. These models typically only rely on language modeling objectives during fine-tuning and lack explicit taxonomy-aware regularization. To address this, we propose Hierarchical Representation Regularization (HiR$^2$), a simple plug-and-play regularizer that improves hierarchical consistency in LMMs. Specifically, we introduce a semantic-aware visual tree construction framework that extracts coarse-to-fine visual features from intermediate LLM layers guided by textual cues. The regularizer combines two complementary objectives: a taxonomic entailment loss that enforces hierarchy via hyperbolic entailment cones in the Lorentz model, and a discriminative dispersive loss that promotes angular separation of semantically similar embeddings on the unit sphere without disturbing the radial hierarchical structure. Extensive experiments demonstrate that HiR$^2$ effectively captures taxonomic structures across diverse LMMs and fine-tuning methods. Code is available at https://github.com/PKUICST-MIPL/HiR2_ICML2026.",
+      "authors": [
+        "Hulingxiao He",
+        "Zhi Tan",
+        "Yuxin Peng"
+      ],
+      "primary_category": "Hierarchical Visual Recognition",
+      "categories": [
+        "Hierarchical Visual Recognition",
+        "Large Multimodal Models"
+      ],
+      "published": "2026-04-30T19:08:52.44+00:00",
+      "link": "https://openreview.net/forum?id=19Wap8LePy",
+      "pdf_url": "https://openreview.net/pdf/059ca1543a41ce5904a8502c9cd31fa2aa21f2c9.pdf",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-icml-2026-vgz66lux3q",
+      "source": "ICML-2026-Accepted",
+      "title": "Active Learning with Foundation Model Priors: Efficient Learning under Class Imbalance",
+      "abstract": "Real-world datasets across image and text domains are often characterized by skewed class distributions and noisy annotations, which jointly degrade model performance, particularly on minority classes. Among existing solutions, active learning offers an effective and efficient paradigm by selectively querying the most informative and balanced samples for annotation. We propose an innovative active learning framework that mitigates class imbalance and selects the most informative samples to annotate. Leveraging foundation model priors, our algorithm enables imbalance-aware co-decisions between foundation model and small model to tackle noisy and imbalanced labels across various domains. We introduce the first study to systematically explore active learning under the dual challenges of label noise and class imbalance across image and text domains. Extensive experiments on imbalanced datasets demonstrate that our method achieves substantial annotation savings—over 50\\% compared to the best active learning baseline—while preserving performance and robustness to label noise.",
+      "authors": [
+        "Jiancheng Zhang",
+        "Meiqing Li",
+        "Qi Zhang",
+        "Yinglun Zhu"
+      ],
+      "primary_category": "Active Learning",
+      "categories": [
+        "Active Learning",
+        "Foundation Models",
+        "Class Imbalance"
+      ],
+      "published": "2026-04-30T19:12:40.871+00:00",
+      "link": "https://openreview.net/forum?id=vgZ66lux3q",
+      "pdf_url": "https://openreview.net/pdf/10124716a588053f6a7ec8a4efe9e89228c8cfec.pdf",
+      "tags": [
+        "keyword:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-y8vwyf5cvi",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "Differentiable Hierarchical Visual Tokenization",
+      "abstract": "Vision Transformers rely on fixed patch tokens that ignore the spatial and semantic structure of images. In this work, we introduce an end-to-end differentiable tokenizer that adapts to image content with pixel-level granularity while remaining backward-compatible with existing architectures for retrofitting pretrained models. Our method uses hierarchical model selection with information criteria to provide competitive performance in both image-level classification and dense-prediction tasks, and even supports out-of-the-box raster-to-vector conversion.",
+      "authors": [
+        "Marius Aasan",
+        "Martine Hjelkrem-Tan",
+        "Nico Catalano",
+        "Changkyu Choi",
+        "Adín Ramírez Rivera"
+      ],
+      "primary_category": "ViT",
+      "categories": [
+        "ViT",
+        "Partitioning",
+        "Tokenization",
+        "Segmentation",
+        "Vectorization",
+        "Adaptive",
+        "Hierarchical",
+        "Model Selection"
+      ],
+      "published": "2025-09-18T17:37:17.385+00:00",
+      "link": "https://openreview.net/forum?id=y8VWYf5cVI",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-a1fwrvr72o",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "LookWhere? Efficient Visual Recognition by Learning Where to Look and What to See from Self-Supervision",
+      "abstract": "Vision transformers are ever larger, more accurate, and more expensive to compute.\nAt high resolution, the expense is even more extreme as the number of tokens grows quadratically in the image size. \nWe turn to adaptive computation to cope with this cost by learning to predict where to compute.\nOur LookWhere method divides the computation between a low-resolution selector and a high-resolution extractor without ever processing the full high-resolution input.\nWe jointly pretrain the selector and extractor without task supervision by distillation from a self-supervised teacher, in effect learning where and what to compute at the same time.\nUnlike prior token reduction methods, which pay to save by pruning already-computed tokens, and prior token selection methods, which \nrequire complex and expensive per-task optimization, LookWhere economically and accurately selects and extracts transferrable representations of images.\nWe show that LookWhere excels at sparse recognition on high-resolution inputs (Traffic Signs), maintaining accuracy while reducing FLOPs by 17x and time by 4x, and standard recognition tasks that are global (ImageNet classification) and local (ADE20K segmentation), improving accuracy while reducing time by 1.36x.",
+      "authors": [
+        "Anthony Fuller",
+        "Yousef Yassin",
+        "Junfeng Wen",
+        "Tarek Ibrahim",
+        "Daniel Kyrollos",
+        "James R Green",
+        "Evan Shelhamer"
+      ],
+      "primary_category": "deep learning",
+      "categories": [
+        "deep learning",
+        "computer vision",
+        "adaptive computation"
+      ],
+      "published": "2025-09-18T17:44:10.593+00:00",
+      "link": "https://openreview.net/forum?id=a1fWrvr72O",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-icml-2026-eyo7titaf9",
+      "source": "ICML-2026-Accepted",
+      "title": "MAGIC: Multi-Granularity Language-Informed Image Clustering",
+      "abstract": "Image clustering is a fundamental unsupervised task in computer vision. Recent studies have explored incorporating external linguistic information to facilitate visual feature learning and thereby enhance clustering performance. Nevertheless, these methods typically rely on fixed vocabularies (e.g., WordNet) to generate language counterparts, leading to inter-modal semantic misalignment due to granularity discrepancy between visual and textual semantics. Moreover, they often overlook the issue of intra-modal semantic redundancy caused by task-irrelevant knowledge. To address these challenges, we propose a new Multi-grAnularity lanGuage-informed Image Clustering method, dubbed MAGIC. To reduce semantic misalignment, we first prompt the vision-language models to generate multi-granularity language descriptions that capture rich image semantics, which are then integrated for effective multi-modal alignment. To alleviate semantic redundancy, we design modality-specific semantic adapters that adaptively refine and compress the semantically dense features into clustering-friendly representations under task guidance. A consensus representation is obtained by fusing the refined visual and textual features, which acts as a teacher to guide image clustering through a robust contrastive learning framework. Extensive experiments on benchmarks demonstrate that MAGIC outperforms state-of-the-art methods.",
+      "authors": [
+        "Xiaohan Zhang",
+        "Chao Zhang",
+        "Chunlin Chen",
+        "Huaxiong Li"
+      ],
+      "primary_category": "Clustering",
+      "categories": [
+        "Clustering",
+        "Multimodal learning",
+        "Multiview learning",
+        "Vision-language model"
+      ],
+      "published": "2026-04-30T19:16:01.267+00:00",
+      "link": "https://openreview.net/forum?id=eyo7TITaF9",
+      "pdf_url": "https://openreview.net/pdf/47d5af77c3140cb5297c28b66794cab72679285a.pdf",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-neurips-2025-13bj5fyg8e",
+      "source": "NeurIPS-2025-Accepted",
+      "title": "Learning a Cross-Modal Schrödinger Bridge for Visual Domain Generalization",
+      "abstract": "Domain generalization aims to train models that perform robustly on unseen target domains without access to target data. \nThe realm of vision-language foundation model has opened a new venue owing to its inherent out-of-distribution generalization capability.\nHowever, the static alignment to class-level textual anchors remains insufficient to handle the dramatic distribution discrepancy from diverse domain-specific visual features.\nIn this work, we propose a novel cross-domain Schrödinger Bridge (SB) method, namely SBGen, to handle this challenge, which explicitly formulates the stochastic semantic evolution, to gain better generalization to unseen domains.\nTechnically, the proposed \\texttt{SBGen} consists of three key components: (1) \\emph{text-guided domain-aware feature selection} to isolate semantically aligned image tokens; (2) \\emph{stochastic cross-domain evolution} to simulate the SB dynamics via a learnable time-conditioned drift; and (3) \\emph{stochastic domain-agnostic interpolation} to construct semantically grounded feature trajectories. \nEmpirically, \\texttt{SBGen} achieves state-of-the-art performance on domain generalization in both classification and segmentation. This work highlights the importance of modeling domain shifts as structured stochastic processes grounded in semantic alignment.",
+      "authors": [
+        "Hao Zheng",
+        "Jingjun Yi",
+        "Qi Bi",
+        "Huimin Huang",
+        "Haolan Zhan",
+        "Yawen Huang",
+        "Yuexiang Li",
+        "Xian Wu",
+        "Yefeng Zheng"
+      ],
+      "primary_category": "Domain Generalization",
+      "categories": [
+        "Domain Generalization",
+        "Schrödinger Bridge",
+        "Image-Text Alignment",
+        "Optimal Transport"
+      ],
+      "published": "2025-09-18T17:31:46.9+00:00",
+      "link": "https://openreview.net/forum?id=13BJ5FYG8E",
+      "pdf_url": null,
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ]
+    },
+    {
+      "id": "openreview-icml-2026-bmvwc1aina",
+      "source": "ICML-2026-Accepted",
+      "title": "Text-Conditional JEPA for Learning Semantically Rich Visual Representations",
+      "abstract": "Image-based Joint-Embedding Predictive Architecture (I-JEPA) offers a promising approach to visual self-supervised learning through masked feature prediction. However with the inherent visual uncertainty at masked positions, feature prediction remains challenging and may fail to learn semantic representations. In this work, we propose Text-Conditional JEPA (TC-JEPA) that uses image captions to reduce the prediction uncertainty. Specifically, we modulate the predicted patch features using a fine-grained text conditioner that computes sparse cross-attention over input text tokens. With such conditioning, patch features become predictable as a function of text, thus are more semantically meaningful. We show TC-JEPA improves downstream performance and training stability, with promising scaling properties. TC-JEPA also offers a new vision-language pretraining paradigm based on feature prediction only, outperforming contrastive methods on diverse tasks, especially those requiring fine-grained visual understanding and reasoning.",
+      "authors": [
+        "Chen Huang",
+        "Xianhang Li",
+        "Vimal Thilak",
+        "Etai Littwin",
+        "Joshua M. Susskind"
+      ],
+      "primary_category": "JEPA",
+      "categories": [
+        "JEPA",
+        "Text conditioning",
+        "Vision-language pretraining"
+      ],
+      "published": "2026-04-30T19:12:03.988+00:00",
+      "link": "https://openreview.net/forum?id=bmvWC1ainA",
+      "pdf_url": "https://openreview.net/pdf/3dca6993c97cff3946f0a9cf9b35ebc364fcc59a.pdf",
+      "tags": [
+        "query:dino-fg"
+      ]
+    }
+  ],
+  "queries": [
+    {
+      "type": "intent_query",
+      "tag": "dino-fg",
+      "paper_tag": "query:dino-fg",
+      "query_text": "DINO fine grained classification papers",
+      "sim_scores": {
+        "openreview-neurips-2025-my72tmxg6t": {
+          "score": 0.015873015873015872,
+          "rank": 3
+        },
+        "openreview-neurips-2025-au2eay2qeu": {
+          "score": 0.013157894736842105,
+          "rank": 16
+        },
+        "openreview-neurips-2025-vntj7pglrz": {
+          "score": 0.011235955056179775,
+          "rank": 29
+        }
+      },
+      "ranked": [
+        {
+          "paper_id": "openreview-neurips-2025-vntj7pglrz",
+          "score": 1.0,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-au2eay2qeu",
+          "score": 0.9586435070306036,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-reahulrjzr",
+          "score": 0.9185999185999183,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-9yxk1rnc9o",
+          "score": 0.9185999185999183,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-my72tmxg6t",
+          "score": 0.8798076923076922,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-ij2c56ra1a",
+          "score": 0.8422090729783037,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-ou6fxksie0",
+          "score": 0.8422090729783037,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-eyo7titaf9",
+          "score": 0.8057498057498057,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-y8vwyf5cvi",
+          "score": 0.702712746191007,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-bmvwc1aina",
+          "score": 0.5495495495495496,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-gkt3vracu1",
+          "score": 0.3910256410256411,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-19wap8lepy",
+          "score": 0.3433395872420263,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-neurips-2025-64wevllqjq",
+          "score": 0.32035835650293487,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-vgz66lux3q",
+          "score": 0.29792429792429775,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-n2rimdibv6",
+          "score": 0.25462134764460337,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-lj1qi7fgyb",
+          "score": 0.23371647509578536,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-neurips-2025-91gzt22sef",
+          "score": 0.1737891737891738,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-neurips-2025-pr7vmmtsxc",
+          "score": 0.1360089186176142,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-ltxvohuol2",
+          "score": 0.015799015799015898,
+          "star_rating": 2
+        }
+      ]
+    },
+    {
+      "type": "intent_query",
+      "tag": "dino-fg",
+      "paper_tag": "query:dino-fg",
+      "query_text": "Foundation models for fine grained visual classification",
+      "sim_scores": {
+        "openreview-neurips-2025-reahulrjzr": {
+          "score": 0.01639344262295082,
+          "rank": 1
+        },
+        "openreview-neurips-2025-vntj7pglrz": {
+          "score": 0.016129032258064516,
+          "rank": 2
+        },
+        "openreview-icml-2026-19wap8lepy": {
+          "score": 0.015873015873015872,
+          "rank": 3
+        },
+        "openreview-neurips-2025-y8vwyf5cvi": {
+          "score": 0.015151515151515152,
+          "rank": 6
+        },
+        "openreview-icml-2026-eyo7titaf9": {
+          "score": 0.014705882352941176,
+          "rank": 8
+        },
+        "openreview-neurips-2025-91gzt22sef": {
+          "score": 0.013888888888888888,
+          "rank": 12
+        },
+        "openreview-icml-2026-bmvwc1aina": {
+          "score": 0.013513513513513514,
+          "rank": 14
+        },
+        "openreview-neurips-2025-a1fwrvr72o": {
+          "score": 0.012658227848101266,
+          "rank": 19
+        },
+        "openreview-icml-2026-ij2c56ra1a": {
+          "score": 0.009615384615384616,
+          "rank": 44
+        },
+        "openreview-neurips-2025-13bj5fyg8e": {
+          "score": 0.009345794392523364,
+          "rank": 47
+        }
+      },
+      "ranked": [
+        {
+          "paper_id": "openreview-neurips-2025-vntj7pglrz",
+          "score": 1.0,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-72ceg36b0q",
+          "score": 1.0,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-au2eay2qeu",
+          "score": 0.9586435070306036,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-reahulrjzr",
+          "score": 0.9185999185999183,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-ou6fxksie0",
+          "score": 0.8798076923076922,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-vgz66lux3q",
+          "score": 0.8422090729783037,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-pr7vmmtsxc",
+          "score": 0.8057498057498057,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-19wap8lepy",
+          "score": 0.73604826546003,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-13bj5fyg8e",
+          "score": 0.702712746191007,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-ij2c56ra1a",
+          "score": 0.6703296703296702,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-eyo7titaf9",
+          "score": 0.6703296703296702,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-gkt3vracu1",
+          "score": 0.6388587937883712,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-y8vwyf5cvi",
+          "score": 0.5495495495495496,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-64wevllqjq",
+          "score": 0.5213675213675214,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-9yxk1rnc9o",
+          "score": 0.2760180995475112,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-neurips-2025-a1fwrvr72o",
+          "score": 0.21328671328671328,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-bmvwc1aina",
+          "score": 0.1737891737891738,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-n2rimdibv6",
+          "score": 0.1737891737891738,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-neurips-2025-91gzt22sef",
+          "score": 0.09983633387888699,
+          "star_rating": 2
+        },
+        {
+          "paper_id": "openreview-neurips-2025-gbrvlyvoqh",
+          "score": 0.06517094017094004,
+          "star_rating": 2
+        }
+      ]
+    },
+    {
+      "type": "intent_query",
+      "tag": "dino-fg",
+      "paper_tag": "query:dino-fg",
+      "query_text": "Self supervised vision transformers for fine grained classification",
+      "sim_scores": {
+        "openreview-neurips-2025-91gzt22sef": {
+          "score": 0.01639344262295082,
+          "rank": 1
+        },
+        "openreview-neurips-2025-reahulrjzr": {
+          "score": 0.015625,
+          "rank": 4
+        },
+        "openreview-neurips-2025-vntj7pglrz": {
+          "score": 0.014925373134328358,
+          "rank": 7
+        },
+        "openreview-neurips-2025-y8vwyf5cvi": {
+          "score": 0.014492753623188406,
+          "rank": 9
+        },
+        "openreview-neurips-2025-a1fwrvr72o": {
+          "score": 0.014285714285714285,
+          "rank": 10
+        },
+        "openreview-icml-2026-ij2c56ra1a": {
+          "score": 0.0125,
+          "rank": 20
+        },
+        "openreview-icml-2026-bmvwc1aina": {
+          "score": 0.012195121951219513,
+          "rank": 22
+        },
+        "openreview-neurips-2025-64wevllqjq": {
+          "score": 0.010638297872340425,
+          "rank": 34
+        },
+        "openreview-icml-2026-n2rimdibv6": {
+          "score": 0.01020408163265306,
+          "rank": 38
+        },
+        "openreview-icml-2026-eyo7titaf9": {
+          "score": 0.009900990099009901,
+          "rank": 41
+        }
+      },
+      "ranked": [
+        {
+          "paper_id": "openreview-neurips-2025-a1fwrvr72o",
+          "score": 1.0,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-vntj7pglrz",
+          "score": 1.0,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-72ceg36b0q",
+          "score": 0.9586435070306036,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-64wevllqjq",
+          "score": 0.9185999185999183,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-icml-2026-ij2c56ra1a",
+          "score": 0.9185999185999183,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-neurips-2025-gbrvlyvoqh",
+          "score": 0.8798076923076922,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-lj1qi7fgyb",
+          "score": 0.8422090729783037,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-n2rimdibv6",
+          "score": 0.8057498057498057,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-reahulrjzr",
+          "score": 0.7703788748564866,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-gkt3vracu1",
+          "score": 0.702712746191007,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-91gzt22sef",
+          "score": 0.6703296703296702,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-ltxvohuol2",
+          "score": 0.6388587937883712,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-eyo7titaf9",
+          "score": 0.6388587937883712,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-y8vwyf5cvi",
+          "score": 0.578503688092729,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-bmvwc1aina",
+          "score": 0.5213675213675214,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-neurips-2025-pr7vmmtsxc",
+          "score": 0.49392712550607265,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-neurips-2025-ou6fxksie0",
+          "score": 0.46719946719946726,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-neurips-2025-au2eay2qeu",
+          "score": 0.21328671328671328,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-vgz66lux3q",
+          "score": 0.1360089186176142,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-19wap8lepy",
+          "score": 0.09983633387888699,
+          "star_rating": 2
+        },
+        {
+          "paper_id": "openreview-neurips-2025-13bj5fyg8e",
+          "score": 0.0483743061062648,
+          "star_rating": 2
+        }
+      ]
+    },
+    {
+      "type": "keyword",
+      "tag": "dino-fg",
+      "paper_tag": "keyword:dino-fg",
+      "query_text": "DINO model",
+      "sim_scores": {
+        "openreview-neurips-2025-9yxk1rnc9o": {
+          "score": 0.01639344262295082,
+          "rank": 1
+        },
+        "openreview-neurips-2025-ou6fxksie0": {
+          "score": 0.015873015873015872,
+          "rank": 3
+        },
+        "openreview-neurips-2025-gbrvlyvoqh": {
+          "score": 0.014925373134328358,
+          "rank": 7
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "dino-fg",
+      "paper_tag": "keyword:dino-fg",
+      "query_text": "DINO model for fine-grained classification",
+      "sim_scores": {
+        "openreview-neurips-2025-reahulrjzr": {
+          "score": 0.016129032258064516,
+          "rank": 2
+        },
+        "openreview-neurips-2025-my72tmxg6t": {
+          "score": 0.015384615384615385,
+          "rank": 5
+        },
+        "openreview-neurips-2025-vntj7pglrz": {
+          "score": 0.015151515151515152,
+          "rank": 6
+        },
+        "openreview-neurips-2025-au2eay2qeu": {
+          "score": 0.014492753623188406,
+          "rank": 9
+        },
+        "openreview-icml-2026-19wap8lepy": {
+          "score": 0.0125,
+          "rank": 20
+        },
+        "openreview-icml-2026-vgz66lux3q": {
+          "score": 0.009900990099009901,
+          "rank": 41
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "dino-fg",
+      "paper_tag": "keyword:dino-fg",
+      "query_text": "fine-grained classification",
+      "sim_scores": {
+        "openreview-neurips-2025-vntj7pglrz": {
+          "score": 0.01639344262295082,
+          "rank": 1
+        },
+        "openreview-icml-2026-ij2c56ra1a": {
+          "score": 0.015873015873015872,
+          "rank": 3
+        },
+        "openreview-neurips-2025-gkt3vracu1": {
+          "score": 0.014925373134328358,
+          "rank": 7
+        },
+        "openreview-neurips-2025-my72tmxg6t": {
+          "score": 0.011627906976744186,
+          "rank": 26
+        },
+        "openreview-neurips-2025-64wevllqjq": {
+          "score": 0.009345794392523364,
+          "rank": 47
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "dino-fg",
+      "paper_tag": "keyword:dino-fg",
+      "query_text": "fine-grained classification using vision transformers",
+      "sim_scores": {
+        "openreview-neurips-2025-91gzt22sef": {
+          "score": 0.01639344262295082,
+          "rank": 1
+        },
+        "openreview-neurips-2025-reahulrjzr": {
+          "score": 0.016129032258064516,
+          "rank": 2
+        },
+        "openreview-neurips-2025-y8vwyf5cvi": {
+          "score": 0.015873015873015872,
+          "rank": 3
+        },
+        "openreview-neurips-2025-vntj7pglrz": {
+          "score": 0.015151515151515152,
+          "rank": 6
+        },
+        "openreview-neurips-2025-a1fwrvr72o": {
+          "score": 0.014492753623188406,
+          "rank": 9
+        },
+        "openreview-icml-2026-ij2c56ra1a": {
+          "score": 0.014285714285714285,
+          "rank": 10
+        },
+        "openreview-icml-2026-n2rimdibv6": {
+          "score": 0.013888888888888888,
+          "rank": 12
+        },
+        "openreview-icml-2026-eyo7titaf9": {
+          "score": 0.013157894736842105,
+          "rank": 16
+        },
+        "openreview-neurips-2025-64wevllqjq": {
+          "score": 0.012048192771084338,
+          "rank": 23
+        },
+        "openreview-icml-2026-19wap8lepy": {
+          "score": 0.010869565217391304,
+          "rank": 32
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "dino-fg",
+      "paper_tag": "keyword:dino-fg",
+      "query_text": "foundation model",
+      "sim_scores": {
+        "openreview-neurips-2025-72ceg36b0q": {
+          "score": 0.01639344262295082,
+          "rank": 1
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "dino-fg",
+      "paper_tag": "keyword:dino-fg",
+      "query_text": "foundation model for image classification",
+      "sim_scores": {
+        "openreview-neurips-2025-reahulrjzr": {
+          "score": 0.015873015873015872,
+          "rank": 3
+        },
+        "openreview-neurips-2025-vntj7pglrz": {
+          "score": 0.014925373134328358,
+          "rank": 7
+        },
+        "openreview-neurips-2025-y8vwyf5cvi": {
+          "score": 0.012345679012345678,
+          "rank": 21
+        },
+        "openreview-icml-2026-eyo7titaf9": {
+          "score": 0.012048192771084338,
+          "rank": 23
+        },
+        "openreview-icml-2026-vgz66lux3q": {
+          "score": 0.011764705882352941,
+          "rank": 25
+        },
+        "openreview-neurips-2025-a1fwrvr72o": {
+          "score": 0.011627906976744186,
+          "rank": 26
+        },
+        "openreview-icml-2026-19wap8lepy": {
+          "score": 0.010101010101010102,
+          "rank": 39
+        },
+        "openreview-icml-2026-ij2c56ra1a": {
+          "score": 0.009708737864077669,
+          "rank": 43
+        },
+        "openreview-neurips-2025-13bj5fyg8e": {
+          "score": 0.009523809523809525,
+          "rank": 45
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "dino-fg",
+      "paper_tag": "keyword:dino-fg",
+      "query_text": "vision transformer",
+      "sim_scores": {
+        "openreview-icml-2026-n2rimdibv6": {
+          "score": 0.01639344262295082,
+          "rank": 1
+        },
+        "openreview-icml-2026-lj1qi7fgyb": {
+          "score": 0.016129032258064516,
+          "rank": 2
+        },
+        "openreview-neurips-2025-pr7vmmtsxc": {
+          "score": 0.015873015873015872,
+          "rank": 3
+        },
+        "openreview-neurips-2025-64wevllqjq": {
+          "score": 0.015625,
+          "rank": 4
+        },
+        "openreview-neurips-2025-91gzt22sef": {
+          "score": 0.015151515151515152,
+          "rank": 6
+        },
+        "openreview-icml-2026-ltxvohuol2": {
+          "score": 0.014705882352941176,
+          "rank": 8
+        },
+        "openreview-neurips-2025-ou6fxksie0": {
+          "score": 0.01098901098901099,
+          "rank": 31
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "dino-fg",
+      "paper_tag": "keyword:dino-fg",
+      "query_text": "vision transformer architecture for classification",
+      "sim_scores": {
+        "openreview-neurips-2025-91gzt22sef": {
+          "score": 0.01639344262295082,
+          "rank": 1
+        },
+        "openreview-neurips-2025-y8vwyf5cvi": {
+          "score": 0.015625,
+          "rank": 4
+        },
+        "openreview-neurips-2025-reahulrjzr": {
+          "score": 0.015384615384615385,
+          "rank": 5
+        },
+        "openreview-icml-2026-n2rimdibv6": {
+          "score": 0.015151515151515152,
+          "rank": 6
+        },
+        "openreview-neurips-2025-a1fwrvr72o": {
+          "score": 0.014492753623188406,
+          "rank": 9
+        },
+        "openreview-neurips-2025-64wevllqjq": {
+          "score": 0.012987012987012988,
+          "rank": 17
+        },
+        "openreview-icml-2026-ij2c56ra1a": {
+          "score": 0.009900990099009901,
+          "rank": 41
+        },
+        "openreview-icml-2026-eyo7titaf9": {
+          "score": 0.009259259259259259,
+          "rank": 48
+        }
+      }
+    }
+  ],
+  "global_candidate_ids": [
+    "openreview-icml-2026-kjq0iscnm6",
+    "openreview-neurips-2025-evtxnxah0f",
+    "openreview-neurips-2025-reahulrjzr",
+    "openreview-neurips-2025-vntj7pglrz",
+    "openreview-neurips-2025-91gzt22sef",
+    "openreview-icml-2026-yvnmueuzqd",
+    "openreview-neurips-2025-9yxk1rnc9o",
+    "openreview-icml-2026-kgh7gtmczm",
+    "openreview-icml-2026-lqnrpoxqob",
+    "openreview-neurips-2025-72ceg36b0q",
+    "openreview-neurips-2025-kxmiivub9u",
+    "openreview-icml-2026-o2znfxqcij",
+    "openreview-icml-2026-n2rimdibv6",
+    "openreview-icml-2026-lj1qi7fgyb",
+    "openreview-neurips-2025-v7rrnsalby",
+    "openreview-icml-2026-bxkhmeszmw",
+    "openreview-neurips-2025-jugw5alhnf",
+    "openreview-neurips-2025-y8vwyf5cvi",
+    "openreview-icml-2026-l6mbbwswus",
+    "openreview-icml-2026-khwpvcgmsg",
+    "openreview-icml-2026-ij2c56ra1a",
+    "openreview-neurips-2025-a1fwrvr72o",
+    "openreview-icml-2026-cy2npckqzq",
+    "openreview-neurips-2025-64wevllqjq",
+    "openreview-icml-2026-eyo7titaf9",
+    "openreview-icml-2026-d9obyvpqau",
+    "openreview-neurips-2025-0owhzjrnb6",
+    "openreview-icml-2026-pdrq4yesir",
+    "openreview-icml-2026-skotyhxscd",
+    "openreview-icml-2026-i2790nxluz",
+    "openreview-neurips-2025-ril1vouzoc",
+    "openreview-icml-2026-yktmna6mbh",
+    "openreview-icml-2026-fdmizwsnog",
+    "openreview-icml-2026-w3cdjwawr8",
+    "openreview-icml-2026-19wap8lepy",
+    "openreview-neurips-2025-upxytg7dtl",
+    "openreview-icml-2026-ot1vp0ar0j",
+    "openreview-neurips-2025-tdtelvnag4",
+    "openreview-neurips-2025-jwrdyknuz8",
+    "openreview-neurips-2025-s82afyfbj3",
+    "openreview-icml-2026-fr1xrg47fl",
+    "openreview-neurips-2025-my4kpjt3lm",
+    "openreview-neurips-2025-nabgo9bful",
+    "openreview-neurips-2025-my72tmxg6t",
+    "openreview-icml-2026-aye8j2jomk",
+    "openreview-icml-2026-j3norf0n7d",
+    "openreview-icml-2026-fsnn0jluse",
+    "openreview-neurips-2025-rgjsjv6cuy",
+    "openreview-icml-2026-qjwfbn77kx",
+    "openreview-icml-2026-bkz40fnkll",
+    "openreview-icml-2026-mtoqfuksrq",
+    "openreview-icml-2026-x01mwoak3k",
+    "openreview-neurips-2025-c5e4tgdcj3",
+    "openreview-neurips-2025-wlvbct5pbb",
+    "openreview-icml-2026-fpqfv3lcib",
+    "openreview-neurips-2025-58vr1kowg9",
+    "openreview-neurips-2025-q7hotsbv1t",
+    "openreview-neurips-2025-au2eay2qeu",
+    "openreview-icml-2026-mlvsiefywj",
+    "openreview-neurips-2025-ou6fxksie0",
+    "openreview-icml-2026-4zps8v8ni4",
+    "openreview-icml-2026-bmvwc1aina",
+    "openreview-neurips-2025-kyyyez1lix",
+    "openreview-neurips-2025-qzobe4mi2n",
+    "openreview-neurips-2025-rjkanku6hi",
+    "openreview-icml-2026-xfx7jthi8h",
+    "openreview-neurips-2025-svgkn64x4m",
+    "openreview-neurips-2025-u3arwvkbv1",
+    "openreview-icml-2026-ilyvhfoark",
+    "openreview-neurips-2025-5bs6gbb4yp",
+    "openreview-neurips-2025-b7lygdsdii",
+    "openreview-neurips-2025-7wgyeioldv",
+    "openreview-icml-2026-uqlgajv1cf",
+    "openreview-icml-2026-wgoitdkqus",
+    "openreview-icml-2026-dyct9jtcra",
+    "openreview-icml-2026-cj7ayuefj3",
+    "openreview-icml-2026-nijotyiqsz",
+    "openreview-neurips-2025-myxvp2kogt",
+    "openreview-icml-2026-qus6ferxg8",
+    "openreview-neurips-2025-lss6jmvgha",
+    "openreview-icml-2026-cb1vqvnzas",
+    "openreview-icml-2026-lyn8omvymt",
+    "openreview-icml-2026-vgz66lux3q",
+    "openreview-icml-2026-fr1fjjwrnn",
+    "openreview-neurips-2025-0az25lvdt2",
+    "openreview-neurips-2025-t77ezljvd5",
+    "openreview-icml-2026-jewtuduk7l",
+    "openreview-icml-2026-lrcsehvgjc",
+    "openreview-neurips-2025-x7ak8ohjpg",
+    "openreview-neurips-2025-2xjcosh3yq",
+    "openreview-neurips-2025-r3yqrzynqa",
+    "openreview-neurips-2025-v4e5fb3mql",
+    "openreview-neurips-2025-6uwv6ytamu",
+    "openreview-icml-2026-0rnjygztsj",
+    "openreview-icml-2026-bbylxhoutl",
+    "openreview-neurips-2025-13bj5fyg8e",
+    "openreview-icml-2026-340ep8sfj3",
+    "openreview-neurips-2025-anl9huwims",
+    "openreview-neurips-2025-pr7vmmtsxc",
+    "openreview-icml-2026-1mpoh36rbu",
+    "openreview-neurips-2025-4fyndd2b5s",
+    "openreview-neurips-2025-qo5n2wxry7",
+    "openreview-icml-2026-etcqp26td0",
+    "openreview-icml-2026-pbb3tyfdvp",
+    "openreview-neurips-2025-s3mwcbuqav",
+    "openreview-icml-2026-4mgh9asgrq",
+    "openreview-icml-2026-gknfx22vxf",
+    "openreview-icml-2026-mydeypbs0k",
+    "openreview-neurips-2025-pizxeozcid",
+    "openreview-icml-2026-jlqeiq1azu",
+    "openreview-neurips-2025-d4eahgittm",
+    "openreview-neurips-2025-dr06wjh45k",
+    "openreview-neurips-2025-gbrvlyvoqh",
+    "openreview-neurips-2025-gkt3vracu1",
+    "openreview-icml-2026-3hpanv6ldo",
+    "openreview-icml-2026-jws8vuevwo",
+    "openreview-icml-2026-ltxvohuol2",
+    "openreview-icml-2026-w6fvmhpvez",
+    "openreview-neurips-2025-efdiapcjgi",
+    "openreview-icml-2026-yb0ymduqqx"
+  ],
+  "global_pool_lane_top_k": 30,
+  "global_pool_limit": 120,
+  "global_pool_guaranteed_per_lane": 2,
+  "global_pool_effective_size": 120,
+  "reranked_at": "2026-07-09T06:50:45.386744+00:00",
+  "llm_ranked": [
+    {
+      "paper_id": "openreview-icml-2026-n2rimdibv6",
+      "score": 8.0,
+      "evidence_en": "Roto-reflection equivariant ViT for image classification",
+      "evidence_cn": "旋转反射等变视觉Transformer用于图像分类",
+      "canonical_evidence": "旋转反射等变视觉Transformer用于图像分类",
+      "tldr_en": "REViT proposes a discrete roto-reflection group equivariant vision transformer with convolutional attention, preserving symmetry in feature maps for image classification.",
+      "tldr_cn": "现有等变视觉Transformer研究大多基于CNN，REViT提出了一种离散旋转反射群等变视觉Transformer，通过卷积注意力保留特征图中的旋转、翻转和位置对称性，以更简单的方式实现等变性，并在图像分类任务上验证了有效性。",
+      "title_zh": "REViT：旋转反射等变卷积视觉Transformer",
+      "motivation_cn": "现有等变模型多基于CNN，缺乏Vision Transformer中的等变实现研究。",
+      "method_cn": "提出离散旋转反射群等变的视觉Transformer，使用卷积注意力机制。",
+      "result_cn": "实验证明该方法在等变性和分类性能上有效。",
+      "conclusion_cn": "提供了一种更简单的Vision Transformer等变实现方案。",
+      "matched_requirement_id": "req-3",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-64wevllqjq",
+      "score": 8.0,
+      "evidence_en": "Multi-kernel ViT for enhanced fine-grained local detail and multi-scale integration",
+      "evidence_cn": "多核视觉Transformer增强细粒度局部细节和多尺度整合",
+      "canonical_evidence": "多核视觉Transformer增强细粒度局部细节和多尺度整合",
+      "tldr_en": "MK-CAViT proposes a multi-kernel correlation-attention vision transformer to integrate fine-grained local details and global dependencies for improved classification.",
+      "tldr_cn": "针对Vision Transformer难以建模多尺度空间关系的问题，MK-CAViT基于HGR理论提出并行多核架构，通过小、中、大卷积核提取多尺度特征，并利用Fast-HGR增强跨尺度交互，有效整合细粒度局部细节与长距离全局依赖，提升分类性能。",
+      "title_zh": "多核相关注意力视觉Transformer用于增强上下文理解与多尺度整合",
+      "motivation_cn": "传统Vision Transformer在建模多尺度空间关系时存在局限，难以整合细粒度局部细节和全局依赖。",
+      "method_cn": "提出多核相关注意力Vision Transformer，使用并行多核架构和Fast-HGR增强跨尺度交互。",
+      "result_cn": "实验证明该方法有效提升了多尺度特征整合和分类准确率。",
+      "conclusion_cn": "为Vision Transformer的多尺度建模提供了有效方案。",
+      "matched_requirement_id": "req-2",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-reahulrjzr",
+      "score": 8.0,
+      "evidence_en": "fine-grained open-vocabulary detection with decomposition framework",
+      "evidence_cn": "基于分解框架的细粒度开放词汇检测",
+      "canonical_evidence": "基于分解框架的细粒度开放词汇检测",
+      "tldr_en": "GUIDED addresses semantic entanglement in fine-grained detection by separating subject and attribute recognition, boosting performance.",
+      "tldr_cn": "GUIDED通过分解主体和属性嵌入来解决细粒度开放词汇检测中的语义纠缠问题。该方法将目标定位和细粒度识别分离，有效缓解了属性过表示和语义漂移，在多个FG-OVD基准上大幅提升检测精度，为细粒度识别提供了有效框架。",
+      "title_zh": "GUIDED：通过识别、检测和判别实现细粒度开放词汇目标检测",
+      "motivation_cn": "现有开放词汇检测在细粒度场景下因语义纠缠而性能不佳。",
+      "method_cn": "提出分解框架，分别处理目标定位和细粒度识别。",
+      "result_cn": "在细粒度开放词汇检测基准上取得显著改进。",
+      "conclusion_cn": "为细粒度检测提供了解耦语义的有效方法。",
+      "matched_requirement_id": "req-2",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers"
+    },
+    {
+      "paper_id": "openreview-icml-2026-ij2c56ra1a",
+      "score": 7.0,
+      "evidence_en": "fine-grained re-identification using ViT with token merging",
+      "evidence_cn": "使用视觉Transformer进行细粒度重识别，并采用token合并",
+      "canonical_evidence": "使用视觉Transformer进行细粒度重识别，并采用token合并",
+      "tldr_en": "Proposes SRE-Merge for discriminative token compression in fine-grained re-identification with ViTs, preserving local details.",
+      "tldr_cn": "细粒度检索任务中，视觉Transformer的二次计算成本限制了实时应用，现有压缩策略在丢弃信息时容易损失判别性局部细节。本文提出SRE-Merge，一种无需训练的判别性token合并框架，通过空间熵显著性评估、局部性保持合并和空间正则化三种机制，在压缩token的同时保留关键细节。在多个细粒度重识别数据集上，该方法在保持高效的同时显著优于基线，为ViT在细粒度任务中的实用化提供了有效方案。",
+      "title_zh": "基于空间正则化熵的细粒度重识别判别性Token合并",
+      "motivation_cn": "视觉Transformer用于细粒度识别时，二次计算成本高，现有压缩方法会丢失关键局部细节。",
+      "method_cn": "提出SRE-Merge框架，通过空间熵显著性评估、局部性保持合并和空间正则化实现判别性token压缩。",
+      "result_cn": "在多个细粒度重识别数据集上，该方法在压缩计算的同时保持或提升了识别准确率。",
+      "conclusion_cn": "SRE-Merge有效解决了细粒度任务中ViT的压缩与精度权衡问题。",
+      "matched_requirement_id": "req-2",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-vntj7pglrz",
+      "score": 7.0,
+      "evidence_en": "fine-grained classification with MLLM using unlabeled data and self-supervised prompt learning",
+      "evidence_cn": "利用无标签数据和自监督提示学习提升多模态大模型细粒度分类性能",
+      "canonical_evidence": "利用无标签数据和自监督提示学习提升多模态大模型细粒度分类性能",
+      "tldr_en": "AutoSEP improves fine-grained zero-shot classification by iteratively learning discriminative prompts from unlabeled data using MLLMs.",
+      "tldr_cn": "针对多模态大模型在细粒度图像分类上易忽略细微视觉差异的问题，提出AutoSEP框架，无需监督信号，通过迭代自监督提示学习，让MLLM聚焦于关键判别特征。实验显示该方法显著提升细粒度分类准确率，为零样本细粒度分类提供新范式。",
+      "title_zh": "无标签数据提升多模态大模型细粒度图像零样本分类",
+      "motivation_cn": "多模态大模型在细粒度分类中易忽略细微视觉差异。",
+      "method_cn": "提出AutoSEP，利用无标签数据自监督学习图像描述提示，引导MLLM关注判别特征。",
+      "result_cn": "在细粒度分类任务上准确率显著提升。",
+      "conclusion_cn": "自监督提示学习可有效增强多模态大模型细粒度分类能力。",
+      "matched_requirement_id": "req-2",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-pr7vmmtsxc",
+      "score": 7.0,
+      "evidence_en": "unified vision transformer foundation model for native resolution classification",
+      "evidence_cn": "统一视觉Transformer基础模型，支持原生分辨率分类",
+      "canonical_evidence": "统一视觉Transformer基础模型，支持原生分辨率分类",
+      "tldr_en": "UniViTAR proposes a family of homogeneous vision foundation models with native resolution support and advanced architectural components for classification.",
+      "tldr_cn": "该论文针对传统ViT固定输入分辨率忽视图像自然可变性的问题，提出UniViTAR系列视觉基础模型，通过多种架构升级（如2D RoPE）支持原生分辨率输入。该模型在统一视觉模态和原生分辨率场景下表现优异，可作为分类任务的通用骨干网络。",
+      "title_zh": "VITRIX-UniViTAR：原生分辨率统一视觉Transformer",
+      "motivation_cn": "传统ViT固定输入分辨率，牺牲空间上下文保真度。",
+      "method_cn": "提出UniViTAR，整合多项架构升级实现原生分辨率支持。",
+      "result_cn": "在统一视觉模态和原生分辨率任务上性能领先。",
+      "conclusion_cn": "UniViTAR可作为通用视觉基础模型，尤其适合需要保留细节的分类场景。",
+      "matched_requirement_id": "req-3",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification"
+    },
+    {
+      "paper_id": "openreview-icml-2026-lj1qi7fgyb",
+      "score": 7.0,
+      "evidence_en": "XTRA with extra tokens for disentangled representation learning, enabling fine-grained part decomposition",
+      "evidence_cn": "XTRA利用额外token进行解耦表示学习，实现细粒度部件分解",
+      "canonical_evidence": "XTRA利用额外token进行解耦表示学习，实现细粒度部件分解",
+      "tldr_en": "XTRA augments Vision Transformers with dedicated factor tokens and a Minimum Volume Constraint to learn disentangled representations of semantic parts without supervision.",
+      "tldr_cn": "针对Vision Transformer中额外token缺乏语义结构的问题，XTRA提出专用因子token和最小体积约束，在无监督情况下将图像分解为头部、身体等语义部件，促进了细粒度特征学习，实验验证了其有效性。",
+      "title_zh": "额外Token很重要：使用Vision Transformer的解耦表示学习",
+      "motivation_cn": "现有Vision Transformer的额外token缺乏语义结构，无法分解图像语义部件。",
+      "method_cn": "提出XTRA框架，增加专用因子token并通过最小体积约束实现解耦。",
+      "result_cn": "实验表明该方法能无监督地分解图像为语义部件，有助于细粒度任务。",
+      "conclusion_cn": "证明了额外token可被正则化为有意义的解耦表示。",
+      "matched_requirement_id": "req-2",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-gkt3vracu1",
+      "score": 7.0,
+      "evidence_en": "seq-JEPA for self-supervised learning resolving invariance-equivariance trade-off, beneficial for fine-grained classification",
+      "evidence_cn": "seq-JEPA通过自监督学习解决不变性与等变性权衡，有益于细粒度分类",
+      "canonical_evidence": "seq-JEPA通过自监督学习解决不变性与等变性权衡，有益于细粒度分类",
+      "tldr_en": "seq-JEPA introduces architectural inductive biases into joint-embedding predictive architectures to resolve the trade-off between invariance and equivariance in self-supervised learning.",
+      "tldr_cn": "自监督学习中，两视图范式常导致不变性与等变性任务之间的性能权衡。seq-JEPA提出一种世界模型框架，通过引入架构偏置到联合嵌入预测架构中，同时提升高层面不变性任务（如图像分类）和细粒度等变性任务的性能，实验表明其有效缓解了这一权衡。",
+      "title_zh": "seq-JEPA：不变-等变世界模型的自回归预测学习",
+      "motivation_cn": "现有自监督学习方法在不变性和等变性任务间存在性能权衡。",
+      "method_cn": "提出seq-JEPA框架，在联合嵌入预测架构中引入归纳偏置。",
+      "result_cn": "实验证明该方法能同时提升分类和细粒度等变任务的表现。",
+      "conclusion_cn": "提供了解决自监督学习权衡问题的新思路。",
+      "matched_requirement_id": "req-6",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification"
+    },
+    {
+      "paper_id": "openreview-icml-2026-ltxvohuol2",
+      "score": 6.0,
+      "evidence_en": "studies vision transformer component plasticity for finetuning, directly relevant to ViT classification",
+      "evidence_cn": "研究视觉Transformer组件在微调中的塑性，直接适用于ViT分类",
+      "canonical_evidence": "研究视觉Transformer组件在微调中的塑性，直接适用于ViT分类",
+      "tldr_en": "This paper analyzes vision transformer component plasticity, showing that non-smooth components benefit transfer learning, providing guidance for finetuning ViT classifiers.",
+      "tldr_cn": "针对视觉Transformer微调中组件适应性不明确的问题，本文提出‘塑性’度量并理论分析，通过1000多次微调实验证明非光滑组件更易适应，为ViT分类器微调中组件选择提供原则性指导。",
+      "title_zh": "视觉Transformer微调受益于非光滑组件",
+      "motivation_cn": "Transformer平滑性在迁移学习中作用未被充分理解，需要指导微调时组件选择。",
+      "method_cn": "定义组件塑性（输出对输入变化的敏感度），通过理论分析和大量微调实验验证。",
+      "result_cn": "发现非光滑组件（高塑性）对迁移性能更重要，并在不同ViT规模上验证。",
+      "conclusion_cn": "塑性视角为ViT微调提供实用指导，提升分类迁移效果。",
+      "matched_requirement_id": "req-3",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-au2eay2qeu",
+      "score": 6.0,
+      "evidence_en": "fine-grained few-shot class-incremental learning directly addresses fine-grained classification",
+      "evidence_cn": "细粒度小样本类增量学习直接针对细粒度分类",
+      "canonical_evidence": "细粒度小样本类增量学习直接针对细粒度分类",
+      "tldr_en": "This paper proposes a meta-environment learner for fine-grained few-shot class-incremental learning, modeling sub-category synergy to improve incremental fine-grained classification.",
+      "tldr_cn": "针对细粒度小样本类增量学习中类别间细微差异和增量协同问题，提出元环境学习器，通过理论公式推导子类别协同机制，在多个细粒度增量数据集上显著提升渐进分类性能。",
+      "title_zh": "用于细粒度小样本类增量学习的元环境学习器演化与正则化",
+      "motivation_cn": "现有方法在细粒度增量学习中未充分利用子类别间的潜在协同。",
+      "method_cn": "从理论上推导出子类别协同公式，并设计元环境学习器实现动态正则化。",
+      "result_cn": "在CUB-200等细粒度数据集上超越现有方法。",
+      "conclusion_cn": "有效利用子类别协同可显著提升细粒度增量学习效果。",
+      "matched_requirement_id": "req-2",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-91gzt22sef",
+      "score": 6.0,
+      "evidence_en": "proposes Visual-Contrast Attention as a drop-in replacement for MHSA in ViT",
+      "evidence_cn": "提出视觉对比注意力模块替代ViT的多头自注意力",
+      "canonical_evidence": "提出视觉对比注意力模块替代ViT的多头自注意力",
+      "tldr_en": "Linear Differential Vision Transformer introduces Visual-Contrast Attention (VCA) that reduces complexity from O(N^2C) to O(NnC) while injecting explicit discrimination into ViT, serving as a general backbone improvement for image classification.",
+      "tldr_cn": "针对视觉Transformer中多头自注意力计算开销大且难以聚焦判别性特征的问题，本文提出线性差分视觉Transformer，其核心是视觉对比注意力（VCA）模块。VCA通过将密集查询场蒸馏为少量视觉对比令牌，并分离为可学习的正负对比，显式注入判别力，同时将复杂度降至线性。在图像分类任务上，VCA在降低计算量的同时保持或提升准确率，为视觉Transformer架构提供了高效且有效的改进方案。",
+      "title_zh": "线性差分视觉Transformer：通过成对差分学习视觉对比",
+      "motivation_cn": "现有ViT的自注意力计算全局关联，对弱关联花费大量计算，缺乏判别性偏置。",
+      "method_cn": "提出视觉对比注意力（VCA），将每个注意力头的密集查询场蒸馏为少量空间池化对比令牌，并分为正负对比，实现显式判别性。",
+      "result_cn": "在ImageNet等基准上，VCA在降低计算复杂度的同时达到与原始ViT相当或更优的分类性能。",
+      "conclusion_cn": "VCA作为多头自注意力的即插即用替代方案，提升了ViT的计算效率与判别能力。",
+      "matched_requirement_id": "req-3",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-a1fwrvr72o",
+      "score": 6.0,
+      "evidence_en": "self-supervised distillation for adaptive visual recognition",
+      "evidence_cn": "通过自监督蒸馏学习何处计算和看到什么，提升视觉识别效率",
+      "canonical_evidence": "通过自监督蒸馏学习何处计算和看到什么，提升视觉识别效率",
+      "tldr_en": "LookWhere jointly pretrains a low-resolution selector and high-resolution extractor via self-supervised teacher distillation, enabling efficient visual recognition by selectively processing only relevant image regions without full high-resolution computation.",
+      "tldr_cn": "针对高分辨率图像下视觉Transformer计算开销过大的问题，本文提出LookWhere方法，通过自适应计算策略降低开销。该方法将计算分解为低分辨率选择器和高分辨率提取器，两者通过自监督教师蒸馏联合预训练，无需完整处理高分辨率输入。实验证明，LookWhere在保持高精度的同时显著减少计算量，为自监督视觉Transformer在细粒度等任务中的高效应用提供了新思路。",
+      "title_zh": "LookWhere？通过自监督学习何处看和看什么实现高效视觉识别",
+      "motivation_cn": "高分辨率图像下视觉Transformer计算量随令牌数平方增长，亟需自适应计算。",
+      "method_cn": "提出双分辨率框架，低分辨率选择器预测关注区域，高分辨率提取器仅处理选定区域，通过自监督蒸馏联合训练。",
+      "result_cn": "在多个视觉识别基准上，LookWhere以更低计算量达到与全分辨率模型相当的性能。",
+      "conclusion_cn": "展示了自监督学习引导自适应计算在视觉Transformer中的潜力。",
+      "matched_requirement_id": "req-6",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-ou6fxksie0",
+      "score": 5.0,
+      "evidence_en": "experiments on DINO model",
+      "evidence_cn": "在DINO模型上实验",
+      "canonical_evidence": "在DINO模型上实验",
+      "tldr_en": "Proposes SnapViT for pruning ViTs without retraining, tested on DINO and other models, enabling elastic inference.",
+      "tldr_cn": "现有视觉基础模型在部署时受限于固定尺寸，无法弹性适配不同计算预算。本文提出SnapViT，一种无需重训练的后剪枝方法，通过结合梯度信息和进化算法近似跨网络结构相关性，实现连续的弹性推理。在DINO、SigLIPv2等多个模型上的实验表明，该方法在不需标签数据且无需重训练的情况下优于现有方法，为模型压缩提供了高效方案。",
+      "title_zh": "无需重训练的弹性视觉Transformer剪枝方法",
+      "motivation_cn": "视觉基础模型在部署时只能选择固定尺寸，导致计算资源与性能无法最优权衡。",
+      "method_cn": "提出SnapViT，一种基于梯度信息和进化算法的结构化剪枝方法，无需标注数据和重训练。",
+      "result_cn": "在DINO、DeIT等模型上取得优于现有方法的剪枝性能，支持连续弹性推理。",
+      "conclusion_cn": "SnapViT有效实现了视觉Transformer的弹性剪枝，简化了部署流程。",
+      "matched_requirement_id": "req-4",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification"
+    },
+    {
+      "paper_id": "openreview-icml-2026-19wap8lepy",
+      "score": 5.0,
+      "evidence_en": "hierarchical visual recognition with coarse-to-fine features",
+      "evidence_cn": "层次视觉识别，粗到细特征，接近细粒度分类",
+      "canonical_evidence": "层次视觉识别，粗到细特征，接近细粒度分类",
+      "tldr_en": "Proposes HiR2 regularizer for hierarchical visual recognition in LMMs, constructing coarse-to-fine visual features.",
+      "tldr_cn": "大型多模态模型在层次视觉识别中缺乏显式的分类学知识，导致细粒度分类一致性差。本文提出层次表示正则化方法HiR2，通过构建语义感知的视觉树，提取粗到细的视觉特征，并作为正则项约束模型。实验表明该方法显著提升了模型在层次分类任务中的一致性，对细粒度识别也有帮助。",
+      "title_zh": "面向大型多模态模型的层次树学习与层次表示正则化",
+      "motivation_cn": "大型多模态模型缺乏分类学知识，导致层次视觉识别（如细粒度分类）一致性低。",
+      "method_cn": "提出HiR2正则化方法，构建语义视觉树并提取粗到细特征，作为插件式正则项。",
+      "result_cn": "在多个层次视觉识别基准上，该方法提升了模型的一致性表现。",
+      "conclusion_cn": "显式引入层次结构正则化能有效改善多模态模型的细粒度识别能力。",
+      "matched_requirement_id": "req-7",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Foundation models for fine grained visual classification"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-9yxk1rnc9o",
+      "score": 5.0,
+      "evidence_en": "explicitly mentions DINO as contrastively pretrained model used for zero-shot semantic matching",
+      "evidence_cn": "明确提及DINO作为对比预训练模型用于零样本语义匹配",
+      "canonical_evidence": "明确提及DINO作为对比预训练模型用于零样本语义匹配",
+      "tldr_en": "Fuse2Match proposes a training-free fusion of Stable Diffusion 3, flow, and contrastive models (including DINO) for zero-shot semantic matching, demonstrating that DINO features can be combined with other modalities for discriminative tasks.",
+      "tldr_cn": "本文探索将Stable Diffusion 3、流模型与对比预训练模型（如DINO）的特征进行多层级融合，用于零样本语义对应。研究发现SD3的语义信号分散在多个时间步和层中，通过设计的置信度加权融合方案，有效整合了来自DINO等模型的判别性表示。该方法无需训练即可提升匹配性能，验证了DINO特征在跨模型协同中的价值，尽管并非直接用于细粒度分类，但为DINO在视觉理解任务中的扩展提供了方法启示。",
+      "title_zh": "Fuse2Match：流模型、扩散模型与对比模型的无训练融合用于零样本语义匹配",
+      "motivation_cn": "现有工作简单拼接SD和DINO特征用于语义对应，效果有限且未充分利用SD3的多层信息。",
+      "method_cn": "提出多层级融合方案，将SD3不同时间步和层的特征以及DINO特征进行置信度加权融合，无需训练。",
+      "result_cn": "在多个语义匹配基准上超越简单拼接和现有方法，达到新最优。",
+      "conclusion_cn": "证实了融合多模态生成模型与对比模型特征的潜力，展示了DINO的适用性。",
+      "matched_requirement_id": "req-1",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "DINO model for fine-grained classification"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-my72tmxg6t",
+      "score": 5.0,
+      "evidence_en": "unsupervised hierarchical prototype discovery for classification",
+      "evidence_cn": "用于分类的无监督层次原型发现",
+      "canonical_evidence": "用于分类的无监督层次原型发现",
+      "tldr_en": "Deep taxonomic networks automatically discover hierarchical taxonomies and prototypes from unlabeled data using a tree-structured mixture-of-Gaussian prior.",
+      "tldr_cn": "深度分类网络提出了一种新的深度潜在变量方法，通过优化完全二叉树结构的混合高斯先验，从未标注数据中自动发现层次分类结构和原型簇。该方法克服了现有层次聚类方法对类别数的依赖，并充分利用中间层次的原型信息，在多个数据集上有效发现有意义的层次结构。",
+      "title_zh": "深度分类网络用于无监督层次原型发现",
+      "motivation_cn": "现有深度层次聚类方法受限于类别数且未利用中间层次原型信息。",
+      "method_cn": "在变分推断框架中优化完全二叉树的混合高斯先验。",
+      "result_cn": "在多个数据集上成功发现层次结构和原型簇。",
+      "conclusion_cn": "为无监督分类提供了自动构建层次结构的新方法。",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification."
+    },
+    {
+      "paper_id": "openreview-icml-2026-eyo7titaf9",
+      "score": 4.0,
+      "evidence_en": "uses multi-granularity language to enhance visual feature learning, relevant for fine-grained classification",
+      "evidence_cn": "利用多粒度语言增强视觉特征学习，对细粒度分类有借鉴意义",
+      "canonical_evidence": "利用多粒度语言增强视觉特征学习，对细粒度分类有借鉴意义",
+      "tldr_en": "MAGIC uses multi-granularity language information to improve image clustering by aligning visual and textual semantics, addressing granularity discrepancy and redundancy.",
+      "tldr_cn": "针对图像聚类中视觉与语言语义粒度不匹配及冗余问题，提出MAGIC方法，通过多粒度语言提示和自监督学习对齐多模态语义，在多个聚类基准上取得显著提升，为细粒度特征学习提供新思路。",
+      "title_zh": "MAGIC：多粒度语言引导的图像聚类",
+      "motivation_cn": "现有语言引导聚类方法因固定词汇表导致视觉与语言语义粒度不匹配，且存在任务无关冗余。",
+      "method_cn": "利用视觉语言模型生成多粒度语言描述，结合自监督学习进行跨模态语义对齐。",
+      "result_cn": "在多个图像聚类数据集上取得最佳结果，有效缓解了语义错位和冗余问题。",
+      "conclusion_cn": "多粒度语言信息能显著提升图像聚类性能，并为细粒度视觉任务提供启发。",
+      "matched_requirement_id": "req-2",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-gbrvlyvoqh",
+      "score": 4.0,
+      "evidence_en": "dataset distillation for pre-trained self-supervised vision models",
+      "evidence_cn": "针对预训练自监督视觉模型的数据集蒸馏",
+      "canonical_evidence": "针对预训练自监督视觉模型的数据集蒸馏",
+      "tldr_en": "Proposes Linear Gradient Matching for distilling datasets to train linear probes on pre-trained self-supervised models.",
+      "tldr_cn": "现有数据集蒸馏方法通常针对随机初始化模型训练，而当前视觉模型多基于大规模预训练自监督模型。本文研究如何蒸馏小数据集以高效训练这些模型的线性分类头。提出线性梯度匹配方法，优化合成图像使得在线性探测过程中梯度匹配，从而压缩数据。实验表明该方法在多个自监督模型上有效，减少了数据需求。",
+      "title_zh": "面向预训练自监督视觉模型的数据集蒸馏",
+      "motivation_cn": "现有数据集蒸馏方法不适用于在预训练自监督模型上训练线性分类头的场景。",
+      "method_cn": "提出线性梯度匹配方法，优化合成数据以匹配线性探测过程中的梯度。",
+      "result_cn": "在多个预训练自监督模型上，蒸馏数据训练的分类头性能接近全数据训练。",
+      "conclusion_cn": "该方法有效降低了预训练模型微调所需的数据量，具有实用价值。",
+      "matched_requirement_id": "req-4",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification"
+    },
+    {
+      "paper_id": "openreview-icml-2026-bmvwc1aina",
+      "score": 4.0,
+      "evidence_en": "self-supervised ViT with text conditioning reduces prediction uncertainty",
+      "evidence_cn": "利用文本条件减少自监督视觉Transformer预测不确定性",
+      "canonical_evidence": "利用文本条件减少自监督视觉Transformer预测不确定性",
+      "tldr_en": "TC-JEPA improves visual representation learning by conditioning on text to reduce prediction uncertainty; applicable to classification.",
+      "tldr_cn": "该论文针对自监督学习中掩码特征预测的不确定性问题，提出文本条件JEPA（TC-JEPA），利用图像描述通过稀疏交叉注意力调控预测的块特征，使特征更语义化。实验表明该方法在下游任务中提升性能，可作为自监督视觉Transformer的一种增强方式，对细粒度分类等任务有潜在帮助。",
+      "title_zh": "文本条件JEPA用于学习语义丰富的视觉表示",
+      "motivation_cn": "自监督掩码特征预测存在视觉不确定性，难以学习语义表征。",
+      "method_cn": "提出文本条件JEPA，利用图像描述通过稀疏交叉注意力减少预测不确定性。",
+      "result_cn": "在多个下游任务上性能提升，表明特征更具语义性。",
+      "conclusion_cn": "文本条件可有效引导自监督学习，提升视觉表示质量。",
+      "matched_requirement_id": "req-6",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification"
+    },
+    {
+      "paper_id": "openreview-icml-2026-vgz66lux3q",
+      "score": 4.0,
+      "evidence_en": "active learning with foundation model priors for efficient classification under imbalance",
+      "evidence_cn": "利用基础模型先验进行主动学习，处理类别不平衡下的高效分类",
+      "canonical_evidence": "利用基础模型先验进行主动学习，处理类别不平衡下的高效分类",
+      "tldr_en": "Proposes active learning framework leveraging foundation model priors for imbalance-aware sample selection and robust classification.",
+      "tldr_cn": "该论文针对真实数据集类别不平衡和噪声标注问题，提出主动学习框架，利用基础模型先验辅助小模型做出平衡决策。通过选择最具信息量且平衡的样本进行标注，有效提升少数类分类性能。方法适用于多种图像和文本分类任务。",
+      "title_zh": "基于基础模型先验的主动学习：类别不平衡下的高效学习",
+      "motivation_cn": "真实数据集存在类别不平衡和噪声，损害少数类性能。",
+      "method_cn": "提出主动学习框架，结合基础模型先验进行不平衡感知样本选择。",
+      "result_cn": "在多个领域有效提升少数类分类性能。",
+      "conclusion_cn": "基础模型先验可有效指导主动学习，缓解类别不平衡问题。",
+      "matched_requirement_id": "req-4",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-y8vwyf5cvi",
+      "score": 4.0,
+      "evidence_en": "differentiable hierarchical tokenizer for vision transformers, improving classification and dense prediction",
+      "evidence_cn": "可微层次视觉分词器，提升Vision Transformer分类与密集预测",
+      "canonical_evidence": "可微层次视觉分词器，提升Vision Transformer分类与密集预测",
+      "tldr_en": "Introduces a differentiable tokenizer that adapts to image content, improving ViT classification performance.",
+      "tldr_cn": "该论文针对ViT固定块标记忽略图像结构的问题，提出端到端可微分层次分词器，根据图像内容自适应生成标记，并保持与现有架构兼容。在图像分类和密集预测任务上取得竞争力，且支持光栅到矢量转换，为ViT提供了更灵活的输入表示。",
+      "title_zh": "可微层次视觉分词化",
+      "motivation_cn": "ViT固定块标记忽略空间和语义结构。",
+      "method_cn": "提出可微层次分词器，利用信息准则进行层次模型选择。",
+      "result_cn": "在分类和密集预测任务上表现竞争力。",
+      "conclusion_cn": "自适应分词可提升ViT对图像结构的利用，改善分类性能。",
+      "matched_requirement_id": "req-3",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-72ceg36b0q",
+      "score": 4.0,
+      "evidence_en": "self-supervised adaptation for vision foundation models",
+      "evidence_cn": "视觉基础模型的自监督适应",
+      "canonical_evidence": "视觉基础模型的自监督适应",
+      "tldr_en": "VESSA proposes a self-supervised fine-tuning method for vision foundation models using object-centric videos, enabling domain adaptation without labels.",
+      "tldr_cn": "VESSA提出了一种基于物体中心视频的自监督微调方法，用于视觉基础模型的领域适应。该方法无需标注即可扩展模型能力，实验表明在多个下游任务上有效，为视觉基础模型的自监督适应提供了新范式。",
+      "title_zh": "VESSA：基于视频的物体中心自监督适应视觉基础模型",
+      "motivation_cn": "现有视觉基础模型在分布偏移下性能下降，且监督微调不可行。",
+      "method_cn": "利用短多视角物体中心视频进行自监督微调，无需标注。",
+      "result_cn": "实验表明在多个下游任务上有效，提升了模型适应能力。",
+      "conclusion_cn": "为视觉基础模型的自监督适应提供了有效范式。",
+      "matched_requirement_id": "req-4",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification"
+    },
+    {
+      "paper_id": "openreview-neurips-2025-13bj5fyg8e",
+      "score": 4.0,
+      "evidence_en": "cross-modal domain generalization method for vision-language foundation models",
+      "evidence_cn": "针对视觉-语言基础模型的跨域泛化方法",
+      "canonical_evidence": "针对视觉-语言基础模型的跨域泛化方法",
+      "tldr_en": "SBGen uses Schrodinger bridge to model stochastic semantic evolution for cross-domain generalization in vision-language models.",
+      "tldr_cn": "SBGen利用施罗丁格桥模拟随机语义演化，用于视觉语言基础模型的跨域泛化。该方法通过文本引导等组件，显式建模语义演变，在多个域泛化基准上取得先进结果，为处理分布偏移提供了新思路。",
+      "title_zh": "学习跨模态施罗丁格桥用于视觉域泛化",
+      "motivation_cn": "静态语义对齐不足以应对域之间的分布差异。",
+      "method_cn": "提出跨模态施罗丁格桥，显式建模随机语义演化。",
+      "result_cn": "在多个域泛化基准上显著优于现有方法。",
+      "conclusion_cn": "为域泛化提供了基于随机过程的创新方法。",
+      "matched_requirement_id": "req-4",
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification"
+    }
+  ],
+  "llm_ranked_at": "2026-07-09T06:53:06.637709+00:00",
+  "display_min_score": 4.0,
+  "pruned_at": "2026-07-09T06:53:06.676435+00:00"
+}
