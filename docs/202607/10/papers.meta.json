@@ -1,0 +1,24 @@
+{
+  "label": "2026-07-10",
+  "date": "2026-07-10",
+  "generated_at": "2026-07-10T21:27:15",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202607/10/2607.03068v1-pixcon-clean-positive-contrastive-learning-for-foundation-model-semi-supervised-segmentation",
+      "section": "quick",
+      "title_en": "PixCon: Clean-Positive Contrastive Learning for Foundation-Model Semi-Supervised Segmentation",
+      "authors": "Ebenezer Tarubinga",
+      "date": "2026-07-03",
+      "pdf": "https://arxiv.org/pdf/2607.03068v1",
+      "score": "6.0",
+      "evidence": "使用DINOv2作为基础骨干进行半监督分割",
+      "tldr": "半监督语义分割依赖伪标签过滤，但基础模型DINOv2生成的伪标签已高度清洁。本文提出PixCon，一种干净正样本像素对比学习框架，通过仅存储学生正确分类的标记像素来构建无污染记忆库，污染率为0。梯度分析揭示了污染危害的定量关系。在Pascal VOC、Cityscapes和ADE20K上，PixCon匹配或改进DINOv2-based UniMatch V2基线，每种子提升约0.2 mIoU。干净正样本对比成为基础模型下半监督分割的鲁棒、低成本默认方案。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Semi-supervised semantic segmentation (SSSS) has long turned on one question, which pseudo-labels to trust, and answered it with ever more careful confidence filtering. Foundation backbones change the regime: with a DINOv2 teacher a strict threshold already retains a measured 98%-clean pseudo-label set, so the accuracy that remains lives not in the filter but in how the embedding space is structured by class. We propose PixCon, a clean-positive pixel-contrastive framework. PixCon maintains a per-class memory bank that admits only labeled pixels the student already classifies correctly, guaranteeing a contamination-free positive set ($ρ_F=0$) by construction, unlike prior contrastive SSSS banks (ReCo, U$^2$PL) built from confidence-filtered pseudo-labels. It is a single branch over a consistency backbone, adds no inference-time parameters, and needs no bank-specific threshold. A first-order analysis of the supervised-InfoNCE gradient explains why contamination hurts: its false-positive term scales as $ρ_F/(1-ρ_F)$, which we measure (0.018 on Pascal, 0.106 on ADE20K) rather than assume. Across Pascal VOC, Cityscapes, and ADE20K, PixCon matches or improves a strong DINOv2-based UniMatch V2 baseline in a compute-matched one-switch protocol: it improves every Pascal-1/8 seed (a per-seed gain of about +0.2 mIoU) and its three-seed mean reaches 87.90, the published UniMatch V2-B figure. Because contamination is already rare under foundation-model teachers, our analysis indicates the $ρ_F=0$ guarantee acts chiefly as robustness as teachers weaken, while the accuracy gain comes from cleaner positive supervision, making clean-positive contrast a robust, low-cost default for foundation-model SSSS.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

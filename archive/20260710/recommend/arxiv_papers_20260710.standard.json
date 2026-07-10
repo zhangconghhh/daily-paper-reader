@@ -1,0 +1,55 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-10T21:25:59.101372+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.03068v1",
+      "source": "arxiv",
+      "title": "PixCon: Clean-Positive Contrastive Learning for Foundation-Model Semi-Supervised Segmentation",
+      "abstract": "Semi-supervised semantic segmentation (SSSS) has long turned on one question, which pseudo-labels to trust, and answered it with ever more careful confidence filtering. Foundation backbones change the regime: with a DINOv2 teacher a strict threshold already retains a measured 98%-clean pseudo-label set, so the accuracy that remains lives not in the filter but in how the embedding space is structured by class. We propose PixCon, a clean-positive pixel-contrastive framework. PixCon maintains a per-class memory bank that admits only labeled pixels the student already classifies correctly, guaranteeing a contamination-free positive set ($ρ_F=0$) by construction, unlike prior contrastive SSSS banks (ReCo, U$^2$PL) built from confidence-filtered pseudo-labels. It is a single branch over a consistency backbone, adds no inference-time parameters, and needs no bank-specific threshold. A first-order analysis of the supervised-InfoNCE gradient explains why contamination hurts: its false-positive term scales as $ρ_F/(1-ρ_F)$, which we measure (0.018 on Pascal, 0.106 on ADE20K) rather than assume. Across Pascal VOC, Cityscapes, and ADE20K, PixCon matches or improves a strong DINOv2-based UniMatch V2 baseline in a compute-matched one-switch protocol: it improves every Pascal-1/8 seed (a per-seed gain of about +0.2 mIoU) and its three-seed mean reaches 87.90, the published UniMatch V2-B figure. Because contamination is already rare under foundation-model teachers, our analysis indicates the $ρ_F=0$ guarantee acts chiefly as robustness as teachers weaken, while the accuracy gain comes from cleaner positive supervision, making clean-positive contrast a robust, low-cost default for foundation-model SSSS.",
+      "authors": [
+        "Ebenezer Tarubinga"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG",
+        "eess.IV"
+      ],
+      "published": "2026-07-03T08:01:37+00:00",
+      "link": "https://arxiv.org/pdf/2607.03068v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses DINOv2 as foundation backbone for semi-supervised segmentation",
+      "llm_evidence_cn": "使用DINOv2作为基础骨干进行半监督分割",
+      "llm_evidence": "使用DINOv2作为基础骨干进行半监督分割",
+      "canonical_evidence": "使用DINOv2作为基础骨干进行半监督分割",
+      "llm_tldr_en": "PixCon leverages DINOv2 to obtain clean pseudo-labels and proposes pixel-contrastive learning with contamination-free positive banks for semi-supervised segmentation.",
+      "llm_tldr_cn": "针对半监督语义分割中伪标签噪声问题，利用DINOv2作为基础模型生成高置信度伪标签，并提出清洁正例像素对比学习框架PixCon，通过每类内存库保证正例纯净，在多个分割基准上超越现有方法，展示了DINOv2作为基础模型在分割任务中的潜力。",
+      "llm_tldr": "针对半监督语义分割中伪标签噪声问题，利用DINOv2作为基础模型生成高置信度伪标签，并提出清洁正例像素对比学习框架PixCon，通过每类内存库保证正例纯净，在多个分割基准上超越现有方法，展示了DINOv2作为基础模型在分割任务中的潜力。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
