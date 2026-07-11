@@ -6,26 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-10
-- 运行时间：2026-07-10 21:27:07 UTC
+- 最新运行日期：2026-07-11
+- 运行时间：2026-07-11 21:13:32 UTC
 - 运行状态：成功
-- 本次总论文数：1
+- 本次总论文数：2
 - 精读区：0
-- 速读区：1
+- 速读区：2
 
 ### 今日简报（AI）
-今天速读了《PixCon》，一篇用干净正例对比学习提升基础模型半监督分割的论文。  
-核心方向：通过“干净正例”对比学习解决半监督分割中的噪声问题，实验表明在小标注场景下效果好。  
-建议：如果你手头有少量标注的分割数据，可尝试将PixCon方法融入现有基础模型（如SAM）训练。
-- 详情：[/202607/10/README](/202607/10/README)
+1) 今日速读两篇6.0分论文，聚焦超像素图像分类的几何不变性图变换器，以及语义概念空间中的可解释新类别发现。  
+2) 最值得关注的方向：超像素与图Transformer的几何结构保持；可解释性驱动的开放世界类别发现。  
+3) 若想深入，可结合Graph Transformer在分割任务中的应用，或尝试用语义概念空间解释未见类别。
+- 详情：[/202607/11/README](/202607/11/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [PixCon: Clean-Positive Contrastive Learning for Foundation-Model Semi-Supervised Segmentation](/202607/10/2607.03068v1-pixcon-clean-positive-contrastive-learning-for-foundation-model-semi-supervised-segmentation)  
+1. [On Preserving Geometrical Invariance for Superpixel Image Classification using Graph Transformer](/202607/11/2607.04262v1-on-preserving-geometrical-invariance-for-superpixel-image-classification-using-graph-transformer)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：使用DINOv2作为基础骨干进行半监督分割
+   evidence：使用图变换器进行图像分类，是视觉变换器的一种变体
+2. [Explainable Novel Category Discovery in Semantic Concept Space](/202607/11/2607.04548v1-explainable-novel-category-discovery-in-semantic-concept-space)  
+   标签：评分：6.0/10、query:dino-fg
+   evidence：利用视觉-语言先验在语义概念空间中进行可解释新类别发现
 
 
 <div class="dpr-home-promo-card">

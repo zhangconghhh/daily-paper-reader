@@ -1,0 +1,93 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-11T21:12:15.929541+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.04262v1",
+      "source": "arxiv",
+      "title": "On Preserving Geometrical Invariance for Superpixel Image Classification using Graph Transformer",
+      "abstract": "Convolutional Neural Network (CNN) and Vision Transformer (ViT) for image classification exploit a dense grid of pixels containing redundant information. Consequently, for a larger image dataset, CNNs and ViTs face deployability challenges due to high computational complexity. Representing images as graphs of superpixels offers an efficient alternative that preserves key information while eliminating pixel-level redundancy. Graph Neural Networks (GNNs) have been utilized on such graphs to perform image classification. However, GNNs are known to struggle with capturing long-range dependencies which is important in the domain of image classification. Furthermore, a majority of these superpixel-based image classification approaches do not explicitly preserve translation/rotation invariance. Nevertheless, preserving translation/rotation invariance is important for robust image classification. Thus, this paper proposes SuperGT, a Graph Transformer-based framework for image classification, which captures the long range dependencies, along with a pre-processing scheme that preserves translation/rotation invariance. We evaluate SuperGT on CIFAR-10 dataset and observe that it performs significantly better than many baselines. Furthermore, we note that the overall performance of SuperGT is comparable to the previous state-of-the-art model, namely, ShapeGNN, without relying on coordinates of the boundary points of each superpixel required by ShapeGNN.",
+      "authors": [
+        "Sarabeshwar Balaji",
+        "Shubham Mohanty",
+        "Akash Anil"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-05T12:16:23+00:00",
+      "link": "https://arxiv.org/pdf/2607.04262v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "image classification using graph transformer, a variant of vision transformer",
+      "llm_evidence_cn": "使用图变换器进行图像分类，是视觉变换器的一种变体",
+      "llm_evidence": "使用图变换器进行图像分类，是视觉变换器的一种变体",
+      "canonical_evidence": "使用图变换器进行图像分类，是视觉变换器的一种变体",
+      "llm_tldr_en": "Proposes a graph transformer for superpixel image classification, addressing long-range dependencies and computational efficiency.",
+      "llm_tldr_cn": "本文提出一种基于超像素图表示的图变换器用于图像分类，解决了超像素图中长程依赖建模困难的问题。通过将图像转换为超像素图，利用图变换器捕获全局依赖，在多个图像分类数据集上取得有竞争力的性能，同时降低了计算开销。为高效视觉分类提供了新方法。",
+      "llm_tldr": "本文提出一种基于超像素图表示的图变换器用于图像分类，解决了超像素图中长程依赖建模困难的问题。通过将图像转换为超像素图，利用图变换器捕获全局依赖，在多个图像分类数据集上取得有竞争力的性能，同时降低了计算开销。为高效视觉分类提供了新方法。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.04548v1",
+      "source": "arxiv",
+      "title": "Explainable Novel Category Discovery in Semantic Concept Space",
+      "abstract": "Novel category discovery aims to identify unseen classes from unlabeled data by transferring knowledge from labeled categories, but most existing methods perform discovery in opaque latent feature spaces. As a result, they may separate novel categories accurately while providing little insight into what semantic evidence defines each discovered group. We propose xNCD, an explainable novel category discovery framework that performs both representation-based discovery and pseudo-label assignment directly in a structured semantic concept space. Instead of clustering arbitrary deep features, xNCD learns a label-free concept representation by aligning visual features with vision-language similarity priors from pretrained multimodal models, and then applies a unified labeled-and-unlabeled self-labeling objective over concept-space logits. This design makes each discovered category explainable by construction through stable concept signatures and instance-level concept evidence. Theoretically, we show that routing discovery through a semantic concept bottleneck induces a strict restriction of the feature-space hypothesis class, excluding a large family of unconstrained decision rules and biasing induced partitions toward semantically interpretable concept coordinates. Experiments on CIFAR-10, CIFAR-100, and CUB-200 demonstrate that xNCD preserves strong discovery performance while providing intrinsic explanations. Under task-agnostic evaluation, xNCD achieves 92.63% overall accuracy on CIFAR-10, close to UNO's 93.4%, and improves CIFAR-100 overall accuracy from 73.2% to 76.45%, while being the only compared method that provides human-readable cluster- and instance-level explanations.",
+      "authors": [
+        "Ifrat Ikhtear Uddin",
+        "Yang Zhou",
+        "KC Santosh",
+        "Longwei Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-05T23:36:36+00:00",
+      "link": "https://arxiv.org/pdf/2607.04548v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "explainable novel category discovery in semantic concept space using vision-language priors",
+      "llm_evidence_cn": "利用视觉-语言先验在语义概念空间中进行可解释新类别发现",
+      "llm_evidence": "利用视觉-语言先验在语义概念空间中进行可解释新类别发现",
+      "canonical_evidence": "利用视觉-语言先验在语义概念空间中进行可解释新类别发现",
+      "llm_tldr_en": "Proposes xNCD for explainable novel category discovery by clustering in a structured semantic concept space aligned with vision-language priors, enabling interpretable classification.",
+      "llm_tldr_cn": "现有新类别发现方法在隐式特征空间聚类，缺乏可解释性。本文提出xNCD框架，通过对齐视觉-语言相似性先验学习无标签概念表示，在结构化语义空间中进行发现和伪标签分配。实验表明方法能准确识别新类别并提供语义证据，对细粒度分类中的未知类别识别有借鉴意义。",
+      "llm_tldr": "现有新类别发现方法在隐式特征空间聚类，缺乏可解释性。本文提出xNCD框架，通过对齐视觉-语言相似性先验学习无标签概念表示，在结构化语义空间中进行发现和伪标签分配。实验表明方法能准确识别新类别并提供语义证据，对细粒度分类中的未知类别识别有借鉴意义。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

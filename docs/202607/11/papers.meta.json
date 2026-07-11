@@ -1,0 +1,39 @@
+{
+  "label": "2026-07-11",
+  "date": "2026-07-11",
+  "generated_at": "2026-07-11T21:13:38",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202607/11/2607.04262v1-on-preserving-geometrical-invariance-for-superpixel-image-classification-using-graph-transformer",
+      "section": "quick",
+      "title_en": "On Preserving Geometrical Invariance for Superpixel Image Classification using Graph Transformer",
+      "authors": "Sarabeshwar Balaji, Shubham Mohanty, Akash Anil",
+      "date": "2026-07-05",
+      "pdf": "https://arxiv.org/pdf/2607.04262v1",
+      "score": "6.0",
+      "evidence": "使用图变换器进行图像分类，是视觉变换器的一种变体",
+      "tldr": "密集像素网格导致CNN和ViT计算复杂，超像素图表示可减少冗余但现有GNN缺乏长程依赖和几何不变性。SuperGT利用Graph Transformer捕获全局依赖并设计几何不变预处理，在CIFAR-10上超越多数基线，性能与需边界点坐标的ShapeGNN相当。该方法无需超像素边界坐标即可实现高精度分类，为高效鲁棒的图像分类提供新范式。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Convolutional Neural Network (CNN) and Vision Transformer (ViT) for image classification exploit a dense grid of pixels containing redundant information. Consequently, for a larger image dataset, CNNs and ViTs face deployability challenges due to high computational complexity. Representing images as graphs of superpixels offers an efficient alternative that preserves key information while eliminating pixel-level redundancy. Graph Neural Networks (GNNs) have been utilized on such graphs to perform image classification. However, GNNs are known to struggle with capturing long-range dependencies which is important in the domain of image classification. Furthermore, a majority of these superpixel-based image classification approaches do not explicitly preserve translation/rotation invariance. Nevertheless, preserving translation/rotation invariance is important for robust image classification. Thus, this paper proposes SuperGT, a Graph Transformer-based framework for image classification, which captures the long range dependencies, along with a pre-processing scheme that preserves translation/rotation invariance. We evaluate SuperGT on CIFAR-10 dataset and observe that it performs significantly better than many baselines. Furthermore, we note that the overall performance of SuperGT is comparable to the previous state-of-the-art model, namely, ShapeGNN, without relying on coordinates of the boundary points of each superpixel required by ShapeGNN.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/11/2607.04548v1-explainable-novel-category-discovery-in-semantic-concept-space",
+      "section": "quick",
+      "title_en": "Explainable Novel Category Discovery in Semantic Concept Space",
+      "authors": "Ifrat Ikhtear Uddin, Yang Zhou, KC Santosh, Longwei Wang",
+      "date": "2026-07-05",
+      "pdf": "https://arxiv.org/pdf/2607.04548v1",
+      "score": "6.0",
+      "evidence": "利用视觉-语言先验在语义概念空间中进行可解释新类别发现",
+      "tldr": "现有新类别发现方法在隐式特征空间中聚类，缺乏可解释性。本文提出xNCD框架，在结构化语义概念空间中进行表示学习和伪标签分配，利用视觉-语言先验对齐特征，并通过概念瓶颈约束使每个发现类别具有可解释的概念签名。在CIFAR-10/100和CUB-200上，xNCD保持强发现性能（如CIFAR-10准确率92.63%），同时唯一提供人类可读的聚类和实例级解释。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Novel category discovery aims to identify unseen classes from unlabeled data by transferring knowledge from labeled categories, but most existing methods perform discovery in opaque latent feature spaces. As a result, they may separate novel categories accurately while providing little insight into what semantic evidence defines each discovered group. We propose xNCD, an explainable novel category discovery framework that performs both representation-based discovery and pseudo-label assignment directly in a structured semantic concept space. Instead of clustering arbitrary deep features, xNCD learns a label-free concept representation by aligning visual features with vision-language similarity priors from pretrained multimodal models, and then applies a unified labeled-and-unlabeled self-labeling objective over concept-space logits. This design makes each discovered category explainable by construction through stable concept signatures and instance-level concept evidence. Theoretically, we show that routing discovery through a semantic concept bottleneck induces a strict restriction of the feature-space hypothesis class, excluding a large family of unconstrained decision rules and biasing induced partitions toward semantically interpretable concept coordinates. Experiments on CIFAR-10, CIFAR-100, and CUB-200 demonstrate that xNCD preserves strong discovery performance while providing intrinsic explanations. Under task-agnostic evaluation, xNCD achieves 92.63% overall accuracy on CIFAR-10, close to UNO's 93.4%, and improves CIFAR-100 overall accuracy from 73.2% to 76.45%, while being the only compared method that provides human-readable cluster- and instance-level explanations.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
