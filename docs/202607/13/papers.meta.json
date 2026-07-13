@@ -1,0 +1,54 @@
+{
+  "label": "2026-07-13",
+  "date": "2026-07-13",
+  "generated_at": "2026-07-13T20:54:59",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202607/13/2607.09086v1-subtoken-vision-transformer-for-fine-grained-recognition",
+      "section": "deep",
+      "title_en": "Subtoken Vision Transformer for Fine-grained Recognition",
+      "authors": "Jie Zhu, Ivy Zhang, Minchul Kim, Xiaoming Liu",
+      "date": "2026-07-10",
+      "pdf": "https://arxiv.org/pdf/2607.09086v1",
+      "score": "9.0",
+      "evidence": "提出SubViT方法用于细粒度视觉识别，基于视觉变换器",
+      "tldr": "标准Vision Transformer将固定尺寸图像块压缩为单个token，但细粒度识别依赖局部细微差异，导致容量错配。SubViT通过对判别性区域分配多个子token，保留全局上下文的同时增强局部细节。采用两阶段训练：先用随机注意力头采样子区域微调，再蒸馏出轻量路由器直接预测token重要性。在CUB、FGVC-Aircraft和Stanford Cars上，将DINOv2在新类上的准确率从81.3%提升至84.7%，仅增加0.50ms延迟和3.4%FLOPs，比Retina Patch延迟降低73.8%。",
+      "tags": "query:dino-fg",
+      "abstract_en": "We present Subtoken Vision Transformer (SubViT), a selective image tokenization method for fine-grained visual recognition. Standard Vision Transformers compress each fixed-size patch into a single token, although fine-grained distinctions often depend on localized variations within only a few patches. SubViT addresses this mismatch by representing discriminative patches with multiple subtokens while retaining the original token sequence for global context, thereby allocating additional capacity where it is most needed. Since attention heads encode complementary semantics and extracting attention maps at inference requires an extra backbone forward, we adopt a two-stage training strategy. Stage 1 fine-tunes the ViT using subdivision regions sampled from random attention heads, exposing the model to diverse subdivision patterns. Stage 2 identifies informative attention maps through feature-degradation distances and distills them into a lightweight single-map router, which directly predicts deterministic token-importance scores without a separate attention forward. We evaluate SubViT on Generalized Category Discovery (GCD), a challenging task requiring both fine-grained discrimination and generalization to unlabeled novel categories. Across CUB, FGVC-Aircraft, and Stanford Cars, SubViT improves the average novel-category accuracy of DINOv2 from $81.3\\%$ to $84.7\\%$, with only $0.50$ ms additional latency and $3.4\\%$ more FLOPs, while reducing latency by $73.8\\%$ relative to Retina Patch. Results on CIFAR-10 and ImageNet-100 demonstrate its broader applicability.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/13/2607.09480v1-foveation-guided-dynamic-token-selection-for-robust-and-efficient-vision-transformers",
+      "section": "quick",
+      "title_en": "Foveation-Guided Dynamic Token Selection for Robust and Efficient Vision Transformers",
+      "authors": "Ibrahim Batuhan Akkaya, Kishaan Jeeveswaran, Bahram Zonooz, Elahe Arani",
+      "date": "2026-07-10",
+      "pdf": "https://arxiv.org/pdf/2607.09480v1",
+      "score": "7.0",
+      "evidence": "用于分类的视觉Transformer架构，具有动态令牌选择机制",
+      "tldr": "视觉Transformer面临计算效率低和鲁棒性差的问题。受人类视觉系统注视与中心凹采样启发，提出FDT架构，通过注视模块定位关键区域、中心凹模块生成多尺度嵌入，实现动态令牌选择。在50%注视预算下，FDT在ImageNet上达到81.9%准确率，比DeiT-S高1.0%的同时减少34.57%运算量，并对噪声和对抗攻击表现出天然鲁棒性。该工作将生物视觉机制融入Transformer，为设计高效鲁棒的自适应神经网络提供了新思路。",
+      "tags": "query:dino-fg",
+      "abstract_en": "The human visual system (HVS) employs foveated sampling and eye movements to achieve efficient perception, conserving both metabolic energy and computational resources. Drawing inspiration from this robustness and adaptability, we introduce the Foveated Dynamic Transformer (FDT), a foveation-guided dynamic token-selection architecture that integrates these mechanisms into a vision transformer framework. The FDT exhibits strong resilience to various types of noise and adversarial attacks, despite not being explicitly trained for such challenges. This inherent robustness is achieved through the use of fixation and foveation modules: the fixation module identifies fixation points to filter out irrelevant information, while the foveation module generates foveated embeddings with multi-scale information. At the 50% fixation-budget setting, FDT achieves higher accuracy than DeiT-S (81.9% vs. 80.9%) while reducing multiply-accumulate operations by 34.57%, highlighting one operating point on its accuracy-efficiency trade-off. These attributes position FDT as an HVS-inspired step toward artificial neural networks that combine adaptive computation with improved resilience.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/13/2607.09488v1-siglip-hd-by-fine-to-coarse-supervision",
+      "section": "quick",
+      "title_en": "SigLIP-HD by Fine-to-Coarse Supervision",
+      "authors": "Lihe Yang, Zhen Zhao, Hengshuang Zhao",
+      "date": "2026-07-10",
+      "pdf": "https://arxiv.org/pdf/2607.09488v1",
+      "score": "6.0",
+      "evidence": "细到粗监督实现细粒度视觉感知",
+      "tldr": "高分辨率图像虽能提升多模态大模型的细粒度视觉感知，但增加计算和设计复杂度。SigLIP-HD通过细到粗监督设计，让中分辨率图像的粗特征学习高分辨率图像的细特征，在不增加推理预算的前提下生成更优视觉token。在多项MLLM基准测试中，该方法显著超越基线，尤其在OCR任务上表现突出。该工作表明，通过巧妙训练策略可在标准分辨率下充分释放模型感知潜力，为高效视觉表示提供了新思路。",
+      "tags": "query:dino-fg",
+      "abstract_en": "High-quality visual representation is a long-standing pursuit in computer vision. In the context of multimodal LLMs (MLLMs), feeding higher-resolution images can produce more fine-grained visual tokens. However, it introduces additional computational and design complexity, due to multiple forward passes and post-processing of increased tokens. Before simply adopting a higher resolution, have we truly unlocked the model's full perception capability at a standard resolution? Therefore, we study an interesting problem: how to achieve fine visual perception under lower cost without larger images. We present SigLIP-HD in this work. The core is a highly simple fine-to-coarse supervision design. We enforce the coarse feature of a mid-resolution image to mimic the fine-grained feature of its high-resolution version. We build this framework on the advanced SigLIP 2 model. Our final model produces better visual tokens at exactly the same inference budget. It is validated on extensive MLLM benchmarks and consistently delivers stronger results than our baseline model, especially on OCR-related tasks.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

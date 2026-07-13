@@ -1,0 +1,132 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-13T20:51:14.644551+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2607.09086v1",
+      "source": "arxiv",
+      "title": "Subtoken Vision Transformer for Fine-grained Recognition",
+      "abstract": "We present Subtoken Vision Transformer (SubViT), a selective image tokenization method for fine-grained visual recognition. Standard Vision Transformers compress each fixed-size patch into a single token, although fine-grained distinctions often depend on localized variations within only a few patches. SubViT addresses this mismatch by representing discriminative patches with multiple subtokens while retaining the original token sequence for global context, thereby allocating additional capacity where it is most needed. Since attention heads encode complementary semantics and extracting attention maps at inference requires an extra backbone forward, we adopt a two-stage training strategy. Stage 1 fine-tunes the ViT using subdivision regions sampled from random attention heads, exposing the model to diverse subdivision patterns. Stage 2 identifies informative attention maps through feature-degradation distances and distills them into a lightweight single-map router, which directly predicts deterministic token-importance scores without a separate attention forward. We evaluate SubViT on Generalized Category Discovery (GCD), a challenging task requiring both fine-grained discrimination and generalization to unlabeled novel categories. Across CUB, FGVC-Aircraft, and Stanford Cars, SubViT improves the average novel-category accuracy of DINOv2 from $81.3\\%$ to $84.7\\%$, with only $0.50$ ms additional latency and $3.4\\%$ more FLOPs, while reducing latency by $73.8\\%$ relative to Retina Patch. Results on CIFAR-10 and ImageNet-100 demonstrate its broader applicability.",
+      "authors": [
+        "Jie Zhu",
+        "Ivy Zhang",
+        "Minchul Kim",
+        "Xiaoming Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-10T04:07:23+00:00",
+      "link": "https://arxiv.org/pdf/2607.09086v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "proposes SubViT for fine-grained recognition using vision transformer",
+      "llm_evidence_cn": "提出SubViT方法用于细粒度视觉识别，基于视觉变换器",
+      "llm_evidence": "提出SubViT方法用于细粒度视觉识别，基于视觉变换器",
+      "canonical_evidence": "提出SubViT方法用于细粒度视觉识别，基于视觉变换器",
+      "llm_tldr_en": "SubViT improves fine-grained recognition by representing discriminative patches with multiple subtokens, allocating more capacity to local variations.",
+      "llm_tldr_cn": "针对标准ViT将每个固定大小块压缩为单一标记而丢失细粒度细节的问题，提出SubViT。该方法对判别性区域用多个子标记表示，同时保留全局上下文。采用两阶段训练策略：第一阶段利用随机注意力图的子区域微调ViT，第二阶段微调整个网络。在多个细粒度基准上，SubViT显著提升了识别精度，证明了选择性标记化在细粒度视觉任务中的有效性。",
+      "llm_tldr": "针对标准ViT将每个固定大小块压缩为单一标记而丢失细粒度细节的问题，提出SubViT。该方法对判别性区域用多个子标记表示，同时保留全局上下文。采用两阶段训练策略：第一阶段利用随机注意力图的子区域微调ViT，第二阶段微调整个网络。在多个细粒度基准上，SubViT显著提升了识别精度，证明了选择性标记化在细粒度视觉任务中的有效性。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.09480v1",
+      "source": "arxiv",
+      "title": "Foveation-Guided Dynamic Token Selection for Robust and Efficient Vision Transformers",
+      "abstract": "The human visual system (HVS) employs foveated sampling and eye movements to achieve efficient perception, conserving both metabolic energy and computational resources. Drawing inspiration from this robustness and adaptability, we introduce the Foveated Dynamic Transformer (FDT), a foveation-guided dynamic token-selection architecture that integrates these mechanisms into a vision transformer framework. The FDT exhibits strong resilience to various types of noise and adversarial attacks, despite not being explicitly trained for such challenges. This inherent robustness is achieved through the use of fixation and foveation modules: the fixation module identifies fixation points to filter out irrelevant information, while the foveation module generates foveated embeddings with multi-scale information. At the 50% fixation-budget setting, FDT achieves higher accuracy than DeiT-S (81.9% vs. 80.9%) while reducing multiply-accumulate operations by 34.57%, highlighting one operating point on its accuracy-efficiency trade-off. These attributes position FDT as an HVS-inspired step toward artificial neural networks that combine adaptive computation with improved resilience.",
+      "authors": [
+        "Ibrahim Batuhan Akkaya",
+        "Kishaan Jeeveswaran",
+        "Bahram Zonooz",
+        "Elahe Arani"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG",
+        "cs.NE"
+      ],
+      "published": "2026-07-10T14:53:16+00:00",
+      "link": "https://arxiv.org/pdf/2607.09480v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Vision Transformer architecture for classification with dynamic token selection",
+      "llm_evidence_cn": "用于分类的视觉Transformer架构，具有动态令牌选择机制",
+      "llm_evidence": "用于分类的视觉Transformer架构，具有动态令牌选择机制",
+      "canonical_evidence": "用于分类的视觉Transformer架构，具有动态令牌选择机制",
+      "llm_tldr_en": "Proposes Foveated Dynamic Transformer (FDT), a vision transformer with foveation-guided dynamic token selection for robust and efficient image classification, inspired by the human visual system.",
+      "llm_tldr_cn": "该论文受人类视觉系统启发提出聚焦动态Transformer（FDT），通过注视引导的动态令牌选择机制，在不增加显式训练的情况下增强视觉Transformer对噪声和对抗攻击的鲁棒性。FDT采用固定和聚焦模块有效过滤无关信息，在图像分类任务上表现出更强的鲁棒性和效率。该工作为设计更稳健的视觉Transformer架构提供了新方向。",
+      "llm_tldr": "该论文受人类视觉系统启发提出聚焦动态Transformer（FDT），通过注视引导的动态令牌选择机制，在不增加显式训练的情况下增强视觉Transformer对噪声和对抗攻击的鲁棒性。FDT采用固定和聚焦模块有效过滤无关信息，在图像分类任务上表现出更强的鲁棒性和效率。该工作为设计更稳健的视觉Transformer架构提供了新方向。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.09488v1",
+      "source": "arxiv",
+      "title": "SigLIP-HD by Fine-to-Coarse Supervision",
+      "abstract": "High-quality visual representation is a long-standing pursuit in computer vision. In the context of multimodal LLMs (MLLMs), feeding higher-resolution images can produce more fine-grained visual tokens. However, it introduces additional computational and design complexity, due to multiple forward passes and post-processing of increased tokens. Before simply adopting a higher resolution, have we truly unlocked the model's full perception capability at a standard resolution? Therefore, we study an interesting problem: how to achieve fine visual perception under lower cost without larger images. We present SigLIP-HD in this work. The core is a highly simple fine-to-coarse supervision design. We enforce the coarse feature of a mid-resolution image to mimic the fine-grained feature of its high-resolution version. We build this framework on the advanced SigLIP 2 model. Our final model produces better visual tokens at exactly the same inference budget. It is validated on extensive MLLM benchmarks and consistently delivers stronger results than our baseline model, especially on OCR-related tasks.",
+      "authors": [
+        "Lihe Yang",
+        "Zhen Zhao",
+        "Hengshuang Zhao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-10T15:05:21+00:00",
+      "link": "https://arxiv.org/pdf/2607.09488v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "fine-to-coarse supervision for fine-grained visual perception",
+      "llm_evidence_cn": "细到粗监督实现细粒度视觉感知",
+      "llm_evidence": "细到粗监督实现细粒度视觉感知",
+      "canonical_evidence": "细到粗监督实现细粒度视觉感知",
+      "llm_tldr_en": "Proposes SigLIP-HD with fine-to-coarse supervision to achieve fine-grained visual perception at standard resolution, reducing computational cost.",
+      "llm_tldr_cn": "现有方法通过提高图像分辨率获取细粒度视觉特征，但带来高昂计算成本。本文提出SigLIP-HD，采用细到粗监督设计，强制中等分辨率图像的粗特征模仿其细粒度特征，从而在不增加分辨率的情况下提升视觉感知的精细度。实验表明该方法有效降低了计算开销，同时保持了细粒度表示质量，为高效细粒度视觉任务提供了新思路。",
+      "llm_tldr": "现有方法通过提高图像分辨率获取细粒度视觉特征，但带来高昂计算成本。本文提出SigLIP-HD，采用细到粗监督设计，强制中等分辨率图像的粗特征模仿其细粒度特征，从而在不增加分辨率的情况下提升视觉感知的精细度。实验表明该方法有效降低了计算开销，同时保持了细粒度表示质量，为高效细粒度视觉任务提供了新思路。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
