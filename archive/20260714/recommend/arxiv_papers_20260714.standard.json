@@ -1,0 +1,132 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-14T20:07:44.149564+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.10406v1",
+      "source": "arxiv",
+      "title": "TVT-PAPD: Pathology-Aware Prototype Distillation for Self-Supervised Whole Slide Image Classification",
+      "abstract": "Self-supervised learning (SSL) has emerged as an effective paradigm for learning transferable representations from large-scale unlabeled whole slide images (WSIs). However, existing SSL methods primarily learn generic visual features and often fail to explicitly capture pathology-specific morphological patterns that are critical for disease characterization. To address this limitation, we propose Tiny Vision Transformer with Pathology-Aware Prototype Distillation (TVT-PAPD). This self-supervised pathology representation learning framework integrates a Tiny Vision Transformer (TVT) with a novel Pathology-Aware Prototype Distillation (PAPD) module. PAPD employs a learnable pathology prototype bank to discover and preserve representative tissue morphology patterns, encouraging semantically similar pathological regions to learn consistent and discriminative representations. The proposed framework enhances pathology-aware feature learning while maintaining computational efficiency with 90M parameters. Experiments on the Cancer Genome Atlas (TCGA) low-grade glioma (LGG)/glioblastoma (GBM) dataset and the Indian Pathology Brain (IPD-Brain) dataset demonstrate that TVT-PAPD achieves weighted F1-scores of 93.02% and 90.23%, respectively, for LGG-GBM classification, while exhibiting strong cross-cohort generalization across independent glioma datasets.",
+      "authors": [
+        "Ramesh Naidu Laveti",
+        "Jaya Sreevalsan-Nair",
+        "T K Srikanth"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-07-11T17:15:17+00:00",
+      "link": "https://arxiv.org/pdf/2607.10406v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-supervised vision transformer with prototype distillation for pathology image classification",
+      "llm_evidence_cn": "自监督视觉变换器结合原型蒸馏用于病理图像分类",
+      "llm_evidence": "自监督视觉变换器结合原型蒸馏用于病理图像分类",
+      "canonical_evidence": "自监督视觉变换器结合原型蒸馏用于病理图像分类",
+      "llm_tldr_en": "A self-supervised Tiny Vision Transformer with Pathology-Aware Prototype Distillation learns pathology-specific features for whole slide image classification, achieving fine-grained disease characterization.",
+      "llm_tldr_cn": "针对现有自监督方法在病理全切片图像分类中忽略病理特异性形态模式的问题，本文提出TVT-PAPD框架，整合小视觉变换器与病理感知原型蒸馏模块，通过可学习的病理原型库发现并保留关键病理特征。实验表明该方法有效提升了疾病亚型分类的准确性和细粒度识别能力，为病理图像分析提供了新的自监督范式。",
+      "llm_tldr": "针对现有自监督方法在病理全切片图像分类中忽略病理特异性形态模式的问题，本文提出TVT-PAPD框架，整合小视觉变换器与病理感知原型蒸馏模块，通过可学习的病理原型库发现并保留关键病理特征。实验表明该方法有效提升了疾病亚型分类的准确性和细粒度识别能力，为病理图像分析提供了新的自监督范式。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.09825v1",
+      "source": "arxiv",
+      "title": "More Structure, Not More Capacity: Object-Centric Representations for Visuomotor Imitation Learning",
+      "abstract": "Robotic manipulation policies rely on pre-trained vision models that give either a global scene embedding or a dense patch grid. Both mix task-relevant and task-irrelevant features. Object-centric slot representations are a structured alternative: they group features into a few per-object slots. We test what this structure buys on ManiSkill3 PickCube-v1, with a frozen encoder and a held-out-seed evaluation. Holding the policy, goal token, rendering, and calibration fixed and changing only the encoder, a frozen object-centric SPOT representation (DINO ViT-B/16 + Slot Attention) reaches 55.0$\\pm$2.9% success, 22.4% above a dense DINO global-feature baseline (32.6 $\\pm$ 1.5%), with the same trainable policy and no encoder fine-tuning. More tokens alone do not help: a dense patch grid with 16x the tokens performs no better than the global feature. Adding an explicit 2D spatial goal and native-resolution rendering raises the full system to 68.7$\\pm$4.2%, just below a privileged 3D-oracle upper bound (71.7$\\pm$4.1%). An automated kinematic failure taxonomy then separates spatial-precision (Near-Miss) failures from object-tracking (No-Grasp) failures: spatial grounding reduces Near-Miss while leaving No- Grasp unchanged. The same taxonomy transfers to the harder StackCube-v1 and points to occlusion as the main bottleneck.",
+      "authors": [
+        "Yi Li",
+        "Alexandre Chapin",
+        "Liming Chen",
+        "Jan Peters",
+        "Alap Kshirsagar"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-07-10T10:35:24+00:00",
+      "link": "https://arxiv.org/pdf/2607.09825v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "uses DINO ViT-B/16 as frozen encoder for object-centric representation",
+      "llm_evidence_cn": "使用DINO ViT-B/16作为冻结编码器用于对象中心表示",
+      "llm_evidence": "使用DINO ViT-B/16作为冻结编码器用于对象中心表示",
+      "canonical_evidence": "使用DINO ViT-B/16作为冻结编码器用于对象中心表示",
+      "llm_tldr_en": "Object-centric SPOT representation with frozen DINO ViT-B/16 + Slot Attention outperforms dense DINO global-feature baseline by 22.4% on robotic manipulation.",
+      "llm_tldr_cn": "该论文验证了对象中心表示在机器人操控中的优势，其中使用了冻结的DINO ViT-B/16作为视觉编码器。尽管任务并非细粒度分类，但DINO ViT作为基础视觉特征提取器直接相关，且方法可迁移至细粒度特征学习。",
+      "llm_tldr": "该论文验证了对象中心表示在机器人操控中的优势，其中使用了冻结的DINO ViT-B/16作为视觉编码器。尽管任务并非细粒度分类，但DINO ViT作为基础视觉特征提取器直接相关，且方法可迁移至细粒度特征学习。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.10985v1",
+      "source": "arxiv",
+      "title": "MED-DSLC: Multi-Expert-Domain Classification via Domain Supervision and Logit Calibration",
+      "abstract": "Vision-language models (VLMs) such as CLIP enable zero-shot classification by comparing image features with text prompts in a shared embedding space. A fundamental property underlying this capability is the global comparability of logits across arbitrary candidate classes. However, VLMs are often adapted to fine-grained domains using techniques such as LoRA. While this improves in-domain accuracy, out-of-domain accuracy degrades. This leads to a highly fragmented model ecosystem, with thousands of specialized models. Multi-Expert-Domain classification seeks to address this problem, by merging LoRAs trained independently on specialized domains. However, due to the independent training, the various domain experts no longer produce globally calibrated logits. As a result, when evaluating over the union of multiple domain-specific class sets, heterogeneous logit scales induce cross-domain interference and artificially high confidence for out-of-domain classes, inducing prediction errors. In this work, we identify domain supervision and cross-domain logit miscalibration as the key issue to scalable multi-domain zero-shot recognition. We propose MED-DSLC, combining domain supervised training and domain-wise logit scaling, to explicitly restore global logit comparability. MED-DSLC is a lightweight solution for MED classification, which is shown to preserve within-domain discrimination while reducing cross-domain logit interference with minimal data. Extensive experiments across diverse fine-grained benchmarks demonstrate that it substantially improves mean accuracy (+15\\%), cross-domain robustness, and scalability in the size of MED classification problem. Our results show that restoring output-level calibration is essential under highly data imbalanced settings for achieving a truly zero-shot VLM under multi-domain specialization.",
+      "authors": [
+        "Zheng Zeng",
+        "Deepak Sridhar",
+        "Nuno Vasconcelos"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-13T01:18:32+00:00",
+      "link": "https://arxiv.org/pdf/2607.10985v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Uses vision-language foundation model CLIP with LoRA for fine-grained domain classification",
+      "llm_evidence_cn": "使用CLIP视觉语言基础模型和LoRA进行细粒度领域分类",
+      "llm_evidence": "使用CLIP视觉语言基础模型和LoRA进行细粒度领域分类",
+      "canonical_evidence": "使用CLIP视觉语言基础模型和LoRA进行细粒度领域分类",
+      "llm_tldr_en": "MED-DSLC addresses multi-expert-domain classification by merging LoRAs trained on fine-grained domains, using domain supervision and logit calibration to improve global logit comparability.",
+      "llm_tldr_cn": "针对视觉语言模型在适应细粒度领域后导致不同领域专家模型的logit不可比的问题，本文提出MED-DSLC，通过领域监督和logit校准来合并多个独立训练的LoRA模块，从而恢复全局logit可比性，实现多专家域分类。实验表明，该方法在多个细粒度域上有效，在保持域内精度的同时显著提升跨域分类性能，为构建可扩展的多域分类系统提供了新思路。",
+      "llm_tldr": "针对视觉语言模型在适应细粒度领域后导致不同领域专家模型的logit不可比的问题，本文提出MED-DSLC，通过领域监督和logit校准来合并多个独立训练的LoRA模块，从而恢复全局logit可比性，实现多专家域分类。实验表明，该方法在多个细粒度域上有效，在保持域内精度的同时显著提升跨域分类性能，为构建可扩展的多域分类系统提供了新思路。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Foundation models for fine grained visual classification",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

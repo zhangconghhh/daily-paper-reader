@@ -6,33 +6,32 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-13
-- 运行时间：2026-07-13 20:54:52 UTC
+- 最新运行日期：2026-07-14
+- 运行时间：2026-07-14 20:09:21 UTC
 - 运行状态：成功
 - 本次总论文数：3
-- 精读区：1
-- 速读区：2
+- 精读区：0
+- 速读区：3
 
 ### 今日简报（AI）
-今日聚焦视觉Transformer前沿，精读一篇细粒度识别新架构，速览两项高效改进方案。
-
-最值得关注的是《Subtoken Vision Transformer for Fine-grained Recognition》（9.0分），其子token拆分思路对细粒度分类很有启发性；同时《Foveation-Guided Dynamic Token Selection》（7.0分）提供了提升鲁棒性与效率的实用方法。
-
-建议优先深入理解Subtoken ViT的token分解机制，再结合动态选择策略尝试改进现有视觉任务模型。
-- 详情：[/202607/13/README](/202607/13/README)
+今日速读3篇：聚焦病理图像分类、多专家域分类及模仿学习。  
+最值得关注7.0分方向：自监督WSI分类的病理感知原型蒸馏法，以及基于域监督与logit校准的多专家域分类。  
+建议读者优先了解病理图像自监督学习的原型蒸馏思路，并结合域校准技术提升分类鲁棒性。
+- 详情：[/202607/14/README](/202607/14/README)
 
 ### 精读区论文标签
-1. [Subtoken Vision Transformer for Fine-grained Recognition](/202607/13/2607.09086v1-subtoken-vision-transformer-for-fine-grained-recognition)  
-   标签：评分：9.0/10、query:dino-fg
-   evidence：提出SubViT方法用于细粒度视觉识别，基于视觉变换器
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Foveation-Guided Dynamic Token Selection for Robust and Efficient Vision Transformers](/202607/13/2607.09480v1-foveation-guided-dynamic-token-selection-for-robust-and-efficient-vision-transformers)  
+1. [TVT-PAPD: Pathology-Aware Prototype Distillation for Self-Supervised Whole Slide Image Classification](/202607/14/2607.10406v1-tvt-papd-pathology-aware-prototype-distillation-for-self-supervised-whole-slide-image-classification)  
    标签：评分：7.0/10、query:dino-fg
-   evidence：用于分类的视觉Transformer架构，具有动态令牌选择机制
-2. [SigLIP-HD by Fine-to-Coarse Supervision](/202607/13/2607.09488v1-siglip-hd-by-fine-to-coarse-supervision)  
+   evidence：自监督视觉变换器结合原型蒸馏用于病理图像分类
+2. [MED-DSLC: Multi-Expert-Domain Classification via Domain Supervision and Logit Calibration](/202607/14/2607.10985v1-med-dslc-multi-expert-domain-classification-via-domain-supervision-and-logit-calibration)  
+   标签：评分：7.0/10、query:dino-fg
+   evidence：使用CLIP视觉语言基础模型和LoRA进行细粒度领域分类
+3. [More Structure, Not More Capacity: Object-Centric Representations for Visuomotor Imitation Learning](/202607/14/2607.09825v1-more-structure-not-more-capacity-object-centric-representations-for-visuomotor-imitation-learning)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：细到粗监督实现细粒度视觉感知
+   evidence：使用DINO ViT-B/16作为冻结编码器用于对象中心表示
 
 
 <div class="dpr-home-promo-card">
