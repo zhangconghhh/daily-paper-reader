@@ -1,0 +1,54 @@
+{
+  "label": "2026-07-15",
+  "date": "2026-07-15",
+  "generated_at": "2026-07-15T20:17:36",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202607/15/2607.11732v1-gfr-sam-training-free-referring-camouflaged-object-segmentation-via-cross-image-prompting",
+      "section": "deep",
+      "title_en": "GFR-SAM: Training-Free Referring Camouflaged Object Segmentation via Cross-Image Prompting",
+      "authors": "Yilong Yang, Jianxin Tian, Shengchuan Zhang, Liujuan Cao",
+      "date": "2026-07-13",
+      "pdf": "https://arxiv.org/pdf/2607.11732v1",
+      "score": "8.0",
+      "evidence": "在分割中使用DINOv3进行原型对齐",
+      "tldr": "引用伪装目标分割任务需根据线索分割隐藏目标，现有无训练方法依赖点提示易错。本文提出GFR-SAM，采用生成-过滤-细化三阶段：上下文示例引导SAM生成候选掩码，区域-全局对比过滤抑制背景，几何语义细化恢复边界。在R2C7K上加权F值提升8.7%，与监督方法竞争。该方法解锁SAM跨图像提示能力，建立无需微调的稳健范式。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Referring Camouflaged Object Detection (Ref-COD) requires segmenting hidden targets guided by reference cues. While supervised methods are annotation-heavy and training-free approaches via sparse point-prompting are sensitive to localization errors, we propose GFR-SAM, a robust three-stage training-free framework. GFR-SAM shifts the paradigm from fragile point-matching to a \"Generate-Filter-Refine\" pipeline. First, we introduce In-Context Exemplar-guided Segmentation, empowering SAM3 with cross-image inference to generate candidate masks via holistic visual exemplars, bypassing its native intra-image constraints. Second, a Region-Global Contrastive Filtering module ranks candidates through DINOv3-based prototypical alignment, effectively suppressing background distractors. Finally, a Geometric-Semantic Refinement module synergizes bounding box and text prompts to recover fine-grained boundaries and enhance instance recall. Evaluated on the R2C7K benchmark, GFR-SAM outperforms existing training-free methods by 8.7\\% in weighted F-measure ($F_β^w$) and competes with supervised state-of-the-art counterparts. Ultimately, this work underscores the potential of unlocking SAM3's latent capability for cross-image In-Context prompting, establishing a robust, training-free paradigm that effectively bridges the gap between general-purpose foundation models and specialized, label-intensive perception tasks without the need for task-specific fine-tuning.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/15/2607.09825v1-more-structure-not-more-capacity-object-centric-representations-for-visuomotor-imitation-learning",
+      "section": "quick",
+      "title_en": "More Structure, Not More Capacity: Object-Centric Representations for Visuomotor Imitation Learning",
+      "authors": "Yi Li, Alexandre Chapin, Liming Chen, Jan Peters, Alap Kshirsagar",
+      "date": "2026-07-10",
+      "pdf": "https://arxiv.org/pdf/2607.09825v1",
+      "score": "7.0",
+      "evidence": "使用DINO ViT作为冻结编码器，在机器人任务中展示了相比DINO基线的性能提升",
+      "tldr": "机器人模仿学习的视觉编码常将任务相关与无关特征混杂，缺乏结构化。本文提出物体中心槽表示（SPOT），在ManiSkill3 PickCube-v1上，冻结编码器下比全局特征提升22.4%成功率，且单纯增加token无效。引入空间接地后性能接近3D上界，故障分析显示空间接地减少精度错误，但遮挡仍是主要瓶颈。该表示在更难任务上同样有效，揭示了物体中心结构的关键价值。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Robotic manipulation policies rely on pre-trained vision models that give either a global scene embedding or a dense patch grid. Both mix task-relevant and task-irrelevant features. Object-centric slot representations are a structured alternative: they group features into a few per-object slots. We test what this structure buys on ManiSkill3 PickCube-v1, with a frozen encoder and a held-out-seed evaluation. Holding the policy, goal token, rendering, and calibration fixed and changing only the encoder, a frozen object-centric SPOT representation (DINO ViT-B/16 + Slot Attention) reaches 55.0$\\pm$2.9% success, 22.4% above a dense DINO global-feature baseline (32.6 $\\pm$ 1.5%), with the same trainable policy and no encoder fine-tuning. More tokens alone do not help: a dense patch grid with 16x the tokens performs no better than the global feature. Adding an explicit 2D spatial goal and native-resolution rendering raises the full system to 68.7$\\pm$4.2%, just below a privileged 3D-oracle upper bound (71.7$\\pm$4.1%). An automated kinematic failure taxonomy then separates spatial-precision (Near-Miss) failures from object-tracking (No-Grasp) failures: spatial grounding reduces Near-Miss while leaving No- Grasp unchanged. The same taxonomy transfers to the harder StackCube-v1 and points to occlusion as the main bottleneck.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/15/2607.10391v1-vertical-fusion-condensing-internal-representations-for-robust-vit-classification",
+      "section": "quick",
+      "title_en": "Vertical Fusion: Condensing Internal Representations for Robust ViT Classification",
+      "authors": "Francesco Di Salvo, Shyam Nandan Rai, Hamed Damirchi, Ignacio Meza De la Jara, Sebastian Doerrich, Marco Lents, Christian Ledig",
+      "date": "2026-07-11",
+      "pdf": "https://arxiv.org/pdf/2607.10391v1",
+      "score": "7.0",
+      "evidence": "利用内部表示改进ViT分类的方法",
+      "tldr": "视觉Transformer通常仅使用最后一层特征，但中间层包含可纠正最后一层错误的信息。本文提出VFusion，通过学习映射将各层内部表示聚合到低维潜在空间，实现垂直融合。实验表明VFusion大幅提升分类性能，缩小与理论最优差距的45%，并有效泛化至不同模型规模与预训练方式。该方法为单模型内利用层次特征提供高效鲁棒替代方案。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Despite exposing rich intermediate representations, Vision Transformers (ViTs) are almost exclusively utilized as black-box feature extractors, where only the last layer is considered for downstream tasks. We challenge this convention by introducing the notion of recoverability: the capacity of intermediate representations to correct last-layer failures. By evaluating independent classification probes at every model depth across 16 datasets, we observe that intermediate probes correctly classify 18% to 76% of samples that the last-layer probe misclassifies. We show that these gains are not primarily driven by predictive diversity, but by a redundancy-correctness correspondence, where the internal hierarchy acts as a series of stable, redundant probes of a shared discriminative signal. While established horizontal ensemble strategies (i.e., across multiple models) can improve performance, they incur high computational cost and ignore this vertical signal within a single model. To bridge this gap, we propose VFusion, a principled vertical aggregation strategy employing a learnable mapping into a low-dimensional latent space that synthesizes features across the internal ViT hierarchy. VFusion substantially outperforms established aggregation baselines in both in-distribution and out-of-distribution settings, notably closing 45% of the accuracy gap between the best individual layer and a theoretical oracle performance. Our gains consistently generalize across model sizes and pre-training regimes, confirming that VFusion offers a robust and efficient alternative to horizontal ensemble methods. The code is available at https://github.com/francescodisalvo05/vit-vertical-fusion.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

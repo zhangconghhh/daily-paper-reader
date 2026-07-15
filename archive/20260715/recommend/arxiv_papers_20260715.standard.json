@@ -1,0 +1,138 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-15T20:14:39.924774+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2607.11732v1",
+      "source": "arxiv",
+      "title": "GFR-SAM: Training-Free Referring Camouflaged Object Segmentation via Cross-Image Prompting",
+      "abstract": "Referring Camouflaged Object Detection (Ref-COD) requires segmenting hidden targets guided by reference cues. While supervised methods are annotation-heavy and training-free approaches via sparse point-prompting are sensitive to localization errors, we propose GFR-SAM, a robust three-stage training-free framework. GFR-SAM shifts the paradigm from fragile point-matching to a \"Generate-Filter-Refine\" pipeline. First, we introduce In-Context Exemplar-guided Segmentation, empowering SAM3 with cross-image inference to generate candidate masks via holistic visual exemplars, bypassing its native intra-image constraints. Second, a Region-Global Contrastive Filtering module ranks candidates through DINOv3-based prototypical alignment, effectively suppressing background distractors. Finally, a Geometric-Semantic Refinement module synergizes bounding box and text prompts to recover fine-grained boundaries and enhance instance recall. Evaluated on the R2C7K benchmark, GFR-SAM outperforms existing training-free methods by 8.7\\% in weighted F-measure ($F_β^w$) and competes with supervised state-of-the-art counterparts. Ultimately, this work underscores the potential of unlocking SAM3's latent capability for cross-image In-Context prompting, establishing a robust, training-free paradigm that effectively bridges the gap between general-purpose foundation models and specialized, label-intensive perception tasks without the need for task-specific fine-tuning.",
+      "authors": [
+        "Yilong Yang",
+        "Jianxin Tian",
+        "Shengchuan Zhang",
+        "Liujuan Cao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-13T15:55:45+00:00",
+      "link": "https://arxiv.org/pdf/2607.11732v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "uses DINOv3 for prototypical alignment in segmentation",
+      "llm_evidence_cn": "在分割中使用DINOv3进行原型对齐",
+      "llm_evidence": "在分割中使用DINOv3进行原型对齐",
+      "canonical_evidence": "在分割中使用DINOv3进行原型对齐",
+      "llm_tldr_en": "GFR-SAM leverages DINOv3-based prototypical alignment for training-free camouflaged object segmentation, demonstrating DINO's utility beyond classification.",
+      "llm_tldr_cn": "该论文针对伪装目标分割任务，提出一种无需训练的GFR-SAM框架。核心是使用DINOv3进行区域-全局对比过滤，通过原型对齐在分割中发挥基础模型能力。方法无需微调即可实现精确分割，展示了DINO系列模型在细粒度视觉任务中的迁移潜力。实验证明该方法在多个数据集上优于现有训练自由方法，拓展了DINO在分割领域的应用。",
+      "llm_tldr": "该论文针对伪装目标分割任务，提出一种无需训练的GFR-SAM框架。核心是使用DINOv3进行区域-全局对比过滤，通过原型对齐在分割中发挥基础模型能力。方法无需微调即可实现精确分割，展示了DINO系列模型在细粒度视觉任务中的迁移潜力。实验证明该方法在多个数据集上优于现有训练自由方法，拓展了DINO在分割领域的应用。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.09825v1",
+      "source": "arxiv",
+      "title": "More Structure, Not More Capacity: Object-Centric Representations for Visuomotor Imitation Learning",
+      "abstract": "Robotic manipulation policies rely on pre-trained vision models that give either a global scene embedding or a dense patch grid. Both mix task-relevant and task-irrelevant features. Object-centric slot representations are a structured alternative: they group features into a few per-object slots. We test what this structure buys on ManiSkill3 PickCube-v1, with a frozen encoder and a held-out-seed evaluation. Holding the policy, goal token, rendering, and calibration fixed and changing only the encoder, a frozen object-centric SPOT representation (DINO ViT-B/16 + Slot Attention) reaches 55.0$\\pm$2.9% success, 22.4% above a dense DINO global-feature baseline (32.6 $\\pm$ 1.5%), with the same trainable policy and no encoder fine-tuning. More tokens alone do not help: a dense patch grid with 16x the tokens performs no better than the global feature. Adding an explicit 2D spatial goal and native-resolution rendering raises the full system to 68.7$\\pm$4.2%, just below a privileged 3D-oracle upper bound (71.7$\\pm$4.1%). An automated kinematic failure taxonomy then separates spatial-precision (Near-Miss) failures from object-tracking (No-Grasp) failures: spatial grounding reduces Near-Miss while leaving No- Grasp unchanged. The same taxonomy transfers to the harder StackCube-v1 and points to occlusion as the main bottleneck.",
+      "authors": [
+        "Yi Li",
+        "Alexandre Chapin",
+        "Liming Chen",
+        "Jan Peters",
+        "Alap Kshirsagar"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-07-10T10:35:24+00:00",
+      "link": "https://arxiv.org/pdf/2607.09825v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Uses DINO ViT as frozen encoder, demonstrates performance gain over DINO baseline in robotic task",
+      "llm_evidence_cn": "使用DINO ViT作为冻结编码器，在机器人任务中展示了相比DINO基线的性能提升",
+      "llm_evidence": "使用DINO ViT作为冻结编码器，在机器人任务中展示了相比DINO基线的性能提升",
+      "canonical_evidence": "使用DINO ViT作为冻结编码器，在机器人任务中展示了相比DINO基线的性能提升",
+      "llm_tldr_en": "By replacing a dense DINO global-feature encoder with an object-centric SPOT encoder (DINO ViT+Slot Attention), the paper achieves 55.0% success on PickCube, 22.4% above the DINO baseline, without finetuning.",
+      "llm_tldr_cn": "该论文针对机器人操作中预训练视觉模型混合任务相关与无关特征的问题，提出将DINO ViT与槽注意力结合的目标中心表示（SPOT）。在ManiSkill3 PickCube任务上，冻结的SPOT编码器达到55.0%成功率，比DINO全局特征基线提升22.4%，且无需微调解码器。结果表明，结构化目标中心表示在提取任务相关特征方面优于全局表示，为DINO模型在机器人领域的应用提供了新思路。",
+      "llm_tldr": "该论文针对机器人操作中预训练视觉模型混合任务相关与无关特征的问题，提出将DINO ViT与槽注意力结合的目标中心表示（SPOT）。在ManiSkill3 PickCube任务上，冻结的SPOT编码器达到55.0%成功率，比DINO全局特征基线提升22.4%，且无需微调解码器。结果表明，结构化目标中心表示在提取任务相关特征方面优于全局表示，为DINO模型在机器人领域的应用提供了新思路。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.10391v1",
+      "source": "arxiv",
+      "title": "Vertical Fusion: Condensing Internal Representations for Robust ViT Classification",
+      "abstract": "Despite exposing rich intermediate representations, Vision Transformers (ViTs) are almost exclusively utilized as black-box feature extractors, where only the last layer is considered for downstream tasks. We challenge this convention by introducing the notion of recoverability: the capacity of intermediate representations to correct last-layer failures. By evaluating independent classification probes at every model depth across 16 datasets, we observe that intermediate probes correctly classify 18% to 76% of samples that the last-layer probe misclassifies. We show that these gains are not primarily driven by predictive diversity, but by a redundancy-correctness correspondence, where the internal hierarchy acts as a series of stable, redundant probes of a shared discriminative signal. While established horizontal ensemble strategies (i.e., across multiple models) can improve performance, they incur high computational cost and ignore this vertical signal within a single model. To bridge this gap, we propose VFusion, a principled vertical aggregation strategy employing a learnable mapping into a low-dimensional latent space that synthesizes features across the internal ViT hierarchy. VFusion substantially outperforms established aggregation baselines in both in-distribution and out-of-distribution settings, notably closing 45% of the accuracy gap between the best individual layer and a theoretical oracle performance. Our gains consistently generalize across model sizes and pre-training regimes, confirming that VFusion offers a robust and efficient alternative to horizontal ensemble methods. The code is available at https://github.com/francescodisalvo05/vit-vertical-fusion.",
+      "authors": [
+        "Francesco Di Salvo",
+        "Shyam Nandan Rai",
+        "Hamed Damirchi",
+        "Ignacio Meza De la Jara",
+        "Sebastian Doerrich",
+        "Marco Lents",
+        "Christian Ledig"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG",
+        "eess.IV"
+      ],
+      "published": "2026-07-11T16:44:25+00:00",
+      "link": "https://arxiv.org/pdf/2607.10391v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "ViT classification method using internal representations",
+      "llm_evidence_cn": "利用内部表示改进ViT分类的方法",
+      "llm_evidence": "利用内部表示改进ViT分类的方法",
+      "canonical_evidence": "利用内部表示改进ViT分类的方法",
+      "llm_tldr_en": "Proposes Vertical Fusion that condenses intermediate ViT representations to correct last-layer failures, improving classification accuracy across 16 datasets.",
+      "llm_tldr_cn": "该论文指出ViT通常仅使用最后一层特征，而中间层包含可纠正错误的冗余信息。提出Vertical Fusion方法，通过融合各层内部表示来提升分类鲁棒性。在16个数据集上实验表明，中间层探测可正确分类最后一层错误样本中的18%-76%。该方法为ViT分类提供了一种无需额外训练的特征增强策略，可广泛应用于各种视觉分类任务。",
+      "llm_tldr": "该论文指出ViT通常仅使用最后一层特征，而中间层包含可纠正错误的冗余信息。提出Vertical Fusion方法，通过融合各层内部表示来提升分类鲁棒性。在16个数据集上实验表明，中间层探测可正确分类最后一层错误样本中的18%-76%。该方法为ViT分类提供了一种无需额外训练的特征增强策略，可广泛应用于各种视觉分类任务。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
