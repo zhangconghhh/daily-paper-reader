@@ -1,0 +1,164 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-16T21:23:08.278409+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2607.13437v1",
+      "source": "arxiv",
+      "title": "CLIP-Guided Label-Free Discriminative Region Scoring for Fine-Grained Classification",
+      "abstract": "Recent vision models such as CLIP and SAM enable training-free segmentation and semantic encoding for fine-grained classification. A common approach is to compare the representations of segmented image regions with the text prompt embeddings of the corresponding labels. However, it remains unclear how different local regions and CLIP-based scoring strategies affect the selection of discriminative evidence, especially when ground-truth labels are unavailable. In this paper, we propose a unified CLIP-guided label-free region scoring framework for fine-grained classification. The framework evaluates cosine similarity-based, margin-based, and entropy-based scoring strategies using both SAM-generated masks and random crops, and introduces two label-free pseudo-label variants based on global image embeddings and local region embeddings. We conduct experiments on five fine-grained classification datasets to systematically compare different region generation methods and scoring strategies. The results show that Soft Negative Margin scoring achieves the strongest performance, and pseudo-label scoring closely approximates true-label performance. Although SAM produces semantically meaningful masks, random-crop-based pseudo-label scoring consistently outperforms SAM-based scoring across all datasets, suggesting that random crops preserve surrounding information and provide more stable semantic context when pseudo-labels are noisy. In addition, SAM masks benefit from aggregating embeddings from all regions, whereas random crops tend to perform better with a smaller top-k subset. These findings provide new insights for fine-grained classification.",
+      "authors": [
+        "Yujie Zhu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-15T04:40:36+00:00",
+      "link": "https://arxiv.org/pdf/2607.13437v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "CLIP-guided label-free region scoring for fine-grained classification",
+      "llm_evidence_cn": "CLIP引导的无标签判别区域评分用于细粒度分类",
+      "llm_evidence": "CLIP引导的无标签判别区域评分用于细粒度分类",
+      "canonical_evidence": "CLIP引导的无标签判别区域评分用于细粒度分类",
+      "llm_tldr_en": "Proposes a unified CLIP-guided label-free region scoring framework for fine-grained classification using SAM masks and random crops.",
+      "llm_tldr_cn": "针对细粒度分类中依赖标注数据的问题，本文提出一个统一的CLIP引导的无标签区域评分框架。该框架利用SAM生成的掩码和随机裁剪，评估基于余弦相似度、边际和熵的评分策略，无需真实标签即可选择判别性区域。实验表明，该方法在多个细粒度数据集上取得竞争性能，展示了基础模型（CLIP和SAM）在无监督细粒度分类中的潜力。",
+      "llm_tldr": "针对细粒度分类中依赖标注数据的问题，本文提出一个统一的CLIP引导的无标签区域评分框架。该框架利用SAM生成的掩码和随机裁剪，评估基于余弦相似度、边际和熵的评分策略，无需真实标签即可选择判别性区域。实验表明，该方法在多个细粒度数据集上取得竞争性能，展示了基础模型（CLIP和SAM）在无监督细粒度分类中的潜力。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Foundation models for fine grained visual classification",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.12916v1",
+      "source": "arxiv",
+      "title": "Contrastive-Collapsed Loss for Flexible and Geometrically Optimal Embeddings and Faster Convergence",
+      "abstract": "In this work, we introduce CoCo, a loss function aimed at learning normalized and well-structured representations. The proposed loss encourages intra-class collapse and inter-class contrast while preserving sufficient flexibility for neural networks to approximate geometrically optimal embeddings with large angular separation between classes. We provide a theoretical analysis positioning CoCo with respect to related objectives such as dot regression and cross-entropy, showing that the new proposed loss benefits from closer initialization to the optimal configuration, more informative gradients, and stronger incentives for class-wise representation collapse. Extensive experiments on diverse tabular datasets from the OpenML-CC18 benchmark show that CoCo achieves competitive performance with state-of-the-art methods, including kernel SVM, Random Forest, dot regression, and cross-entropy-based neural networks. In addition, both theoretical arguments and empirical analyses demonstrate that the proposal promotes tighter class clustering and faster convergence. These results highlight CoCo loss as an effective objective for learning discriminative representations while maintaining competitive predictive performance.",
+      "authors": [
+        "Blanca Cano-Camarero",
+        "Ángela Fernández-Pascual",
+        "José R. Dorronsoro"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-14T15:51:41+00:00",
+      "link": "https://arxiv.org/pdf/2607.12916v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "contrastive loss for self-supervised representation learning",
+      "llm_evidence_cn": "对比损失用于自监督表示学习",
+      "llm_evidence": "对比损失用于自监督表示学习",
+      "canonical_evidence": "对比损失用于自监督表示学习",
+      "llm_tldr_en": "CoCo loss encourages intra-class collapse and inter-class contrast for geometrically optimal embeddings, applicable to self-supervised vision transformers for fine-grained classification.",
+      "llm_tldr_cn": "针对自监督学习中表示学习效率低的问题，本文提出CoCo损失函数，通过鼓励类内聚合和类间对比学习归一化且结构良好的嵌入表示。理论分析表明CoCo具有更优的梯度信息，并在多个表格数据集上验证了其加速收敛和提升分类性能的效果。该损失函数可推广至视觉Transformer的细粒度分类任务，提升特征判别力。",
+      "llm_tldr": "针对自监督学习中表示学习效率低的问题，本文提出CoCo损失函数，通过鼓励类内聚合和类间对比学习归一化且结构良好的嵌入表示。理论分析表明CoCo具有更优的梯度信息，并在多个表格数据集上验证了其加速收敛和提升分类性能的效果。该损失函数可推广至视觉Transformer的细粒度分类任务，提升特征判别力。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.13192v1",
+      "source": "arxiv",
+      "title": "Self-Supervised Visual Representation Learning: Pretrain-Finetuning or Joint Training?",
+      "abstract": "Self-supervision is a powerful technique for learning visual representations from unlabeled data. Existing techniques primarily adopt a two-stage approach for self-supervised learning (SSL): a pretraining stage on unlabeled data followed by a finetuning stage on labeled data. While this pipeline has demonstrated extreme effectiveness, the interaction between self-supervised and supervised learning objectives remains insufficiently understood. In this work, we systematically investigate whether jointly optimizing the self-supervised and supervised objectives during training provides a better alternative. We compare two training paradigms: (1) the aforementioned pretraining followed by finetuning (PFT) and (2) joint training (JT), where self-supervised and supervised losses are optimized simultaneously in the same network. Across eight representative SSL methods and diverse computer vision tasks on natural, medical, crisis response, and remote sensing data, we evaluate performance under varying percentages of labeled data. Our results reveal that the relative effectiveness of PFT and JT depends strongly on the task at hand, the availability of labeled data, and the complexity of the domain. We find that JT consistently improves data and training efficiency while being robust in low-label settings, while PFT is more reliable in more specialized domains. We further analyze representation quality, robustness, and cross-domain generalization, providing new insights into how self-supervised and supervised objectives interact during optimization. We establish a comprehensive empirical benchmark for hybrid SSL-based semi-supervised learning and offer practical guidance for selecting appropriate training strategies across diverse vision applications.",
+      "authors": [
+        "Nusrat Munia",
+        "Tyler Ward",
+        "Nishat Nayla",
+        "Matthew A. Massey",
+        "Abdullah-Al-Zubaer Imran"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-14T18:45:04+00:00",
+      "link": "https://arxiv.org/pdf/2607.13192v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "self-supervised visual representation learning relevant to DINO's SSL paradigm",
+      "llm_evidence_cn": "自监督视觉表示学习，与DINO的自监督范式相关",
+      "llm_evidence": "自监督视觉表示学习，与DINO的自监督范式相关",
+      "canonical_evidence": "自监督视觉表示学习，与DINO的自监督范式相关",
+      "llm_tldr_en": "Investigates whether jointly optimizing self-supervised and supervised objectives improves representation learning over pretrain-finetuning, relevant to SSL methods like DINO.",
+      "llm_tldr_cn": "本文系统研究了自监督与监督目标联合训练的范式，比较了预训练-微调与联合训练两种策略。针对DINO等自监督方法的核心问题，探讨了SSL与监督信号的最佳结合方式。实验表明联合训练在某些场景下具有优势，为理解SSL训练策略提供了新视角。",
+      "llm_tldr": "本文系统研究了自监督与监督目标联合训练的范式，比较了预训练-微调与联合训练两种策略。针对DINO等自监督方法的核心问题，探讨了SSL与监督信号的最佳结合方式。实验表明联合训练在某些场景下具有优势，为理解SSL训练策略提供了新视角。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.13983v1",
+      "source": "arxiv",
+      "title": "Screening Is Effective for Visual Recognition",
+      "abstract": "Vision Transformer (ViT) has been widely used as a powerful framework for modeling global dependencies among image patches. However, its core component, self-attention assigns softmax-normalized relative weights to all patches, making it difficult to evaluate the relevance between patches independently. In visual recognition, images often contain many background or redundant patches, yet self-attention cannot explicitly reject such irrelevant patches, which may introduce unnecessary information into feature aggregation. To address this limitation, Screening has been proposed in the field of language modeling, where the relevance of each token is independently evaluated based on query-key similarity and low-relevance tokens are explicitly excluded through thresholding. In this work, we propose VisionScreen, a new vision model that extends Screening mechanism to visual recognition. VisionScreen treats image patches as tokens arranged on a two-dimensional grid and extends absolute relevance estimation based on query-key similarity to the two-dimensional spatial domain. This allows each patch to selectively aggregate only content-wise and spatially relevant patches without relying on competition among patches. Experiments on image classification benchmarks demonstrate that the proposed method outperforms conventional ViT. These results suggest that Screening can be effective for visual recognition, offering an alternative to relative feature aggregation based on softmax attention.",
+      "authors": [
+        "Shunya Shimomura",
+        "Kazuhiro Hotta"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-15T16:12:48+00:00",
+      "link": "https://arxiv.org/pdf/2607.13983v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "improves Vision Transformer by screening irrelevant patches",
+      "llm_evidence_cn": "通过筛选不相关块改进Vision Transformer",
+      "llm_evidence": "通过筛选不相关块改进Vision Transformer",
+      "canonical_evidence": "通过筛选不相关块改进Vision Transformer",
+      "llm_tldr_en": "Proposes Screening mechanism for Vision Transformers that explicitly excludes low-relevance patches based on query-key similarity, improving visual recognition by reducing noise from background patches.",
+      "llm_tldr_cn": "该论文指出Vision Transformer中的自注意力机制无法明确排除背景或冗余块，导致特征聚合包含不必要信息。作者提出筛选机制，通过查询-键相似度独立评估每个标记的相关性，并利用阈值显式排除低相关标记。在视觉识别任务上，该方法能有效减少背景干扰，提升分类性能。这项工作为改进Vision Transformer架构提供了新思路，可迁移至细粒度分类等需要精细特征的任务。",
+      "llm_tldr": "该论文指出Vision Transformer中的自注意力机制无法明确排除背景或冗余块，导致特征聚合包含不必要信息。作者提出筛选机制，通过查询-键相似度独立评估每个标记的相关性，并利用阈值显式排除低相关标记。在视觉识别任务上，该方法能有效减少背景干扰，提升分类性能。这项工作为改进Vision Transformer架构提供了新思路，可迁移至细粒度分类等需要精细特征的任务。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

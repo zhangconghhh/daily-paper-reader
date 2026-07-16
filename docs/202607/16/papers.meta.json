@@ -1,0 +1,69 @@
+{
+  "label": "2026-07-16",
+  "date": "2026-07-16",
+  "generated_at": "2026-07-16T21:26:43",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202607/16/2607.13437v1-clip-guided-label-free-discriminative-region-scoring-for-fine-grained-classification",
+      "section": "deep",
+      "title_en": "CLIP-Guided Label-Free Discriminative Region Scoring for Fine-Grained Classification",
+      "authors": "Yujie Zhu",
+      "date": "2026-07-15",
+      "pdf": "https://arxiv.org/pdf/2607.13437v1",
+      "score": "9.0",
+      "evidence": "CLIP引导的无标签判别区域评分用于细粒度分类",
+      "tldr": "针对细粒度分类中缺乏标签时如何选择判别性区域的问题，提出统一的无标签区域评分框架。使用CLIP和SAM生成区域并比较余弦相似度、边缘和熵三类评分策略，引入基于全局和局部嵌入的伪标签变体。实验表明，软负边缘评分最优，伪标签逼近真实标签性能；随机裁剪优于SAM，因其保留上下文信息。SAM适合聚合所有区域，随机裁剪适合小top-k子集，为细粒度分类提供新见解。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Recent vision models such as CLIP and SAM enable training-free segmentation and semantic encoding for fine-grained classification. A common approach is to compare the representations of segmented image regions with the text prompt embeddings of the corresponding labels. However, it remains unclear how different local regions and CLIP-based scoring strategies affect the selection of discriminative evidence, especially when ground-truth labels are unavailable. In this paper, we propose a unified CLIP-guided label-free region scoring framework for fine-grained classification. The framework evaluates cosine similarity-based, margin-based, and entropy-based scoring strategies using both SAM-generated masks and random crops, and introduces two label-free pseudo-label variants based on global image embeddings and local region embeddings. We conduct experiments on five fine-grained classification datasets to systematically compare different region generation methods and scoring strategies. The results show that Soft Negative Margin scoring achieves the strongest performance, and pseudo-label scoring closely approximates true-label performance. Although SAM produces semantically meaningful masks, random-crop-based pseudo-label scoring consistently outperforms SAM-based scoring across all datasets, suggesting that random crops preserve surrounding information and provide more stable semantic context when pseudo-labels are noisy. In addition, SAM masks benefit from aggregating embeddings from all regions, whereas random crops tend to perform better with a smaller top-k subset. These findings provide new insights for fine-grained classification.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/16/2607.12916v1-contrastive-collapsed-loss-for-flexible-and-geometrically-optimal-embeddings-and-faster-convergence",
+      "section": "quick",
+      "title_en": "Contrastive-Collapsed Loss for Flexible and Geometrically Optimal Embeddings and Faster Convergence",
+      "authors": "Blanca Cano-Camarero, Ángela Fernández-Pascual, José R. Dorronsoro",
+      "date": "2026-07-14",
+      "pdf": "https://arxiv.org/pdf/2607.12916v1",
+      "score": "7.0",
+      "evidence": "对比损失用于自监督表示学习",
+      "tldr": "现有损失函数在学习归一化且结构良好的嵌入时存在不足。CoCo损失通过同时促进类内特征坍缩和类间对比，使神经网络能逼近大角度分离的几何最优嵌入。实验表明，在OpenML-CC18基准上，CoCo方法达到了与核SVM、随机森林等相当的性能，且收敛更快、类聚类更紧。该工作为学习判别性表示提供了有效目标函数。",
+      "tags": "query:dino-fg",
+      "abstract_en": "In this work, we introduce CoCo, a loss function aimed at learning normalized and well-structured representations. The proposed loss encourages intra-class collapse and inter-class contrast while preserving sufficient flexibility for neural networks to approximate geometrically optimal embeddings with large angular separation between classes. We provide a theoretical analysis positioning CoCo with respect to related objectives such as dot regression and cross-entropy, showing that the new proposed loss benefits from closer initialization to the optimal configuration, more informative gradients, and stronger incentives for class-wise representation collapse. Extensive experiments on diverse tabular datasets from the OpenML-CC18 benchmark show that CoCo achieves competitive performance with state-of-the-art methods, including kernel SVM, Random Forest, dot regression, and cross-entropy-based neural networks. In addition, both theoretical arguments and empirical analyses demonstrate that the proposal promotes tighter class clustering and faster convergence. These results highlight CoCo loss as an effective objective for learning discriminative representations while maintaining competitive predictive performance.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/16/2607.13192v1-self-supervised-visual-representation-learning-pretrain-finetuning-or-joint-training",
+      "section": "quick",
+      "title_en": "Self-Supervised Visual Representation Learning: Pretrain-Finetuning or Joint Training?",
+      "authors": "Nusrat Munia, Tyler Ward, Nishat Nayla, Matthew A. Massey, Abdullah-Al-Zubaer Imran",
+      "date": "2026-07-14",
+      "pdf": "https://arxiv.org/pdf/2607.13192v1",
+      "score": "6.0",
+      "evidence": "自监督视觉表示学习，与DINO的自监督范式相关",
+      "tldr": "自监督视觉表征学习中，传统方法是先无监督预训练再监督微调（PFT），本文系统探究了另一种联合训练（JT）范式——同时优化自监督和监督损失。在8种自监督方法、多样视觉任务（自然、医疗、灾害响应、遥感）及不同标签比例下，发现JT在数据与训练效率、低标签场景下更优，而PFT在专业领域更可靠。研究揭示了两种目标交互机制，为混合SSL半监督学习提供了基准和选择指南。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Self-supervision is a powerful technique for learning visual representations from unlabeled data. Existing techniques primarily adopt a two-stage approach for self-supervised learning (SSL): a pretraining stage on unlabeled data followed by a finetuning stage on labeled data. While this pipeline has demonstrated extreme effectiveness, the interaction between self-supervised and supervised learning objectives remains insufficiently understood. In this work, we systematically investigate whether jointly optimizing the self-supervised and supervised objectives during training provides a better alternative. We compare two training paradigms: (1) the aforementioned pretraining followed by finetuning (PFT) and (2) joint training (JT), where self-supervised and supervised losses are optimized simultaneously in the same network. Across eight representative SSL methods and diverse computer vision tasks on natural, medical, crisis response, and remote sensing data, we evaluate performance under varying percentages of labeled data. Our results reveal that the relative effectiveness of PFT and JT depends strongly on the task at hand, the availability of labeled data, and the complexity of the domain. We find that JT consistently improves data and training efficiency while being robust in low-label settings, while PFT is more reliable in more specialized domains. We further analyze representation quality, robustness, and cross-domain generalization, providing new insights into how self-supervised and supervised objectives interact during optimization. We establish a comprehensive empirical benchmark for hybrid SSL-based semi-supervised learning and offer practical guidance for selecting appropriate training strategies across diverse vision applications.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/16/2607.13983v1-screening-is-effective-for-visual-recognition",
+      "section": "quick",
+      "title_en": "Screening Is Effective for Visual Recognition",
+      "authors": "Shunya Shimomura, Kazuhiro Hotta",
+      "date": "2026-07-15",
+      "pdf": "https://arxiv.org/pdf/2607.13983v1",
+      "score": "6.0",
+      "evidence": "通过筛选不相关块改进Vision Transformer",
+      "tldr": "视觉Transformer依赖自注意力为所有图像块分配软权重，难以独立评估相关性，且无法排除背景或冗余块。本文提出VisionScreen，将语言建模中的Screening机制扩展至视觉识别，基于查询-键相似性独立评估每个块的相关性，并通过阈值显式排除低相关块。在图像分类基准上，VisionScreen优于传统ViT。结果表明，Screening可有效用于视觉识别，为softmax注意力提供替代方案。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Vision Transformer (ViT) has been widely used as a powerful framework for modeling global dependencies among image patches. However, its core component, self-attention assigns softmax-normalized relative weights to all patches, making it difficult to evaluate the relevance between patches independently. In visual recognition, images often contain many background or redundant patches, yet self-attention cannot explicitly reject such irrelevant patches, which may introduce unnecessary information into feature aggregation. To address this limitation, Screening has been proposed in the field of language modeling, where the relevance of each token is independently evaluated based on query-key similarity and low-relevance tokens are explicitly excluded through thresholding. In this work, we propose VisionScreen, a new vision model that extends Screening mechanism to visual recognition. VisionScreen treats image patches as tokens arranged on a two-dimensional grid and extends absolute relevance estimation based on query-key similarity to the two-dimensional spatial domain. This allows each patch to selectively aggregate only content-wise and spatially relevant patches without relying on competition among patches. Experiments on image classification benchmarks demonstrate that the proposed method outperforms conventional ViT. These results suggest that Screening can be effective for visual recognition, offering an alternative to relative feature aggregation based on softmax attention.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

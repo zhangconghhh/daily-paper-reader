@@ -6,29 +6,34 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-15
-- 运行时间：2026-07-15 20:17:29 UTC
+- 最新运行日期：2026-07-16
+- 运行时间：2026-07-16 21:26:36 UTC
 - 运行状态：成功
-- 本次总论文数：3
+- 本次总论文数：4
 - 精读区：1
-- 速读区：2
+- 速读区：3
 
 ### 今日简报（AI）
-今日精读8分论文《GFR-SAM》，速览两项7分工作：视觉运动学习的物体中心表征与ViT分类的内部表征融合。最值得关注的是《GFR-SAM》无需训练即可通过跨图像提示精准分割伪装目标，大幅降低应用门槛。建议非专业读者重点关注这种零训练范式，未来或能拓展至更多视觉任务。
-- 详情：[/202607/15/README](/202607/15/README)
+今日探讨细粒度分类、对比学习与自监督表示，精读聚焦CLIP引导的无标签判别区域评分。  
+最值得精读《CLIP-Guided Label-Free Discriminative Region Scoring for Fine-Grained Classification》（9.0分），另可关注对比折叠损失带来的快速收敛新思路。  
+建议普通读者优先精读高分论文，再速读对比折叠损失与自监督联合训练的方法。
+- 详情：[/202607/16/README](/202607/16/README)
 
 ### 精读区论文标签
-1. [GFR-SAM: Training-Free Referring Camouflaged Object Segmentation via Cross-Image Prompting](/202607/15/2607.11732v1-gfr-sam-training-free-referring-camouflaged-object-segmentation-via-cross-image-prompting)  
-   标签：评分：8.0/10、query:dino-fg
-   evidence：在分割中使用DINOv3进行原型对齐
+1. [CLIP-Guided Label-Free Discriminative Region Scoring for Fine-Grained Classification](/202607/16/2607.13437v1-clip-guided-label-free-discriminative-region-scoring-for-fine-grained-classification)  
+   标签：评分：9.0/10、query:dino-fg
+   evidence：CLIP引导的无标签判别区域评分用于细粒度分类
 
 ### 速读区论文标签
-1. [More Structure, Not More Capacity: Object-Centric Representations for Visuomotor Imitation Learning](/202607/15/2607.09825v1-more-structure-not-more-capacity-object-centric-representations-for-visuomotor-imitation-learning)  
+1. [Contrastive-Collapsed Loss for Flexible and Geometrically Optimal Embeddings and Faster Convergence](/202607/16/2607.12916v1-contrastive-collapsed-loss-for-flexible-and-geometrically-optimal-embeddings-and-faster-convergence)  
    标签：评分：7.0/10、query:dino-fg
-   evidence：使用DINO ViT作为冻结编码器，在机器人任务中展示了相比DINO基线的性能提升
-2. [Vertical Fusion: Condensing Internal Representations for Robust ViT Classification](/202607/15/2607.10391v1-vertical-fusion-condensing-internal-representations-for-robust-vit-classification)  
-   标签：评分：7.0/10、query:dino-fg
-   evidence：利用内部表示改进ViT分类的方法
+   evidence：对比损失用于自监督表示学习
+2. [Self-Supervised Visual Representation Learning: Pretrain-Finetuning or Joint Training?](/202607/16/2607.13192v1-self-supervised-visual-representation-learning-pretrain-finetuning-or-joint-training)  
+   标签：评分：6.0/10、query:dino-fg
+   evidence：自监督视觉表示学习，与DINO的自监督范式相关
+3. [Screening Is Effective for Visual Recognition](/202607/16/2607.13983v1-screening-is-effective-for-visual-recognition)  
+   标签：评分：6.0/10、query:dino-fg
+   evidence：通过筛选不相关块改进Vision Transformer
 
 
 <div class="dpr-home-promo-card">
