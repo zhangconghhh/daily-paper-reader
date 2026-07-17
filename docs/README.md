@@ -6,34 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-16
-- 运行时间：2026-07-16 21:26:36 UTC
+- 最新运行日期：2026-07-17
+- 运行时间：2026-07-17 20:59:45 UTC
 - 运行状态：成功
-- 本次总论文数：4
+- 本次总论文数：2
 - 精读区：1
-- 速读区：3
+- 速读区：1
 
 ### 今日简报（AI）
-今日探讨细粒度分类、对比学习与自监督表示，精读聚焦CLIP引导的无标签判别区域评分。  
-最值得精读《CLIP-Guided Label-Free Discriminative Region Scoring for Fine-Grained Classification》（9.0分），另可关注对比折叠损失带来的快速收敛新思路。  
-建议普通读者优先精读高分论文，再速读对比折叠损失与自监督联合训练的方法。
-- 详情：[/202607/16/README](/202607/16/README)
+今日精选2篇论文，重点研读视觉基础模型区域对应性，兼顾多粒度学习新思路。最值得关注的是《Emergent Region-Level Facial Correspondence》，揭示冻结视觉模型展现区域级语义对应能力（8.0分），其次《U-shaped Multi-granularity Learning》提供跨模态粒度融合方案（7.0分）。建议优先精读脸部对应论文，后续可关注多粒度模型在图文匹配中的局限性突破。
+- 详情：[/202607/17/README](/202607/17/README)
 
 ### 精读区论文标签
-1. [CLIP-Guided Label-Free Discriminative Region Scoring for Fine-Grained Classification](/202607/16/2607.13437v1-clip-guided-label-free-discriminative-region-scoring-for-fine-grained-classification)  
-   标签：评分：9.0/10、query:dino-fg
-   evidence：CLIP引导的无标签判别区域评分用于细粒度分类
+1. [Emergent Region-Level Facial Correspondence in Frozen Vision Foundation Models](/202607/17/2607.14423v1-emergent-region-level-facial-correspondence-in-frozen-vision-foundation-models)  
+   标签：评分：8.0/10、query:dino-fg
+   evidence：DINOv3特征实现区域级面部对应，对细粒度分类有参考价值
 
 ### 速读区论文标签
-1. [Contrastive-Collapsed Loss for Flexible and Geometrically Optimal Embeddings and Faster Convergence](/202607/16/2607.12916v1-contrastive-collapsed-loss-for-flexible-and-geometrically-optimal-embeddings-and-faster-convergence)  
+1. [U-shaped Multi-granularity Learning for Vision-Language Models](/202607/17/2607.14966v1-u-shaped-multi-granularity-learning-for-vision-language-models)  
    标签：评分：7.0/10、query:dino-fg
-   evidence：对比损失用于自监督表示学习
-2. [Self-Supervised Visual Representation Learning: Pretrain-Finetuning or Joint Training?](/202607/16/2607.13192v1-self-supervised-visual-representation-learning-pretrain-finetuning-or-joint-training)  
-   标签：评分：6.0/10、query:dino-fg
-   evidence：自监督视觉表示学习，与DINO的自监督范式相关
-3. [Screening Is Effective for Visual Recognition](/202607/16/2607.13983v1-screening-is-effective-for-visual-recognition)  
-   标签：评分：6.0/10、query:dino-fg
-   evidence：通过筛选不相关块改进Vision Transformer
+   evidence：针对视觉语言模型中的细粒度语义意识问题，提出U形多粒度提示学习框架。
 
 
 <div class="dpr-home-promo-card">

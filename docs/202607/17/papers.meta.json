@@ -1,0 +1,39 @@
+{
+  "label": "2026-07-17",
+  "date": "2026-07-17",
+  "generated_at": "2026-07-17T20:59:51",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202607/17/2607.14423v1-emergent-region-level-facial-correspondence-in-frozen-vision-foundation-models",
+      "section": "deep",
+      "title_en": "Emergent Region-Level Facial Correspondence in Frozen Vision Foundation Models",
+      "authors": "Izaldein Al-Zyoud, Abdulmotaleb El Saddik",
+      "date": "2026-07-15",
+      "pdf": "https://arxiv.org/pdf/2607.14423v1",
+      "score": "8.0",
+      "evidence": "DINOv3特征实现区域级面部对应，对细粒度分类有参考价值",
+      "tldr": "人脸全局布局相似但身份细节差异大，冻结自监督模型能否对齐人脸区域？本文利用DINOv3 ViT-L/16特征和FaRL标注接口，在CelebDF-v2视频上评估跨身份最近邻匹配与时间传播。DINOv3达到83.0%区域语义准确率（远超随机基线23.0%）和95.5%时间跟踪准确率，且最佳对应出现在中间层（block 18）。结果表明冻结DINOv3可零样本实现区域级人脸对应，为密集人脸分析提供了强基线。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Frozen self-supervised vision models can align parts of generic objects, but it remains unclear whether this correspondence extends to human faces, where global layout is shared while identity-specific appearance varies sharply. We test whether frozen DINOv3 features define a region-level facial coordinate system: a feature space in which eyes, brows, nose, mouth, skin, and hair remain distinguishable across people and across time without face-specific training. Using DINOv3 ViT-L/16 patch embeddings and FaRL only as a face-part labeling interface, we evaluate cross-identity nearest-neighbor matching and temporal label propagation on 200 CelebDF-v2 real videos. DINOv3 achieves 83.0% region-level semantic accuracy under unconstrained cross-identity matching, compared with a 23.0% area-weighted random baseline, and 95.5% temporal tracking accuracy without a learned temporal module. A no-FaRL control collapses to 0.9%, showing that FaRL supplies semantic initialization while DINOv3 supplies dense spatial correspondence. The strongest correspondence appears at an intermediate layer: block 18 gives a 4.93x same-region versus cross-region discrimination ratio, compared with 1.48x at the final block. Against CLIP ViT-L/14, DINOv3 shows only a small aggregate advantage but a +16.8 pp gain on anatomical regions, indicating that image-level contrastive supervision captures coarse facial layout but not fine-grained anatomical identity. These results establish frozen DINOv3 as a strong zero-shot representation for region-level facial correspondence and identify intermediate self-supervised features as the most useful layer for dense face analysis.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/17/2607.14966v1-u-shaped-multi-granularity-learning-for-vision-language-models",
+      "section": "quick",
+      "title_en": "U-shaped Multi-granularity Learning for Vision-Language Models",
+      "authors": "Biao Chen, Yunqian Yu, Xiangxu Zhao, Zhongshu Chen, Mengmeng Jing, Lin Zuo",
+      "date": "2026-07-16",
+      "pdf": "https://arxiv.org/pdf/2607.14966v1",
+      "score": "7.0",
+      "evidence": "针对视觉语言模型中的细粒度语义意识问题，提出U形多粒度提示学习框架。",
+      "tldr": "视觉语言模型的提示学习面临粒度困境：全局提示缺乏细粒度语义，局部提示忽略上下文关联，限制跨任务泛化。受U-Net启发，提出U形多粒度提示学习框架UPrompt，通过对称编码器-解码器路径和跨层级连接，构建视觉和文本模态的并行多粒度表示，实现粗到细的级联增强和细到粗的分层监督。在17个基准上验证有效性，MSCOCO上rSum比MAMET和VPKE分别提升4.1和7.3，基到新泛化超CoCoA-Mix 5.09%，粗粒度开销极小，中粒度匹配PSRC仅1/3成本。",
+      "tags": "query:dino-fg",
+      "abstract_en": "The prompt learning paradigm for vision-language models is effective yet faces a granularity dilemma: global prompts lack fine-grained semantic awareness, while local prompts ignore contextual associations, limiting cross-task generalization. This dilemma exists in dense prediction tasks. Inspired by U-Net, which unifies multi-level representations across granularities, we propose UPrompt, a U-shaped multi-granularity prompt learning framework for vision-language models. Similar to how U-Net integrates fine and coarse features through symmetric encoder-decoder pathways with cross-level connections, UPrompt constructs parallel multi-granularity representations in both visual and textual modalities, where coarse-to-fine cascaded enhancement propagates global context to refine local details, while fine-to-coarse hierarchical supervision ensures semantic consistency across scales. Extensive experiments on 17 benchmarks validate our effectiveness. UPrompt outperforms MAMET and VPKE by 4.1 and 7.3 rSum on MSCOCO, surpasses CoCoA-Mix by 5.09% in base-to-novel generalization, while maintaining competitive performance with minimal overhead (coarse-grained) and matching PSRC with 1/3 cost (medium-grained).",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

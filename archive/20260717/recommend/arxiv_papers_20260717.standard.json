@@ -1,0 +1,94 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-17T20:57:53.905656+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2607.14423v1",
+      "source": "arxiv",
+      "title": "Emergent Region-Level Facial Correspondence in Frozen Vision Foundation Models",
+      "abstract": "Frozen self-supervised vision models can align parts of generic objects, but it remains unclear whether this correspondence extends to human faces, where global layout is shared while identity-specific appearance varies sharply. We test whether frozen DINOv3 features define a region-level facial coordinate system: a feature space in which eyes, brows, nose, mouth, skin, and hair remain distinguishable across people and across time without face-specific training. Using DINOv3 ViT-L/16 patch embeddings and FaRL only as a face-part labeling interface, we evaluate cross-identity nearest-neighbor matching and temporal label propagation on 200 CelebDF-v2 real videos. DINOv3 achieves 83.0% region-level semantic accuracy under unconstrained cross-identity matching, compared with a 23.0% area-weighted random baseline, and 95.5% temporal tracking accuracy without a learned temporal module. A no-FaRL control collapses to 0.9%, showing that FaRL supplies semantic initialization while DINOv3 supplies dense spatial correspondence. The strongest correspondence appears at an intermediate layer: block 18 gives a 4.93x same-region versus cross-region discrimination ratio, compared with 1.48x at the final block. Against CLIP ViT-L/14, DINOv3 shows only a small aggregate advantage but a +16.8 pp gain on anatomical regions, indicating that image-level contrastive supervision captures coarse facial layout but not fine-grained anatomical identity. These results establish frozen DINOv3 as a strong zero-shot representation for region-level facial correspondence and identify intermediate self-supervised features as the most useful layer for dense face analysis.",
+      "authors": [
+        "Izaldein Al-Zyoud",
+        "Abdulmotaleb El Saddik"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "eess.IV"
+      ],
+      "published": "2026-07-15T23:23:28+00:00",
+      "link": "https://arxiv.org/pdf/2607.14423v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "DINOv3 features enable region-level facial correspondence, relevant for fine-grained classification",
+      "llm_evidence_cn": "DINOv3特征实现区域级面部对应，对细粒度分类有参考价值",
+      "llm_evidence": "DINOv3特征实现区域级面部对应，对细粒度分类有参考价值",
+      "canonical_evidence": "DINOv3特征实现区域级面部对应，对细粒度分类有参考价值",
+      "llm_tldr_en": "Shows frozen DINOv3 ViT features define a region-level facial coordinate system achieving 83% semantic accuracy, without face-specific training, supporting fine-grained part recognition.",
+      "llm_tldr_cn": "针对冻结自监督视觉模型能否捕捉面部部件细节的问题，该论文使用DINOv3 ViT-L/16的patch嵌入，验证了其在不经过人脸训练的情况下能定义区域级面部坐标系。在CelebDF-v2视频上，DINOv3实现了83.0%的区域语义准确率。结果表明DINOv3可作为细粒度面部部件识别的强大基础特征，为后续细粒度分类任务提供了预训练特征支撑。",
+      "llm_tldr": "针对冻结自监督视觉模型能否捕捉面部部件细节的问题，该论文使用DINOv3 ViT-L/16的patch嵌入，验证了其在不经过人脸训练的情况下能定义区域级面部坐标系。在CelebDF-v2视频上，DINOv3实现了83.0%的区域语义准确率。结果表明DINOv3可作为细粒度面部部件识别的强大基础特征，为后续细粒度分类任务提供了预训练特征支撑。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "DINO model for fine-grained classification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.14966v1",
+      "source": "arxiv",
+      "title": "U-shaped Multi-granularity Learning for Vision-Language Models",
+      "abstract": "The prompt learning paradigm for vision-language models is effective yet faces a granularity dilemma: global prompts lack fine-grained semantic awareness, while local prompts ignore contextual associations, limiting cross-task generalization. This dilemma exists in dense prediction tasks. Inspired by U-Net, which unifies multi-level representations across granularities, we propose UPrompt, a U-shaped multi-granularity prompt learning framework for vision-language models. Similar to how U-Net integrates fine and coarse features through symmetric encoder-decoder pathways with cross-level connections, UPrompt constructs parallel multi-granularity representations in both visual and textual modalities, where coarse-to-fine cascaded enhancement propagates global context to refine local details, while fine-to-coarse hierarchical supervision ensures semantic consistency across scales. Extensive experiments on 17 benchmarks validate our effectiveness. UPrompt outperforms MAMET and VPKE by 4.1 and 7.3 rSum on MSCOCO, surpasses CoCoA-Mix by 5.09% in base-to-novel generalization, while maintaining competitive performance with minimal overhead (coarse-grained) and matching PSRC with 1/3 cost (medium-grained).",
+      "authors": [
+        "Biao Chen",
+        "Yunqian Yu",
+        "Xiangxu Zhao",
+        "Zhongshu Chen",
+        "Mengmeng Jing",
+        "Lin Zuo"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-16T13:18:08+00:00",
+      "link": "https://arxiv.org/pdf/2607.14966v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Addresses fine-grained semantic awareness in vision-language models, proposing U-shaped multi-granularity prompt learning.",
+      "llm_evidence_cn": "针对视觉语言模型中的细粒度语义意识问题，提出U形多粒度提示学习框架。",
+      "llm_evidence": "针对视觉语言模型中的细粒度语义意识问题，提出U形多粒度提示学习框架。",
+      "canonical_evidence": "针对视觉语言模型中的细粒度语义意识问题，提出U形多粒度提示学习框架。",
+      "llm_tldr_en": "Proposes UPrompt, a U-shaped multi-granularity prompt learning framework that integrates global and local granularities for vision-language models, improving fine-grained semantic awareness.",
+      "llm_tldr_cn": "视觉语言模型面临粒度困境：全局提示缺乏细粒度语义，局部提示忽略上下文关联。受U-Net启发，该论文提出UPrompt框架，通过U形结构构建视觉和文本模态的并行多粒度表示，并采用粗到细级联增强传递全局上下文。该方法有效提升了密集预测任务中的细粒度语义感知，可推广至细粒度分类等任务。",
+      "llm_tldr": "视觉语言模型面临粒度困境：全局提示缺乏细粒度语义，局部提示忽略上下文关联。受U-Net启发，该论文提出UPrompt框架，通过U形结构构建视觉和文本模态的并行多粒度表示，并采用粗到细级联增强传递全局上下文。该方法有效提升了密集预测任务中的细粒度语义感知，可推广至细粒度分类等任务。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
