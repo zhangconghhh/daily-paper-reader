@@ -6,26 +6,27 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-17
-- 运行时间：2026-07-17 20:59:45 UTC
+- 最新运行日期：2026-07-18
+- 运行时间：2026-07-18 19:58:15 UTC
 - 运行状态：成功
 - 本次总论文数：2
-- 精读区：1
-- 速读区：1
+- 精读区：0
+- 速读区：2
 
 ### 今日简报（AI）
-今日精选2篇论文，重点研读视觉基础模型区域对应性，兼顾多粒度学习新思路。最值得关注的是《Emergent Region-Level Facial Correspondence》，揭示冻结视觉模型展现区域级语义对应能力（8.0分），其次《U-shaped Multi-granularity Learning》提供跨模态粒度融合方案（7.0分）。建议优先精读脸部对应论文，后续可关注多粒度模型在图文匹配中的局限性突破。
-- 详情：[/202607/17/README](/202607/17/README)
+今日速读2篇论文，聚焦机器人模仿学习与视觉表示学习前沿。重点看“More Structure, Not More Capacity”中物体中心表示对模仿学习的提升，以及自监督学习中预训练微调 vs 联合训练的对比结论。建议优先阅读这两篇6分论文，理解结构线索与训练策略的权衡。
+- 详情：[/202607/18/README](/202607/18/README)
 
 ### 精读区论文标签
-1. [Emergent Region-Level Facial Correspondence in Frozen Vision Foundation Models](/202607/17/2607.14423v1-emergent-region-level-facial-correspondence-in-frozen-vision-foundation-models)  
-   标签：评分：8.0/10、query:dino-fg
-   evidence：DINOv3特征实现区域级面部对应，对细粒度分类有参考价值
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [U-shaped Multi-granularity Learning for Vision-Language Models](/202607/17/2607.14966v1-u-shaped-multi-granularity-learning-for-vision-language-models)  
-   标签：评分：7.0/10、query:dino-fg
-   evidence：针对视觉语言模型中的细粒度语义意识问题，提出U形多粒度提示学习框架。
+1. [More Structure, Not More Capacity: Object-Centric Representations for Visuomotor Imitation Learning](/202607/18/2607.09825v1-more-structure-not-more-capacity-object-centric-representations-for-visuomotor-imitation-learning)  
+   标签：评分：6.0/10、query:dino-fg
+   evidence：使用冻结DINO ViT进行目标中心表示，展示可迁移特征质量
+2. [Self-Supervised Visual Representation Learning: Pretrain-Finetuning or Joint Training?](/202607/18/2607.13192v1-self-supervised-visual-representation-learning-pretrain-finetuning-or-joint-training)  
+   标签：评分：6.0/10、query:dino-fg
+   evidence：自监督视觉表示学习，为基础模型提供训练范式
 
 
 <div class="dpr-home-promo-card">

@@ -1,0 +1,96 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-18T19:57:59.944487+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.09825v1",
+      "source": "arxiv",
+      "title": "More Structure, Not More Capacity: Object-Centric Representations for Visuomotor Imitation Learning",
+      "abstract": "Robotic manipulation policies rely on pre-trained vision models that give either a global scene embedding or a dense patch grid. Both mix task-relevant and task-irrelevant features. Object-centric slot representations are a structured alternative: they group features into a few per-object slots. We test what this structure buys on ManiSkill3 PickCube-v1, with a frozen encoder and a held-out-seed evaluation. Holding the policy, goal token, rendering, and calibration fixed and changing only the encoder, a frozen object-centric SPOT representation (DINO ViT-B/16 + Slot Attention) reaches 55.0$\\pm$2.9% success, 22.4% above a dense DINO global-feature baseline (32.6 $\\pm$ 1.5%), with the same trainable policy and no encoder fine-tuning. More tokens alone do not help: a dense patch grid with 16x the tokens performs no better than the global feature. Adding an explicit 2D spatial goal and native-resolution rendering raises the full system to 68.7$\\pm$4.2%, just below a privileged 3D-oracle upper bound (71.7$\\pm$4.1%). An automated kinematic failure taxonomy then separates spatial-precision (Near-Miss) failures from object-tracking (No-Grasp) failures: spatial grounding reduces Near-Miss while leaving No- Grasp unchanged. The same taxonomy transfers to the harder StackCube-v1 and points to occlusion as the main bottleneck.",
+      "authors": [
+        "Yi Li",
+        "Alexandre Chapin",
+        "Liming Chen",
+        "Jan Peters",
+        "Alap Kshirsagar"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published": "2026-07-10T10:35:24+00:00",
+      "link": "https://arxiv.org/pdf/2607.09825v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses frozen DINO ViT for object-centric representation, demonstrating transferable feature quality",
+      "llm_evidence_cn": "使用冻结DINO ViT进行目标中心表示，展示可迁移特征质量",
+      "llm_evidence": "使用冻结DINO ViT进行目标中心表示，展示可迁移特征质量",
+      "canonical_evidence": "使用冻结DINO ViT进行目标中心表示，展示可迁移特征质量",
+      "llm_tldr_en": "This paper proposes object-centric slot representations for visuomotor imitation learning, using frozen DINO ViT-B/16 and Slot Attention, achieving 55.0% success on PickCube-v1, 22.4% above DINO global-feature baseline.",
+      "llm_tldr_cn": "针对机器人模仿学习中视觉特征混杂问题，本文提出基于DINO ViT的目标中心槽表示（SPOT），将特征分组至物体槽。在ManiSkill3任务上，冻结DINO ViT编码器仅训练轻量策略，相比全局特征提升22.4%成功率至55.0%。结果表明DINO ViT的特征质量使下游任务受益，验证了其作为通用视觉基础模型的有效性。",
+      "llm_tldr": "针对机器人模仿学习中视觉特征混杂问题，本文提出基于DINO ViT的目标中心槽表示（SPOT），将特征分组至物体槽。在ManiSkill3任务上，冻结DINO ViT编码器仅训练轻量策略，相比全局特征提升22.4%成功率至55.0%。结果表明DINO ViT的特征质量使下游任务受益，验证了其作为通用视觉基础模型的有效性。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.13192v1",
+      "source": "arxiv",
+      "title": "Self-Supervised Visual Representation Learning: Pretrain-Finetuning or Joint Training?",
+      "abstract": "Self-supervision is a powerful technique for learning visual representations from unlabeled data. Existing techniques primarily adopt a two-stage approach for self-supervised learning (SSL): a pretraining stage on unlabeled data followed by a finetuning stage on labeled data. While this pipeline has demonstrated extreme effectiveness, the interaction between self-supervised and supervised learning objectives remains insufficiently understood. In this work, we systematically investigate whether jointly optimizing the self-supervised and supervised objectives during training provides a better alternative. We compare two training paradigms: (1) the aforementioned pretraining followed by finetuning (PFT) and (2) joint training (JT), where self-supervised and supervised losses are optimized simultaneously in the same network. Across eight representative SSL methods and diverse computer vision tasks on natural, medical, crisis response, and remote sensing data, we evaluate performance under varying percentages of labeled data. Our results reveal that the relative effectiveness of PFT and JT depends strongly on the task at hand, the availability of labeled data, and the complexity of the domain. We find that JT consistently improves data and training efficiency while being robust in low-label settings, while PFT is more reliable in more specialized domains. We further analyze representation quality, robustness, and cross-domain generalization, providing new insights into how self-supervised and supervised objectives interact during optimization. We establish a comprehensive empirical benchmark for hybrid SSL-based semi-supervised learning and offer practical guidance for selecting appropriate training strategies across diverse vision applications.",
+      "authors": [
+        "Nusrat Munia",
+        "Tyler Ward",
+        "Nishat Nayla",
+        "Matthew A. Massey",
+        "Abdullah-Al-Zubaer Imran"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-14T18:45:04+00:00",
+      "link": "https://arxiv.org/pdf/2607.13192v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "self-supervised visual representation learning for foundation models",
+      "llm_evidence_cn": "自监督视觉表示学习，为基础模型提供训练范式",
+      "llm_evidence": "自监督视觉表示学习，为基础模型提供训练范式",
+      "canonical_evidence": "自监督视觉表示学习，为基础模型提供训练范式",
+      "llm_tldr_en": "Compares pretrain-finetune vs joint training for self-supervised visual representation learning, offering insights for designing foundation models like DINO.",
+      "llm_tldr_cn": "本文系统比较了自监督学习中的预训练-微调范式与联合训练范式，探讨了两者的交互作用。研究发现，联合训练在某些情况下能提升表示质量。该工作为DINO等自监督视觉基础模型的训练策略提供了有价值的指导，有助于改进细粒度分类等下游任务的性能。",
+      "llm_tldr": "本文系统比较了自监督学习中的预训练-微调范式与联合训练范式，探讨了两者的交互作用。研究发现，联合训练在某些情况下能提升表示质量。该工作为DINO等自监督视觉基础模型的训练策略提供了有价值的指导，有助于改进细粒度分类等下游任务的性能。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
