@@ -6,27 +6,36 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-18
-- 运行时间：2026-07-18 19:58:15 UTC
+- 最新运行日期：2026-07-19
+- 运行时间：2026-07-19 20:01:14 UTC
 - 运行状态：成功
-- 本次总论文数：2
+- 本次总论文数：5
 - 精读区：0
-- 速读区：2
+- 速读区：5
 
 ### 今日简报（AI）
-今日速读2篇论文，聚焦机器人模仿学习与视觉表示学习前沿。重点看“More Structure, Not More Capacity”中物体中心表示对模仿学习的提升，以及自监督学习中预训练微调 vs 联合训练的对比结论。建议优先阅读这两篇6分论文，理解结构线索与训练策略的权衡。
-- 详情：[/202607/18/README](/202607/18/README)
+今日速读5篇论文，重点聚焦注意力机制优化、CLIP表示学习及通用物体姿态估计三个方向。最值得关注的是《AVQ-Attention》提出的自适应向量量化注意力机制和《AspectCLIP》在CLIP表示空间中的导向性正则化方法。建议普通读者可先跟踪这两个方向中的视觉-语言基础模型改进思路。
+- 详情：[/202607/19/README](/202607/19/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [More Structure, Not More Capacity: Object-Centric Representations for Visuomotor Imitation Learning](/202607/18/2607.09825v1-more-structure-not-more-capacity-object-centric-representations-for-visuomotor-imitation-learning)  
+1. [AVQ-Attention: Adaptive Vector-Quantized Attention](/202607/19/2607.12789v1-avq-attention-adaptive-vector-quantized-attention)  
+   标签：评分：7.0/10、query:dino-fg
+   evidence：提出自适应向量量化注意力，适用于视觉Transformer等模型
+2. [AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization](/202607/19/2607.13805v2-aspectclip-optimizing-clip-representation-space-via-aspect-guided-consistency-regularization)  
+   标签：评分：7.0/10、query:dino-fg
+   evidence：优化CLIP表示空间，CLIP是图像分类的基础模型
+3. [UniPose9D: Universal Category-Agnostic Object Pose Estimation](/202607/19/2607.09985v1-unipose9d-universal-category-agnostic-object-pose-estimation)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：使用冻结DINO ViT进行目标中心表示，展示可迁移特征质量
-2. [Self-Supervised Visual Representation Learning: Pretrain-Finetuning or Joint Training?](/202607/18/2607.13192v1-self-supervised-visual-representation-learning-pretrain-finetuning-or-joint-training)  
+   evidence：使用DINOv2特征进行姿态估计，可迁移至细粒度分类
+4. [GFR-SAM: Training-Free Referring Camouflaged Object Segmentation via Cross-Image Prompting](/202607/19/2607.11732v1-gfr-sam-training-free-referring-camouflaged-object-segmentation-via-cross-image-prompting)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：自监督视觉表示学习，为基础模型提供训练范式
+   evidence：使用DINOv3进行原型对齐，基于视觉变压器框架
+5. [VideoSEMA: a scalable and efficient Mamba-like attention for video understanding](/202607/19/2607.14711v1-videosema-a-scalable-and-efficient-mamba-like-attention-for-video-understanding)  
+   标签：评分：6.0/10、query:dino-fg
+   evidence：提出一种用于视频分类的视觉Transformer变体
 
 
 <div class="dpr-home-promo-card">

@@ -1,0 +1,215 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-19T19:58:40.314456+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.12789v1",
+      "source": "arxiv",
+      "title": "AVQ-Attention: Adaptive Vector-Quantized Attention",
+      "abstract": "The $\\mathcal{O}(N^2)$ complexity of attention over $N$ tokens remains a computational bottleneck in transformer models. Vector-Quantized (VQ) attention reduces this to $\\mathcal{O}(MN)$ by representing keys with $M$ codewords, but applies uniform codebook capacity regardless of where attention mass concentrates: high-attention regions of key space may be coarsely approximated while low-attention regions waste representational capacity. We propose Adaptive Vector-Quantized (AVQ) Attention, which adaptively allocates codebook capacity based on attention importance. Starting from a small set of codewords, our method identifies the most important codes during the forward pass and refines them with pre-learned child codewords, achieving fine-grained quantization where it matters most while maintaining coarse quantization elsewhere. We develop an implementation using custom Triton kernels that enables the full adaptive refinement process, including importance scoring, child codeword insertion, and parent contribution replacement, to be carried out within the tiled computation paradigm of Flash Attention with minimal overhead. Our approach maintains $\\mathcal{O}(MN)$ complexity while achieving improved accuracy-efficiency trade-offs compared to fixed-codebook VQ-attention.",
+      "authors": [
+        "Winfried van den dool",
+        "Patrick Forré",
+        "Amir Habibian",
+        "Yuki M. Asano",
+        "Max Welling"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-07-14T14:02:22+00:00",
+      "link": "https://arxiv.org/pdf/2607.12789v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "proposes adaptive vector-quantized attention for transformer models applicable to vision transformers",
+      "llm_evidence_cn": "提出自适应向量量化注意力，适用于视觉Transformer等模型",
+      "llm_evidence": "提出自适应向量量化注意力，适用于视觉Transformer等模型",
+      "canonical_evidence": "提出自适应向量量化注意力，适用于视觉Transformer等模型",
+      "llm_tldr_en": "Proposes AVQ-Attention that adaptively allocates codebook capacity based on attention importance reducing complexity while preserving fine-grained quantization in high-attention regions.",
+      "llm_tldr_cn": "该论文针对标准注意力机制二次复杂度以及向量量化注意力中码本容量分配不均的问题，提出自适应向量量化（AVQ）注意力，在前向传播中识别重要码本并用预训练子码本细化，在保持计算效率的同时对高注意力区域进行细粒度量化。实验表明AVQ可应用于Transformer模型，有效降低计算成本而不显著牺牲性能，为高效注意力机制提供了新方案。",
+      "llm_tldr": "该论文针对标准注意力机制二次复杂度以及向量量化注意力中码本容量分配不均的问题，提出自适应向量量化（AVQ）注意力，在前向传播中识别重要码本并用预训练子码本细化，在保持计算效率的同时对高注意力区域进行细粒度量化。实验表明AVQ可应用于Transformer模型，有效降低计算成本而不显著牺牲性能，为高效注意力机制提供了新方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.09985v1",
+      "source": "arxiv",
+      "title": "UniPose9D: Universal Category-Agnostic Object Pose Estimation",
+      "abstract": "Object pose estimation is a fundamental problem in 3D vision. Although recent state-of-the-art approaches achieve strong performance, they often overfit to existing benchmarks and exhibit limited generalization to novel categories and unseen scenes. We propose UniPose9D, a category-agnostic foundation model for 9D object pose estimation: given an instance mask/ROI and either an RGB-D observation or an RGB image with predicted depth, the model estimates rotation, translation, and metric size without category labels, CAD models, mean-shape priors, or reference views. Specifically, UniPose9D samples point pairs from the observed object geometry and uses DINOv2 and PointNet features to predict NOCS coordinates for each pair. To improve accuracy, we introduce a point-pair-based RANSAC N-hop Kabsch--Umeyama algorithm with an adaptive threshold. We further employ flow matching to address symmetric ambiguities and construct a large-scale training set by curating and aligning pose annotations from existing public datasets. Experiments across six datasets show that a single unified model can match or surpass specialist methods while generalizing to unseen objects and in-the-wild scenarios. Our code and model are available on https://github.com/qq456cvb/UniPose9D.",
+      "authors": [
+        "Yang You",
+        "Yi Du",
+        "Cole Harrison",
+        "Leonidas Guibas"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-10T21:24:23+00:00",
+      "link": "https://arxiv.org/pdf/2607.09985v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "uses DINOv2 features for pose estimation, transferable to fine-grained classification",
+      "llm_evidence_cn": "使用DINOv2特征进行姿态估计，可迁移至细粒度分类",
+      "llm_evidence": "使用DINOv2特征进行姿态估计，可迁移至细粒度分类",
+      "canonical_evidence": "使用DINOv2特征进行姿态估计，可迁移至细粒度分类",
+      "llm_tldr_en": "UniPose9D uses DINOv2 and PointNet for category-agnostic 9D object pose estimation, enabling generalization without category labels.",
+      "llm_tldr_cn": "现有的物体姿态估计方法对未见过的类别和场景泛化性差。为此，本文提出UniPose9D，一个基于DINOv2和PointNet特征的类别无关姿态估计基础模型，直接在点对级别预测NOCS坐标。该方法无需类别标签、CAD模型或先验形状，在多种输入模态下实现鲁棒的9D姿态估计。该工作展示了DINOv2在三维视觉中的强大迁移能力，对细粒度分类等下游任务具有启示意义。",
+      "llm_tldr": "现有的物体姿态估计方法对未见过的类别和场景泛化性差。为此，本文提出UniPose9D，一个基于DINOv2和PointNet特征的类别无关姿态估计基础模型，直接在点对级别预测NOCS坐标。该方法无需类别标签、CAD模型或先验形状，在多种输入模态下实现鲁棒的9D姿态估计。该工作展示了DINOv2在三维视觉中的强大迁移能力，对细粒度分类等下游任务具有启示意义。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.13805v2",
+      "source": "arxiv",
+      "title": "AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization",
+      "abstract": "Contrastive Language-Image Pretraining learns a shared representation space through large-scale contrastive learning. However, existing methods that enforce global consistency regularization overlook a key challenge: the inherent information asymmetry between images and text: captions typically describe only one specific aspect of an image, thus images with similar visual content can be paired with completely divergent textual content and semantic information. Consequently, global regularizers inadvertently impose constraints between visually similar images whose captions describe divergent aspects, introducing semantic distortion into the representation space. We propose AspectCLIP, a framework that reformulates consistency regularization to respect this one-to-many structure. AspectCLIP first partitions training samples into attribute clusters based on textual similarity to identify aspect-coherent groups, then applies full cyclic consistency within each cluster while restricting cross-cluster regularization to prototype-level comparisons. This aspect-guided regularization enforces strict geometric alignment only when images and texts describe a consistent facet, while allowing flexibility across divergent aspects. Extensive experiments on downstream tasks demonstrate that AspectCLIP consistently outperforms traditional methods and achieves a more structured representation space.",
+      "authors": [
+        "Yiyang Yao",
+        "Shanglin Liu",
+        "Jianming Lv",
+        "Chengjun Wang",
+        "Jinyi Li",
+        "Yuchan Jie",
+        "Zhihua Jin"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-15T13:11:06+00:00",
+      "link": "https://arxiv.org/pdf/2607.13805v2",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "optimizes CLIP representation space, a foundation model for image classification",
+      "llm_evidence_cn": "优化CLIP表示空间，CLIP是图像分类的基础模型",
+      "llm_evidence": "优化CLIP表示空间，CLIP是图像分类的基础模型",
+      "canonical_evidence": "优化CLIP表示空间，CLIP是图像分类的基础模型",
+      "llm_tldr_en": "AspectCLIP addresses information asymmetry in CLIP by aspect-guided consistency regularization, reducing semantic distortion for better representation.",
+      "llm_tldr_cn": "对比语言-图像预训练（CLIP）面临图像与文本信息不对称的问题：一张图片的多个方面可能对应不同的描述，全局一致性正则化会引入语义失真。本文提出AspectCLIP，通过方面引导的一致性正则化，仅约束同一方面的样本对，避免跨方面误约束。实验表明该方法能显著改善表示空间的语义一致性，提升下游分类性能。",
+      "llm_tldr": "对比语言-图像预训练（CLIP）面临图像与文本信息不对称的问题：一张图片的多个方面可能对应不同的描述，全局一致性正则化会引入语义失真。本文提出AspectCLIP，通过方面引导的一致性正则化，仅约束同一方面的样本对，避免跨方面误约束。实验表明该方法能显著改善表示空间的语义一致性，提升下游分类性能。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.11732v1",
+      "source": "arxiv",
+      "title": "GFR-SAM: Training-Free Referring Camouflaged Object Segmentation via Cross-Image Prompting",
+      "abstract": "Referring Camouflaged Object Detection (Ref-COD) requires segmenting hidden targets guided by reference cues. While supervised methods are annotation-heavy and training-free approaches via sparse point-prompting are sensitive to localization errors, we propose GFR-SAM, a robust three-stage training-free framework. GFR-SAM shifts the paradigm from fragile point-matching to a \"Generate-Filter-Refine\" pipeline. First, we introduce In-Context Exemplar-guided Segmentation, empowering SAM3 with cross-image inference to generate candidate masks via holistic visual exemplars, bypassing its native intra-image constraints. Second, a Region-Global Contrastive Filtering module ranks candidates through DINOv3-based prototypical alignment, effectively suppressing background distractors. Finally, a Geometric-Semantic Refinement module synergizes bounding box and text prompts to recover fine-grained boundaries and enhance instance recall. Evaluated on the R2C7K benchmark, GFR-SAM outperforms existing training-free methods by 8.7\\% in weighted F-measure ($F_β^w$) and competes with supervised state-of-the-art counterparts. Ultimately, this work underscores the potential of unlocking SAM3's latent capability for cross-image In-Context prompting, establishing a robust, training-free paradigm that effectively bridges the gap between general-purpose foundation models and specialized, label-intensive perception tasks without the need for task-specific fine-tuning.",
+      "authors": [
+        "Yilong Yang",
+        "Jianxin Tian",
+        "Shengchuan Zhang",
+        "Liujuan Cao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-13T15:55:45+00:00",
+      "link": "https://arxiv.org/pdf/2607.11732v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "uses DINOv3 for prototypical alignment in vision transformer framework",
+      "llm_evidence_cn": "使用DINOv3进行原型对齐，基于视觉变压器框架",
+      "llm_evidence": "使用DINOv3进行原型对齐，基于视觉变压器框架",
+      "canonical_evidence": "使用DINOv3进行原型对齐，基于视觉变压器框架",
+      "llm_tldr_en": "Proposes GFR-SAM, a training-free framework for camouflaged object segmentation using DINOv3-based prototypical alignment and cross-image prompting, achieving robust segmentation without annotations.",
+      "llm_tldr_cn": "针对伪装目标分割中标注成本高和点提示敏感的问题，本文提出GFR-SAM无训练框架。该方法通过上下文示例分割生成候选掩码，并利用DINOv3进行区域-全局对比过滤，实现无需标注的鲁棒分割。在多个数据集上表现优异，展示了DINOv3作为基础模型在视觉任务中的迁移能力。",
+      "llm_tldr": "针对伪装目标分割中标注成本高和点提示敏感的问题，本文提出GFR-SAM无训练框架。该方法通过上下文示例分割生成候选掩码，并利用DINOv3进行区域-全局对比过滤，实现无需标注的鲁棒分割。在多个数据集上表现优异，展示了DINOv3作为基础模型在视觉任务中的迁移能力。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.14711v1",
+      "source": "arxiv",
+      "title": "VideoSEMA: a scalable and efficient Mamba-like attention for video understanding",
+      "abstract": "We present for video understanding (classification) a split space-time attention model, VideoSEMA, consisting of a scalable and efficient Mamba-like attention (SEMA) block in space and a softmax temporal attention in time. In each frame, SEMA attention applies a local window attention in parallel with a global averaging in a Mamba macro-architecture, which is called Mamba-like. Under certain rank conditions, we prove that the computationally cheaper split space-time attention is equivalent to full space-time attention. On benchmark K400 data sets, VideoSEMA out-performs heavier vision transformer and Mamba models. On benchmark SSv2 data, VideoSEMA leads in top-1 accuracy among models of similar parameter sizes. As image resolution scales up from standard $224^2$ to $1024^2$ on K400 and without fine-tuning, VideoSEMA degrades much more gracefully than VideoMamba in accuracy. It is promising to extend VideoSEMA to longer videos with a dilated/sparse temporal attention.",
+      "authors": [
+        "Nhat Thanh Tran",
+        "Fanghui Xue andShuai Zhang",
+        "Jiancheng Lyu",
+        "Yunling Zheng",
+        "Yingyong Qi",
+        "Jack Xin"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-16T08:22:08+00:00",
+      "link": "https://arxiv.org/pdf/2607.14711v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "proposes a vision transformer variant for video classification",
+      "llm_evidence_cn": "提出一种用于视频分类的视觉Transformer变体",
+      "llm_evidence": "提出一种用于视频分类的视觉Transformer变体",
+      "canonical_evidence": "提出一种用于视频分类的视觉Transformer变体",
+      "llm_tldr_en": "VideoSEMA introduces a split space-time attention model using Mamba-like attention blocks, achieving state-of-the-art video classification with lower computational cost.",
+      "llm_tldr_cn": "针对视频理解中计算效率问题，提出VideoSEMA模型，包含空间上的Mamba类注意力（SEMA）和时间上的softmax注意力，并证明拆分注意力与全空间-时间注意力的等价性。在K400和SSv2数据集上，VideoSEMA以更少参数超越更重的视觉Transformer和Mamba模型，为高效视频分类提供了新架构。",
+      "llm_tldr": "针对视频理解中计算效率问题，提出VideoSEMA模型，包含空间上的Mamba类注意力（SEMA）和时间上的softmax注意力，并证明拆分注意力与全空间-时间注意力的等价性。在K400和SSv2数据集上，VideoSEMA以更少参数超越更重的视觉Transformer和Mamba模型，为高效视频分类提供了新架构。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
