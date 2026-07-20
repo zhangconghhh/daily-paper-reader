@@ -1,0 +1,54 @@
+{
+  "label": "2026-07-20",
+  "date": "2026-07-20",
+  "generated_at": "2026-07-20T20:30:35",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202607/20/2607.11196v1-slot-rae-streamlining-object-centric-learning-via-direct-representation-auto-encoders",
+      "section": "quick",
+      "title_en": "Slot-RAE: Streamlining Object-Centric Learning via Direct Representation Auto-Encoders",
+      "authors": "Alexandre Chapin, Emmanuel Dellandrea, Liming Chen",
+      "date": "2026-07-13",
+      "pdf": "https://arxiv.org/pdf/2607.11196v1",
+      "score": "7.0",
+      "evidence": "直接使用DINOv3视觉基础模型特征",
+      "tldr": "现有目标中心模型依赖复杂pipeline和预训练生成先验（如Stable Diffusion）及外部VAE潜空间，计算成本高。本文提出Slot-RAE，直接在视觉基础模型DINOv3的连续语义特征空间中训练Slot Attention和扩散Transformer解码器，无需VAE和任务无关预训练。在COCO数据集上，该方法在无监督物体发现、图像重建和零样本组合性上达到SOTA，且训练速度更快、计算效率更高。贡献在于大幅简化了目标中心学习的架构，降低了依赖。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Deploying object-centric models for real-world scene understanding typically requires complex pipelines to achieve both robust scene decomposition and high-fidelity generation. Recent diffusion-based approaches have improved visual quality, but they almost universally rely on heavy, pretrained generative priors (e.g., Stable Diffusion) and external VAE latent spaces. In this paper, we propose Slot-RAE, a much simpler, fully integrated framework that operates directly within the continuous semantic feature space of visual foundation models (e.g., DINOv3). Slot-RAE employs a feature-space diffusion process using a Diffusion Transformer (DiT) decoder and a Representation Alignment (REPA) head. Unlike existing diffusion-based objectcentric methods that rely heavily on subsidized text-toimage priors, the generative core of Slot-RAE (Slot Attention and the DiT) is trained from scratch within the frozen VFM feature space. This eliminates the need for VAE bottlenecks and task-agnostic generative pre-training. Experiments on the COCO dataset demonstrate that despite its architectural simplicity, Slot-RAE achieves state-of-the-art results. It delivers comparable unsupervised object discovery, higher-fidelity image reconstruction, and robust zero-shot compositionality, all while being significantly faster and more computationally efficient than existing object-centric latent diffusion models.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/20/2607.10762v1-tolid-bridging-the-architecture-gap-in-vision-foundation-model-to-lidar-pretraining-via-token-lifting-for-distillation",
+      "section": "quick",
+      "title_en": "TOLiD: Bridging the Architecture Gap in Vision Foundation Model to LiDAR Pretraining via Token Lifting for Distillation",
+      "authors": "Sutharsan Mahendran, Darshana Priyasad, Kaushik Roy, Tharindu Fernando, Sridha Sridharan, Clinton Fookes, Peyman Moghadam",
+      "date": "2026-07-12",
+      "pdf": "https://arxiv.org/pdf/2607.10762v1",
+      "score": "6.0",
+      "evidence": "从视觉基础模型（如DINO）蒸馏到LiDAR，使用ViT学生网络",
+      "tldr": "现有从视觉基础模型到LiDAR骨干的跨模态蒸馏存在架构差距，模型被迫同时弥合模态与架构鸿沟。TOLiD通过耦合LiDAR骨干与学生ViT，使用Frustum Pooling和Attention将点特征转换为patch token，在可见性掩蔽下执行token级蒸馏。部署时通过掩蔽双线性采样将token特征提升回逐点表示。在五个异构LiDAR数据集和四个跨传感器适应对上，冻结骨干和轻量头均展现优异迁移性能。该方法无需密集点云标注，有效提升3D场景理解的自监督预训练效果。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Cross-modal distillation from Vision Foundation Models (VFMs) to LiDAR backbones has recently emerged as a self-supervised pretraining strategy that reduces reliance on dense point-wise annotation for 3D scene understanding. However, existing distillation pipelines typically treat the VFM as a frozen feature source and train a heterogeneous 3D backbone to match fixed image embeddings, forcing the student to bridge both the modality gap and the cross-architecture gap between dense ViT token representations and sparse 3D encoders. We propose TOLiD, a self-supervised pretraining method for LiDAR representation learning that addresses this gap by coupling a LiDAR backbone with a student Vision Transformer (ViT) initialized from a frozen VFM teacher and applying supervision over compatible patch-token representations. TOLiD converts the set of point features within each image patch frustum into a token using Frustum Pooling followed by Frustum Attention, and performs token-level distillation with visibility masking. For LiDAR-only deployment, we lift token features back to per-point representations using masked bilinear sampling to avoid patches that have limited LiDAR points. We extensively evaluate TOLiD on five heterogeneous LiDAR datasets and four cross-sensor adaptation pairs, demonstrating improved transfer with frozen backbones and lightweight heads.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/20/2607.13805v1-aspectclip-optimizing-clip-representation-space-via-aspect-guided-consistency-regularization",
+      "section": "quick",
+      "title_en": "AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization",
+      "authors": "Yiyang Yao, Shanglin Liu, Jianming Lv, Chengjun Wang, Jinyi Li, Yuchan Jie, Zhihua Jin",
+      "date": "2026-07-15",
+      "pdf": "https://arxiv.org/pdf/2607.13805v1",
+      "score": "6.0",
+      "evidence": "优化CLIP表示空间，这是图像分类的基础模型",
+      "tldr": "现有CLIP全局一致性正则化忽视了图像与文本间的信息不对称——一张图对应多角度描述，导致语义扭曲。AspectCLIP通过文本相似性聚类划分属性簇，在簇内进行全循环一致性约束，簇间仅做原型级比较，从而尊重这种一对多结构。该方法在下游任务上显著优于传统方法，并获得了更清晰、更结构化的表示空间，有效减少了语义失真。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Contrastive Language-Image Pretraining learns a shared representation space through large-scale contrastive learning. However, existing methods that enforce global consistency regularization overlook a key challenge: the inherent information asymmetry between images and text: captions typically describe only one specific aspect of an image, thus images with similar visual content can be paired with completely divergent textual content and semantic information. Consequently, global regularizers inadvertently impose constraints between visually similar images whose captions describe divergent aspects, introducing semantic distortion into the representation space. We propose AspectCLIP, a framework that reformulates consistency regularization to respect this one-to-many structure. AspectCLIP first partitions training samples into attribute clusters based on textual similarity to identify aspect-coherent groups, then applies full cyclic consistency within each cluster while restricting cross-cluster regularization to prototype-level comparisons. This aspect-guided regularization enforces strict geometric alignment only when images and texts describe a consistent facet, while allowing flexibility across divergent aspects. Extensive experiments on downstream tasks demonstrate that AspectCLIP consistently outperforms traditional methods and achieves a more structured representation space.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

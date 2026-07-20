@@ -1,0 +1,408 @@
+Title: TOLiD: Bridging the Architecture Gap in Vision Foundation Model to LiDAR Pretraining via Token Lifting for Distillation
+
+URL Source: https://arxiv.org/pdf/2607.10762v1
+
+Published Time: Tue, 14 Jul 2026 01:54:17 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# TOLiD: Bridging the Architecture Gap in Vision Foundation Model to LiDAR Pretraining via Token Lifting for Distillation 
+
+Sutharsan Mahendran 1,2, Darshana Priyasad 1, Kaushik Roy 2, Tharindu Fernando 1,Sridha Sridharan 1, Clinton Fookes 1, Peyman Moghadam 1,2
+
+Abstract — Cross-modal distillation from Vision Foundation Models (VFMs) to LiDAR backbones has recently emerged as a self-supervised pretraining strategy that reduces reliance on dense point-wise annotation for 3D scene understanding. How-ever, existing distillation pipelines typically treat the VFM as a frozen feature source and train a heterogeneous 3D backbone to match fixed image embeddings, forcing the student to bridge both the modality gap and the cross-architecture gap between dense ViT token representations and sparse 3D encoders. We propose TOLiD , a self-supervised pretraining method for LiDAR representation learning that addresses this gap by coupling a LiDAR backbone with a student Vision Transformer (ViT) initialized from a frozen VFM teacher and applying su-pervision over compatible patch-token representations. TOLiD 
+
+converts the set of point features within each image patch frustum into a token using Frustum Pooling followed by Frustum Attention , and performs token-level distillation with visibility masking. For LiDAR-only deployment, we lift token features back to per-point representations using masked bilinear sam-pling to avoid patches that have limited LiDAR points. We ex-tensively evaluate TOLiD on five heterogeneous LiDAR datasets and four cross-sensor adaptation pairs, demonstrating im-proved transfer with frozen backbones and lightweight heads. 
+
+I. I NTRODUCTION 
+
+3D semantic segmentation is a core capability for au-tonomous robots and self-driving cars, enabling 3D scene understanding for navigation, mapping, and safe interac-tion [1]–[5]. In many robotics systems, 3D scene understand-ing relies primarily on LiDAR, as it provides metric geomet-ric measurements that are largely invariant to illumination and support reliable long-range perception. LiDAR-based learning models must operate across het-erogeneous sensor suites that differ in beam count, field of view, point density, and scanning pattern, and these variations induce cross-sensor domain shifts when models are transferred between platforms. Addressing such sensor gaps by collecting new annotations is often impractical, since dense point-wise labelling of LiDAR scans is labour-intensive and costly [1]. While 2D perception tasks have benefited substantially from Vision Foundation Models (VFMs) pre-trained on large-scale datasets [6], [7], progress for LiDAR-based tasks has been comparatively constrained by the absence of suit-able 3D foundation models and by the modality gap that         
+
+> 1SAIVT Group, School of Electrical Engineering and Robotics, Queens-land University of Technology, Australia. E-mails: {s2.mahendren, s.sridharan, c.fookes, peyman.moghadam}@qut.edu.au
+> 2CSIRO Robotics, CSIRO, Australia. E-mails:
+> {sutharsan.mahendran, kaushik.roy, peyman.moghadam}@csiro.au
+
+arises when utilizing VFMs for LiDAR representations [8], [9]. To address these limitations, recent work has leveraged VFMs as teachers and distilled their representations directly to LiDAR backbones as a self-supervised pretraining step, followed by a finetuning stage that requires substantially less labeled 3D data. These VFM-to-LiDAR cross-modal distilla-tion methods typically follow a two-stage pipeline. In the pre-training stage, synchronized camera–LiDAR pairs are used to establish 2D–3D correspondences: LiDAR points [10], [11] (or superpoints [12], [13]) are projected into the image plane and associated with dense VFM features (patch tokens or intermediate feature embeddings). Then LiDAR encoder is trained to predict or align to these VFM embeddings, often through feature regression [11], [14], or contrastive objectives [10], [12], [15] that encourage the LiDAR encoder to mimic the teacher’s embedding structure. Despite their effectiveness, current VFM-to-LiDAR cross-modal distillation pipelines face a fundamental limitation. They often distill from very large ViT teachers into compar-atively small 3D backbones with substantially different ar-chitectures and feature parameterizations, forcing the student to bridge both the cross-modal gap and the cross-architecture gap simultaneously. This mismatch can lead to information loss or unstable transfer, where only coarse cues are retained, and fine-grained semantics that matter for the point-wise semantic segmentation task do not distill reliably, particularly under strong sensor or environmental shifts. To tackle these limitations, we propose TOLiD , a self-supervised pretraining method for LiDAR representation learning that addresses the architectural gaps in existing cross-modal distillation pipelines. Instead of distilling VFM features directly into a heterogeneous 3D LiDAR backbone, 
+
+TOLiD couples a LiDAR backbone with a student Vision Transformer (ViT) initialized with a frozen VFM teacher, so that supervision is applied over compatible patch-token representations rather than across heterogeneous architec-tures. Distillation is formulated on the teacher’s transformer outputs, using patch tokens (and a global [CLS] token) as self-supervision targets. To make LiDAR features compatible with patch tokens, 
+
+TOLiD represents each image patch by its corresponding 3D frustum and converts the set of point features in that frustum into a single token. We propose two complementary mecha-nisms for this conversion: Frustum Pooling (FP) provides a simple and stable aggregation that maps variable-size point sets into tokens, while Frustum Attention (FA) allows each token to selectively emphasise the most informative points arXiv:2607.10762v1 [cs.CV] 12 Jul 2026 within its frustum via query-based weighting, which is im-portant when point density, occlusion, and sampling patterns vary across varieties of LiDAR sensors. Finally, TOLiD sup-ports LiDAR-only deployment by lifting token features back to per-point representations. To avoid introducing spurious signals from image patches with no LiDAR support, we use masked bilinear sampling that restricts interpolation to supported tokens and renormalises the weights. We pretrain TOLiD on five heterogeneous camera-LiDAR datasets with different sensor configurations. TOLiD exhibits stronger scaling with pretraining diversity. When evaluated with a frozen backbone and a lightweight segmentation head, the average performance gap over the prior state-of-the-art widens from +2.0% to +4.2% mIoU as pretraining data increases more than double from 169k to 342k frames. The self-supervised representations learned by TOLiD transfer directly under domain shift. A lightweight MLP head trained on a labelled source dataset achieves SOTA accuracy on target domain across four cross-sensor pairs. These results demonstrate that coupling the VFM student with the LiDAR backbone yields deployment ready representations. II. R ELATED WORK 
+
+A. Self-Supervised LiDAR Representation Learning 
+
+Self-supervised pretraining methods learn transferable 3D representations from unlabeled point clouds using contrastive objectives [16] and masked reconstruction [17]. While these approaches provide effective initializations, they are inher-ently limited to geometric and structural cues and lack the rich semantic abstractions encoded in large-scale pretrained image models, motivating cross-modal distillation. 
+
+B. VFM-to-LiDAR Cross-Modal Distillation 
+
+Distilling pretrained 2D vision backbones into 3D LiDAR networks has emerged as an effective self-supervised pre-training strategy that leverages synchronized camera-LiDAR pairs without point-wise annotations. PPKT [10] introduced pixel-to-point contrastive alignment but is primarily suited to dense indoor RGB-D settings. To handle the sparsity and oc-clusion of outdoor LiDAR, SLidR [12] proposed superpixel-level contrast, though class-agnostic superpixels introduce semantic conflicts. Seal [13] addresses this by leveraging foundation-model semantic regions, while CLIP2Scene [18] exploits CLIP’s text-aligned embeddings to guide sampling. More recently, ScaLR [11] and LargeAD [19] demon-strated that pretraining across multiple heterogeneous LiDAR datasets with direct feature-level alignment can improve cross-sensor generalization. However, these methods still treat the VFM as a frozen feature source and train a het-erogeneous 3D backbone to match fixed image embeddings, forcing the student to bridge both the modality gap and the cross-architecture gap between dense ViT token represen-tations and sparse 3D encoders. This restricts distillation to final feature alignment and limits how effectively the structured representations encoded in modern VFMs transfer as pretraining data grows in scale and sensor diversity. More broadly, prior work in the image domain has shown that transferring knowledge across such heterogeneous ar-chitectures is inherently difficult [20], [21], as differences in receptive field, block structure, and normalization yield in-compatible feature spaces [22]. In contrast, TOLiD addresses this gap by coupling a LiDAR backbone with a student ViT initialized from a frozen VFM teacher, so that supervision is applied over compatible patch-token representations rather than across heterogeneous architectures. III. M ETHODOLOGY 
+
+Existing VFM-to-LiDAR cross-modal distillation meth-ods treat the VFM as a frozen feature source and train a heterogeneous 3D backbone to match fixed image em-beddings [11], [12], [14], requiring the LiDAR network to bridge both the modality gap and the cross-architecture gap. In contrast, TOLiD couples a LiDAR backbone Lθ with a student Vision Transformer (ViT) Gϕ initialized with a frozen VFM teacher, T (Fig. 1). The LiDAR backbone provides point-wise features that are projected into calibrated camera views and converted into ViT-compatible patch tokens, a process that requires: (i) projecting 3D point features into each camera view using the correspondences, (ii) aggregation of variable-size frustum sets into fixed-dimensional tokens, and (iii) multi-stage alignment across multiple stages within ViT blocks. We implement this through Frustum Pooling at the ViT input and Frustum Attention at subsequent stages. This enables distillation to be formulated directly over the teacher’s transformer representations. 
+
+A. Preliminaries and Notations 
+
+We assume a synchronized multi-sensor setup, consisting of a single LiDAR scan and a set of calibrated cameras V
+
+providing 360 ◦ coverage ( e.g. , surround-view systems). Let 
+
+P = {(xi, ai)}Ni=1 denote the LiDAR point cloud, where 
+
+xi ∈ R3 are 3D coordinates expressed in the LiDAR frame 
+
+ℓ and ai ∈ RL are raw point attributes ( e.g. , intensity). The corresponding RGB images are I = {Iv }v∈V , where Iv ∈
+
+RH×W ×3 is the image captured by camera v. Each camera 
+
+v ∈ V has intrinsics Int v and an extrinsic transformation 
+
+Ext vℓ mapping points from the LiDAR frame ℓ to the camera 
+
+v. Using these calibration parameters, each LiDAR point xi
+
+is projected into view v as 
+
+uvi = πv (xi) ∈ R2, (1) where πv (·) denotes the perspective projection induced by 
+
+(Int v , Ext vℓ ). We define the visible subset Pv ⊆ P as the points whose projections fall within the image bounds of Iv
+
+(and satisfy the positive depth constraint), establishing point– pixel correspondences used for VFM-to-LiDAR cross-modal distillation. 
+
+B. Frustum Pooling: Point-to-Token Mapping 
+
+The student ViT Gϕ(·) operates on a regular grid of 
+
+Np=( H/p )×(W/p ) patch tokens with patch size p, whereas the LiDAR backbone Lθ (·) produces unordered point fea-tures fi ∈ RCw for each LiDAR point and Cw is LiDAR feature dimension. Using the projections uvi , we define for Student ViT LiDAR Backbone 
+
+> Teacher ViT
+> Visibility-Masked Distillation
+> Cross View Agg
+> SegHead
+> MBS
+> MBS
+
+Pretraining Finetuning Fig. 1: Overview of the TOLiD . During pretraining ( top ), Lθ converts the point features into patch tokens via Frustum Pooling (FP) and Frustum Attention (FA) at J stages and integrates into the Gϕ; visibility-masked distillation aligns them with the frozen teacher T . During finetuning ( bottom ), token features are lifted back to per-point representations via Masked Bilinear Sampling (MBS) across all views and concatenated with Lθ features for segmentation. each patch t in view v with v ∈ V a frustum set N v (t)
+
+containing all visible points whose projections fall within the corresponding patch. A binary mask Mv ∈ { 0, 1}Np
+
+indicates whether a patch contains projected LiDAR points, 
+
+i.e. , Mvt = 1 if N v (t)̸ = ∅ and Mvt = 0 otherwise. At the initial stage ( j=0 ), where j ∈ { 0, . . . , J − 1}, we replace the standard ViT patch embedding with tokens derived from the LiDAR backbone Lθ . For each patch t in view v, point features within its frustum N v (t) are linearly projected to the ViT embedding space and mean-pooled: 
+
+zvt = 1
+
+|N v (t)|
+
+X  
+
+> i∈N v(t)
+
+Wpfi, (2) where Wp ∈ RCS ×Cw . Patches without visible points (Mvt = 0) receive a learnable empty token e ∈ RCS .The resulting token grid Zv ∈ RNp×CS , augmented with positional embeddings and a [CLS] token, is fed to the student ViT blocks. This initialization allows the transformer to operate directly in its native token space while preserving geometric structure via image-to-LiDAR projections. However, mean pooling treats all points equally and cannot distinguish foreground structure from background clutter within a frustum. We therefore introduce a content-aware aggregation mechanism at deeper stages. 
+
+C. Frustum Attention: Content-Aware 3D →2D Injection 
+
+At deeper blocks ( j> 0), patch tokens encode progressively contextual representations. We therefore introduce Frustum Attention (FA) , a cross-attention mechanism that allows each token to selectively aggregate features from the set of 3D points within its corresponding frustum. Given a patch token 
+
+zt and the set of point features {fi}i∈N v (t) (Fig. 2), we first map point features to the ViT embedding dimension using a stage-specific linear projection W(j) 
+
+> p
+
+, yielding gi = W(j) 
+
+> p
+
+fi
+
+(we omit the superscript (j) for clarity). We then compute Query ( Q), Key ( K), and Value ( V) projection matrices as: 
+
+Qt = WQzt; Ki = WK gi; Vi = WV gi, (3) where gi=Wpfi maps point features to the ViT embedding space. We learn separate projections at each stage; for readability we omit the stage index on Wp, WQ, WK , WV .Attention weights and aggregated context are computed as: 
+
+∆zt = X  
+
+> i∈N v(t)
+
+softmax i∈N v (t)
+
+ Q⊤ 
+
+> t
+
+Ki
+
+√d
+
+
+
+Vi, (4) where d = CS /n h is the per-head dimension and nh is the number of attention heads. The update is applied via residual addition with layer normalization LN( ·) to stabilise the injected cross-attention output: 
+
+zt ← zt + LN(∆ zt) . (5) The softmax in Eq. 4 is computed independently within each frustum. Unlike static pooling in ViT, Frustum Attention (FA) enables geometry injection conditioned on the token’s current semantic state, allowing selective aggregation of object-relevant structure while suppressing background noise. Fig. 2: Frustum Pooling and Frustum Attention . At the ViT input ( j=0 ), point features are projected and mean-pooled into patch tokens; at deeper ViT blocks ( j> 0), each token attends to its frustum points via cross-attention. 
+
+D. Multi-Stage LiDAR Integration with Student ViT Frustum Pooling (FP) and Frustum Attention (FA) inte-grate the LiDAR backbone Lθ at J stages within the ViT blocks of the student Gϕ, enabling multi-stage point features to be progressively mapped into patch-token representations. Let Dw denote the total number of layers of Lθ ; between successive stages, Lθ advances by Dw/J backbone layers alongside the corresponding ViT blocks, and the resulting point features are mapped to view-specific patch-token grids using the projections uvi .Unlike conventional VFM-to-LiDAR cross-modal distillation where a 3D backbone is required to approximate the teacher’s representation independently, Lθ is used to supply geometry-conditioned features that complement the student ViT’s pretrained processing at multiple stages. The ViT retains responsibility for global reasoning and semantic abstraction through self-attention. Distillation gradients propagate through the Frustum modules and the ViT blocks into Lθ , guiding the LiDAR backbone to learn point-wise features that are compatible with the teacher-supervised token representations, rather than relying on direct regression from a standalone 3D encoder. 
+
+E. Visibility-Masked Distillation 
+
+For a given camera view v, the frozen teacher T processes the RGB image Iv to produce token representations ZT ,v =
+
+{zT ,v  
+
+> cls
+
+, zT ,v t }Np
+
+> t=1
+
+, whereas the student ViT Gϕ is conditioned on patch tokens constructed from projected LiDAR features; it outputs ZS,v = {zS,v  
+
+> cls
+
+, zS,v t }Np
+
+> t=1
+
+. A learnable projection 
+
+ψ(·) : RCS → RCT maps student features to the teacher embedding space, where CT is the embedding dimension of the frozen teacher T .
+
+Distillation Objective: Feature alignment is enforced via 
+
+Ldist (p, q) = 12
+
+ Lcos (p, q) + Lsl1 (p, q), (6) where p and q denote any two embeddings being aligned, 
+
+Lcos = 1 − cos( ·) and Lsl1 denotes smooth-ℓ1. This com-bination constrains both directional consistency and feature magnitude. empty token 
+
+Fig. 3: Masked Bilinear Sampling for 2D →3D Lifting. 
+
+Empty patches (red) are suppressed by the occupancy mask 
+
+Mvn and the contributions from valid tokens (blue) are renor-malised, preventing spurious features in lifted 3D points. 
+
+Global Alignment: We align the [CLS] tokens through 
+
+Lcls = Ldist 
+
+
+
+ψ(zS,v  
+
+> cls
+
+), zT ,v 
+
+> cls
+
+
+
+. (7) 
+
+Visibility-Masked Local Alignment: Patch-level supervi-sion is applied only to tokens supported by projected LiDAR geometry using the occupancy mask Mv :
+
+Lpatch = 1
+
+P 
+
+> t
+
+MvtNp
+
+X
+
+> t=1
+
+Mvt Ldist 
+
+
+
+ψ(zS,v t ), zT ,v t
+
+
+
+, (8) thereby avoiding penalization of regions without geometric evidence. The final objective combines global and local terms: 
+
+L = 12 (Lcls + Lpatch ). (9) This visibility-masked distillation ensures that supervision remains physically grounded in observed 3D structure, preventing spurious alignment in image-only regions. 
+
+F. Finetuning via Masked Bilinear Sampling 
+
+During finetuning, Lθ features are integrated into Gϕ at all J stages and across all V views. At the final stage, ViT tokens are lifted to the point domain and concatenated with point-wise features from Lθ , yielding geometry-aware and semantically enriched point representations. 
+
+Masked Bilinear Sampling: Naive bilinear interpolation at a point’s projection uvi aggregates all four neighbouring tokens, including empty patches, introducing spurious se-mantics. We instead mask interpolation using the occupancy map Mv (Fig. 3): 
+
+rvi =
+
+P  
+
+> n∈Ω( uvi)
+
+wn · zvn · Mvn
+
+P  
+
+> n∈Ω( uvi)
+
+wn · Mvn + ϵ , (10) where Ω( uvi ) denotes the four grid neighbors and wn are bilinear weights. Empty tokens are suppressed and weights renormalised over valid support only. 
+
+Cross-view Aggregation and Segmentation: A single Li-DAR point xi may be visible in multiple cameras. For each such view v where i ∈ P v , masked bilinear sampling pro-duces a lifted feature rvi . These are averaged across all views that observe the point ri=Mean( {rvi | v : i ∈ P v }). The aggregated view feature ri is then passed to a segmentation head for per-point prediction ˆyi = SegHead([ fi ∥ ri]) ,. Overall, TOLiD preserves the teacher’s architectural prior by retaining a same-family ViT during distillation, while 
+
+Frustum Pooling/Attention and masked lifting enforce geometrically grounded cross-modal alignment. IV. E XPERIMENTAL SETUPS 
+
+A. Datasets 
+
+We pretrain TOLiD on five large-scale autonomous driving datasets with 78,791 LiDAR scans and 341,645 camera-LiDAR pairs, spanning diverse sensor configurations, view-points, and driving environments. 
+
+nuScenes [23]: 28,130 keyframes with 16 semantic classes, captured using a 32-beam LiDAR ( 360 ◦) and 6 surround-view cameras in Boston and Singapore, yielding 168,780 camera-LiDAR pairs. 
+
+SemanticKITTI [1]: 19,130 frames with dense point-wise annotations over 19 classes, acquired from a 64-beam LiDAR (KITTI odometry sequences), providing 19,130 camera-LiDAR pairs. 
+
+PandaSet [24]: Two splits are used. PandaSet-64 (3,920 frames) employs a 64-beam LiDAR with 6 cameras (23,520 pairs); PandaSet-GT (3,920 frames) uses roughly 150 chan-nels of forward-facing LiDAR with 3 front cameras (11,760 pairs). Both provide 17 semantic classes. 
+
+Waymo Open [25]: Following MuDDoS [26], we use a 23,691-frame subset annotated over 22 classes. Data are cap-tured with a 64-beam LiDAR and 5 cameras across diverse U.S. urban/suburban environments, contributing 118,455 camera-LiDAR pairs. Overall, the pretraining corpus spans a broad range of Li-DAR configurations, including forward-facing, high-angular-resolution sensing ( i.e. , Hesai PandarGT, roughly 150 chan-nels, 60-degree HFOV, 10 Hz, up to 300 m) and mechan-ical spinning 360-degree LiDARs with 32–64 beams ( i.e. ,
+
+nuScenes at 32 beams; SemanticKITTI , Waymo Open , and 
+
+PandaSet-64 at 64 beams), with capture rates up to 20 Hz and ranges from about 100 to 300 m, alongside heterogeneous multi-camera rigs, providing substantial geometric and cross-sensor diversity for self-supervised LiDAR learning. 
+
+B. Evaluation Protocols 
+
+We evaluate TOLiD under four complementary protocols assessing representation quality, label efficiency, and cross-domain generalization. All results are reported in mIoU for consistent comparison across datasets and tasks. 
+
+Linear probing (LP): Following [11], the pretrained back-bone is frozen and a lightweight head (BatchNorm + linear classifier) is trained on data. We report mIoU on the official validation splits of nuScenes , SemanticKITTI , PandaSet-64 ,and PandaSet-GT .
+
+Label-Efficient Finetuning: The full model is finetuned using few-shot finetuning protocols on 1% and 10% labels on nuScenes and 1% on SemanticKITTI , measuring low-data regimes performance [11]. TABLE I: Comparison with prior camera-LiDAR distilla-tion methods. mIoU (%) on nuScenes (LP, 1%, 10%, 100%) and SemanticKITTI (1%).                                                  
+
+> Method Pretrain nuScenes S.KITTI LP 1% 10% 100% 1% PPKT [10] nuSc. 35.9 37.8 60.3 74.5 44.0
+> SLidR [12] nuSc. 38.8 38.3 59.8 74.8 44.6
+> ST-SLidR [27] nuSc. 40.5 40.8 60.8 75.1 44.7
+> Seal [13] nuSc. 45.0 45.8 63.0 75.6 46.6
+> LargeAD [19] Multi 48.7 49.2 64.8 75.9 51.7
+> ScaLR [11] Multi 67.8 50.7 69.2 78.4 56.8
+> TOLiD Multi 71.7 53.5 69.2 77.3 57.0
+
+TABLE II: Unsupervised domain adaptation. mIoU (%) on 10 shared classes for four cross-sensor pairs. Mod.: modality (U: uni, M: multi). ST: self training with target dataset. ∗:pretrained on five datasets (incl. Waymo Open ). TOLiD (4-dataset pretraining, no Waymo Open ) surpasses MuDDoS trained on five datasets, indicating strong generalization to unseen sensors.                                                                   
+
+> Method Mod. N →KK→NN→W W →NAvg. Target oracle -72.4 83.8 83.4 83.8 80.9 Source only -44.6 55.1 37.1 64.6 50.4 PL [28] U30.0 29.0 31.9 22.3 28.3 CosMix [29] U30.6 29.7 31.5 30.0 30.5 MM2D3D [30] M32.9 33.7 34.1 37.5 34.6 Adapt-SAM [31] M48.5 42.9 44.9 48.2 46.1 MuDDoS wo ST [26] M41.8 53.3 54.1 53.0 50.6 MuDDoS w ST [26] M52.1 66.4 69.1 70.5 64.5
+> TOLiD wo ST M53.7 66.7 58.4 66.8 61.4
+> TOLiD ∗wo ST M57.2 68.6 70.6 70.5 66.7
+
+Full Finetuning: All parameters are trained on 100% 
+
+nuScenes labels. 
+
+Domain Adaptation (DA): We follow unsupervised domain adaptation protocol [26]. The pretrained backbone is frozen and an MLP head is trained on a labeled source domain and evaluated on an unlabeled target domain over 10 shared classes. We report N →K, K →N, N →W, and W →N (N: 
+
+nuScenes , K: SemanticKITTI , W: Waymo Open ). 
+
+C. Fixed-Camera Systems 
+
+For downstream evaluation, we replace per-frame cal-ibrations with a fixed dataset-level camera rig, selecting the most frequent intrinsic configuration. For nuScenes ,
+
+SemanticKITTI , and PandaSet , we adopt a standardized 6-camera rig based on the dominant nuScenes configuration. For Waymo Open , we augment its 5-camera setup with three rear virtual cameras (front extrinsics rotated 180 ◦ about the 
+
+z-axis) to achieve full 360 ◦ coverage. This allows a single pretrained model to transfer across diverse datasets. 
+
+D. Implementation Details 
+
+The 3D backbone Lθ is a 48-layer WaffleIron [32] with 768-dimensional features. The student Gϕ is a DINOv2 ViT-B/14 [33] (768-dim) initialized from pretrained weights, and the frozen teacher T is DINOv2 ViT-L/14 (1024-dim); a TABLE III: Scaling pretraining data. Linear probing mIoU (%) under varying pretraining data: 169k ( nuScenes ), 223k (nuScenes + SemanticKITTI + PandaSet-64 + PandaSet-GT ), and 342k (+ Waymo Open ). TOLiD consistently outperforms ScaLR, with gains increasing as more data is used (N: 
+
+nuScenes , S: SemanticKITTI , P: PandaSet ).                                                        
+
+> Downstream & Test Dataset Method #Data NSP-64 P-GT
+> Pretraining with DINO-ViT-S/8 and linear probing
+> ScaLR [11] 169k 54.4 28.8 26.9 25.2
+> TOLiD 169k 56.4 40.9 27.6 29.3
+> ScaLR [11] 223k 54.6 50.6 33.1 32.3
+> TOLiD 223k 56.8 48.2 31.4 33.4
+> Pretraining with DINOv2-ViT-L/14 and linear probing
+> ScaLR [11] 169k 67.8 43.1 33.9 29.9
+> TOLiD 169k 68.9 48.8 32.3 32.8
+> ScaLR [11] 223k 67.8 55.8 37.9 34.5
+> TOLiD 223k 71.7 57.0 39.9 40.6
+> ScaLR [11] 342k 67.5 56.8 38.7 35.9
+> TOLiD 342k 70.9 60.1 42.0 42.6
+
+linear projector maps student features to the teacher dimen-sion. Frustum Attention is inserted every 4th ViT layer with 12 attention heads. We optimize all trainable parameters with AdamW using an initial learning rate of 5 × 10 −4, cosine-decayed to 10 −6
+
+with 10% warmup and weight decay 0.03. Training runs for 25 epochs on 8 NVIDIA H100 GPUs with a total batch size of 16 and gradient clipping at 1.0. During distillation, a single camera view is randomly sampled per scene; the teacher processes the corresponding RGB image, while the student is conditioned on the LiDAR-derived tokens from the same view. Images are tightly cropped to the 2D support of projected LiDAR points and resized to 518 × 518 , yielding a 
+
+37 ×37 token grid for ViT-14. During finetuning, all available views are used. Point cloud augmentations include random rotation about the z-axis, random XY flips, and isotropic scale jitter ( ±0.1). The distillation loss combines cosine similarity and smooth-
+
+ℓ1 over the [CLS] token and visibility-masked patch tokens. Following [34], teacher tokens are standardised to zero mean and unit variance before loss computation, with separate EMA running statistics for [CLS] and patch tokens synchro-nised across GPUs, and cosine-scheduled momentum from 
+
+β0 = 1 .0 to βend = 0 .001 .V. R ESULTS 
+
+Linear Probing and Label-Efficient Finetuning: Tab. I reports results on nuScenes and SemanticKITTI . Baseline results are taken directly from the corresponding publica-tions. TOLiD is pretrained on four heterogeneous datasets: 
+
+nuScenes , SemanticKITTI , PandaSet-64 , and PandaSet-GT .Under linear probing, TOLiD attains 71.7% mIoU on 
+
+nuScenes , surpassing the previous best (ScaLR [11], 67.8%) by +3.9%. Since linear probing evaluates frozen representa-tions, this margin reflects a substantive improvement in fea-ture quality. Retaining the VFM within the distillation loop 169k 223k 342k  
+
+> Pretraining Data Size
+> 42.5
+> 45.0
+> 47.5
+> 50.0
+> 52.5
+> 55.0
+> Avg. LP mIoU (%)
+> 45.7
+> 52.3
+> 53.9
+> 43.7
+> 49.0 49.7
+> +4.2
+> ScaLR
+> TOLiD
+
+Fig. 4: Effect of scaling pretraining data. Average mIoU across nuScenes , SemanticKITTI , PandaSet-64 , and 
+
+PandaSet-GT . TOLiD exhibits stronger scaling with data diversity, widening the gap over ScaLR [11] from +2.0% at 169k frames to +4.2% at 342k frames.   
+
+> GT ScaLR [11] TOLiD
+
+Fig. 5: Qualitative results on SemanticKITTI (linear probing). 
+
+TOLiD produces more semantically consistent predictions than ScaLR [11]. yields 3D embeddings that are more semantically structured and linearly separable than those obtained through cross-architectural distillation. 
+
+Cross-Sensor Domain Adaptation: Tab. II reports unsu-pervised domain adaptation under the MuDDoS protocol [26]. Without any self-training (ST) on the target domain, a step that MuDDoS [26] relies on for its best results, TOLiD 
+
+pretrained on all five datasets achieves the best performance on all four cross-sensor pairs, averaging 66.7% mIoU (+2.2% over MuDDoS [26]). The largest improvement occurs on the challenging N →K setting, increasing from 52.1% to 57.2% mIoU (+5.1%), corresponding to the sensor gap (32-beam nuScenes → 64-beam SemanticKITTI ). Notably, even without Waymo Open pretraining, TOLiD already surpasses MuDDoS [26] without self-training on N →W (58.4% vs. 54.1%) and W →N (66.8% vs. 53.0%), demonstrating that 
+
+TOLiD generalizes to unseen sensors during pretraining phase. These gains are obtained using our frozen-backbone and lightweight MLP head, confirming that self-supervised representations learned via distillation over compatible patch-token representations are intrinsically robust to cross-sensor domain shifts. 
+
+Cross-Dataset Generalization. Tab. III evaluates how pre-training data scale affects linear probing performance across four datasets with heterogeneous LiDAR sensors. With a DINOv2-ViT-L/14 teacher, TOLiD outperforms ScaLR [11] TABLE IV: Robustness probing on the nuScenes-C split of the Robo3D benchmark [35], which demonstrates eight real-world corruption types from severe weather, external disturbances, and internal sensor failures. Each corruption is evaluated across different severity levels, and mIoU (%) is reported per corruption type and averaged. ∗ denotes the multi-dataset pretrained model evaluated under both LP and Full finetuning protocols. The substantial LP improvement reflects the quality of TOLiD frozen representations, which yield deployment-ready features that remain robust under sensor corruptions.                                                                                                                                                             
+
+> #Method Fog Wet Snow Move Beam Cross Echo Sensor Avg LP
+> PPKT [10] 30.65 35.42 28.12 29.21 32.82 19.52 28.01 20.71 28.06 SLidR [12] 34.88 38.09 32.64 26.44 33.73 20.81 31.54 21.44 29.95 Seal [13] 37.33 42.77 29.93 37.73 40.32 20.31 37.73 24.94 33.88 Superflow [36] 37.59 43.42 37.60 39.57 41.40 23.64 38.03 26.69 35.99 LargeAD [19] 40.54 43.26 37.92 38.27 40.27 25.67 39.26 30.62 36.98 ScaLR [11] 59.87 66.47 57.77 46.13 58.20 45.97 53.13 40.53 53.51 ScaLR ∗[11] 59.82 66.39 57.75 46.14 58.08 46.01 53.07 40.42 53.46
+> TOLiD ∗67.28 71.41 66.28 54.14 63.73 63.52 61.05 43.28 61.34 Full
+> PPKT [10] 64.01 72.18 59.08 57.17 63.88 36.34 60.59 39.57 56.60 SLidR [12] 65.41 72.31 56.01 56.07 62.87 41.94 61.16 38.90 56.83 Seal [13] 72.66 74.31 66.22 66.14 65.96 57.44 59.87 39.85 62.81 Superflow [36] 70.32 75.77 65.41 61.05 68.09 60.02 58.36 50.41 63.68 LargeAD [19] 71.95 72.47 67.28 65.29 67.49 59.42 61.38 42.46 63.47 ScaLR [11] 70.8 77.2 67.1 55.9 70.0 65.7 63.9 51.1 65.20 ScaLR ∗[11] 72.2 77.9 69.1 57.4 70.1 62.7 64.0 52.2 65.70
+> TOLiD ∗70.42 77.21 71.70 57.89 69.37 67.07 65.83 46.27 65.72
+
+TABLE V: Ablation study evaluating the effect of sam-pling strategy and frustum aggregation on nuScenes and 
+
+PandaSet-64 . Top: effect of masked vs naive bilinear sam-pling. Bottom: Frustum Attention vs Pooling across fusion stages. LP mIoU (%) 
+
+Ablation Type Setting nuScenes Pand. 64 
+
+Sampling Strategy Naive bilinear 71.3 39.7 Masked bilinear 71.7 39.9 
+
+Frustum Aggregation Frustum Pool 56.0 27.4 Frustum Attn. 56.4 27.6 
+
+on the majority of settings, and the average gap widens with increasing data volume. At 342k frames, TOLiD achieves 70.9%, 60.1%, 42.0%, and 42.6% mIoU on nuScenes , Se-manticKITTI , PandaSet-64 , and PandaSet-GT respectively, outperforming ScaLR by +3.4%, +3.3%, +3.3%, and +6.7% mIoU. The gain on PandaSet-GT is particularly notable, as this forward-facing sensor presents the largest domain gap from the predominantly 360 ◦ pretraining distributions. At 223k frames, TOLiD already reaches its peak nuScenes 
+
+score of 71.7% mIoU (+3.9% over ScaLR) and 40.6% on 
+
+PandaSet-GT (+6.1%), while scaling to 342k frames further boosts SemanticKITTI by +3.1% and both PandaSet splits by at least +2.0% mIoU, at a modest cost on nuScenes . Fig. 4 confirms this trend: the average LP gap widens from +2.0% mIoU at 169k frames to +4.2% at 342k frames, indicating that the coupled LiDAR-ViT architecture leverages geomet-ric diversity from heterogeneous sensors more effectively than feature-level alignment, which saturates earlier. Fig. 5 shows qualitative LP comparisons on SemanticKITTI , where 
+
+TOLiD produces more semantically consistent predictions than ScaLR [11]. This is encouraging for robotic fleets that continually accumulate unlabeled multi-sensor data, as 
+
+TOLiD can translate such data growth into improved repre-sentations without additional annotation effort. 
+
+Robustness to Sensor Corruptions: Tab. IV evaluates robustness on the Robo3D benchmark [35], which simulates eight corruption types spanning severe weather (fog, wet ground, snow), external disturbances (motion blur, beam missing), and internal sensor failure (crosstalk, incomplete echo, cross-sensor). Under LP, TOLiD achieves 61.34% mIoU compared to 53.46% for ScaLR [11], improving across all eight corruptions. Gains are consistent across corrup-tion categories, with the largest improvement on crosstalk (+17.51%), where multi-path interference introduces spu-rious points. Under full finetuning both methods converge (65.72% vs. 65.70%), confirming that the advantage is spe-cific to frozen representations. This distinction is practically relevant: TOLiD enables faster adaptation to new robotic plat-forms by training only a lightweight head, while providing strong robustness under real-world sensor perturbations. 
+
+Ablation Studies: Tab. V presents an ablation study on two key design choices. First, we show Masked bilinear sampling (Eq. 10) restricts interpolation to geometrically supported tokens and re-normalizes over valid support only, improving LP mIoU from 71.3% to 71.7% on nuScenes and from 39.7% to 39.9% on PandaSet-64 . Naive bilinear interpolation contaminates lifted per-point representations. Second, we compare Frustum Attention against Frustum Pooling at the deeper fusion stages (Fig. 2) using a small-scale setting (DINO ViT-S/8, WI-256, nuScenes only). Both variants share 
+
+Frustum Pooling at layer 0 for initialization and differ only at the three subsequent injection points. Frustum Attention 
+
+raises LP mIoU from 56.0% to 56.4% on nuScenes and from 27.4% to 27.6% on PandaSet-64 , confirming that content-aware cross-attention extracts richer cues than mean pooling. VI. C ONCLUSION 
+
+We introduced TOLiD , a self-supervised cross-modal dis-tillation framework for LiDAR representation learning that addresses a key limitation of prior VFM-to-LiDAR methods: the need to align sparse 3D features directly to a frozen visual teacher across a substantial architectural mismatch. Instead of distilling into a standalone heterogeneous 3D encoder, TOLiD couples a LiDAR backbone with a stu-dent ViT from the same architectural family as the frozen teacher, enabling supervision in a compatible patch-token space. Through Frustum Pooling and Frustum Attention ,projected LiDAR features are converted into geometry-aware tokens, while visibility-masked distillation and masked bi-linear sampling ensure that both supervision and feature lifting remain grounded in valid 3D support. Extensive experiments across five heterogeneous pretraining datasets show that TOLiD learns stronger and more scalable represen-tations, consistently improving linear probing, label-efficient finetuning, cross-dataset generalization, cross-sensor domain adaptation, and robustness to sensor corruptions. In partic-ular, its advantages are most pronounced when transferring frozen backbones with lightweight heads, demonstrating that closing the architecture gap during distillation leads to more transferable, semantically structured, and deployment-ready LiDAR features for real-world 3D perception. ACKNOWLEDGMENT 
+
+The authors would like to acknowledge support from the CSIRO’s Embodied AI cluster and partial support from the Australian Research Council (ARC) Discovery Project Grant DP250103634. REFERENCES [1] J. Behley, M. Garbade, et al. , “Semantickitti: A dataset for seman-tic scene understanding of lidar sequences,” in Proceedings of the IEEE/CVF international conference on computer vision , 2019, pp. 9297–9307. [2] K. Vidanapathirana, J. Knights, et al. , “WildScenes: A Benchmark for 2D and 3D Semantic Segmentation in Large-scale Natural Environ-ments,” The International Journal of Robotics Research , vol. 44, no. 4, pp. 532–549, 2025. [3] S. Ancha, P. R. Osteen, and N. Roy, “Deep evidential uncertainty esti-mation for semantic segmentation under out-of-distribution obstacles,” in 2024 IEEE International Conference on Robotics and Automation (ICRA) . IEEE, 2024, pp. 6943–6951. [4] X. Chen, A. Milioto, et al. , “Suma++: Efficient lidar-based semantic slam,” in 2019 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) . IEEE, 2019, pp. 4530–4537. [5] Y. Sun, W. Zuo, et al. , “Pointmoseg: Sparse tensor-based end-to-end moving-obstacle segmentation in 3-d lidar point clouds for au-tonomous driving,” IEEE Robotics and Automation Letters , vol. 6, no. 2, pp. 510–517, 2020. [6] J. Shang, K. Schmeckpeper, et al. , “Theia: Distilling diverse vision foundation models for robot learning,” in 8th Annual Conference on Robot Learning , 2024. [7] S. Hausler and P. Moghadam, “Pair-VPR: Place-Aware Pre-Training and Contrastive Pair Classification for Visual Place Recognition with Vision Transformers,” IEEE Robotics and Automation Letters , 2025. [8] M. Jung, L. F. T. Fu, et al. , “ImLPR: Image-based LiDAR Place Recognition using Vision Foundation Models,” in Proceedings of The 9th Conference on Robot Learning , vol. 305, 2025, pp. 3318–3340. [9] J. Hindel, R. Mohan, et al. , “Label-efficient lidar semantic segmen-tation with 2d-3d vision transformer adapters,” in 2025 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) .IEEE, 2025, pp. 4115–4122. [10] Y.-C. Liu, Y.-K. Huang, et al. , “Learning from 2d: Contrastive pixel-to-point knowledge transfer for 3d pretraining,” arXiv preprint arXiv:2104.04687 , 2021. [11] G. Puy, S. Gidaris, et al. , “Three pillars improving vision foundation model distillation for lidar,” in CVPR , June 2024, pp. 21 519–21 529. [12] C. Sautier, G. Puy, et al. , “Image-to-lidar self-supervised distillation for autonomous driving data,” in CVPR , 2022, pp. 9891–9901. [13] Y. Liu, L. Kong, et al. , “Segment any point cloud sequences by distilling vision foundation models,” Advances in Neural Information Processing Systems , vol. 36, pp. 37 193–37 229, 2023. [14] H. Govindarajan, M. K. Wozniak, et al. , “Cleverdistiller: Simple and spatially consistent cross-modal distillation,” in BMVC , 2025. [15] M. Cai, C. Luo, et al. , “Cross-modal self-supervised learning with effective contrastive units for lidar point clouds,” in 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) ,2024, pp. 9468–9475. [16] S. Mahendren, S. Rahman, et al. , “Point-PNG: Conditional Pseudo-Negatives Generation for Point Cloud Pre-Training,” IEEE Access ,vol. 13, pp. 208 612–208 625, 2025. [17] Y. Liu, Y. Zha, et al. , “Expert-enhanced masked point modeling for point cloud self-supervised learning,” in 2025 IEEE International Conference on Robotics and Automation (ICRA) , 2025, pp. 1436– 1443. [18] R. Chen, Y. Liu, et al. , “Clip2scene: Towards label-efficient 3d scene understanding by clip,” in CVPR , 2023, pp. 7020–7030. [19] L. Kong, X. Xu, et al. , “Largead: Large-scale cross-sensor data pretraining for autonomous driving,” IEEE Transactions on Pattern Analysis and Machine Intelligence , 2025. [20] M. Raghu, T. Unterthiner, et al. , “Do vision transformers see like convolutional neural networks?” in Advances in Neural Information Processing Systems , vol. 34, 2021, pp. 12 116–12 128. [21] Z. Hao, J. Guo, et al. , “One-for-all: Bridge the gap between hetero-geneous architectures in knowledge distillation,” Advances in Neural Information Processing Systems , vol. 36, pp. 79 570–79 582, 2023. [22] B. Zhao, R. Song, and J. Liang, “Cumulative spatial knowledge distillation for vision transformers,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2023, pp. 6146–6155. [23] H. Caesar, V. Bankiti, et al. , “nuscenes: A multimodal dataset for autonomous driving,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2020, pp. 11 621–11 631. [24] P. Xiao, Z. Shao, et al. , “Pandaset: Advanced sensor suite dataset for autonomous driving,” in 2021 IEEE International Intelligent Trans-portation Systems Conference (ITSC) , 2021, p. 3095–3101. [25] P. Sun, H. Kretzschmar, et al. , “Scalability in perception for au-tonomous driving: Waymo open dataset,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,2020, pp. 2446–2454. [26] B. Michele, A. Boulch, et al. , “Improving multimodal distillation for 3d semantic segmentation under domain shift,” in 36th British Machine Vision Conference 2025, BMVC 2025, Sheffield, UK, November 24-27, 2025 . BMVA, 2025. [27] A. Mahmoud, J. S. Hu, et al. , “Self-supervised image-to-point distil-lation via semantically tolerant contrastive loss,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2023, pp. 7102–7110. [28] P. Morerio, J. Cavazza, and V. Murino, “Minimal-entropy correlation alignment for unsupervised deep domain adaptation,” in ICLR , 2018. [29] C. Saltori, F. Galasso, et al. , “Cosmix: Compositional semantic mix for domain adaptation in 3d lidar segmentation,” in European conference on computer vision . Springer, 2022, pp. 586–602. [30] A. Cardace, P. Z. Ramirez, et al. , “Exploiting the complementarity of 2d and 3d networks to address domain-shift in 3d semantic seg-mentation,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops , 2023, pp. 98–109. [31] X. Peng, R. Chen, et al. , “Learning to adapt sam for segmenting cross-domain point clouds,” in European Conference on Computer Vision ,2024, pp. 54–71. [32] G. Puy, A. Boulch, and R. Marlet, “Using a waffle iron for automotive point cloud semantic segmentation,” in Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , October 2023, pp. 3379–3389. [33] M. Oquab, T. Darcet, et al. , “DINOv2: Learning robust visual features without supervision,” Transactions on Machine Learning Research ,2024. [34] M. B. Sarıyıldız, P. Weinzaepfel, et al. , “Dune: Distilling a universal encoder from heterogeneous 2d and 3d teachers,” in Proceedings of the Computer Vision and Pattern Recognition Conference , 2025, pp. 30 084–30 094. [35] L. Kong, Y. Liu, et al. , “Robo3D: Towards robust and reliable 3d perception against corruptions,” in ICCV , 2023, pp. 19 994–20 006. [36] X. Xu, L. Kong, et al. , “4d contrastive superflows are dense 3d representation learners,” in European Conference on Computer Vision ,2024, pp. 58–80.

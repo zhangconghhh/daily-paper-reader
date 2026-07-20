@@ -6,36 +6,30 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-19
-- 运行时间：2026-07-19 20:01:14 UTC
+- 最新运行日期：2026-07-20
+- 运行时间：2026-07-20 20:30:30 UTC
 - 运行状态：成功
-- 本次总论文数：5
+- 本次总论文数：3
 - 精读区：0
-- 速读区：5
+- 速读区：3
 
 ### 今日简报（AI）
-今日速读5篇论文，重点聚焦注意力机制优化、CLIP表示学习及通用物体姿态估计三个方向。最值得关注的是《AVQ-Attention》提出的自适应向量量化注意力机制和《AspectCLIP》在CLIP表示空间中的导向性正则化方法。建议普通读者可先跟踪这两个方向中的视觉-语言基础模型改进思路。
-- 详情：[/202607/19/README](/202607/19/README)
+今日速读3篇论文，聚焦对象中心学习、激光雷达预训练和CLIP表示优化。最值得关注的是《Slot-RAE》（7.0分）提出的直接表示自编码器，可简化对象中心学习流程；《AspectCLIP》（6.0分）则通过方面引导一致性正则化提升CLIP表示质量。建议普通读者优先精读这两篇，把握高效表征学习与多模态对齐的新思路。
+- 详情：[/202607/20/README](/202607/20/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [AVQ-Attention: Adaptive Vector-Quantized Attention](/202607/19/2607.12789v1-avq-attention-adaptive-vector-quantized-attention)  
+1. [Slot-RAE: Streamlining Object-Centric Learning via Direct Representation Auto-Encoders](/202607/20/2607.11196v1-slot-rae-streamlining-object-centric-learning-via-direct-representation-auto-encoders)  
    标签：评分：7.0/10、query:dino-fg
-   evidence：提出自适应向量量化注意力，适用于视觉Transformer等模型
-2. [AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization](/202607/19/2607.13805v2-aspectclip-optimizing-clip-representation-space-via-aspect-guided-consistency-regularization)  
-   标签：评分：7.0/10、query:dino-fg
-   evidence：优化CLIP表示空间，CLIP是图像分类的基础模型
-3. [UniPose9D: Universal Category-Agnostic Object Pose Estimation](/202607/19/2607.09985v1-unipose9d-universal-category-agnostic-object-pose-estimation)  
+   evidence：直接使用DINOv3视觉基础模型特征
+2. [TOLiD: Bridging the Architecture Gap in Vision Foundation Model to LiDAR Pretraining via Token Lifting for Distillation](/202607/20/2607.10762v1-tolid-bridging-the-architecture-gap-in-vision-foundation-model-to-lidar-pretraining-via-token-lifting-for-distillation)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：使用DINOv2特征进行姿态估计，可迁移至细粒度分类
-4. [GFR-SAM: Training-Free Referring Camouflaged Object Segmentation via Cross-Image Prompting](/202607/19/2607.11732v1-gfr-sam-training-free-referring-camouflaged-object-segmentation-via-cross-image-prompting)  
+   evidence：从视觉基础模型（如DINO）蒸馏到LiDAR，使用ViT学生网络
+3. [AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization](/202607/20/2607.13805v1-aspectclip-optimizing-clip-representation-space-via-aspect-guided-consistency-regularization)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：使用DINOv3进行原型对齐，基于视觉变压器框架
-5. [VideoSEMA: a scalable and efficient Mamba-like attention for video understanding](/202607/19/2607.14711v1-videosema-a-scalable-and-efficient-mamba-like-attention-for-video-understanding)  
-   标签：评分：6.0/10、query:dino-fg
-   evidence：提出一种用于视频分类的视觉Transformer变体
+   evidence：优化CLIP表示空间，这是图像分类的基础模型
 
 
 <div class="dpr-home-promo-card">
