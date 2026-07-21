@@ -1,0 +1,25 @@
+---
+title: When does more data help? Spectral Geometry and Scaling Laws in MRI Transformers
+title_zh: 更多数据何时有帮助？MRI Transformer中的谱几何与缩放定律
+authors: "Chattopadhyay, T., Shelar, K., Thomopoulos, S. I., Thompson, P. M."
+date: 2026-07-20
+pdf: "https://www.biorxiv.org/content/10.64898/2026.07.14.738571v1.full.pdf"
+tags: ["query:dino-fg"]
+score: 7.0
+evidence: 使用冻结的DINO ViT-B/16编码器进行MRI疾病分类
+tldr: "在MRI Transformer中，数据量增加如何提升性能受表示光谱影响。本文训练三种监督3D ViT和自监督DINO进行阿尔茨海默病分类，通过谱展开分析发现监督模型表示高度集中（单主成分捕获90-96%方差），疾病信息集中于单一模式，性能随样本增加趋于饱和；而DINO表示分散，有效秩高，从50样本到2822样本提升11个百分点。结果表明，分布式表示能持续受益于更多数据，集中式表示则过早耗尽信号，揭示了缩放规律与光谱几何的内在联系。"
+source: biorxiv
+selection_source: fresh_fetch
+figures_json: "[{\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-14-738571-v1/fig-001.webp\", \"caption\": \"\", \"page\": 0, \"index\": 1, \"width\": 477, \"height\": 350, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-14-738571-v1/fig-002.webp\", \"caption\": \"\", \"page\": 0, \"index\": 2, \"width\": 668, \"height\": 361, \"label\": \"Figure\"}, {\"url\": \"assets/figures/biorxiv/biorxiv-10-64898-2026-07-14-738571-v1/fig-003.webp\", \"caption\": \"\", \"page\": 0, \"index\": 3, \"width\": 545, \"height\": 402, \"label\": \"Figure\"}]"
+tables_json: "[{\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-14-738571-v1/table-001.webp\", \"caption\": \"\", \"page\": 0, \"index\": 1, \"width\": 1271, \"height\": 170, \"label\": \"Table\"}, {\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-14-738571-v1/table-002.webp\", \"caption\": \"\", \"page\": 0, \"index\": 2, \"width\": 1270, \"height\": 204, \"label\": \"Table\"}, {\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-14-738571-v1/table-003.webp\", \"caption\": \"\", \"page\": 0, \"index\": 3, \"width\": 1272, \"height\": 203, \"label\": \"Table\"}, {\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-14-738571-v1/table-004.webp\", \"caption\": \"\", \"page\": 0, \"index\": 4, \"width\": 1275, \"height\": 242, \"label\": \"Table\"}, {\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-14-738571-v1/table-005.webp\", \"caption\": \"\", \"page\": 0, \"index\": 5, \"width\": 1275, \"height\": 203, \"label\": \"Table\"}, {\"url\": \"assets/tables/biorxiv/biorxiv-10-64898-2026-07-14-738571-v1/table-006.webp\", \"caption\": \"\", \"page\": 0, \"index\": 6, \"width\": 1112, \"height\": 202, \"label\": \"Table\"}]"
+motivation: 探究不同编码器类型下，数据量增加时模型性能缩放规律是否受判别信号在谱模式上分布的影响。
+method: "训练三种监督3D ViT（ViT3D, MINiT, NIT）和自监督DINO进行AD分类，通过谱展开分析Mahalanobis信号分布。"
+result: "监督模型表示高度集中（单主成分捕获90-96%方差），性能随样本增加趋于饱和；DINO表示分散，有效秩高，性能持续提升11个百分点。"
+conclusion: 表示谱分布决定数据量缩放行为：分布式表示保留更多模式信号，随数据增加持续改进；集中式表示在低样本量即耗尽可发现信号。
+---
+
+## 摘要
+缩放定律描述了模型性能如何随着训练数据量的增加而提升，最近的如zeta定律等理论表明，缩放行为受到模型潜在表示的特征谱的影响。本文评估了判别信号在谱模式上的分布是否能够预测未来的缩放行为，以用于疾病分类的MRI Transformer为对象。我们使用来自阿尔茨海默病神经影像学倡议（ADNI）的2,822个训练扫描，训练了三个有监督的3D视觉Transformer（ViT3D、MINiT和NIT）用于阿尔茨海默病分类；我们将它们的编码器谱与一个适应于3D MRI的冻结自监督DINO ViT-B/16编码器的谱进行了比较。有监督模型学习了高度集中的表示，CLS令牌方差的90-96%由单个主成分捕获，而DINO则将信号分布在多个潜在方向上。通过马氏信号的谱展开，我们发现监督训练将疾病信息集中到一个主导模式上，而自监督训练则产生了更丰富的谱几何，具有更高的有效秩和可发现性。这导致了不同的缩放行为：有监督模型表现出更平坦的AUC(N)曲线，而DINO随着样本量的增加持续改进，从N=50到N=2,822提高了11.0个百分点。总体而言，对于这些不同的编码器类型，判别信号的谱分布影响了随着样本量增加，性能剩余的可发现性。分布式表示可能跨多个潜在模式保留信号，并随着更多数据继续改进，而集中式表示则在更小的样本量下就耗尽了大部分可发现的信号。
+
+## Abstract
+Scaling laws describe how model performance improves as the amount of training data increases, and recent theories such as the zeta law suggest that scaling behavior is influenced by the eigenspectrum of the model's latent representation. Here, we evaluated whether the distribution of discriminative signals across spectral modes predicts the future scaling behavior, for MRI transformers trained for disease classification. We trained three supervised 3D vision transformers (ViT3D, MINiT, and NIT) for Alzheimer's disease classification using 2,822 training scans from the Alzheimer's Disease Neuroimaging Initiative (ADNI); we compared their encoder spectra with that of a frozen self-supervised DINO ViT-B/16 encoder adapted to 3D MRI. The supervised models learned highly concentrated representations, with 90-96% of CLS-token variance captured by a single principal component, whereas DINO distributed signal across many latent directions. Via spectral expansion of the Mahalanobis signal, we found that supervised training concentrated disease information into a single dominant mode, while self-supervised training produced a richer spectral geometry with higher effective rank and discoverability. This led to different scaling behavior: supervised models exhibited flatter AUC(N) curves, yet DINO continued to improve as sample size increased, gaining 11.0 percentage points from N=50 to N=2,822. Overall, the spectral distribution of the discriminative signal, for these different encoder types, influenced how much performance remained discoverable as sample size increased. Distributed representations may retain signal across many latent modes and continue to improve with additional data, whereas concentrated representations tend to exhaust most of the discoverable signal at much lower sample sizes.

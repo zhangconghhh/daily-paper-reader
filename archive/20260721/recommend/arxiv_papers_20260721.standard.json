@@ -1,0 +1,130 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-21T21:20:57.677726+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "biorxiv-10-64898-2026-07-19-739426-v1",
+      "source": "biorxiv",
+      "title": "Vision Normalizing Flows for the probability-informed detection of banana diseases from in-field images",
+      "abstract": "Banana diseases impose severe production losses in tropical smallholder farming systems, yet accurate in-field visual diagnosis remains difficult: symptom expression varies across cultivars and growth stages, and several diseases produce morphologically overlapping foliar signs. We developed a probabilistic image-recognition framework for detecting five economically important banana diseases - Xanthomonas Wilt, Banana Bunchy Top Disease, Fusarium Wilt (Panama disease), Yellow Sigatoka, and Black Sigatoka - from in-field photographs, without any disease-specific fine-tuning of the vision backbone. The approach extracts frozen 1,152-dimensional embeddings from the DINOv3 vision foundation model and couples them with a conditional normalizing flow, trained on four publicly available datasets spanning diseased banana plants, healthy tissue, non-banana vegetation, and general natural imagery. On an independent test set the model achieved F1 scores exceeding 0.98, average precision values of 0.968-0.999, and AUROC values of 0.997-1.0 across all five diseases evaluated as binary detection problems. Multi-class accuracy was near-perfect, with limited confusion between Yellow Sigatoka and Black Sigatoka - a biologically plausible ambiguity attributable to overlapping early-infection foliar symptoms. Because the normalizing flow estimates explicit conditional probability densities rather than decision boundaries, two complementary log-likelihood ratios can be derived: a disease ratio comparing each disease class against healthy banana, and a plant ratio comparing banana against non-banana imagery. Together these define an interpretable two-dimensional diagnostic space that simultaneously quantifies evidence for disease presence and image relevance, cleanly separating diseased plants, healthy plants, and out-of-distribution images while flagging uncertain predictions for confirmatory testing. Inference on frozen embeddings is lightweight and compatible with smartphone deployment, providing a scalable, uncertainty-aware diagnostic tool for smallholder farming systems and disease surveillance programmes.",
+      "authors": [
+        "Prusokiene, A.",
+        "Prusokas, A.",
+        "Retkute, R."
+      ],
+      "primary_category": "plant biology",
+      "categories": [
+        "plant biology"
+      ],
+      "published": "2026-07-21T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.19.739426v1.full.pdf",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Uses DINOv3 vision foundation model for banana disease classification",
+      "llm_evidence_cn": "使用DINOv3视觉基础模型进行香蕉病害分类",
+      "llm_evidence": "使用DINOv3视觉基础模型进行香蕉病害分类",
+      "canonical_evidence": "使用DINOv3视觉基础模型进行香蕉病害分类",
+      "llm_tldr_en": "A probabilistic image recognition framework uses frozen DINOv3 embeddings and normalizing flows to classify five banana diseases from in-field photos without fine-tuning, achieving probability-informed detection.",
+      "llm_tldr_cn": "香蕉病害症状多变且重叠，导致田间诊断困难。本研究提出一种概率图像识别框架，冻结DINOv3视觉基础模型提取1152维嵌入，并耦合条件归一化流进行概率分类。无需针对病害微调视觉骨干，即可从田间照片中检测五种香蕉病害。该方法实现了无需特定微调的可靠检测，为细粒度分类提供了一种基础模型加概率建模的范例。",
+      "llm_tldr": "香蕉病害症状多变且重叠，导致田间诊断困难。本研究提出一种概率图像识别框架，冻结DINOv3视觉基础模型提取1152维嵌入，并耦合条件归一化流进行概率分类。无需针对病害微调视觉骨干，即可从田间照片中检测五种香蕉病害。该方法实现了无需特定微调的可靠检测，为细粒度分类提供了一种基础模型加概率建模的范例。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "DINO model for fine-grained classification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "biorxiv-10-64898-2026-07-14-738571-v1",
+      "source": "biorxiv",
+      "title": "When does more data help? Spectral Geometry and Scaling Laws in MRI Transformers",
+      "abstract": "Scaling laws describe how model performance improves as the amount of training data increases, and recent theories such as the zeta law suggest that scaling behavior is influenced by the eigenspectrum of the model's latent representation. Here, we evaluated whether the distribution of discriminative signals across spectral modes predicts the future scaling behavior, for MRI transformers trained for disease classification. We trained three supervised 3D vision transformers (ViT3D, MINiT, and NIT) for Alzheimer's disease classification using 2,822 training scans from the Alzheimer's Disease Neuroimaging Initiative (ADNI); we compared their encoder spectra with that of a frozen self-supervised DINO ViT-B/16 encoder adapted to 3D MRI. The supervised models learned highly concentrated representations, with 90-96% of CLS-token variance captured by a single principal component, whereas DINO distributed signal across many latent directions. Via spectral expansion of the Mahalanobis signal, we found that supervised training concentrated disease information into a single dominant mode, while self-supervised training produced a richer spectral geometry with higher effective rank and discoverability. This led to different scaling behavior: supervised models exhibited flatter AUC(N) curves, yet DINO continued to improve as sample size increased, gaining 11.0 percentage points from N=50 to N=2,822. Overall, the spectral distribution of the discriminative signal, for these different encoder types, influenced how much performance remained discoverable as sample size increased. Distributed representations may retain signal across many latent modes and continue to improve with additional data, whereas concentrated representations tend to exhaust most of the discoverable signal at much lower sample sizes.",
+      "authors": [
+        "Chattopadhyay, T.",
+        "Shelar, K.",
+        "Thomopoulos, S. I.",
+        "Thompson, P. M."
+      ],
+      "primary_category": "neuroscience",
+      "categories": [
+        "neuroscience"
+      ],
+      "published": "2026-07-20T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.14.738571v1.full.pdf",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "uses frozen DINO ViT-B/16 encoder for MRI disease classification",
+      "llm_evidence_cn": "使用冻结的DINO ViT-B/16编码器进行MRI疾病分类",
+      "llm_evidence": "使用冻结的DINO ViT-B/16编码器进行MRI疾病分类",
+      "canonical_evidence": "使用冻结的DINO ViT-B/16编码器进行MRI疾病分类",
+      "llm_tldr_en": "This paper studies scaling laws in MRI transformers using a frozen DINO ViT-B/16 encoder for Alzheimer's classification, revealing how spectral geometry predicts data scaling benefits.",
+      "llm_tldr_cn": "监督式3D视觉变换器在医学图像分类中的缩放行为尚不明确。本文将自监督DINO ViT-B/16编码器适配到3D MRI，训练三个变换器进行阿尔茨海默病分类。通过分析编码器谱，发现判别信号的谱分布可预测未来缩放行为，为DINO在医学分类中的应用提供理论洞见。",
+      "llm_tldr": "监督式3D视觉变换器在医学图像分类中的缩放行为尚不明确。本文将自监督DINO ViT-B/16编码器适配到3D MRI，训练三个变换器进行阿尔茨海默病分类。通过分析编码器谱，发现判别信号的谱分布可预测未来缩放行为，为DINO在医学分类中的应用提供理论洞见。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "DINO model for fine-grained classification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.17563v1",
+      "source": "arxiv",
+      "title": "FlexiGrad: Adaptive Gradient Modulation for Hierarchical Fine-Grained Classification",
+      "abstract": "Many fine-grained recognition tasks contain hierarchical labels such as order, family and species. Although this supervision should be beneficial, jointly optimising all levels often leads to unstable training because coarse and fine classifiers impose inconsistent gradients on the shared backbone. This hierarchical gradient conflict prevents the model from learning a coherent coarse-to-fine representation. In this paper, we propose FlexiGrad, a simple and parameter-free method that regulates gradient interactions during backpropagation. FlexiGrad removes only the harmful conflicting component when tasks disagree and reinforces the shared direction when they partially agree through a smooth hierarchy-aware weighting function. This produces stable optimisation and preserves both global structure and fine-grained discriminative cues. FlexiGrad integrates into existing architectures without modification while improves multi-granularity accuracy on CUB-200-2011, FGVC-Aircraft and Stanford Cars. The code will be available at PRIS-CV/FlexiGrad.",
+      "authors": [
+        "Zilu Zhou",
+        "Dongliang Chang",
+        "Junhan Chen",
+        "Zhanyu Ma"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-20T05:18:19+00:00",
+      "link": "https://arxiv.org/pdf/2607.17563v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "fine-grained classification method, applicable to vision transformers",
+      "llm_evidence_cn": "细粒度分类方法，可应用于视觉Transformer",
+      "llm_evidence": "细粒度分类方法，可应用于视觉Transformer",
+      "canonical_evidence": "细粒度分类方法，可应用于视觉Transformer",
+      "llm_tldr_en": "FlexiGrad addresses hierarchical gradient conflict in fine-grained recognition by adaptively modulating gradients, enabling stable joint training of coarse and fine classifiers. It is parameter-free and enhances representation learning for hierarchical labels.",
+      "llm_tldr_cn": "当前细粒度分类任务常包含层次标签，但联合优化各层级会导致梯度冲突，阻碍模型学习一致的特征表示。本文提出FlexiGrad方法，通过层次感知的权重函数在反向传播中移除有害的冲突梯度并增强共享梯度方向，无需额外参数。实验表明该方法能有效稳定训练过程，提升层次化细粒度分类性能。该方法可与任意骨干网络结合，包括视觉Transformer。",
+      "llm_tldr": "当前细粒度分类任务常包含层次标签，但联合优化各层级会导致梯度冲突，阻碍模型学习一致的特征表示。本文提出FlexiGrad方法，通过层次感知的权重函数在反向传播中移除有害的冲突梯度并增强共享梯度方向，无需额外参数。实验表明该方法能有效稳定训练过程，提升层次化细粒度分类性能。该方法可与任意骨干网络结合，包括视觉Transformer。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

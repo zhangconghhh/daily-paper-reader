@@ -1,0 +1,364 @@
+Title: FlexiGrad: Adaptive Gradient Modulation for Hierarchical Fine-Grained Classification
+
+URL Source: https://arxiv.org/pdf/2607.17563v1
+
+Published Time: Tue, 21 Jul 2026 01:46:39 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# FlexiGrad: Adaptive Gradient Modulation for Hierarchical Fine-Grained Classification 
+
+Zilu Zhou 1,2, Dongliang Chang 1,2,B, Junhan Chen 1,2, and Zhanyu Ma 1,2 
+
+> 1
+
+Beijing University of Posts and Telecommunications, Beijing 100876, China  
+
+> 2
+
+Beijing Key Laboratory of Multimodal Data Intelligent Perception and Governance, Beijing 100876, China 
+
+changdongliang@bupt.edu.cn 
+
+Abstract. Many fine-grained recognition tasks contain hierarchical la-bels such as order, family and species. Although this supervision should be beneficial, jointly optimising all levels often leads to unstable training because coarse and fine classifiers impose inconsistent gradients on the shared backbone. This hierarchical gradient conflict prevents the model from learning a coherent coarse-to-fine representation. In this paper, we propose FlexiGrad, a simple and parameter-free method that regulates gradient interactions during backpropagation. FlexiGrad removes only the harmful conflicting component when tasks disagree and reinforces the shared direction when they partially agree through a smooth hierarchy-aware weighting function. This produces stable optimisation and pre-serves both global structure and fine-grained discriminative cues. Flex-iGrad integrates into existing architectures without modification while improves multi-granularity accuracy on CUB-200-2011, FGVC-Aircraft and Stanford Cars. The code will be available at PRIS-CV/FlexiGrad. 
+
+Keywords: Multi-granularity · Fine-Grained Visual Classification · Multi-Task Learning. 
+
+1 Introduction 
+
+Hierarchical supervision is one of the most powerful forms of structure avail-able in fine-grained recognition [8]. A single image often carries multiple la-bels at different semantic levels such as order, family and species (as shown in Figure 1) [15, 20, 25]. Coarse labels define global appearance patterns and fine labels provide subtle discriminative cues. In theory, learning all levels jointly should make recognition easier, not harder. Yet in practice, models trained with multi-granularity supervision often converge more slowly, behave less stably and sometimes underperform models trained using only the finest labels. This para-dox suggests that the challenge does not lie in the labels themselves, but in the way optimisation handles them. A multi-granularity setting naturally resembles multi-task learning because each granularity level defines a related but distinct objective. Although these objectives share the same backbone, they influence it in different and sometimes arXiv:2607.17563v1 [cs.CV] 20 Jul 2026 2 Z. Zhou et al.  
+
+> Fig. 1. Fine-Grained Visual Classification (FGVC) with Hierarchical Labels for Multi-Granularity Recognition.
+
+incompatible ways. Coarse classifiers encourage broad and shape-dominant fea-tures, while fine classifiers depend on highly localised and subtle attributes [2, 3, 14]. During backpropagation their gradients frequently point in inconsistent directions [30], which creates hierarchical gradient conflict. This conflict dis-torts the shared parameter landscape and makes the joint objective significantly harder to optimise than any individual task. Even simple cases lead to twisted descent paths as shown in Figure 2. The backbone receives competing signals, and the final representation fails to fully exploit the hierarchical structure that should have been beneficial. Existing solutions attempt to solve this problem from two separate perspec-tives, but both fall short when applied to hierarchical fine-grained recognition. Gradient-modification methods such as PCGrad [30] and CAGrad [16] adjust gradients through geometric projections or balancing objectives. These tech-niques stabilise training for loosely related tasks, yet they treat all tasks sym-metrically and therefore ignore the semantic roles encoded in a hierarchy. A coarse-level gradient that promotes global consistency should not be suppressed in the same way as a conflicting fine-level gradient that carries discriminative ev-idence. Uniform geometric treatment often eliminates signals that should guide the backbone, weakening the very information that hierarchical supervision is supposed to provide. Architectural approaches take the opposite direction. Hierarchical FGVC models frequently restrict or block gradient flow across granularity levels to pre-vent negative interference [3]. Such designs avoid harmful interactions, but at the cost of removing positive transfer and limiting the backbone’s ability to learn a coherent coarse-to-fine representation. Once gradients are isolated, the hierarchy becomes a set of disconnected prediction problems. The structural advantage of multi-level labels is largely lost. These limitations point to a critical missing capability. A hierarchical system requires neither full symmetry nor full separation. It requires a mechanism that FlexiGrad for Hierarchical FGVC 3 
+
+> Fig. 2. (a) The 3D landscape of the combined multi-task (coarse & fine Classification) objective. (b) & (c) Contour plots of the individual Coarse Task and Fine Task ob-jectives. (d) Trajectory using the standard Adam optimizer. The gradient vectors of the two tasks at the end of the trajectory are indicated by blue and orange arrows. (e) Trajectory using Adam with PCGrad. (f) Trajectory using Adam with FlexiGrad.
+
+regulates how coarse and fine tasks influence one another, adjusts their interac-tions based on consistency and preserves the semantic priorities of the hierarchy. The optimisation process must become sensitive to these relationships instead of treating all disagreements as harmful or all agreements as equally valuable. We introduce FlexiGrad, a simple and parameter-free gradient modulation mechanism for hierarchical fine-grained classification. FlexiGrad operates en-tirely during backpropagation and does not modify the network architecture. It computes the consistency between gradients from different granularity levels and adjusts their contribution adaptively. When two tasks conflict strongly, Flexi-Grad removes only the harmful component and keeps the useful part. When two tasks share partial agreement, FlexiGrad reinforces their aligned direction using a smooth weighting function preserving their individual characteristics. This produces an optimisation trajectory that suppresses destructive interfer-ence while amplifying beneficial cooperation. Fine-level gradients naturally gain greater influence because they carry the most discriminative information, while coarse-level signals continue to stabilise global structure. FlexiGrad integrates seamlessly with standard backbones and state-of-the-art FGVC frameworks. Across CUB-200-2011 [25], FGVC-Aircraft [20] and Stanford Cars [13] it improves accuracy at all granularity levels and delivers the largest gains on difficult families and species where gradient conflict is most severe. Training becomes more stable, attention becomes more coherent and the back-bone learns a representation that better reflects the true taxonomy of the data. 4 Z. Zhou et al. 
+
+2 Related Work 
+
+Multi-Task Learning and Gradient Conflict Multi-task learning (MTL) jointly trains multiple objectives with a shared backbone and task-specific heads [17]. Early work balanced task importance using static or adaptive loss weighting [12], while later approaches introduced architectural mechanisms such as task routing and soft parameter decoupling [10, 11, 21–23]. A central issue in MTL is gradient conflict. Gradients from different tasks may point in inconsistent directions, causing inter-task interference [1]. To address this, several methods directly modify gradients during backpropagation. PC-Grad [30] removes conflicting components through projection, and CAGrad [16] searches for a balanced descent direction. DRGrad [18] further refine gradients using agreement-based rules. These approaches improve stability but operate purely on gradient geometry, ignoring the semantic structure linking tasks. In hierarchical classification, coarse and fine objectives form meaningful dependencies rather than independent tasks. Treating their gradients without considering this relationship risks discarding useful information. Our method addresses this limitation by adjusting gradient interactions in a way that respects both their alignment and their hierarchical roles. 
+
+Hierarchical FGVC Strategies Hierarchical supervision has been incor-porated into fine-grained visual classification through structural or architectural designs [4, 5, 9, 27, 28, 32]. FGoN [3] blocks gradient flow between levels to avoid negative transfer, and other works apply class hierarchy priors [19] or hierarchical residual structures to guide feature learning. These methods focus on feature design or architectural separation and often avoid explicit gradient interaction. Although blocking gradients prevents harmful interference, it also removes potentially beneficial cross-level signals and limits coarse-to-fine representation learning. Our work follows a complementary direction. Instead of restricting or isolat-ing gradients, we modulate them adaptively based on consistency. This allows the model to suppress harmful interactions while reinforcing helpful ones, essential in hierarchical FGVC where tasks are semantically linked. 
+
+3 Method 
+
+Hierarchical fine-grained classification requires predicting labels at several se-mantic levels. These levels follow a hierarchical structure rather than a set of independent objectives. Coarse classifiers encourage global structure and fine classifiers emphasise subtle discriminative cues. When jointly optimised, their gradients often misalign, producing hierarchical gradient conflict that disturbs the descent path of the shared backbone. FlexiGrad resolves this issue by con-structing a hierarchy-aware gradient update that suppresses harmful interactions and strengthens beneficial ones, enabling a coherent coarse-to-fine optimisation process (Figure 3). FlexiGrad for Hierarchical FGVC 5
+
+Fig. 3. Overview of our hierarchy classification model and FlexiGrad method. gi and gj
+
+represent the gradients backpropagating from classifier Ci and classifier Cj (i, j ∈ K), which perform classification tasks of coarser granularity level and finer granularity level, respectively. θ represents the angle between gi and gj .
+
+3.1 Hierarchical Optimisation Objective 
+
+Given an image x with labels {y1, y 2, . . . , y K }, the backbone F extracts a feature 
+
+f , and each classifier Ck predicts ˆ yk. The standard objective minimises the sum of cross-entropy losses 
+
+Ltotal =
+
+> K
+
+X
+
+> k=1
+
+Lk. (1) Its gradient is the raw sum 
+
+graw =
+
+> K
+
+X
+
+> k=1
+
+gk, (2) where gk = ∇θ Lk. This aggregation ignores the semantic dependencies among granularity levels and treats all supervision as equally compatible. In practice, coarse and fine tasks often push the parameters toward inconsistent regions, so the naive update direction becomes suboptimal. FlexiGrad retains the same optimisation target Ltotal but reshapes the de-scent direction. Algorithm 1 provides a comprehensive breakdown of the Flex-iGrad execution flow within a single training iteration. Instead of using graw ,FlexiGrad computes a hierarchy-consistent update 
+
+gFG =
+
+> K
+
+X
+
+> k=1
+
+gFG  
+
+> k
+
+, (3) where each corrected gradient gFG  
+
+> k
+
+incorporates conflict resolution or cooperative reinforcement based on its relationship with other tasks. 6 Z. Zhou et al. 
+
+Algorithm 1 FlexiGrad Update Rule 
+
+Require: Model parameters θ, task minibatch B = {T k}
+
+1: gk ← ∇ θ Lk(θ) ∀k
+
+2: gFG  
+
+> k
+
+← gk ∀k
+
+3: for Ti ∈ B do 
+
+4: for Tj ∈ {T k | k > i } in sequential order do 
+
+5: Compute cos( θij ) = ⟨gi,g j ⟩∥gi∥∥ gj ∥
+
+6: if cos( θij ) < 0 then 
+
+7: // conflicting 
+
+8: gFG  
+
+> i
+
+← gFG  
+
+> i
+
+− ⟨gi,g j ⟩∥gj ∥2+ϵ gj
+
+9: else 
+
+10: // cooperative 
+
+11: wij = 1+cos( θij )2
+
+12: gFG  
+
+> i
+
+← wij gFG  
+
+> i
+
++ (1 − wij ) ⟨gi,g j ⟩∥gj ∥2+ϵ gj
+
+13: end if 
+
+14: end for 
+
+15: end for 
+
+16: return Update ∆θ = gFG  
+
+> f inal
+
+= P 
+
+> i
+
+gFG 
+
+> i
+
+3.2 Gradient Interaction Modelling 
+
+For two granularity levels i and j, we measure their interaction using cosine similarity cos( θij ) = gi · gj
+
+∥gi∥∥ gj ∥ . (4) Negative similarity indicates a conflict, and positive similarity indicates partial agreement. FlexiGrad uses this value not as a binary signal but as a continuous measure of consistency. The corrected gradient gFG  
+
+> i
+
+is obtained by iteratively interacting with all other tasks. 
+
+3.3 Conflict Resolution 
+
+When cos( θij ) < 0, gradients from the two levels pull the backbone in inconsis-tent directions. Removing the entire influence of one task would discard useful information, so FlexiGrad removes only the harmful component 
+
+gconf  
+
+> i
+
+= gi − gi · gj
+
+∥gj ∥2 + ϵ gj . (5) FlexiGrad for Hierarchical FGVC 7
+
+This preserves the informative part of gi while preventing destructive inter-ference. The update remains close to the original objective but avoids regions conflicting with the hierarchy. 
+
+3.4 Cooperation Reinforcement 
+
+Granularity levels often share partially aligned supervision. Instead of treat-ing this as perfect agreement, FlexiGrad strengthens it proportionally using a smooth alignment weight 
+
+wij = 1 + cos( θij )2 . (6) The reinforced gradient becomes 
+
+gcoop  
+
+> i
+
+= wij gi + (1 − wij ) gi · gj
+
+∥gj ∥2 + ϵ gj . (7) This encourages the model to move in directions supported consistently by mul-tiple levels while still preserving task-specific fine-grained cues. The continuous weighting naturally reflects the hierarchical dependency: coarse supervision sta-bilises global representation, and fine supervision guides detailed discrimination. 
+
+3.5 Full Gradient Modulation 
+
+For each task i, FlexiGrad starts with its raw gradient gi and sequentially applies the conflict or cooperation rule with all other tasks j̸ = i. After this process, we obtain corrected gradients gFG  
+
+> i
+
+, and the final update becomes 
+
+gFG =
+
+> K
+
+X
+
+> i=1
+
+gFG  
+
+> i
+
+. (8) FlexiGrad introduces no parameters, requires no modifications to the architec-ture and integrates seamlessly into any optimiser by replacing the raw gradient with gFG .
+
+3.6 Theoretical Interpretation 
+
+The corrected update direction gFG remains a valid descent direction for the total objective. When gradients conflict, removing the opposing component yields 
+
+gconf  
+
+> i
+
+· gi = ∥gi∥2 − (gi · gj )2
+
+∥gj ∥2 ≥ 0, (9) so the update continues to decrease Li. When gradients are partially aligned, reinforcement produces 
+
+gcoop  
+
+> i
+
+· gi = wij ∥gi∥2 + (1 − wij ) (gi · gj )2
+
+∥gj ∥2 > 0, (10) 8 Z. Zhou et al. 
+
+so the descent direction reduces Li while benefiting from agreement with Lj .Since each corrected gradient remains a non-ascending direction for its own task, their sum gFG constitutes a principled surrogate descent for Ltotal . Flexi-Grad therefore retains the original optimisation objective but yields a smoother, hierarchy-consistent trajectory in parameter space. 
+
+3.7 Summary 
+
+FlexiGrad introduces a continuous, hierarchy-aware gradient modulation mecha-nism that captures both conflict and cooperation across granularity levels. It pre-serves the discriminative power of fine-level supervision while stabilizing global representation through coarse supervision, and reshapes the descent path to align with the semantic structure of hierarchical classification. 
+
+4 Experiment 
+
+4.1 Experimental Setup Datasets and Evaluation: We evaluate FlexiGrad on three hierarchical FGVC benchmarks: CUB-200-2011 [25]: 11,877 bird images annotated at order, fam-ily and species levels. Its deep taxonomy and subtle species differences expose strong coarse-to-fine gradient interference. FGVC-Aircraft [20]: 10,000 images from 30 makers, 70 families and 100 variants. Fine-level distinctions are ex-tremely subtle, making it a natural stress test for gradient alignment. Stanford Cars [13]: 8,144 images covering 196 models. Rigid shapes but large colour varia-tions create inconsistent coarse-level cues. We report accuracy at each granularity and the average, averaged over three runs. 
+
+Implementation: FlexiGrad is model-agnostic. We use ResNet50, Swin-B and ViT-B/16 pretrained on ImageNet [6]. Images are resized to 224 × 224; standard augmentations are used. Training uses SGD for 100 epochs with weight decay 5 × 10 −4. All models follow identical optimisation settings to ensure com-parability. 
+
+Baselines: We compare against representative strategies for hierarchical multi-task learning: Vanilla single : shared backbone without conflict handling, 
+
+Vanilla multi : separate backbones, removing all gradient interaction, PCGrad [30]: projection-based conflict removal, FGoN [3]: architecture-level gradient block-ing, and Ours : FlexiGrad applied to Vanilla single. To test generality, we also apply FlexiGrad as a plug-in to four strong FGVC models (NTS [29], PMG [7], MPSA [26] and ACC-ViT [31]), producing Ours NTS , Ours PMG , Ours MPSA 
+
+and Ours ACC-ViT .
+
+4.2 Comparisons with State-of-the-Art Methods 
+
+Table 1 compares against state-of-the-art methods. Across all datasets, Flexi-Grad consistently improves accuracy at every granularity and across all back-bones. More importantly, the pattern of improvement directly reflects the opti-misation behaviour predicted by our hierarchy-aware formulation. FlexiGrad for Hierarchical FGVC 9
+
+Table 1. Performance comparison on three datasets. Blue indicates the best results among baseline methods, while Red highlights the best performance among SOTA approaches and our plug-in versions.                                                                                                                                                                                                                                                                                                                                                                     
+
+> Method CUB-200-2011 FGVC-Aircraft Stanford Cars order acc family acc species acc avg acc maker acc family acc model acc avg acc maker acc model acc avg acc Vanilla single 94.97 ±0.27 87.74 ±0.11 73.82 ±0.31 85.51 94.59 ±0.03 92.13 ±0.42 86.93 ±0.21 91.22 95.03 ±0.25 88.59 ±0.13 91.81
+> Vanilla multi [3] 95.13 ±0.53 89.70 ±0.13 78.31 ±0.35 87.71 90.69 ±0.48 89.23 ±0.23 88.10 ±0.10 89.34 95.24 ±0.20 89.14 ±0.16 92.19
+> PCGrad 96.70 ±0.14 90.14 ±0.32 78.07 ±0.19 88.30 94.30 ±0.28 92.67 ±0.05 87.80 ±0.36 91.59 95.19 ±0.16 89.15 ±0.27 92.17
+> FGoN [3] 96.37 ±0.16 90.39 ±0.15 77.95 ±0.04 88.24 93.04 ±0.25 90.73 ±0.19 88.35 ±0.18 90.71 95.58 ±0.06 89.66 ±0.16 92.62
+> Ours 96.94 ±0.10 90.85 ±0.33 79.79 ±0.41 89.19 94.56 ±0.06 93.00 ±0.21 88.76 ±0.15 92.11 95.80 ±0.34 90.58 ±0.18 93.19 NTS 97.60 ±0.15 93.55 ±0.18 83.75 ±0.20 91.63 95.41 ±0.25 93.85 ±0.12 88.60 ±0.14 92.62 95.20 ±0.21 91.98 ±0.19 93.59
+> Ours NTS 97.91 ±0.11 93.98 ±0.22 84.01 ±0.15 91.97 95.68 ±0.19 94.16 ±0.18 88.95 ±0.11 92.93 95.62 ±0.24 92.61 ±0.15 94.12
+> PMG 97.93 ±0.09 93.35 ±0.42 83.32 ±0.17 91.53 95.88 ±0.30 93.79 ±0.04 87.85 ±0.29 92.51 94.93 ±0.06 91.29 ±0.45 93.11
+> Ours PMG 98.21 ±0.56 94.21 ±0.25 84.36 ±0.13 92.26 96.22 ±0.08 94.06 ±0.61 89.25 ±0.10 93.18 96.25 ±0.33 93.18 ±0.12 94.72 ACC-ViT 99.50 ±0.08 97.10 ±0.15 89.18 ±0.11 95.26 96.80 ±0.19 94.75 ±0.14 86.55 ±0.22 92.70 95.45 ±0.15 87.10 ±0.25 91.28
+> Ours ACC-ViT 99.77 ±0.05 97.52 ±0.12 89.45 ±0.14 95.58 97.01 ±0.15 95.02 ±0.10 86.91 ±0.18 92.98 95.67 ±0.18 87.36 ±0.21 91.52
+> MPSA 99.57 ±0.09 97.90 ±0.17 88.82 ±0.04 95.43 97.03 ±0.28 94.93 ±0.11 89.26 ±0.20 93.74 95.82 ±0.13 91.05 ±0.31 93.44
+> Ours MPSA 99.71 ±0.06 98.10 ±0.12 89.37 ±0.16 95.73 97.19 ±0.27 95.07 ±0.21 89.77 ±0.15 94.01 96.01 ±0.20 91.47 ±0.39 93.74
+
+First, the largest gains emerge at the finest granularity. Species-and model-level classifiers benefit substantially more than coarse levels, indicating that Flex-iGrad effectively suppresses the strong coarse-to-fine gradient interference that typically harms fine-grained recognition. This matches our core hypothesis: finer tasks suffer the most misalignment and therefore gain the most from continuous conflict removal and cooperation reinforcement. Second, this improvement persists across model families. FlexiGrad enhances both CNN-based FGVC models (NTS, PMG) and transformer-based architec-tures (ACC-ViT, MPSA), demonstrating that hierarchy-aware gradient modula-tion acts on the optimisation dynamics rather than architectural priors. The con-sistent gains also indicate that task-level interference cannot be fully resolved by stronger feature extractors or attention modules alone. Even models with explicit attention mechanisms still exhibit measurable gains, suggesting that task-level interference remains a limiting factor that architecture alone does not resolve. Third, FlexiGrad significantly outperforms projection-based (PCGrad) and gradient-blocking (FGoN) methods by a clear margin. Pure projection often removes useful components, while strict blocking prevents beneficial top-down and bottom-up interactions. In contrast, FlexiGrad distinguishes conflicting and cooperative cases through a continuous alignment measure, which matches the mixed nature of hierarchical supervision. FlexiGrad’s continuous alignment strat-egy preserves helpful cooperation while eliminating only the harmful part, lead-ing to a consistently stronger optimisation trajectory. Together, these results show that FlexiGrad delivers robust, architecture-agnostic improvements by reshaping the gradient landscape to better reflect the hierarchical structure of multi-granularity FGVC. 10 Z. Zhou et al.  
+
+> Fig. 4. Visualizations of Vanilla single with PCGrad and Ours at Order, Family, and Species granularities on CUB-200-2011.
+
+5 Further Analysis 
+
+5.1 Visualization 
+
+We visualise how FlexiGrad reshapes hierarchical optimisation through three complementary analyses. Across all visualisations, a consistent pattern emerges: FlexiGrad produces coarse-to-fine feature refinement that matches the structure of the hierarchy. 
+
+Hierarchical attention progression. Figure 4 shows Grad-CAM [24] maps at order, family and species levels. Vanilla and PCGrad often produce diffuse activations or misaligned focus across levels, reflecting inconsistent gradient sig-nals. FlexiGrad generates a clear coarse-to-fine progression: broad body regions at the order level, more semantically coherent structures at the family level, and sharply localised fine details at the species level. This behaviour indicates stabilised coarse gradients and strengthened fine-level cues, consistent with our gradient modulation design. 
+
+Optimisation dynamics. Figure 5 compares the first 20 training epochs. Flex-iGrad converges faster and exhibits significantly reduced oscillation. This sug-gests a smoother, more coherent descent direction, whereas Vanilla and PCGrad suffer from gradient tug-of-war between levels. The separation between different methods may become more pronounced in scenarios with deeper hierarchies and more intense gradient conflicts. 
+
+Per-class improvement structure. Figure 6 highlights class-wise gains rel-ative to PCGrad. FlexiGrad improves the majority of classes and the largest gains occur in high-confusion species, precisely where coarse-to-fine interference is typically the strongest. The improvement distribution aligns with our intuition: FlexiGrad amplifies useful inter-level agreement and suppresses destructive in-terference, giving the biggest advantage in the hardest regions of the taxonomy. Together, these visual analyses show that FlexiGrad not only improves ac-curacy but also induces a coherent hierarchical optimisation behaviour that is visible at the feature, training and category levels. FlexiGrad for Hierarchical FGVC 11 
+
+Fig. 5. Accuracy performance comparison of Vanilla single, Vanilla single+PCGrad, FGoN, and our method on CUB-200-2011 during the first 20 epochs. Class Index Class Index Class Index   
+
+> Order Family Species
+> Relative accuracy gain (%)
+
+Fig. 6. Relative accuracy gain versus Vanilla single between Vanilla single with PC-Grad and our method within Order, Family and Species hierarchy on the CUB-200-2011 dataset. 
+
+5.2 Ablation of Core Components 
+
+Table 2 evaluates the two components separately. Using only the conflict resolu-tion mechanism increases the average accuracy to 88.30 percent, which demon-strates that removing the opposing gradient component effectively reduces neg-ative coarse-to-fine interference. Using only the weighting mechanism increases the accuracy to 88.86 percent by amplifying gradients that move in partially consistent directions. Combining the two components gives the best result of 89.19 percent. The improvement shows that eliminating harmful interference and reinforcing beneficial alignment are both necessary and that their effects complement one another. 
+
+5.3 Design of the Weighting Strategy 
+
+To verify the effectiveness of our linear mapping, we evaluate four alternative strategies (Table 3). The Temperature-scaled Sigmoid ( w1) fails due to sat-uration and ”hard” switching that misses subtle inter-task agreements. The Ex-ponential Mapping ( w2) is overly sensitive to gradient variations, leading to optimization instability. For structural designs, Granularity-aware Scaling (w3) imposes a rigid, non-adaptive prior, while Learnable Parameters ( w4)
+
+introduce unstable bi-level optimization problem. Experimental results demonstrate that our proposed wij = (1 + cos θij )/2consistently achieves the highest accuracy across all granularities. By providing a 12 Z. Zhou et al. 
+
+Table 2. Ablation study of the proposed components on the CUB-200-2011 dataset. “✓” indicates the corresponding module is enabled.                      
+
+> Projection Reweight order acc family acc species acc avg acc
+> 94.97 87.74 73.82 85.51
+> ✓96.70 90.14 78.07 88.30
+> ✓96.82 90.54 79.21 88.86
+> ✓✓96.94 90.85 79.79 89.19
+
+Table 3. Ablation study on different wi design strategies on the CUB-200-2011 dataset. (w1: Temperature-scaled Sigmoid, w2: Exponential Mapping, w3: Granularity-aware Scaling, w4: Learnable Parameters.)                         
+
+> Design Strategy order acc family acc specie acc avg acc
+> baseline 96.94 90.85 79.79 89.19
+> w196.60 90.08 79.31 88.66
+> w296.63 90.54 79.41 88.86
+> w396.75 90.65 79.38 88.93
+> w496.58 90.72 79.53 88.94
+
+parameter-free link between alignment and update strength, this linear mapping ensures stable reinforcement proportional to task consistency. 
+
+5.4 Efficiency and Computational Overhead 
+
+FlexiGrad introduces only a small computational overhead. The modulation is performed on task-specific gradients before the final optimizer update, and there-fore mainly relies on lightweight vector operations without extra forward passes or additional network parameters. As shown in Table 4, FlexiGrad achieves the highest average accuracy on CUB-200-2011, while its training time remains close to existing methods. The results demonstrate that the minor increase in processing time relative to PCGrad is well-justified. By introducing a sequential weighting function wij 
+
+to manage hierarchical conflicts, FlexiGrad yields a significant +0.89% absolute gain in average accuracy over the strongest baseline (PCGrad) with only a +0.9% increase in time. This marginal trade-off confirms that FlexiGrad is both effective and computationally practical for real-world fine-grained recognition tasks. 
+
+5.5 Performance on Challenging Fine-Grained Subtrees 
+
+To assess FlexiGrad under the most demanding conditions, we conduct a hard-scenario evaluation focusing on specific taxonomic subtrees. We group samples by family and rank these families based on the discrepancy between family-level and species-level accuracies in the baseline model. A large gap indicates that while the model captures coarse global patterns, it fails to resolve the subtle, discriminative features required for species-level distinction due to overwhelming hierarchical interference. FlexiGrad for Hierarchical FGVC 13 
+
+Table 4. The computational overhead and average accuracy comparisons on CUB-200-2011.                
+
+> Method Time/Run (min) Overhead vs. Vanilla avg acc
+> Vanilla single 41.30 -85.51 FGoN 42.11 +2.0% 88.24 Vanilla single+PCGrad 43.98 +6.5% 88.30 Ours 44.37 +7.4% 89.19 Family ID (Sorted by Difficulty Gap: Hard -> Easy)
+> Species Accuracy Improvement (%)
+
+Fig. 7. Species-level accuracy improvement(%) versus Vanilla single on the CUB-200-2011 dataset across different bird families. 
+
+As illustrated in Figure 7, FlexiGrad yields substantial accuracy gains across the majority of families, with improvements most pronounced in the high-difficulty regions of the taxonomy. Notably, we observe a maximum species-level improve-ment of 19.33% in families where the baseline’s performance was bottlenecked. By suppressing destructive interactions and reinforcing aligned cross-level sig-nals, FlexiGrad enables the backbone to learn a coherent representation even within these challenging subtrees where standard joint optimization fails to con-verge to an optimal local minimum. 
+
+6 Conclusion 
+
+This work addressed the core optimisation problem in hierarchical fine-grained classification, where coarse and fine levels generate misaligned gradients that dis-rupt learning. FlexiGrad provides a simple solution by removing the conflicting component of each gradient while reinforcing the consistent part, resulting in a coherent hierarchy-aware update direction. The method preserves the benefits of cross-level supervision, suppresses the harmful interference that typically harms fine-grained recognition and produces coarse-to-fine behaviour that matches the structure described in our introduction. Experiments, visualisations and hard-scenario analyses collectively confirm that FlexiGrad improves performance ex-actly where hierarchical conflict is strongest. 14 Z. Zhou et al. 
+
+Acknowledgements 
+
+This work was supported by the National Natural Science Foundation of China (Grant 62406171, 62225601, U23B2052), in part by the Beijing Natural Science Foundation Project No. L242025, in part by the Guizhou Province Science and Technology Plan Project (No. QianKeHeZhongDa [2025]031) , and in part by the Beijing Key Laboratory of Multimodal Data Intelligent Perception and Gov-ernance. 
+
+References 
+
+1. Abdelsamie, M.M., Azab, S.S., Hefny, H.A.: Deep multi-task learning: a review of concepts, methods, and cross-domain applications. International Journal of Data Science and Analytics 21 (1), 77 (2026) 4 2. Chang, D., Ding, Y., Xie, J., Bhunia, A.K., Li, X., Ma, Z., Wu, M., Guo, J., Song, Y.Z.: The devil is in the channels: Mutual-channel loss for fine-grained image classification. IEEE Transactions on Image Processing 29 , 4683–4695 (2020) 2 3. Chang, D., Pang, K., Zheng, Y., Ma, Z., Song, Y.Z., Guo, J.: Your” flamingo” is my” bird”: Fine-grained, or not. In: CVPR (2021) 2, 4, 8, 9 4. Chen, J., Chang, D., Xie, J., Du, R., Ma, Z.: Cross-layer feature based multi-granularity visual classification. In: VCIP (2022) 4 5. Chen, J., Zhou, Z., Tong, Y., Chang, D., Luo, Y., Ma, Z.: Seeing as experts do: A knowledge-augmented agent for open-set fine-grained visual understanding. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-nition. pp. 41446–41455 (2026) 4 6. Deng, J., Dong, W., Socher, R., Li, L.J., Li, K., Fei-Fei, L.: Imagenet: A large-scale hierarchical image database. In: CVPR (2009) 8 7. Du, R., Chang, D., Bhunia, A.K., Xie, J., Ma, Z., Song, Y.Z., Guo, J.: Fine-grained visual classification via progressive multi-granularity training of jigsaw patches. In: ECCV (2020) 8 8. Du, R., Xie, J., Ma, Z., Chang, D., Song, Y.Z., Guo, J.: Progressive learning of category-consistent multi-granularity features for fine-grained visual classification. IEEE Transactions on Pattern Analysis and Machine Intelligence 44 (12), 9521– 9535 (2021) 1 9. Gao, P., Liang, Y., Song, Y., Yang, Z.: Cross-hierarchical bidirectional consistency learning for fine-grained visual classification. arXiv preprint arXiv:2504.13608 (2025) 4 10. Gao, Y., Chang, D., Yu, B., Qin, H., Diao, M., Chen, L., Liang, K., Ma, Z.: Toward generalizable forgery detection and reasoning. IEEE Transactions on Image Processing 35 , 3395–3410 (2026) 4 11. Gao, Y., Lin, W., Xu, J., Xu, W., Chen, P.: Self-supervised adversarial training for robust face forgery detection. In: BMVC. p. 718 (2023) 4 12. Kirchdorfer, L., Sesterhenn, T., Bartelt, C., Stuckenschmidt, H., Schott, L., K¨ ohler, J.M.: Investigating uncertainty weighting for multi-task learning: Insights and an-alytical alternative: L. kirchdorfer et al. International Journal of Computer Vision 
+
+134 (1), 8 (2026) 4 13. Krause, J., Stark, M., Deng, J., Fei-Fei, L.: 3d object representations for fine-grained categorization. In: ICCV Workshops (2013) 3, 8 FlexiGrad for Hierarchical FGVC 15 14. Kuang, W., Li, Z.: Spatial-aware feature enhancement network for fine-grained visual classification. Engineering Applications of Artificial Intelligence 163 , 113123 (2026) 2 15. Li, X., Yu, L., Chang, D., Ma, Z., Cao, J.: Dual cross-entropy loss for small-sample fine-grained vehicle classification. IEEE Transactions on Vehicular Tech-nology 68 (5), 4204–4212 (2019) 1 16. Liu, B., Liu, X., Jin, X., Stone, P., Liu, Q.: Conflict-averse gradient descent for multi-task learning. NeurIPS (2021) 2, 4 17. Liu, E., Wu, Y.C., Huang, X., Gao, C., Wang, R.J., Xue, K., Qian, C.: Pareto set learning for multi-objective reinforcement learning. In: AAAI (2025) 4 18. Liu, Y., Miao, Y., Xia, L.: Direct routing gradient (drgrad): A personalized infor-mation surgery for multi-task learning (mtl) recommendations. In: AAAI (2025) 419. Liu, Y., Yang, L., Wang, Y.: Long-tailed classification with multi-granularity se-mantics. In: ICCV (2025) 4 20. Maji, S., Rahtu, E., Kannala, J., Blaschko, M., Vedaldi, A.: Fine-grained visual classification of aircraft. arXiv preprint arXiv:1306.5151 (2013) 1, 3, 8 21. Matsubara, Y., Mendula, M., Levorato, M.: A multi-task supervised compression model for split computing. In: WACV (2025) 4 22. Qin, H., Chang, D., Gao, Y., Tan, Y., Chen, L., Ma, Z.: Increfa: Breaking the static wall of generative model attribution. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 35405–35415 (2026) 4 23. Qin, H., Chang, D., Gao, Y., Yu, B., Chen, L., Ma, Z.: Multimodal conditional in-formation bottleneck for generalizable ai-generated image detection. arXiv preprint arXiv:2505.15217 (2025) 4 24. Selvaraju, R.R., Cogswell, M., Das, A., Vedantam, R., Parikh, D., Batra, D.: Grad-cam: Visual explanations from deep networks via gradient-based localization. In: ICCV (2017) 10 25. Wah, C., Branson, S., Welinder, P., Perona, P., Belongie, S.: The caltech-ucsd birds-200-2011 dataset (2011) 1, 3, 8 26. Wang, J., Xu, Q., Jiang, B., Luo, B., Tang, J.: Multi-granularity part sampling attention for fine-grained visual classification. Transactions on Image Processing (2024) 8 27. Wang, X., Xu, S., Xiangxuan, S., Zhang, Y., Diao, M., Duan, X., Liang, K., Ma, Z., et al.: Cinetechbench: A benchmark for cinematographic technique understanding and generation. Advances in Neural Information Processing Systems 38 (2026) 4 28. Wang, X., Zhang, Y., Zhang, X., Yan, H., Diao, M., Xu, S., Yan, Z., Li, H., Liang, K., Ma, Z.: Detailverifybench: A benchmark for dense hallucination localization in long image captions (2026) 4 29. Yang, Z., Luo, T., Wang, D., Hu, Z., Gao, J., Wang, L.: Learning to navigate for fine-grained classification. In: ECCV (2018) 8 30. Yu, T., Kumar, S., Gupta, A., Levine, S., Hausman, K., Finn, C.: Gradient surgery for multi-task learning. NeurIPS (2020) 2, 4, 8 31. Zhang, Z.C., Chen, Z.D., Wang, Y., Luo, X., Xu, X.S.: A vision transformer for fine-grained classification by reducing noise and enhancing discriminative information. Pattern Recognition (2024) 8 32. Zheng, H., Yang, S., He, Z., Yang, J., Huang, Z.: Hierarchical cross-modal prompt learning for vision-language models. In: ICCV (2025) 4

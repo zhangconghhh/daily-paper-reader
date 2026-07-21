@@ -6,30 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-20
-- 运行时间：2026-07-20 20:30:30 UTC
+- 最新运行日期：2026-07-21
+- 运行时间：2026-07-21 21:23:26 UTC
 - 运行状态：成功
 - 本次总论文数：3
-- 精读区：0
-- 速读区：3
+- 精读区：1
+- 速读区：2
 
 ### 今日简报（AI）
-今日速读3篇论文，聚焦对象中心学习、激光雷达预训练和CLIP表示优化。最值得关注的是《Slot-RAE》（7.0分）提出的直接表示自编码器，可简化对象中心学习流程；《AspectCLIP》（6.0分）则通过方面引导一致性正则化提升CLIP表示质量。建议普通读者优先精读这两篇，把握高效表征学习与多模态对齐的新思路。
-- 详情：[/202607/20/README](/202607/20/README)
+今日精读1篇高评分香蕉病害检测论文，速读2篇关于MRI缩放定律与细粒度分类的改进方法。最值得关注的是《Vision Normalizing Flows》以9.0分创新实现概率化田间病害检测。建议有兴趣的读者优先阅读该精读论文，掌握其概率推断框架。
+- 详情：[/202607/21/README](/202607/21/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Vision Normalizing Flows for the probability-informed detection of banana diseases from in-field images](/202607/21/biorxiv-10-64898-2026-07-19-739426-v1-vision-normalizing-flows-for-the-probability-informed-detection-of-banana-diseases-from-in-field-images)  
+   标签：评分：9.0/10、query:dino-fg
+   evidence：使用DINOv3视觉基础模型进行香蕉病害分类
 
 ### 速读区论文标签
-1. [Slot-RAE: Streamlining Object-Centric Learning via Direct Representation Auto-Encoders](/202607/20/2607.11196v1-slot-rae-streamlining-object-centric-learning-via-direct-representation-auto-encoders)  
+1. [When does more data help? Spectral Geometry and Scaling Laws in MRI Transformers](/202607/21/biorxiv-10-64898-2026-07-14-738571-v1-when-does-more-data-help-spectral-geometry-and-scaling-laws-in-mri-transformers)  
    标签：评分：7.0/10、query:dino-fg
-   evidence：直接使用DINOv3视觉基础模型特征
-2. [TOLiD: Bridging the Architecture Gap in Vision Foundation Model to LiDAR Pretraining via Token Lifting for Distillation](/202607/20/2607.10762v1-tolid-bridging-the-architecture-gap-in-vision-foundation-model-to-lidar-pretraining-via-token-lifting-for-distillation)  
+   evidence：使用冻结的DINO ViT-B/16编码器进行MRI疾病分类
+2. [FlexiGrad: Adaptive Gradient Modulation for Hierarchical Fine-Grained Classification](/202607/21/2607.17563v1-flexigrad-adaptive-gradient-modulation-for-hierarchical-fine-grained-classification)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：从视觉基础模型（如DINO）蒸馏到LiDAR，使用ViT学生网络
-3. [AspectCLIP: Optimizing CLIP Representation Space via Aspect-Guided Consistency Regularization](/202607/20/2607.13805v1-aspectclip-optimizing-clip-representation-space-via-aspect-guided-consistency-regularization)  
-   标签：评分：6.0/10、query:dino-fg
-   evidence：优化CLIP表示空间，这是图像分类的基础模型
+   evidence：细粒度分类方法，可应用于视觉Transformer
 
 
 <div class="dpr-home-promo-card">

@@ -1,0 +1,319 @@
+Title: When does more data help? Spectral Geometry and Scaling Laws in MRI Transformers
+
+URL Source: https://www.biorxiv.org/content/10.64898/2026.07.14.738571v1.full.pdf
+
+Number of Pages: 10
+
+Markdown Content:
+When does more data help? Spectral Geometry and Scaling Laws in MRI Transformers 
+
+Tamoghna Chattopadhyay 1, Kartik Shelar 1, Sophia Thomopoulos 1, and 
+
+Paul M. Thompson 1 
+
+> 1
+
+Imaging Genetics Center, Mark and Mary Stevens Neuroimaging and Informatics Institute, Keck School of Medicine,University of Southern California, Marina del Rey, CA, United States 
+
+tchattop@usc.edu 
+
+Abstract. Scaling laws describe how model performance improves as the amount of training data increases, and recent theories such as the zeta law suggest that scaling behavior is influenced by the eigenspectrum of the model's latent representation. Here, we evaluated whether the distribution of discriminative signals across spectral modes predicts the future scaling behavior, for MRI transformers trained for disease classification. We trained three supervised 3D vision transformers (ViT3D, MINiT, and NIT) for Alzheimer's disease classification using 2,822 training scans from the Alzheimer's Disease Neuroimaging Initiative (ADNI); we compared their encoder spectra with that of a frozen self-supervised DINO ViT-B/16 encoder adapted to 3D MRI. The supervised models learned highly concentrated representations, with 90–96% of CLS-token variance captured by a single principal component, whereas DINO distributed signal across many latent directions. Via spectral expansion of the Mahalanobis signal, we found that supervised training concentrated disease information into a single dominant mode, while self-supervised training produced a richer spectral geometry with higher effective rank and discoverability. This led to different scaling behavior: supervised models exhibited flatter AUC( N) curves, yet DINO continued to improve as sample size increased, gaining 11.0 percentage points from N=50 to N=2,822. Overall, the spectral distribution of the discriminative signal, for these different encoder types, influenced how much performance remained discoverable as sample size increased. Distributed representations may retain signal across many latent modes and continue to improve with additional data, whereas concentrated representations tend to exhaust most of the discoverable signal at much lower sample sizes. 
+
+Keywords: Vision Transformer, Spectral Concentration, Scaling Laws, Zeta Law, Self-Supervised Learning, Mahalanobis Distance 
+
+1 Introduction 
+
+Vision transformers (ViTs) are now a dominant architecture for image recognition, with increasing success in medical imaging, where 3D variants are now applied to volumetric brain MRI for clinical tasks such as disease classification [1,2]. In neuroimaging, a key application is the automated discrimination of cognitively normal (CN) individuals from those with neurodegenerative diseases such as Alzheimer’s disease and Parkinson’s disease. using multimodal images, such as structural and diffusion MRI, and amyloid or tau PET. This task, along with related 
+
+> .CC-BY-NC 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted July 20, 2026. ;https://doi.org/10.64898/2026.07.14.738571 doi: bioRxiv preprint 2
+
+tasks such as predicting future clinical decline [3,4] and neuropathology classification from in vivo MRI [5] have direct clinical relevance for early diagnosis and patient stratification for drug trials and genetic analysis of underlying disease mechanisms [6-8]. Despite strong performance, transformer-based classifiers often show diminishing returns as training set size grows beyond the low-thousands, and neuroimaging studies frequently attribute this limitation to data scarcity [9,10]. The spectral geometry of learned representations provides a principled framework to examine this scaling failure. Recent theoretical work on the zeta law [11,12] proposes that the data-scaling behaviour of a classifier is influenced by the eigenspectrum of its encoder's embedding space. As the training sample size, N, increases, the application of Vershynin’s [13] concentration inequality, Weyl’s inequality and the Davis-Kahan principle imply that more modes, K(N) , of the data covariance can be reliably estimated [12]. This eigenbasis can then be used for spectral decomposition of the class difference vector in the embedding space, and the Mahalanobis energy of the discriminative signal builds up over an increasing set of eigenvectors as the training N
+
+increases [11,12]. The framework predicts that encoders with steep eigenvalue spectra, where one (or a few) principal components capture the vast majority of explained variance, will be less sensitive to dataset size beyond a certain point, regardless of how much data is collected. Spectral collapse, whereby some neural networks concentrate variance into very few dimensions, has been documented in self-supervised learning [14,15] and linked to the training objective design. Contrastive and self-supervised objectives that enforce consistency across multiple augmented views discourage such spectral collapse by requiring the encoder to represent many orthogonal sources of variation in embedding space [16,17]. Supervised objectives, by contrast, optimize directly for a single binary decision boundary and have no such distributional pressure. The impact of spectral collapse on data-scaling behavior has not been systematically studied in medical imaging, where supervised models are often trained on only a few thousand labeled samples. 
+
+Here we investigate whether spectral collapse limits data scaling in 3D MRI transformers, and whether the training objective rather than architecture is its primary cause. We train three supervised transformers (ViT3D, MINiT, and NIT [1,2]) on ADNI brain MRI data [18] for CN-versus-dementia classification, a representative benchmark expected to generalize to other tasks. We then analyze their CLS-token embeddings using a Mahalanobis signal framework [11,12]. We also evaluate a 3D-inflated DINO ViT-B/16 encoder [19], freezing its self-supervised ImageNet-1k backbone and training only a linear classifier. Comparing spectral metrics across all four models tests whether spectral collapse is driven primarily by the training objective rather than architecture, with DINO providing a positive control. 
+
+2 Theoretical Background 
+
+Eigenvalue Spectrum and Spectral Slope. Let  be mean-centred CLS 𝐸 ∈ 𝑅 {𝑁𝑥𝐷} 
+
+embeddings [20], where D is the dimension of the embedding space (encoder) and N is the number of samples mapped through the trained encoder. In the theoretical limit where N is sufficiently high, the covariance eigensystem yields eigenvalues 
+
+, although only the top K(N) of these can be reliably estimated λ1 ≥ λ2 ≥ ... ≥ λ𝐷 
+
+> .CC-BY-NC 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted July 20, 2026. ;https://doi.org/10.64898/2026.07.14.738571 doi: bioRxiv preprint
+
+3
+
+from a finite data sample of size N [12] We model the leading spectrum as a power 
+
+law,  , where we estimate the spectral slope β > 0 by OLS regression of log(  )λ𝑖 ∝ 𝑖 −β  λ𝑖 
+
+on log( i) over the leading 50 modes, which consistently fell within the stable log-linear spectral regime across all models. Complementary summary statistics that 
+
+describe the encoder spectrum are the effective rank , erank = exp(  log  ) with 
+
+> 𝑖
+
+∑ 𝑝 𝑖  𝑝 𝑖  𝑝 𝑖 
+
+= / , and EVR@k =  . High spectral slope, β, implies that the λ𝑖  𝑗 
+
+∑ λ 𝑗  𝑖=1 𝑘 
+
+∑ λ 𝑖 / 𝑗 
+
+∑ λ 𝑗 
+
+variance of the data is concentrated in few leading components; low β implies a richer, more isotropic embedding space where more components are needed to fully describe the data. 
+
+Mahalanobis Signal and Admission Thresholds. Let d = μ{dem} − μ {cn} be the 
+
+class-mean difference in embedding space, with projections α i = , onto each 𝑢 𝑖 𝑇 𝑑 
+
+eigenmode i. Direction i contributes a net positive signal when SNR i(N) = N.  > 1, 
+
+> α𝑖 2
+> λ𝑖
+
+which first holds at the admission threshold Ni = λ i / . The squared Mahalanobis α𝑖 2
+
+distance, summed over SNR-admissible directions, is  = Σ{SNR i>1}  , giving 𝑑 𝑀 2 α𝑖 2
+
+> λ𝑖
+
+predicted AUROC AUC pred = Φ(d M / √2) under Gaussian class-conditionals [12]. The rate of improvement depends on how discriminative signal is distributed across the spectrum: concentrated representations tend to saturate early, whereas distributed representations keep gaining discriminative power as additional modes become discoverable. Thus, AUC( N) scaling reflects how quickly additional spectral modes 
+
+are revealed as N grows. Under power-law spectra,  is governed by a partial sum of 𝑑 𝑀 2
+
+the Riemann zeta function, ζ K( N) (q) = Σ{i=1 to K( N)}  , so that AUC( N)≈Φ(√ [(C/2) 𝑖 −β 
+
+. ζ K( N)(q)] ), Because classification performance is determined by the growth of this truncated zeta sum as the discoverability horizon expands with sample size, we term this relationship the zeta law of generalization [12]. 
+
+L(k) Scaling Exponent and Error Floor. Define L(k) = 1 − AUROC( k) where AUROC( k) is measured by a logistic probe on the top-k PCA projection of the training embeddings. We fit L(k) = A/kα + δ. The exponent α encodes how rapidly additional PC dimensions improve classification: α = 0 indicates spectral collapse, where all discriminant signal is concentrated in PC1. The constant δ is the irreducible error floor, set by the encoder's total discriminative capacity and its match to the task domain [11]. 
+
+3 Methods 
+
+Dataset. We analyzed publicly available ADNI data [18], selecting cognitively normal (CN) and dementia subjects. This well-studied benchmark was chosen to 
+
+> .CC-BY-NC 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted July 20, 2026. ;https://doi.org/10.64898/2026.07.14.738571 doi: bioRxiv preprint
+
+4
+
+illustrate the concepts and is known to yield strong classification performance. Subjects were split 70/15/15 at the subject level, stratified by diagnosis and sex, yielding 2,822 training scans (811 subjects), 576 validation scans (174 subjects), and 587 test scans (174 subjects). All inputs were 3D T1-weighted MRI volumes (96×112×96 voxels). To isolate encoder effects, no tabular covariates were used, although age and demographic variables are commonly included in practice [21]. 
+
+Supervised Architectures. Three supervised 3D transformer architectures ( Table 1 )were trained end-to-end with a Linear (256→1) and sigmoid classification head on the CLS token. Training parameters were AdamW (learning rate: 1×10 ⁻⁴ , cosine annealing, 5-epoch warmup), weight decay 0.01, FP16 AMP, batch 16, 100 epochs, early stopping (patience 15, val AUC), class-weighted BCE (pos_weight=1.4391). 
+
+Table 1. Supervised Architecture Summary                 
+
+> Model Architecture Layers / Heads Dim. Param.
+> VIT-b/16 Global ViT, 16³ patches, 252 tokens + CLS 6 / 8 256 5.85M
+> MINIT Block encoder (4L) + ABMIL aggregation 4 / 8 256 3.27M
+> NIT Global ViT with NIT attention blocks 6 / 8 256 5.85M
+
+DINO ViT-B/16 Positive Control. To test whether spectral collapse is caused by the training objective or the transformer architecture, we adapted DINO ViT-B/16 [19], pre-trained on ImageNet-1k (~1.28M images) by enforcing CLS token consistency across augmented views to 3D MRI. The 3D inflation comprises four steps: (1) the Conv2d patch embedding (768, 3, 16, 16) was adapted to Conv3d(1, 768, 16) by averaging RGB input channels and replicating the 2D kernel T = 16 times along the depth axis, divided by T to preserve activation magnitude; (2) the CLS token is transferred directly; (3) positional embeddings are set to zero (the 2D 14×14 grid has no canonical interpolation to a 3D 6×7×6 grid); (4) all 12 transformer blocks are transferred and frozen. The backbone processes 252 patches in a (B, 253, 768) sequence, structurally identical to ViT3D. A fresh Linear(768→1) head (769 parameters) is the only trainable component, trained for 30 epochs (AdamW, lr = 1×10 ⁻³, cosine). Zeroing positional embeddings may reduce spatial discriminability, but is unlikely to explain the distributed spectral geometry observed, as it affects all directions equally and would not prevent spectral collapse. 
+
+Comparability caveat. DINO ViT-B differs in embedding dimension (D=768 vs. 256) and parameter count (88.4M vs. 3.27–5.85M). All spectral comparisons use scale-free metrics (β, erank, EVR@k, α, δ) insensitive to absolute embedding scale. The monotone ordering across all four metrics across all four models supports training objective as the dominant driver, though architecture and capacity cannot be fully excluded without a matched supervised ablation. 
+
+Spectral Analysis. CLS embeddings were extracted in evaluation mode from each model's best checkpoint and all spectral analyses were fitted on training-split embeddings only. Four pipelines were applied identically to all four models: OLS regression of log(λ i) on log( i) over i = 1…50 yields β, erank, EVR@k; Mahalanobis 
+
+spectrum α i = u i^T d, SNR-truncated d M, admission thresholds  = λ i / , and PC1 𝑁 1 
+
+> ＊
+
+α𝑖 2
+
+> .CC-BY-NC 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted July 20, 2026. ;https://doi.org/10.64898/2026.07.14.738571 doi: bioRxiv preprint
+
+5
+
+signal concentration; L( k) = 1 − AUROC(k) power-law fit over k = 1–80 yields (α, δ); AUC( N) subsampling sweep over N ∈ {50, 100, 200, 400, 800, 1600, 2822}, 5–10 seeds, stratified by diagnosis. 
+
+4 Results 
+
+Classification Performance. Table 2 reports test-set performance. Supervised models achieved test AUC 0.818–0.878. DINO achieved 0.791 with only 769 trainable parameters. The larger val-to-test gap for DINO (0.863 → 0.791) versus supervised models (≤0.029) reflects ImageNet-to-MRI domain shift in the frozen backbone. This is expected and is explained in Sections 4.4 and 5.2. 
+
+Table 2. Supervised Architecture Summary                               
+
+> Model Training Val AUROC Test AUROC AUPRC F1 Brier
+> VIT-b/16 Supervised 0.855 0.823 0.788 0.697 0.204
+> MINIT Supervised 0.923 0.878 0.845 0.795 0.144
+> NIT Supervised 0.911 0.818 0.776 0.721 0.175
+> DINO Self-sup. + linear head 0.863 0.791 0.759 0.698 0.186
+
+Eigenvalue Spectra and Spectral Slope β. Table 3 reports spectral geometry metrics. The spectral slopes form a monotone ordering consistent with the supervision gradient, though embedding dimension and model capacity also differ across models and may contribute to this pattern: ViT3D (2.311) > MINiT (2.271) > NIT (2.002) > DINO (1.148). All supervised models have EVR@1 = 0.897–0.955: a single PC captures 90–96% of total embedding variance. DINO has EVR@1 ≈ 0.19 - no collapse. Effective rank rises from 1.27–1.72 (supervised) to 52.18 (DINO), a 30-40× increase. Fig. 1 overlays the four eigenvalue log-log plots. 
+
+Table 3. Spectral slope β, effective rank, participation ratio PR, and EVR at three cutoffs. 
+
+DINO R² not reported; power-law fit approximate for richer spectra; β = 1.148 is a robust fit.                                    
+
+> Model βR² erank PR EVR@1 EVR@10 EVR@50
+> VIT-b/16 (Supervised) 2.311 0.952 1.27 1.10 0.955 0.998 1.000
+> MINIT (Supervised) 2.271 0.955 1.38 1.13 0.941 0.996 0.999
+> NIT (Supervised) 2.002 0.959 1.72 1.24 0.897 0.988 0.997
+> DINO (Self-Supervised) 1.148 —52.18 18.66 ≈0.19 ≈0.50 ≈0.85
+
+Fig. 1. Log-log eigenvalue spectra for all four models. Spectral slope β (OLS over i = 1…50) is shown in the legend. Supervised models cluster between β = 2.002 and 2.312. DINO ViT-B/16 (β = 1.148) shows slower variance decay, distributing variance across more principal components. 
+
+> .CC-BY-NC 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted July 20, 2026. ;https://doi.org/10.64898/2026.07.14.738571 doi: bioRxiv preprint
+
+6
+
+Mahalanobis Spectrum and Signal Concentration. Table 4 reports the Mahalanobis spectrum. Three metrics follow the monotone supervision gradient. 
+
+PC1 dominance ratio. |α ₁|/|α ₂| drops from 26–305× for supervised models to 3.8× for DINO. For MINiT, |α ₁| = 6.711 vs. |α ₂| = 0.022 (305×): essentially all Mahalanobis signal resides in a single direction. DINO's signal is genuinely distributed across PC directions. 
+
+Admission threshold.  = λ 1/ is 0.3–0.5 for supervised models so the leading 𝑁 1 
+
+> ＊
+
+α12
+
+discriminative mode is available from the outset. In contrast, DINO has  = 2.93, 𝑁 1
+
+> ＊
+
+requiring roughly three training samples before PC1 becomes admissible. 
+
+Signal concentration. % in PC1 drops from 79.8–91.2% (supervised) to 31.0% 𝑑 𝑀 2
+
+(DINO). Total d M is lower for DINO (1.318 vs. 1.591–1.872) because DINO was not trained to maximize CN vs. dementia separation. The contrast is distributional, not in 
+
+total magnitude. Fig. 2 shows the Mahalanobis spectrum  for all four models. 
+
+> α𝑖 2
+> λ𝑖
+
+Table 4. Mahalanobis spectrum.  = λ 1/ is the PC1 admission threshold; %  is the 𝑁 1 
+
+> ＊
+
+α12 𝑑 𝑀 2
+
+fraction of total Mahalanobis signal in PC1.       
+
+> Model ksnr dM│α ₁││α ₂││α ₁│/│α ₂│
+
+𝑁 1 
+
+> ＊
+
+% PC1 𝑑 𝑀 2                            
+
+> VIT-b/16 (Supervised) 66 1.872 16.932 0.512 33× 0.3 90.6%
+> MINIT (Supervised) 71 1.753 6.711 0.022 305× 0.4 91.2%
+> NIT (Supervised) 71 1.591 6.264 0.243 26× 0.5 79.8%
+> DINO (Self-Supervised) 79 1.318 0.210 0.055 3.8× 2.93 31.0%
+
+Fig. 2. Mahalanobis signal distribution across principal components for all four models. 
+
+(A) Cumulative fraction of total  captured by the first k PCs. Supervised models (ViT3D, 𝑑 𝑀 2
+
+MINiT, NIT) accumulate 80–91% of their total Mahalanobis signal in PC1 alone and quickly plateau, indicating that the discriminative signal is concentrated in a single direction. DINO starts at ~20% at k=1 and rises gradually, reaching only ~50% by k=30, confirming that its 
+
+signal is distributed across many directions. (B) Per-PC Mahalanobis signal  for DINO (log 
+
+> α𝑖 2
+> λ𝑖
+
+scale), with the PC1 signal levels of the three supervised models ( dashed horizontal lines ). The supervised PC1 values sit 1–2 orders of magnitude above DINO's individual PC contributions, yet DINO's signal accumulates across many PCs while the supervised models contribute almost nothing beyond PC1. 
+
+> .CC-BY-NC 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted July 20, 2026. ;https://doi.org/10.64898/2026.07.14.738571 doi: bioRxiv preprint
+
+7
+
+Four-Model Comparison. Table 5 summarizes all spectral metrics. The one exception to the monotone ordering is δ, addressed below. 
+
+Table 5. Four-model spectral comparison. Δ = AUC_obs − AUC_pred (geometry-AUC gap). Monotone direction: β ↓, erank ↑, α ↑ along supervision gradient                                    
+
+> Model βerank dMαδΔAUC_obs
+> VIT-b/16 (Supervised) 2.311 1.27 1.872 0.000 0.189 −0.085 0.823
+> MINIT (Supervised) 2.271 1.38 1.753 0.000 0.126 −0.014 0.878
+> NIT (Supervised) 2.002 1.72 1.591 0.119 0.090 −0.051 0.818
+> DINO (Self-Supervised) 1.148 52.18 1.318 0.802 0.214 −0.034 0.791
+
+L(k) scaling exponent α. α rises 0.000 → 0.000 → 0.119 → 0.802. For ViT3D and MINiT, L(k) is completely flat: adding PC dimensions provides zero benefit;discriminant signal is heavily concentrated in PC1. For DINO, L(k) falls from 0.345 at k = 1 to 0.207 at k = 80, a 40% error reduction as more PC dimensions are included. 
+
+Error floor δ. δ_{DINO} = 0.214 exceeds δ_{NIT} = 0.090, reflecting ImageNet-to-MRI domain mismatch rather than geometric failure: DINO's features encode generic visual structure rather than disease-specific anatomy, and the lower d M
+
+= 1.318 may reflect this task misalignment. The smaller geometry-AUC gap |Δ| = 0.034 (vs. 0.085 and 0.051 for ViT3D/NIT) confirms that distributed geometry generalises better despite lower total signal. Domain-matched self-supervised pre-training would eliminate this δ deficit. 
+
+AUC(N) Scaling. Table 6 and Fig. 3 show the AUC( N) subsampling results. Supervised models are near-flat: ViT3D and MINiT show −0.7% and −0.4% change from N = 50 to N = 2822; NIT shows +3.4%. DINO shows +11.0 percentage points (0.683 → 0.793). This is a consequence of spectral collapse: when N₁ < 1, performance saturates before N = 50; adding data provides no benefit. When N ₁ =2.93, PC1 is not admitted until N ≈ 3 and performance rises across the full training range. 
+
+Table 6. AUC(N) subsampling sweep (5 seeds each for DINO; 10 seeds for supervised models).                          
+
+> Model AUC(N=50) AUC(N=800) AUC(N=2822) Total gain
+> VIT-b/16 (Supervised) ≈0.815 ≈0.812 ≈0.808 −0.7 pp
+> MINIT (Supervised) ≈0.878 ≈0.875 ≈0.874 −0.4 pp
+> NIT (Supervised) ≈0.817 ≈0.837 ≈0.851 +3.4 pp
+> DINO (Self-Supervised) 0.683 0.784 0.793 +11.0 pp
+> .CC-BY-NC 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted July 20, 2026. ;https://doi.org/10.64898/2026.07.14.738571 doi: bioRxiv preprint 8
+> Fig. 3. AUC( N) subsampling curves. Supervised models (ViT3D, MINiT, NIT) are flat across N = 50–2,822, consistent with N ₁< 1. DINO (mean ± sd across 5 seeds, shaded) shows a rising curve from AUC = 0.683 at N= 50 to 0.793 at N = 2,822, consistent with the distributed Mahalanobis signal.
+
+5 Discussion 
+
+The DINO results suggest that spectral collapse is driven primarily by the supervised training objective rather than architecture. While differences in model capacity and pre-training data cannot be fully excluded without a matched supervised ViT-B/16, the consistent ordering across four spectral metrics and AUC( N) provide convergent evidence for the training objective as the dominant factor. A promising remedy is domain-matched self-supervised pre-training on 3D brain MRI, which could combine distributed geometry (α > 0) with stronger signal (lower δ). DINO's lower d_M = 1.318 likely reflects its encoding of generic visual structure rather than disease-specific anatomy. Rather than undermining the framework, this result points to missing domain alignment. DINO's smaller |Δ| suggests that its distributed geometry generalizes better to unseen data, with the domain gap limiting signal rather than generalization. In the AUC( N) staircase framework [9], supervised models have N₁ = 0.3–0.5, effectively collapsing the staircase, whereas DINO partially restores the observable regime (N ₁ = 2.93). Full recovery may require a domain-matched encoder with N_i > 50 across multiple directions, a directly testable hypothesis. 
+
+Limitations: (1) DINO differs in dimension, capacity, and training corpus from supervised models - a supervised ViT-B/16 at D=768 would provide a stronger ablation; (2) 3D inflation zeros positional embeddings, limiting spatial encoding; (3) our analyses used a single dataset and binary task, so generalization to subtler problems (e.g., MCI conversion) or multisite problems is unknown; (4) the Gaussian equal-covariance AUC formula may not hold exactly for supervised embeddings; (5) confidence intervals are not reported for supervised AUC( N) curves. Future work will study the multisite case, where harmonization methods help to pool multiple datasets, and “double-zeta” or hypergeometric fractal laws could account for the spectral mixing of site, imaging protocol, and biological effects. 
+
+6 Conclusion 
+
+Spectral collapse - the concentration of CLS embedding variance into a single principal component - is the primary constraint on data scaling in supervised 3D MRI transformers and appears to be driven mainly by the training objective rather than architecture. This conclusion is supported by four independent spectral metrics and the observed AUC( N) behavior.. A DINO ViT-B/16 inflated to 3D shows β = 1.148, erank = 52.18, α = 0.802, and an actively rising AUC( N) curve (+11.0 pp), versus β = 2.00–2.31, erank ≤ 1.72, α = 0.000, and flat AUC( N) for all supervised counterparts. DINO's higher error floor (δ = 0.214) likely reflects the ImageNet-to-MRI domain gap, motivating domain-matched self-supervised pre-training. Future work could test whether β, effective rank, and the discoverability horizon K(N) predict the value of additional training data before large-scale retraining. 
+
+> .CC-BY-NC 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted July 20, 2026. ;https://doi.org/10.64898/2026.07.14.738571 doi: bioRxiv preprint
+
+9
+
+# Acknowledgment 
+
+Supported by NIH grants U01 AG068057 and S10OD032285. 
+
+# References 
+
+1.  Dosovitskiy, A., et al. (2021). An image is worth 16×16 words: Transformers for image recognition at scale. In Proc. 9th International Conference on Learning Representations (ICLR ). 
+
+2.  Singla, A., et al. (2022, September). Multiple instance neuroimage transformer. In International Workshop on Predictive Intelligence in Medicine (pp. 36-48). Cham: Springer Nature Switzerland. 
+
+3.  Chattopadhyay, T., et al. "Predicting Longitudinal Cognitive Decline via Multimodal Deep Learning Fusing Brain MRI and Clinical Data," 2025 21st International Symposium on Biomedical Image Processing and Analysis (SIPAIM), Pasto, Colombia, 2025, pp. 1-4. 
+
+4.  Chattopadhyay, T., et al. (2026). Deep learning to predict future cognitive decline: a multimodal approach using brain MRI and clinical data. Frontiers in Neuroimaging , 5, 1726037. 
+
+5.  Chattopadhyay, T., et al. (2025, November). Evaluation of Deep Learning Algorithms to Predict Multiple Dementia-Related Neuropathologies from Brain MRI, Clinical and Genetic Data. In 2025 21st International Symposium on Biomedical Image Processing and Analysis (SIPAIM) (pp. 1-4). IEEE. 
+
+6.  Dhinagar, N. J., et al. (2023, July). Efficiently training vision transformers on structural MRI scans for Alzheimer’s disease detection. In 2023 45th Annual International Conference of the IEEE Engineering in Medicine & Biology Society (EMBC) (pp. 1-6). IEEE. 
+
+7.  Dhinagar, N. J., et al. (2025, April). Parameter efficient fine-tuning of transformer-based masked autoencoder enhances resource constrained neuroimage analysis. In Medical Imaging 2025: Computer-Aided Diagnosis (Vol. 13407, pp. 265-272). SPIE. 
+
+8.  Chattopadhyay, T., et al. (2024). Comparison of deep learning architectures for predicting amyloid positivity in Alzheimer’s disease, mild cognitive impairment, and healthy aging, from T1-weighted brain structural MRI. Frontiers in Neuroscience , 18, 1387196. 
+
+9.  Yang, E., et al. (2023). Transformer versus traditional natural language processing: how much data is enough for automated radiology report classification? British Journal of Radiology , 96(1149), 20220769. 
+
+10.  Li, M., et al. (2026). Few-shot deployment of pretrained MRI transformers in brain imaging tasks. Frontiers in Artificial Intelligence , 9, 1771088. 
+
+11.  Thompson, P. M. (2025). How much data is enough? Uniform convergence bounds for generative & vision-language models under low-dimensional structure. arXiv preprint arXiv:2512.23109. 
+
+12.  Thompson, P. M. (2026). How Much Data is Enough? The Zeta Law of Discoverability in Biomedical Data, featuring the enigmatic Riemann zeta function. arXiv preprint arXiv:2604.17581. 
+
+13.  Vershynin, R. (2018). High-dimensional probability: an introduction with applications in data science. Cambridge University Press. 
+
+14.  Hua, T., et al. (2021). On feature decorrelation in self-supervised learning. In Proceedings of the IEEE/CVF International Conference on Computer Vision (pp. 9598-9608). 
+
+15.  Jing, L., et al. (2022). Understanding dimensional collapse in contrastive self-supervised learning. In Proc. 10th International Conference on Learning Representations ( ICLR ). 
+
+16.  Caron, M., et al. (2021). Emerging properties in self-supervised vision transformers. In Proc. IEEE/CVF International Conference on Computer Vision ( ICCV ), pp. 9650–9660. 
+
+17.  Bardes, A., et al. (2022). VICReg: Variance-invariance-covariance regularization for self-supervised learning. In Proc. 10th Int. Conference on Learning Representations (ICLR ). 
+
+> .CC-BY-NC 4.0 International license made available under a (which was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is The copyright holder for this preprint this version posted July 20, 2026. ;https://doi.org/10.64898/2026.07.14.738571 doi: bioRxiv preprint
+
+10 
+
+18.  Jack Jr, C. R., et al. (2008). ‘The Alzheimer's Disease Neuroimaging Initiative (ADNI): MRI methods.’ J. Magnetic Resonance Imaging , 27(4), 685-691. 
+
+19.  Oquab, M., et al. (2024). DINOv2: Learning robust visual features without supervision. 
+
+Transactions on Machine Learning Research. 
+
+20.  Vaswani, A., et al. (2017). Attention is all you need. Advances in Neural Information Processing Systems , 30. 
+
+21.  Chattopadhyay, T., et al. "Can Structural MRIs be used to Detect Amyloid Positivity using Deep Learning?," 2023 19th International Symposium on Medical Information Processing and Analysis (SIPAIM), Mexico City, Mexico, 2023, pp. 1-4.
