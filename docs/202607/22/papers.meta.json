@@ -1,0 +1,24 @@
+{
+  "label": "2026-07-22",
+  "date": "2026-07-22",
+  "generated_at": "2026-07-22T20:28:24",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202607/22/2607.16824v2-test-time-registers-as-global-priors-for-tokenized-image-generation",
+      "section": "quick",
+      "title_en": "Test-Time Registers as Global Priors for Tokenized Image Generation",
+      "authors": "Cheng-Yao Hong, Yifan Wang, Yuewei Lin, Chenyu You",
+      "date": "2026-07-18",
+      "pdf": "https://arxiv.org/pdf/2607.16824v2",
+      "score": "7.0",
+      "evidence": "使用DINOv2视觉Transformer研究寄存器特征用于生成",
+      "tldr": "视觉Transformer中的注意力汇与register token相关，其编码了全局低频结构。本文提出RegToken，通过层定位、子空间提取和投影更新三步，将测试时register特征转化为紧凑的全局先验token，无需重新训练即可插入冻结的令牌化生成模型。在ImageNet上，RegToken将FID-5k从20.5降至20.1，SigLIP从3.6升至3.9，测试优化步数从74减至52。这表明注意力伪影可被复用为轻量级生成先验。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Attention-based models often develop attention sinks, where a small number of tokens repeatedly attract attention and accumulate unusually large activations. In vision transformers, these outliers are closely related to registers, which have been diagnostically linked to global, low-frequency image structure. Existing work has largely studied registers through interpretability analyses and linear probes, leaving open whether they can be operationalized as plug-and-play signals for generation without retraining. We revisit this question in tokenized image generation. Using OpenCLIP and DINOv2 on ImageNet, we find that test-time register features exhibit stronger low-frequency concentration than both [CLS] readouts and patch-mean features, and show a consistent (albeit moderate) correlation with pixel-space DCT low-frequency energy. Motivated by these diagnostics, we introduce RegToken, a training-free procedure that converts register structure into a small set of global prior tokens by (i) NFN-based layer localization, (ii) TokenRank-guided subspace extraction, and (iii) a projection-and-conservation update on the register subspace. Inserted into a frozen compact 1D token generation pipeline, RegToken improves ImageNet generation and alignment metrics (e.g., FID-5k 20.5 to 20.1, SigLIP 3.6 to 3.9) without modifying pretrained weights, and accelerates test-time optimization (Steps@$τ$ 74 to 52). Overall, our results suggest that structures often viewed as attention artifacts can be repurposed as lightweight global priors for tokenized generation.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

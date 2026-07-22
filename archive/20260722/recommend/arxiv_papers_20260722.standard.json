@@ -1,0 +1,55 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-22T20:26:42.416985+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.16824v2",
+      "source": "arxiv",
+      "title": "Test-Time Registers as Global Priors for Tokenized Image Generation",
+      "abstract": "Attention-based models often develop attention sinks, where a small number of tokens repeatedly attract attention and accumulate unusually large activations. In vision transformers, these outliers are closely related to registers, which have been diagnostically linked to global, low-frequency image structure. Existing work has largely studied registers through interpretability analyses and linear probes, leaving open whether they can be operationalized as plug-and-play signals for generation without retraining. We revisit this question in tokenized image generation. Using OpenCLIP and DINOv2 on ImageNet, we find that test-time register features exhibit stronger low-frequency concentration than both [CLS] readouts and patch-mean features, and show a consistent (albeit moderate) correlation with pixel-space DCT low-frequency energy. Motivated by these diagnostics, we introduce RegToken, a training-free procedure that converts register structure into a small set of global prior tokens by (i) NFN-based layer localization, (ii) TokenRank-guided subspace extraction, and (iii) a projection-and-conservation update on the register subspace. Inserted into a frozen compact 1D token generation pipeline, RegToken improves ImageNet generation and alignment metrics (e.g., FID-5k 20.5 to 20.1, SigLIP 3.6 to 3.9) without modifying pretrained weights, and accelerates test-time optimization (Steps@$τ$ 74 to 52). Overall, our results suggest that structures often viewed as attention artifacts can be repurposed as lightweight global priors for tokenized generation.",
+      "authors": [
+        "Cheng-Yao Hong",
+        "Yifan Wang",
+        "Yuewei Lin",
+        "Chenyu You"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-18T13:56:19+00:00",
+      "link": "https://arxiv.org/pdf/2607.16824v2",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "uses DINOv2 vision transformer to study register features for generation",
+      "llm_evidence_cn": "使用DINOv2视觉Transformer研究寄存器特征用于生成",
+      "llm_evidence": "使用DINOv2视觉Transformer研究寄存器特征用于生成",
+      "canonical_evidence": "使用DINOv2视觉Transformer研究寄存器特征用于生成",
+      "llm_tldr_en": "Paper studies test-time registers in vision transformers (DINOv2) as global priors for tokenized image generation, showing they encode low-frequency structure better than CLS tokens.",
+      "llm_tldr_cn": "该论文研究视觉Transformer中的测试时寄存器特征，将其作为全局先验用于分词图像生成。发现DINOv2的寄存器比CLS标记和补丁均值特征具有更强的低频结构集中度，能够作为即插即用的生成信号。实验表明寄存器特征的低频集中度在多种设置下一致，为视觉Transformer的寄存器操作化提供了新方向。",
+      "llm_tldr": "该论文研究视觉Transformer中的测试时寄存器特征，将其作为全局先验用于分词图像生成。发现DINOv2的寄存器比CLS标记和补丁均值特征具有更强的低频结构集中度，能够作为即插即用的生成信号。实验表明寄存器特征的低频集中度在多种设置下一致，为视觉Transformer的寄存器操作化提供了新方向。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
