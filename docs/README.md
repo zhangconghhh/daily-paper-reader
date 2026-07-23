@@ -6,26 +6,22 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-22
-- 运行时间：2026-07-22 20:28:18 UTC
+- 最新运行日期：2026-07-23
+- 运行时间：2026-07-23 20:12:27 UTC
 - 运行状态：成功
-- 本次总论文数：1
+- 本次总论文数：0
 - 精读区：0
-- 速读区：1
+- 速读区：0
 
 ### 今日简报（AI）
-今日速读一篇7分论文，聚焦图像生成中测试时注册全局先验的新思路。  
-最值得关注的是利用可学习注册特征增强分词图像生成的质量与一致性。  
-建议普通读者关注此方向，未来或能提升AI图像生成的细节控制能力。
-- 详情：[/202607/22/README](/202607/22/README)
+> 今日无新推荐，系统未产出可展示论文。
+- 详情：[/202607/23/README](/202607/23/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Test-Time Registers as Global Priors for Tokenized Image Generation](/202607/22/2607.16824v2-test-time-registers-as-global-priors-for-tokenized-image-generation)  
-   标签：评分：7.0/10、query:dino-fg
-   evidence：使用DINOv2视觉Transformer研究寄存器特征用于生成
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">
