@@ -1,0 +1,56 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-24T20:08:17.553997+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.21371v1",
+      "source": "arxiv",
+      "title": "DINOde: Continuous Vision-Text Alignment for Open-Vocabulary Semantic Segmentation",
+      "abstract": "Open-vocabulary semantic segmentation (OVSS) leverages textual semantics to segment objects beyond predefined categories. While the self-supervised model DINOv3 provides strong structured visual representations, its lack of native textual alignment hinders its direct application to OVSS. To bridge this gap, we propose DINOde, an ODE-based framework that continuously aligns CLIP text embeddings with the DINO visual manifold. Our approach employs two complementary components: (i) Semantic Text Flow (STF), which evolves text embeddings toward the DINO manifold through a continuous ODE trajectory, and (ii) Global Context Flow (GCF), which progressively refines the holistic image representation carried by DINO's CLS token. To preserve the hyperspherical geometry of the feature space during this evolution, we further introduce Velocity Tangent Projection, which constrains the learned velocity field to the tangent space. By modeling alignment as a continuous trajectory, DINOde avoids the manifold entanglement inherent in discrete MLP projections and yields more robust cross-modal alignment. Extensive experiments demonstrate that DINOde consistently outperforms existing methods and achieves state-of-the-art performance across multiple OVSS benchmarks. The code is available at https://github.com/yoon307/DINOde.",
+      "authors": [
+        "Sung-Hoon Yoon",
+        "Hoyong Kwon",
+        "Changgyoon Oh",
+        "Kuk-Jin Yoon"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-23T14:37:27+00:00",
+      "link": "https://arxiv.org/pdf/2607.21371v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses DINOv3 as backbone for segmentation, aligns with DINO foundation model theme",
+      "llm_evidence_cn": "使用DINOv3作为分割骨干，符合DINO基础模型主题",
+      "llm_evidence": "使用DINOv3作为分割骨干，符合DINO基础模型主题",
+      "canonical_evidence": "使用DINOv3作为分割骨干，符合DINO基础模型主题",
+      "llm_tldr_en": "DINOde aligns CLIP text embeddings with DINO visual manifold using ODE flows for open-vocabulary segmentation, leveraging DINOv3's strong representations.",
+      "llm_tldr_cn": "开放词汇语义分割要求模型能识别预定义类别之外的物体。现有自监督模型DINOv3虽具有强大视觉表征，但缺乏文本对齐能力。本文提出DINOde，通过常微分方程流（ODE）将CLIP文本嵌入连续对齐到DINO视觉流形，包括语义文本流和全局上下文流两个组件，在多个分割基准上取得优异性能。该工作展示了DINO系列模型在密集预测任务中的潜力，但对细粒度分类的直接影响有限。",
+      "llm_tldr": "开放词汇语义分割要求模型能识别预定义类别之外的物体。现有自监督模型DINOv3虽具有强大视觉表征，但缺乏文本对齐能力。本文提出DINOde，通过常微分方程流（ODE）将CLIP文本嵌入连续对齐到DINO视觉流形，包括语义文本流和全局上下文流两个组件，在多个分割基准上取得优异性能。该工作展示了DINO系列模型在密集预测任务中的潜力，但对细粒度分类的直接影响有限。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
