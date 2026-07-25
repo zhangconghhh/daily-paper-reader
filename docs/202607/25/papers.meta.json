@@ -1,0 +1,39 @@
+{
+  "label": "2026-07-25",
+  "date": "2026-07-25",
+  "generated_at": "2026-07-25T20:01:25",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202607/25/2607.16824v1-test-time-registers-as-global-priors-for-tokenized-image-generation",
+      "section": "quick",
+      "title_en": "Test-Time Registers as Global Priors for Tokenized Image Generation",
+      "authors": "Cheng-Yao Hong, Yifan Wang, Yuewei Lin, Chenyu You",
+      "date": "2026-07-18",
+      "pdf": "https://arxiv.org/pdf/2607.16824v1",
+      "score": "7.0",
+      "evidence": "使用DINOv2特征作为视觉编码器",
+      "tldr": "注意力机制常产生“注意力沉没”，视觉Transformer中的register tokens与全局低频结构相关。本文提出RegToken，无需训练即可将register结构转化为全局先验：通过NFN层定位、TokenRank子空间提取、投影与保守更新三步。在冻结的1D token图像生成中，RegToken将FID从20.5降至20.1，SigLIP从3.6升至3.9，优化步数从74减至52。这表明注意力伪影可被重用作轻量级生成先验，提升性能与效率。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Attention-based models often develop attention sinks, where a small number of tokens repeatedly attract attention and accumulate unusually large activations. In vision transformers, these outliers are closely related to registers, which have been diagnostically linked to global, low-frequency image structure. Existing work has largely studied registers through interpretability analyses and linear probes, leaving open whether they can be operationalized as plug-and-play signals for generation without retraining. We revisit this question in tokenized image generation. Using OpenCLIP and DINOv2 on ImageNet, we find that test-time register features exhibit stronger low-frequency concentration than both [CLS] readouts and patch-mean features, and show a consistent (albeit moderate) correlation with pixel-space DCT low-frequency energy. Motivated by these diagnostics, we introduce RegToken, a training-free procedure that converts register structure into a small set of global prior tokens by (i) NFN-based layer localization, (ii) TokenRank-guided subspace extraction, and (iii) a projection-and-conservation update on the register subspace. Inserted into a frozen compact 1D token generation pipeline, RegToken improves ImageNet generation and alignment metrics (e.g., FID-5k 20.5 to 20.1, SigLIP 3.6 to 3.9) without modifying pretrained weights, and accelerates test-time optimization (Steps@$τ$ 74 to 52). Overall, our results suggest that structures often viewed as attention artifacts can be repurposed as lightweight global priors for tokenized generation.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/25/2607.21371v1-dinode-continuous-vision-text-alignment-for-open-vocabulary-semantic-segmentation",
+      "section": "quick",
+      "title_en": "DINOde: Continuous Vision-Text Alignment for Open-Vocabulary Semantic Segmentation",
+      "authors": "Sung-Hoon Yoon, Hoyong Kwon, Changgyoon Oh, Kuk-Jin Yoon",
+      "date": "2026-07-23",
+      "pdf": "https://arxiv.org/pdf/2607.21371v1",
+      "score": "6.0",
+      "evidence": "使用DINOv3模型进行视觉-文本对齐，涉及DINO和视觉Transformer",
+      "tldr": "开放词汇语义分割需依赖文本语义，但自监督模型DINOv3缺乏文本对齐能力。为此，提出DINOde框架，利用常微分方程连续对齐CLIP文本嵌入与DINO视觉流形，包含语义文本流和全局上下文流两个组件，并引入速度切面投影保持特征空间超球几何。该方法避免了离散MLP投影导致的流形纠缠，在多个基准上取得最优结果。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Open-vocabulary semantic segmentation (OVSS) leverages textual semantics to segment objects beyond predefined categories. While the self-supervised model DINOv3 provides strong structured visual representations, its lack of native textual alignment hinders its direct application to OVSS. To bridge this gap, we propose DINOde, an ODE-based framework that continuously aligns CLIP text embeddings with the DINO visual manifold. Our approach employs two complementary components: (i) Semantic Text Flow (STF), which evolves text embeddings toward the DINO manifold through a continuous ODE trajectory, and (ii) Global Context Flow (GCF), which progressively refines the holistic image representation carried by DINO's CLS token. To preserve the hyperspherical geometry of the feature space during this evolution, we further introduce Velocity Tangent Projection, which constrains the learned velocity field to the tangent space. By modeling alignment as a continuous trajectory, DINOde avoids the manifold entanglement inherent in discrete MLP projections and yields more robust cross-modal alignment. Extensive experiments demonstrate that DINOde consistently outperforms existing methods and achieves state-of-the-art performance across multiple OVSS benchmarks. The code is available at https://github.com/yoon307/DINOde.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

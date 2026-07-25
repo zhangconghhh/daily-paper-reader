@@ -1,0 +1,94 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-25T19:59:44.211456+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.16824v1",
+      "source": "arxiv",
+      "title": "Test-Time Registers as Global Priors for Tokenized Image Generation",
+      "abstract": "Attention-based models often develop attention sinks, where a small number of tokens repeatedly attract attention and accumulate unusually large activations. In vision transformers, these outliers are closely related to registers, which have been diagnostically linked to global, low-frequency image structure. Existing work has largely studied registers through interpretability analyses and linear probes, leaving open whether they can be operationalized as plug-and-play signals for generation without retraining. We revisit this question in tokenized image generation. Using OpenCLIP and DINOv2 on ImageNet, we find that test-time register features exhibit stronger low-frequency concentration than both [CLS] readouts and patch-mean features, and show a consistent (albeit moderate) correlation with pixel-space DCT low-frequency energy. Motivated by these diagnostics, we introduce RegToken, a training-free procedure that converts register structure into a small set of global prior tokens by (i) NFN-based layer localization, (ii) TokenRank-guided subspace extraction, and (iii) a projection-and-conservation update on the register subspace. Inserted into a frozen compact 1D token generation pipeline, RegToken improves ImageNet generation and alignment metrics (e.g., FID-5k 20.5 to 20.1, SigLIP 3.6 to 3.9) without modifying pretrained weights, and accelerates test-time optimization (Steps@$τ$ 74 to 52). Overall, our results suggest that structures often viewed as attention artifacts can be repurposed as lightweight global priors for tokenized generation.",
+      "authors": [
+        "Cheng-Yao Hong",
+        "Yifan Wang",
+        "Yuewei Lin",
+        "Chenyu You"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-18T13:56:19+00:00",
+      "link": "https://arxiv.org/pdf/2607.16824v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "uses DINOv2 features as visual encoder",
+      "llm_evidence_cn": "使用DINOv2特征作为视觉编码器",
+      "llm_evidence": "使用DINOv2特征作为视觉编码器",
+      "canonical_evidence": "使用DINOv2特征作为视觉编码器",
+      "llm_tldr_en": "Explores using DINOv2's test-time register features as global priors for image generation, showing stronger low-frequency concentration than CLS tokens.",
+      "llm_tldr_cn": "现有研究大多将视觉Transformer中的register tokens视为可解释性分析的对象，未将其用于生成任务。本文提出在测试阶段将DINOv2的register特征作为全局先验，用于令牌化图像生成。实验表明，register特征比CLS令牌和patch均值具有更强的低频集中性，且能提升生成质量。该工作将DINOv2的副产品转化为有效的生成信号，拓展了自监督视觉基础模型的应用边界。",
+      "llm_tldr": "现有研究大多将视觉Transformer中的register tokens视为可解释性分析的对象，未将其用于生成任务。本文提出在测试阶段将DINOv2的register特征作为全局先验，用于令牌化图像生成。实验表明，register特征比CLS令牌和patch均值具有更强的低频集中性，且能提升生成质量。该工作将DINOv2的副产品转化为有效的生成信号，拓展了自监督视觉基础模型的应用边界。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.21371v1",
+      "source": "arxiv",
+      "title": "DINOde: Continuous Vision-Text Alignment for Open-Vocabulary Semantic Segmentation",
+      "abstract": "Open-vocabulary semantic segmentation (OVSS) leverages textual semantics to segment objects beyond predefined categories. While the self-supervised model DINOv3 provides strong structured visual representations, its lack of native textual alignment hinders its direct application to OVSS. To bridge this gap, we propose DINOde, an ODE-based framework that continuously aligns CLIP text embeddings with the DINO visual manifold. Our approach employs two complementary components: (i) Semantic Text Flow (STF), which evolves text embeddings toward the DINO manifold through a continuous ODE trajectory, and (ii) Global Context Flow (GCF), which progressively refines the holistic image representation carried by DINO's CLS token. To preserve the hyperspherical geometry of the feature space during this evolution, we further introduce Velocity Tangent Projection, which constrains the learned velocity field to the tangent space. By modeling alignment as a continuous trajectory, DINOde avoids the manifold entanglement inherent in discrete MLP projections and yields more robust cross-modal alignment. Extensive experiments demonstrate that DINOde consistently outperforms existing methods and achieves state-of-the-art performance across multiple OVSS benchmarks. The code is available at https://github.com/yoon307/DINOde.",
+      "authors": [
+        "Sung-Hoon Yoon",
+        "Hoyong Kwon",
+        "Changgyoon Oh",
+        "Kuk-Jin Yoon"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-23T14:37:27+00:00",
+      "link": "https://arxiv.org/pdf/2607.21371v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "uses DINOv3 model for vision-text alignment in segmentation, relevant to DINO and vision transformer",
+      "llm_evidence_cn": "使用DINOv3模型进行视觉-文本对齐，涉及DINO和视觉Transformer",
+      "llm_evidence": "使用DINOv3模型进行视觉-文本对齐，涉及DINO和视觉Transformer",
+      "canonical_evidence": "使用DINOv3模型进行视觉-文本对齐，涉及DINO和视觉Transformer",
+      "llm_tldr_en": "Proposes DINOde, an ODE-based framework aligning CLIP text embeddings with DINOv3 visual manifold for open-vocabulary semantic segmentation, using Semantic Text Flow and Global Context Flow.",
+      "llm_tldr_cn": "针对DINOv3缺乏文本对齐限制其开放词汇语义分割应用的问题，提出DINOde框架，通过连续ODE轨迹将CLIP文本嵌入与DINO视觉流形对齐，包括语义文本流和全局上下文流，在多个分割基准上取得优异性能，拓展了自监督模型的应用。",
+      "llm_tldr": "针对DINOv3缺乏文本对齐限制其开放词汇语义分割应用的问题，提出DINOde框架，通过连续ODE轨迹将CLIP文本嵌入与DINO视觉流形对齐，包括语义文本流和全局上下文流，在多个分割基准上取得优异性能，拓展了自监督模型的应用。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

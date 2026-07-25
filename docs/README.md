@@ -6,24 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-24
-- 运行时间：2026-07-24 20:09:14 UTC
+- 最新运行日期：2026-07-25
+- 运行时间：2026-07-25 20:01:18 UTC
 - 运行状态：成功
-- 本次总论文数：1
+- 本次总论文数：2
 - 精读区：0
-- 速读区：1
+- 速读区：2
 
 ### 今日简报（AI）
-今日仅速读1篇论文，聚焦开放词汇语义分割中的视觉-文本对齐方法。最值得关注的是《DINOde》提出的连续对齐策略，可提升模型对未见类别的分割能力。建议后续可对比该方法与基于CLIP的变体在实际场景中的性能差异。
-- 详情：[/202607/24/README](/202607/24/README)
+1) 今日速读2篇论文，聚焦测试时寄存器图像生成与开放词汇语义分割。  
+2) 最值得关注《Test-Time Registers as Global Priors for Tokenized Image Generation》（7.0/10），探索图像生成新范式。  
+3) 建议进一步比对该方法与主流图像生成模型的实际表现差异。
+- 详情：[/202607/25/README](/202607/25/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [DINOde: Continuous Vision-Text Alignment for Open-Vocabulary Semantic Segmentation](/202607/24/2607.21371v1-dinode-continuous-vision-text-alignment-for-open-vocabulary-semantic-segmentation)  
+1. [Test-Time Registers as Global Priors for Tokenized Image Generation](/202607/25/2607.16824v1-test-time-registers-as-global-priors-for-tokenized-image-generation)  
+   标签：评分：7.0/10、query:dino-fg
+   evidence：使用DINOv2特征作为视觉编码器
+2. [DINOde: Continuous Vision-Text Alignment for Open-Vocabulary Semantic Segmentation](/202607/25/2607.21371v1-dinode-continuous-vision-text-alignment-for-open-vocabulary-semantic-segmentation)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：使用DINOv3作为分割骨干，符合DINO基础模型主题
+   evidence：使用DINOv3模型进行视觉-文本对齐，涉及DINO和视觉Transformer
 
 
 <div class="dpr-home-promo-card">
