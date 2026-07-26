@@ -1,0 +1,69 @@
+{
+  "label": "2026-07-26",
+  "date": "2026-07-26",
+  "generated_at": "2026-07-26T20:37:00",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202607/26/2607.16644v1-dara-degradation-aware-low-rank-residual-adaptation-with-original-to-corrupted-distillation-for-corruption-robust-animal-re-identification",
+      "section": "quick",
+      "title_en": "DARA: Degradation-Aware Low-Rank Residual Adaptation with Original-to-Corrupted Distillation for Corruption-Robust Animal Re-Identification",
+      "authors": "Cynthia Xie, Talia Xu",
+      "date": "2026-07-18",
+      "pdf": "https://arxiv.org/pdf/2607.16644v1",
+      "score": "7.0",
+      "evidence": "使用细粒度身份线索进行动物重识别（细粒度分类）",
+      "tldr": "动物重识别依赖细粒度身份线索，易受模糊、噪声等退化干扰。现有方法通过退化增强训练或像素级恢复间接提升鲁棒性，但未显式修复身份检索空间偏移。本文提出DARA，一种轻量级适配方法，冻结微调后的主干网络，学习路由低秩残差专家以适配退化输入嵌入，并通过原始到损坏的蒸馏稳定修复过程。在ATRW等四个基准上，DARA显著提升退化查询检索性能，恢复77.0%的完整退化微调mAP差距，仅增加0.49%参数和0.05% FLOPs。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Animal re-identification (Re-ID) relies on fine-grained identity cues that can be disrupted by blur, noise, compression, and other visual degradations. Existing robustness strategies based on degradation-augmented training or pixel-level restoration improve robustness indirectly, but do not explicitly repair shifts in the identity retrieval space. We study corruption-robust animal Re-ID as input-conditioned feature-space repair and introduce DARA, a lightweight retrofit for compact Re-ID models. DARA freezes the fine-tuned backbone and learns routed low-rank residual experts to adapt degraded-input embeddings without corruption-type annotations. To stabilize this adaptive repair, original-to-corrupted distillation uses an original-image teacher to preserve individual embeddings and retrieval relations. Experiments on ATRW, FriesianCattle2017, MPDD, and SeaStarReID2023 show that DARA improves corrupted-query retrieval over standard and augmentation-based fine-tuning, generalizes to unseen corruptions and cross-domain evaluation, and recovers 77.0% of the corrupted-query mAP gap to full corrupted fine-tuning while adding only 0.49% parameters and 0.05% FLOPs.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/26/2607.20900v1-dino-vpt-hierarchical-visual-prompt-tuning-for-joint-physical-digital-face-anti-spoofing",
+      "section": "quick",
+      "title_en": "DINO-VPT: Hierarchical Visual Prompt Tuning for Joint Physical-Digital Face Anti-Spoofing",
+      "authors": "Pierre Gallin-Martel, Mika Feng, Koichi Ito, Takafumi Aoki",
+      "date": "2026-07-23",
+      "pdf": "https://arxiv.org/pdf/2607.20900v1",
+      "score": "6.0",
+      "evidence": "使用基于DINO的视觉Transformer进行分类任务（人脸防伪）",
+      "tldr": "统一人脸反欺骗需应对物理和数字攻击，现有视觉语言模型依赖复杂多模态融合。本文提出DINO-VPT，一种轻量级纯视觉框架，通过分层视觉提示调优和提示路由网络动态注入特征条件提示，有效解耦不同欺骗伪影。在UniAttackData基准上，DINO-VPT准确率超越当前最优的基于VLM的方法。表明仅视觉架构在统一人脸反欺骗中能达到SOTA性能，无需多模态监督。",
+      "tags": "query:dino-fg",
+      "abstract_en": "With the increasing diversity of spoofing attacks, there is a growing demand for unified Face Anti-Spoofing (FAS) models capable of detecting both physical and digital threats. While existing Vision-Language Models (VLMs) demonstrate high generalization in this context, they heavily rely on complex multimodal fusion and external text encoders. In this paper, we propose DINO-VPT, a lightweight, vision-only framework leveraging hierarchical visual prompt tuning. By dynamically injecting prompts conditioned on input features via a Prompt Routing Network (PRN), our method effectively disentangles diverse spoofing artifacts without requiring multimodal fusion. Evaluations on the UniAttackData benchmark demonstrate that DINO-VPT achieves higher accuracy than state-of-the-art VLM-based methods. Our results indicate that a properly structured vision-only architecture can achieve state-of-the-art performance in unified FAS without the need for multimodal supervision.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/26/2607.21050v1-hyperimagenet-a-large-scale-high-spatial-resolution-hyperspectral-imagery-classification-benchmark",
+      "section": "quick",
+      "title_en": "HyperImageNet: A Large-Scale High-Spatial Resolution Hyperspectral Imagery Classification Benchmark",
+      "authors": "Chuguang Zeng, Jingtao Li, Yinhe Liu, Yanfei Zhong",
+      "date": "2026-07-23",
+      "pdf": "https://arxiv.org/pdf/2607.21050v1",
+      "score": "6.0",
+      "evidence": "使用基础模型进行细粒度高光谱分类",
+      "tldr": "高光谱图像细粒度分类面临数据集规模小、类别粗、缺乏实例标注的挑战。HyperImageNet包含26,084个航空高光谱图像块、224个光谱波段和138个细粒度类别，并提供像素语义标签与实例掩膜。基于严格空间分离的开放环境基准，评估了多种方法及HyperFree基础模型，结果显示其能有效支持细粒度分割和开放场景泛化。该基准为高光谱遥感提供了大规模、多任务的标准评价平台。",
+      "tags": "query:dino-fg",
+      "abstract_en": "We present HyperImageNet, a large-scale benchmark for fine-grained hyperspectral land-cover understanding. The dataset contains 26,084 airborne hyperspectral image patches with 224 spectral bands and 138 fine-grained land-cover categories. Unlike existing datasets, HyperImageNet provides raw imagery, pixel-level semantic labels, and object-level instance masks, supporting both semantic and instance segmentation. Furthermore, we establish an open-environment benchmark with strict spatial separation to evaluate representative methods and the HyperFree foundation model. Experimental results demonstrate the effectiveness of HyperImageNet for fine-grained hyperspectral understanding and open-environment remote sensing research.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/26/2607.21371v1-dinode-continuous-vision-text-alignment-for-open-vocabulary-semantic-segmentation",
+      "section": "quick",
+      "title_en": "DINOde: Continuous Vision-Text Alignment for Open-Vocabulary Semantic Segmentation",
+      "authors": "Sung-Hoon Yoon, Hoyong Kwon, Changgyoon Oh, Kuk-Jin Yoon",
+      "date": "2026-07-23",
+      "pdf": "https://arxiv.org/pdf/2607.21371v1",
+      "score": "6.0",
+      "evidence": "使用DINOv3自监督模型进行开放词汇语义分割，属于DINO系列基础模型研究",
+      "tldr": "开放词汇语义分割需跨模态对齐，但自监督模型DINOv3缺乏文本对齐能力。本文提出DINOde，基于常微分方程框架，通过语义文本流和全局上下文流将CLIP文本嵌入连续对齐至DINO视觉流形，并引入速度切面投影保持超球面几何。该方法避免离散MLP投影的流形纠缠，在多个基准上达到最优性能。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Open-vocabulary semantic segmentation (OVSS) leverages textual semantics to segment objects beyond predefined categories. While the self-supervised model DINOv3 provides strong structured visual representations, its lack of native textual alignment hinders its direct application to OVSS. To bridge this gap, we propose DINOde, an ODE-based framework that continuously aligns CLIP text embeddings with the DINO visual manifold. Our approach employs two complementary components: (i) Semantic Text Flow (STF), which evolves text embeddings toward the DINO manifold through a continuous ODE trajectory, and (ii) Global Context Flow (GCF), which progressively refines the holistic image representation carried by DINO's CLS token. To preserve the hyperspherical geometry of the feature space during this evolution, we further introduce Velocity Tangent Projection, which constrains the learned velocity field to the tangent space. By modeling alignment as a continuous trajectory, DINOde avoids the manifold entanglement inherent in discrete MLP projections and yields more robust cross-modal alignment. Extensive experiments demonstrate that DINOde consistently outperforms existing methods and achieves state-of-the-art performance across multiple OVSS benchmarks. The code is available at https://github.com/yoon307/DINOde.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

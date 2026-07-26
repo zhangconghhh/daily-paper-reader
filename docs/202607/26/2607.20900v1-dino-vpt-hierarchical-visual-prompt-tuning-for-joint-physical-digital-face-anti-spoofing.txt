@@ -1,0 +1,365 @@
+Title: DINO-VPT: Hierarchical Visual Prompt Tuning for Joint Physical-Digital Face Anti-Spoofing
+
+URL Source: https://arxiv.org/pdf/2607.20900v1
+
+Published Time: Fri, 24 Jul 2026 00:27:39 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# DINO-VPT: Hierarchical Visual Prompt Tuning for Joint Physical-Digital Face Anti-Spoofing 
+
+# Pierre Gallin-Martel, Mika Feng, Koichi Ito, and Takafumi Aoki Graduate School of Information Sciences, Tohoku University, Japan 
+
+> {pierre, mika, ito }@aoki.ecei.tohoku.ac.jp, aoki@ecei.tohoku.ac.jp
+
+# Abstract 
+
+With the increasing diversity of spoofing attacks, there is a growing demand for unified Face Anti-Spoofing (FAS) models capable of detecting both physical and digital threats. While existing Vision-Language Models (VLMs) demonstrate high generalization in this context, they heav-ily rely on complex multimodal fusion and external text encoders. In this paper, we propose DINO-VPT, alightweight, vision-only framework leveraging hierarchical visual prompt tuning. By dynamically injecting prompts conditioned on input features via a Prompt Routing Net-work (PRN), our method effectively disentangles diverse spoofing artifacts without requiring multimodal fusion. Evaluations on the UniAttackData benchmark demonstrate that DINO-VPT achieves higher accuracy than state-of-the-art VLM-based methods. Our results indicate that a prop-erly structured vision-only architecture can achieve state-of-the-art performance in unified FAS without the need for multimodal supervision. 
+
+# 1. Introduction 
+
+Face recognition (FR) systems have become an indis-pensable component of recent authentication infrastruc-tures. However, their widespread adoption has made their vulnerability to spoofing attacks a critical concern. Conse-quently, Face Anti-Spoofing (FAS) techniques are vital for ensuring the reliability of FR systems [ 24 , 16 ]. Early FAS research primarily focused on detecting physical presenta-tion attacks (PAs), such as printed photographs, displays, or masks, achieving high accuracy through deep learning and domain generalization methods [ 26 , 29 , 30 , 13 ]. In recent years, the rapid advancement of generative AI has made digital attack (DA) modalities, including face swapping and deepfakes, easily executable [ 5]. While phys-ical and digital attacks were traditionally treated as dis-tinct tasks, real-world scenarios necessitate addressing both threats simultaneously. This has led to an increasing de-mand for Unified Physical-Digital Attack Detection (UAD) [2]. However, jointly modeling material-based physical ar-tifacts and rendering-based digital anomalies in a unified feature space is extremely challenging due to the significant intra-class variation inherent in this setting. Recent UAD studies have proposed leveraging large Vision-Language Models (VLMs) with hierarchical prompt tuning based on language guidance [ 19 ]. While these multi-modal approaches exhibit strong generalization, they incur substantial computational costs and depend heavily on ex-ternal text encoders, posing challenges for practical deploy-ment in resource-constrained environments. Moreover, di-rect fine-tuning of large vision foundation models on UAD data is prone to overfitting, making it difficult to disentangle fine-grained differences between attack types. Feng et al. [8] demonstrated that DINOv2 with regis-ters [ 6] is highly effective as a vision foundation model for capturing the minute visual discrepancies characteristic of spoofing attacks. However, even with the powerful repre-sentation capabilities of DINOv2, a single feature extrac-tion strategy remains insufficient to cover the diverse attack spectrum in UAD. To address this issue, we propose DINO-VPT, a lightweight vision-only framework built upon DI-NOv2. We introduce hierarchical visual prompt tuning without relying on heavy textual supervision. Specifically, we designed a lightweight Prompt Routing Network (PRN) that dynamically controls prompt injection based on input-level features. This mechanism enables the efficient sep-aration of attack types across coarse to fine-grained levels and the acquisition of sophisticated feature representations without the need for multimodal fusion. Through extensive experiments, we demonstrate the ef-fectiveness of the proposed DINO-VPT. Evaluation on the UniAttackData benchmark [ 2] shows that DINO-VPT out-performs state-of-the-art VLM-based methods despite their massive computational requirements. Furthermore, on the standard cross-domain MICO protocol, our method main-tains generalization performance comparable to traditional image-based state-of-the-art methods. These results indi-cate that a properly structured vision-only design can pro-arXiv:2607.20900v1 [cs.CV] 23 Jul 2026 vide a high-accuracy and efficient solution for UAD without the need for multimodal supervision. 
+
+# 2. Related Work 
+
+The focus of FAS research has transitioned from detect-ing specific attacks to generalizing across unseen domains and diverse attack modalities. This section provides an overview of vision foundation models for FAS, multimodal approaches, and the emerging challenge of unified physical-digital attack detection. 
+
+2.1. Vision Foundation Models for FAS 
+
+Traditional FAS research has primarily utilized CNN-based methods to capture local texture artifacts, such as CDCN [ 35 ], PatchNet [ 28 ], ResNet50 [ 11 ], and models in-corporating auxiliary supervision [ 22 ]. However, because CNNs have a limited receptive field, they are often in-sufficient for modeling the global dependencies required to represent complex spoofing patterns. Recently, Vision Transformers (ViTs) [ 7] have achieved success in FAS due to their ability to capture long-range interactions via self-attention mechanisms. Feng et al. [ 10 ] demonstrated that intermediate ViT features retain robust spoofing representa-tions. Building on this, Feng et al. [ 8] demonstrated that DINOv2 with registers [ 6] is highly effective for capturing the minute visual discrepancies characteristic of spoofing attacks. Nevertheless, these vision-only methods rely on static feature extraction, which limits their adaptability to domain shifts. 
+
+2.2. Multimodal FAS and Prompt-Based Tuning 
+
+To enhance domain generalization, multimodal ap-proaches leveraging vision-language models (VLMs) such as CLIP [ 25 ] have been proposed. Frameworks like FLIP [27 ] and CFPL [ 18 ] improve robustness against unknown attacks by introducing semantic language guidance. These methods have established state-of-the-art (SOTA) perfor-mance on the standard MICO cross-domain protocol, which involves evaluation across diverse datasets including MSU-MFSD [ 33 ], CASIA-FASD [ 37 ], IDIAP Replay-Attack [ 4], and OULU-NPU [ 1]. Additionally, parameter-efficient fine-tuning via hierarchical prompt tuning, such as HIPTune [19 ], has been proposed to effectively adapt VLMs for FAS tasks. However, these multimodal frameworks introduce substantial computational overhead and depend heavily on external text encoders, limiting their practical deployment. 
+
+2.3. Unified Physical-Digital Attack Detection (UAD) 
+
+The primary focus of this work is Unified Physical-Digital Attack Detection (UAD), which was recently pro-posed by Chen et al. [ 2] as a non-trivial and emerging task in FAS. While conventional FAS methods address physical presentation attacks (PAs) and digital attacks (DAs) inde-pendently, the UAD paradigm necessitates a unified frame-work capable of detecting both attack modalities simultane-ously. Extracting discriminative features that capture both material-based physical cues and rendering-based digital ar-tifacts is challenging due to the significant intra-class vari-ation between these domains. Existing works such as MT-Face [ 12 ], SUEDE [ 34 ], and MoAE-CR [ 3] have pioneered this direction. However, the design of vision-only architec-tures that can effectively bridge the performance gap with VLM-based models remains an open challenge. This paper explores the potential of a vision-only framework for robust UAD. 
+
+# 3. Proposed Method: DINO-VPT 
+
+Our proposed DINO-VPT introduces an efficient, vision-only framework tailored for UAD. The core idea is to adapt a powerful vision foundation model to heterogeneous spoofing cues using a hierarchical, dynamic prompt injec-tion mechanism. By organizing task-specific knowledge into a structured Visual Prompt Tree (VP-Tree) and dynam-ically selecting these prompts via lightweight routing net-works, the framework achieves progressive specialization from coarse attack modalities to fine-grained subtypes. Un-like prior multimodal formulations, our approach operates in the visual domain, enabling a simpler and more efficient design while supporting robust generalization. The overall pipeline is illustrated in Fig. 1. During training, an input image first passes through the Simulated Spoofing Cues (SSC) module, which stochastically applies domain-specific augmentations and dynamic relabeling to ensure comprehensive coverage of the hierarchical label space. The image is then converted into a sequence of patch embeddings via a linear projection layer and processed by a pretrained DINOv2 ViT-B/14 backbone with registers [ 6]. To adapt these representations to spoof-specific cues, learn-able visual prompts are injected at multiple depths of the transformer, enabling layer-wise modulation of features. This injection is dynamically governed by PRNs operating directly on the initial input-level features. At each hierarchy level l, the active PRN functions as a multiplexer: it selects a specific prompt token from the VP-Tree for injection, while simultaneously outputting a token index ( il) to condition-ally activate the appropriate PRN at the subsequent depth. The final representation, obtained from the class token of the last encoder block, is passed to a classification head to predict the liveness label. The entire framework, including the routing decisions and binary classification, is jointly op-timized end-to-end. Specifically, the backbone is initialized with pretrained weights and fully fine-tuned, while prompt embeddings, PRNs, and the classification head are learned from scratch. Classification head 
+
+> Encoder x 5
+> Encoder x 7
+
+DINOv2 with Registers 
+
+Real or Fake 
+
+> Linear projection
+
+Simulated Spoofing Cues  
+
+> Live
+> Digital Phys. Print Replay
+> Forgery Adv.
+
+Patch Class token 
+
+Register 
+
+Prompt token ( l=1 )
+
+Token index Prompt set 
+
+Prompt Routing Network 
+
+> Live
+
+Token selector 
+
+Softmax 
+
+Pooling 
+
+Linear classifier 
+
+Token attention scoring 
+
+Prompt token ( l=2 )
+
+GT label GT label 
+
+Live SPSC (Physical) SDSC (Digital) 
+
+Visual Prompt Tree 
+
+Input      
+
+> Figure 1. Overview of the proposed DINO-VPT framework. During training, an input image first passes through the Simulated Spoofing Cues (SSC) module, which stochastically applies domain-specific augmentations (Physical or Digital) for dynamic relabeling. The image is then processed by a DINOv2 backbone with registers, where learnable visual prompts are injected at multiple levels. These prompts are dynamically selected by Prompt Routing Networks (PRNs) operating directly on initial patch embeddings. Guided by the Visual Prompt Tree (VP-Tree), each PRN functions as a conditional multiplexer: it retrieves a specific prompt from the prompt set Slfor injection, while simultaneously outputting an index ilto conditionally activate the highly specialized routing module at the next hierarchy level. This mechanism enables progressive adaptation from coarse attack modalities to fine-grained subtypes.
+
+The subsequent sections detail the core components of our architecture: the foundation backbone (Sec. 3.1 ), the structure of VP-Tree (Sec. 3.2 ), PRN (Sec. 3.3 ), SSC (Sec. 
+
+3.4 ), and the loss functions (Sec. 3.5 ). 
+
+3.1. BackBone: DINOv2 with Registers 
+
+UAD requires highly generalized and robust image fea-tures to capture diverse spoofing cues, ranging from sub-tle physical artifacts (e.g., moir´ e patterns) to sophisticated digital manipulations. Therefore, we adopt DINOv2 with registers [ 6], specifically the ViT-B/14 architecture, as the backbone of our framework. Unlike traditional FAS mod-els trained from scratch on limited domains, DINOv2 pro-vides general-purpose visual representations that encode both high-level global semantics and fine-grained spatial details necessary for identifying heterogeneous attack pat-terns. The efficacy of this architecture in the FAS do-main has been recently established by Feng et al. [ 8], who demonstrated its superiority over standard supervised back-bones in cross-domain spoofing detection. Furthermore, the inclusion of register tokens is particularly essential for our framework. Standard ViT models often exhibit high-norm outlier tokens in non-informative regions, which can disrupt the feature representation and interfere with the extraction of subtle spoofing cues. Registers effectively absorb these uninformative signals, leading to more stable and concen-trated attention maps. Consequently, this stability enhances our dynamic routing mechanism, ensuring that the patch-level features processed by PRNs reflect task-relevant in-formation rather than background noise. 
+
+3.2. Hierarchical Visual Prompt Injection (VP-Tree) 
+
+Expanding on prior hierarchical prompt tuning ap-proaches such as HiPTune [ 19 ], we organize task-specific visual prompts within a structured representation referred to as the VP-Tree. We adapt and simplify its architecture to align with the unified attack taxonomy defined in UAD benchmarks. In this tree structure, each node is associ-ated with a single learnable prompt token, and each level l
+
+corresponds to progressively finer-grained attack subtypes. The root level ( l = 1 ) contains coarse categories represent-ing “Live,” “Digital,” and “Physical” modalities ( S1). The subsequent level ( l = 2 ) refines these into specific attack subtypes ( S2 
+
+> k
+
+): “Digital” attacks branch into “Forgery” and “Adversarial,” while “Physical” attacks branch into “Print” and “Replay.” To maintain a consistent tensor structure dur-ing routing, a dedicated identity prompt is also assigned to the “Live” class at l = 2 . These visual prompts act as task-specific conditioning signals and are injected at different depths of the transformer sequence, following the hierarchi-cal progression of the VP-Tree. Specifically, the selected prompt at l = 1 is injected immediately after the linear projection layer (prior to the first encoder block), whereas the l = 2 prompt is introduced before the 5th transformer block. This depth-wise injection encourages layer special-ization at different levels of granularity while propagating task-relevant information to deeper layers. Unlike tradi-tional prompt tuning that freezes the foundation model, we adopt this paradigm in conjunction with full backbone fine-tuning using a smaller learning rate for the pretrained pa-rameters. This joint optimization enables the backbone to adaptively modulate the influence of the injected prompts without losing its inherent generalization capabilities. 
+
+3.3. Prompt Routing Network (PRN) 
+
+To dynamically select the most appropriate prompts from the VP-Tree, we introduce the PRN. As illustrated in Fig. 1, each PRN operates directly on the initial patch em-beddings obtained from the linear projection layer. Unlike class token based routing strategies [ 32 , 31 ] that rely on in-termediate layers for prompt selection, our approach lever-ages rich spatial information directly from the input level. This maintains a consistent input space and avoids circular dependencies between prompt selection and feature adap-tation. The PRN employs a token attention scoring mech-anism followed by a softmax operation. These normalized scores are used to perform a weighted pooling of the patch features, yielding a global representation that is passed to a linear classifier. Each PRN functions as a conditional multi-plexer with a dual-output mechanism. At a given level l, the linear classifier predicts a probability distribution over the available child nodes, determining the winning token index 
+
+il. This index il serves two distinct purposes. First, it is passed to a token selector, which retrieves the correspond-ing visual prompt from the prompt set Sl for injection into the transformer sequence. For l = 1 and l = 2 , prompts are empirically injected before the 1st and 6th encoder blocks to optimize feature modulation as shown in Fig. 1. Second, il    
+
+> Color distortion Moiré pattern Digital artifacts Original
+> Figure 2. Visual examples of dynamic relabeling applied by the Simulated Spoofing Cues (SSC) module. From left to right, the columns display: the original Live image, Color Distortion (SPSC for Print simulation), Moir´ e Pattern (SPSC for Replay simula-tion), and geometric inconsistencies (SDSC for Digital simula-tion). These stochastically applied transformations ensure com-prehensive coverage of the hierarchical attack taxonomy defined in our VP-Tree.
+
+acts as a control signal to activate the specific PRN module associated with this index at the subsequent level. This con-ditional activation enforces consistency across the VP-Tree. For instance, the root router (PRN 1) evaluates the coarse categories and outputs an index i1. If the network predicts the “Physical” class (e.g., i1 = 3 ), only the corresponding downstream router (PRN 23) is evaluated at the next depth (l = 2 ), completely bypassing the digital branch. This dy-namic routing not only prevents incompatible prompts from being injected simultaneously but also simplifies the deci-sion space for deeper routers by restricting them to highly specialized classification tasks. 
+
+3.4. Simulated Spoofing Cues (SSC) 
+
+To ensure meaningful coverage of all attack subtypes within the VP-Tree, we incorporate SSC into the data aug-mentation pipeline. Rather than serving as a conventional augmentation strategy, SSC acts as a dynamic relabeling mechanism. As shown in Fig. 1, a subset of live images is stochastically transformed into synthetic physical or digital spoof samples during training. These samples are relabeled as “Spoof,” with subtype annotations updated to match the corresponding VP-Tree routing paths. SSC employs Simu-lated Physical Spoofing Cues (SPSC) and Simulated Digital Spoofing Cues (SDSC) [ 12 ]. SPSC simulates physical at-tacks through appearance degradations, approximating print attacks with severe color perturbations and replay attacks with moir’e-like patterns. Conversely, SDSC simulates dig-ital attacks by introducing inconsistencies between facial appearance and geometry via spatial transformations of the input image and its corresponding depth map, producing ar-tifacts typical of face swapping and generative pipelines. Adversarial attacks are not simulated due to the lack of a reliable appearance-based approximation strategy. By ex-posing the model to these simulated variations, SSC allevi-ates class imbalance within the tree branches and improves the robustness of both routing decisions and feature repre-sentations. Examples are shown in Fig. 2.
+
+3.5. Loss Function 
+
+To jointly optimize the classification head and the hier-archical routing modules, the entire DINO-VPT framework is trained end-to-end using a combined objective function. The total loss is formulated as: 
+
+Ltotal = λbin Lbinary + λ1L1 
+
+> route
+
++ λ2L2
+
+> route
+
+, (1) where Lbinary is the objective for the final binary (live vs. spoof) classification, and L1
+
+> route
+
+, L2 
+
+> route
+
+denote the auxiliary routing losses at levels l = 1 and l = 2 of the VP-Tree, respectively. The hyperparameters λbin , λ1, and λ2 balance the contribution of each term. 
+
+Binary Classification Loss. To address varying difficulty levels across heterogeneous spoofing attacks, the final clas-sification head is supervised using Focal Loss calculated by 
+
+Lbinary = −α ∑
+
+> c∈{ 0,1}
+
+(1 − pc)γ yc log pc, (2) where pc is the predicted probability for class c, yc is the one-hot ground-truth label, and γ is the focusing parame-ter. While α typically controls class weighting, we apply it uniformly in our implementation, as severe class imbalance is inherently mitigated through weighted random sampling during training and the dynamic relabeling of the SSC mod-ule. 
+
+Routing Losses. To ensure that the PRNs learn a mean-ingful partitioning of the spoofing cues, each router is trained using a standard cross-entropy loss over its spe-cific subtype labels, rather than simple binary supervision. Specifically, L1 
+
+> route
+
+optimizes the root router (PRN 1) to clas-sify the coarse modalities defined in S1 (“Live,” “Physical,” “Digital”). Similarly, L2 
+
+> route
+
+optimizes the conditionally ac-tivated child router at the subsequent depth ( l = 2 ) for fine-grained subtype classification defined in S2 
+
+> k
+
+(e.g., “Print” vs. “Replay” for the physical branch, or “Forgery” vs. “Ad-versarial” for the digital branch). These auxiliary routing losses are computed exclusively for the active branches, strictly enforcing the conditional execution flow dictated by the VP-Tree. 
+
+# 4. Experiments and Discussion 
+
+This section presents a comprehensive evaluation of the proposed DINO-VPT framework. We first describe the de-tails of the datasets, evaluation metrics, and implementa-tion settings. Subsequently, we evaluate our method against state-of-the-art approaches on both the unified face anti-spoofing benchmark (UniAttackData) and the cross-dataset benchmark (MICO). Finally, we analyze the computational efficiency of our approach and conduct extensive ablation studies to validate the core components. 
+
+4.1. Datasets and Evaluation Metrics 
+
+To evaluate the proposed framework, we conduct exper-iments on two benchmarks: UniAttackData [ 2] for unified physical-digital attack detection, and the MICO benchmark for standard cross-dataset physical presentation attack de-tection. 
+
+UniAttackData. UniAttackData is the largest unified face anti-spoofing dataset, comprising 28,706 images from 1,800 subjects. It contains 1,800 live faces, 5,400 physical attacks (PAs), and 21,506 digital attacks (DAs), including adversarial examples. A key feature is its strict identity con-sistency, where complete attack types are available for every identity across both physical and digital domains. This pre-vents models from relying on identity-specific cues instead of spoofing artifacts. Following the official protocol, we evaluate under two settings. Protocol 1 (P1) measures intra-domain performance, with training, validation, and evalua-tion sets sharing all attack modalities but differing in subject identities. Protocol 2 (P2) evaluates cross-domain general-ization using a leave-one-type-out strategy. In P2.1, models are trained on digital and adversarial attacks and evaluated on unseen physical attacks, while P2.2 trains on physical attacks and evaluates on unseen digital and adversarial at-tacks. We also compare against the benchmark baseline, UniAttackDetection+ (UAD+) [ 2]. 
+
+MICO Benchmark. To verify that our model retains ro-bust generalization against presentation attacks, we use the widely adopted MICO protocol. This involves four stan-dard datasets: MSU-MFSD [ 33 ] (M), IDIAP Replay-Attack [4] (I), CASIA-FASD [ 37 ] (C), and OULU-NPU [ 1] (O). Following the leave-one-dataset-out strategy, the model is trained on three datasets and tested on the remaining unseen dataset. 
+
+Evaluation Metrics. For UniAttackData, we follow the ISO/IEC 30107-3 standards and report the Average Clas-sification Error Rate (ACER) as the primary ranking met-ric. ACER is defined as the mean of the Attack Presenta-tion Classification Error Rate (APCER) and the Bona Fide Presentation Classification Error Rate (BPCER). The deter-mination of ACER on the test set relies on the threshold established at the Equal Error Rate (EER) of the evaluation set. We also report classification accuracy (ACC) and the Area Under the ROC Curve (AUC) to provide complemen-tary perspectives. For the MICO benchmark, performance Table 1. Experimental results on Protocols 1 and 2 of UniAttackData. Protocol 2 reports the average of results from 2.1 and 2.2 (mean ±  
+
+> std). For MTFace and our proposed method, the specific results for P2.1 and P2.2 are provided in parentheses below the average as (P2.1, P2.2). The best and second-best results are highlighted in bold and underline , respectively. Metrics marked as “—” indicate values not reported in the original papers. All metrics are reported as percentages (%).
+
+Method P1 P2 
+
+ACER ↓ AUC ↑ ACC ↑ ACER ↓ AUC ↑ ACC ↑
+
+UAD+ (baseline) [ 2] 0.36 99.97 99.53 9.77 ±6.05 96.31 ±2.91 75.76 ±20.73 ResNet50 [ 11 ] 1.35 99.79 98.83 34.60 ±5.31 87.89 ±6.11 53.69 ±6.39 ViT-B/16 [ 7] 5.92 97.00 92.29 33.69 ±9.33 83.77 ±2.35 52.43 ±25.88 DINOv2 w/ Reg [ 6] 3.40 99.54 97.00 18.55 ±0.11 89.32 ±0.02 82.83 ±1.14 Auxiliary [ 22 ] 1.13 99.82 98.68 42.98 ±6.77 76.27 ±12.06 37.71 ±26.45 CDCN [ 35 ] 1.40 99.52 98.57 34.33 ±0.66 77.46 ±17.56 53.10 ±12.70 FFD [ 5] 2.01 99.57 97.97 44.20 ±1.32 80.97 ±2.86 40.43 ±14.88 MoAE-CR [ 3] 0.37 99.97 99.47 15.13 ±12.10 92.09 ±7.11 85.41 ±6.85 SUEDE [ 34 ] 0.36 99.70 99.50 11.99 ±7.79 91.49 ±4.99 88.99 ±6.96 
+
+HIPTune [ 19 ] 0.33 99.99 — 10.38 97.82 —
+
+MTFace [ 12 ] 0.20 — — 1.49 ±0.17 — —(1.32, 1.65) 
+
+DINO-VPT (ours) 0.07 99.99 99.91 0.63 ±0.18 99.75 ±0.20 99.33 ±0.23 
+
+(0.45, 0.81) (99.55, 99.95) (99.56, 99.10) 
+
+is measured using the Half Total Error Rate (HTER) and AUC. 
+
+4.2. Implementation Details 
+
+DINO-VPT is implemented in PyTorch and optimized end-to-end for 200 epochs using AdamW [ 23 ] with early stopping (patience = 20). The ViT-B/14 backbone with reg-isters is initialized from DINOv2 pretrained weights and fine-tuned with a learning rate of 5 × 10 −6. Prompt embed-dings, routing modules (PRNs), and the classification head are randomly initialized and trained with a learning rate of 
+
+5 × 10 −5.Training uses a batch size of 32. To address class imbal-ance, we employ a weighted random sampler maintaining a target live sample ratio of 0.3 per batch. This empiri-cally provides an optimal balance for the root routing task (l = 1 ), preventing augmented spoof samples from over-shadowing real attack distributions. Focal loss parameters are set to γ = 2 and α = 0 .9. Loss weights are λbin = 1 ,
+
+λ1 = 1 , and λ2 = 0 .5, reducing the contribution of deeper routing supervision. SSC augmentation probabilities are configured per pro-tocol to compensate for missing modalities. For P1, SPSC and SDSC are both applied with probability 0.2. For P2.1 (digital-to-physical), only SPSC is applied with probability 0.6 to synthesize the missing physical domain. For P2.2 (physical-to-digital), only SDSC is applied with probability 0.2, preventing overfitting to forgery artifacts while preserv-ing generalization to unseen digital attacks. Unless other-wise specified, all optimization and architectural hyperpa-rameters are shared across experiments. Protocol-specific augmentation probabilities are adjusted only to reflect the modality imbalance of each protocol. 
+
+4.3. Experimental Results 
+
+In this section, we present the quantitative evaluation of the proposed DINO-VPT framework. We first compare our method against state-of-the-art approaches on the UniAt-tackData and MICO benchmarks. We then analyze the com-putational efficiency of our model and conclude with com-prehensive ablation studies to validate the effectiveness of our core architectural components. 
+
+Results on UniAttackData. Table 1 summarizes the per-formance of our method on the UniAttackData benchmark. For a comprehensive comparison, we include state-of-the-art VLM-based approaches (e.g., UAD+ [ 2], MoAE-CR [3], SUEDE [ 34 ], and HiPTune [ 19 ]) that leverage robust vision-language priors, as well as MTFace [ 12 ], a vision-only baseline that utilizes simulated spoofing cues on a ResNet-50 backbone. Our DINO-VPT framework achieves state-of-the-art performance across both evaluation proto-cols. While most approaches perform strongly on Proto-col 1 (seen attacks), they suffer significant performance degradation on Protocol 2 due to the severe domain shift introduced by unseen attack modalities. In contrast, our method attains an average ACER of 0.63% on P2. Fur-thermore, a detailed analysis of P2 demonstrates consistent cross-modality generalization in both directions, achiev-ing 0.45% ACER for digital-to-physical (P2.1) and 0.81% Table 2. Experimental results on the MICO benchmark [%]. The best and second-best results among vision-only methods are highlighted in bold and underline , respectively. VLM-based multimodal methods are listed at the bottom for reference. 
+
+Method CIO →M OMI →C OCM →I ICM →O Avg. 
+
+HTER ↓ AUC ↑ HTER ↓ AUC ↑ HTER ↓ AUC ↑ HTER ↓ AUC ↑ HTER ↓ AUC ↑
+
+DRDG [ 21 ] 12.43 95.81 19.05 88.79 15.56 91.79 15.63 91.75 15.67 92.04 ANRL [ 20 ] 10.83 96.75 17.83 89.26 16.03 91.04 15.67 91.90 15.09 92.24 PatchNet [ 28 ] 7.10 98.46 11.33 94.58 13.40 95.67 11.82 95.07 10.91 95.95 DiVT-M [ 17 ] 2.86 99.14 8.67 96.92 3.71 99.29 13.06 94.04 7.08 97.35 IADG [ 38 ] 5.41 98.19 8.70 96.44 10.62 94.50 8.86 97.14 8.40 96.57 GAC-FAS [ 14 ] 5.00 97.56 8.20 95.16 4.29 98.87 8.60 97.16 6.52 97.19 Li [ 15 ] 12.92 94.33 9.26 96.98 10.87 95.46 15.13 91.43 12.05 94.55 Feng [ 9] 8.86 96.95 4.49 98.92 9.81 96.70 7.35 98.07 7.63 97.66 
+
+DINO-VPT (ours) 9.14 96.61 10.62 96.10 12.53 95.75 6.56 98.10 9.71 96.64 
+
+FLIP [ 27 ] 4.95 98.11 0.54 99.98 4.25 99.07 2.31 99.63 3.01 99.20 CFPL [ 18 ] 1.43 99.28 2.56 99.10 5.43 98.41 2.50 99.42 2.98 99.05 I-FAS [ 36 ] 0.32 99.88 0.04 99.99 3.22 98.48 1.74 99.66 1.33 99.50 
+
+> Table 3. Parameter count for different methods. Trainable param-eters are estimated based on reported architectures when not ex-plicitly provided. The lowest parameter counts are highlighted in
+> bold .
+
+Method Trainable [M] Total [M] 
+
+CFPL [ 18 ] 94 157 FLIP [ 27 ] 170 170 I-FAS [ 36 ] 104 3,100 HiPTune [ 19 ] 3.4 150 UAD+ [ 2] 18 150 MTFace [ 12 ] 25.6 25.6 
+
+DINO-VPT 87.4 87.4 
+
+ACER for physical-to-digital (P2.2). This balanced per-formance demonstrates that structuring attack representa-tions through the hierarchical VP-Tree, combined with dy-namic relabeling, captures transferable features across dis-tinct spoofing mechanisms without relying on external tex-tual data. 
+
+Cross-Dataset Evaluation on MICO. To evaluate gen-eralization in traditional physical-only attack scenarios, we use the MICO benchmark under a leave-one-dataset-out protocol. As shown in Table 2, our vision-only DINO-VPT achieves performance comparable to state-of-the-art image-encoder-based methods. While VLM-based approaches (e.g., FLIP, I-FAS) achieve lower error rates, they heavily rely on massive model sizes and external textual supervi-sion. In contrast, our framework maintains robust gener-alization against standard physical attacks without requir-ing cross-modal priors. This result confirms that optimizing explicitly for unified physical-digital attack detection does not compromise the model’s fundamental physical anti-spoofing capabilities. 
+
+Computational Efficiency. Table 3 compares the param-eter efficiency of our method against recent state-of-the-art approaches. Prompt-based multimodal methods (e.g., HiPTune, UAD+) exhibit a very small number of trainable parameters by freezing large vision-language backbones. However, these models still require approximately 150M to over 3B total parameters, making them computation-ally heavy during inference. Conversely, while MTFace is highly compact (25.6M), it suffers from performance degra-dation on the cross-modality P2 setting. In contrast, our DINO-VPT operates on a single vision backbone with a to-tal of 87.4M parameters, as the prompt embeddings and routing modules introduce negligible overhead. The re-sulting model requires 44.94 GFLOPs per inference and achieves an average inference latency of 0.29 ms, measured on an NVIDIA A100 80GB GPU. This result demonstrates a high performance-efficiency trade-off: achieving the high-est UAD accuracy through a compact, end-to-end architec-ture without relying on massive auxiliary models. 
+
+Ablation Study. To validate the core architectural contri-butions of our framework, we perform ablation studies on the hierarchical depth and routing strategy as shown in Ta-bles 4 and 5.First, we evaluate the impact of SSC and the VP-Tree depth. As shown in Table 4, the baseline without SSC fails under cross-modality conditions (ACER > 18% ). Applying SSC (Depth None) significantly improves performance but exhibits a significant asymmetry: it achieves 0.45% ACER on P2.1 but degrades to 7.63% on P2.2. Introducing the Table 4. Ablation study on the impact of the hierarchical depth and SSC. “None” indicates the absence of PRN modules (equivalent to the standalone DINOv2 with Registers backbone). The specific results for P2.1 and P2.2 are provided in parentheses below the average as (P2.1, P2.2). All metrics are reported as percentages [%]. 
+
+SSC PRN Depth P1 P2 
+
+ACER ↓ AUC ↑ ACC ↑ ACER ↓ AUC ↑ ACC ↑
+
+None 3.40 99.54 97.00 18.55 ±0.11 89.32 ±0.02 82.84 ±1.15 (18.44, 18.66) (89.34, 89.30) (81.69, 83.98) 1 2.85 99.58 97.11 19.79 ±2.55 88.81 ±2.89 82.93 ±0.11 (17.24, 22.34) (91.70, 85.92) (82.82, 83.03) 2 2.52 99.65 97.48 16.55 ±2.68 91.49 ±2.28 85.34 ±1.27 (13.87, 19.23) (93.77, 89.21) (86.60, 84.07) 
+
+X None 0.09 99.99 99.93 4.04 ±3.59 95.96 ±3.59 97.45 ±2.13 (0.45, 7.63) (99.55, 92.37) (99.58, 95.32) 
+
+X 1 0.10 99.99 99.88 1.65 ±0.54 99.78 ±0.07 98.49 ±0.44 
+
+(1.11, 2.18) (99.85, 99.71) (98.93, 98.05) 
+
+X 2 0.07 99.99 99.91 0.63 ±0.18 99.75 ±0.20 99.33 ±0.23 
+
+(0.45, 0.81) (99.55, 99.95) (99.56, 99.10)    
+
+> Table 5. Ablation study on the impact of the routing strategy. The best result is highlighted in bold .A checkmark ( X) in “Dynamic Routing” indicates our PRN-based input-dependent prompt selection, while its absence denotes a static prompt configuration. The specific results for P2.1 and P2.2 are provided in parentheses below the average as (P2.1, P2.2). All metrics are reported as percentages [%].
+
+Dynamic Routing P1 P2 
+
+ACER ↓ AUC ↑ ACC ↑ ACER ↓ AUC ↑ ACC ↑
+
+0.08 99.99 99.87 5.23 ±4.84 98.25 ±1.74 94.85 ±4.77 (0.39, 10.07) (99.99, 96.51) (99.62, 90.08) 
+
+X 0.07 99.99 99.91 0.63 ±0.18 99.75 ±0.20 99.33 ±0.23 
+
+(0.45, 0.81) (99.55, 99.95) (99.56, 99.10) 
+
+hierarchical PRN (Depth 2) effectively resolves this imbal-ance, reducing the P2.2 ACER to 0.81% and achieving the lowest average ACER of 0.63%. This result demonstrates that augmentation is insufficient to handle complex domain shifts; the hierarchical PRN is essential for bridging the gap across diverse attack modalities. Table 5 confirms the necessity of input-dependent prompt selection. We compare our dynamic routing with a static configuration where the same learnable prompts are fixed at each layer. While the static approach performs well on seen attacks (P1), it overfits to specific modalities under cross-domain conditions, resulting in a catastrophic 10.07% ACER on P2.2. In contrast, our dynamic PRN activates the appropriate prompt subsets based on the input features, gen-eralizing in both directions. These results demonstrate that the dynamic routing mechanism of the VP-Tree is indis-pensable for robust unified attack detection. 
+
+# 5. Conclusion 
+
+In this paper, we proposed DINO-VPT, a lightweight, vision-only framework for unified physical-digital face anti-spoofing. By integrating a hierarchical VP-Tree with dy-namic routing, our method enables input-conditioned fea-ture specialization while maintaining the computational ef-ficiency of a single backbone. Combined with SSC to miti-gate modality imbalance, DINO-VPT achieves state-of-the-art cross-modality generalization on the challenging UniAt-tackData benchmark. This approach successfully resolves the performance asymmetry between physical and digital domain shifts without relying on external vision-language models. In future work, we will explore more expressive routing strategies, such as intermediate feature-based rout-ing, to further enhance reliability in complex scenarios. Ad-ditionally, we plan to extend this hierarchical prompt frame-work to datasets lacking explicit hierarchical annotations by uncovering latent label structures. 
+
+# 6. Acknowledgment 
+
+This work was supported in part by JSPS KAKENHI JP 23H00463 and 25K03131, and JST Moonshot R&D Grant Number JPMJMS2215. References 
+
+[1] Z. Boulkenafet, J. Komulainen, L. Li, X. Feng, and A. Hadid. OULU-NPU: A mobile face presentation attack database with real-world variations. IEEE Int’l Conf. Automatic Face Gesture Recog. , pages 612–618, June 2017. 2, 5
+
+[2] S. Chen, A. Liu, H. Fang, H. Yuan, J. Zheng, D. Zeng, Y. Liu, J. Deng, S. Escalera, X. Liu, J. Wan, and Z. Lei. Uniattack: Unified physical-digital face attack detection. Int. J. Comput. Vis. , 134:88, Jan. 2026. 1, 2, 5, 6, 7
+
+[3] S. Chen, A. Liu, J. Zheng, J. Wan, K. Peng, S. Escalera, and Z. Lei. Mixture-of-attack-experts with class regulariza-tion for unified physical-digital face attack detection. AAAI ,39:2195–2203, Apr. 2025. 2, 6
+
+[4] I. Chingovska, A. Anjos, and S. Marcel. On the effective-ness of local binary patterns in face anti-spoofing. Int. Conf. Biometrics Special Interest Group , pages 1–7, Sept. 2012. 2,
+
+5
+
+[5] H. Dang, F. Liu, J. Stehouwer, X. Liu, , and A. K. Jain. On the detection of digital face manipulation. IEEE/CVF Conf. Comput. Vis. Pattern Recog. , pages 5781–5790, Oct. 2020. 
+
+1, 6
+
+[6] T. Darcet, M. Oquab, J. Mairal, and P. Bojanowski. Vision transformer needs register. Int. Conf. Learn. Represent. , Apr. 2024. 1, 2, 3, 6
+
+[7] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly, J. Uszkoreit, and N. Houlsby. An image is worth 16x16 words: Transformers for image recognition at scale. Int. Conf. Learn. Represent. , Jan. 2021. 2, 6
+
+[8] M. Feng, G.-M. P. A., K. Ito, and T. Aoki. Optimizing DI-NOv2 with registers for face anti-spoofing. Int. Conf. Com-put. Vis. Worksh. , pages 3256–3262, Oct. 2025. 1, 2, 3
+
+[9] M. Feng, P. Gallin-Martel, K. Ito, and T. Aoki. Benchmark-ing vision foundation models for domain-generalizable face anti-spoofing. IEEE/CVF Conf. Comput. Vis. Pattern Recog. Worksh. , Apr. 2026. 7
+
+[10] M. Feng, K. Ito, T. Aoki, T. Ohki, and M. Nishigaki. Lever-aging intermediate features of vision transformer for face anti-spoofing. IEEE/CVF Conf. Comput. Vis. Pattern Recog. Worksh. , pages 3464–3472, June 2025. 2
+
+[11] K. He, X. Zhang, S. Ren, and J. Sun. Deep residual learning for image recognition. IEEE/CVF Conf. Comput. Vis. Pattern Recog. , pages 770–778, June 2016. 2, 6
+
+[12] X. He, D. Liang, S. Yang, Z. Hao, H. Ma, M. Binjie, X. Li, Y. Wang, P. Yan, and A. Liu. Joint physical-digital facial attack detection via simulating spoofing clues. IEEE/CVF Conf. Comput. Vis. Pattern Recog. Worksh. , pages 995–1004, June 2024. 2, 4, 6, 7
+
+[13] Y. Jia, J. Zhang, S. Shan, and X. Chen. Single-side domain generalization for face anti-spoofing. IEEE/CVF Conf. Com-put. Vis. Pattern Recog. , pages 8484–8493, June 2020. 1
+
+[14] B. Le and S. Woo. Gradient alignment for cross-domain face anti-spoofing. IEEE/CVF Conf. Comput. Vis. Pattern Recog. ,pages 188–189, June 2024. 7
+
+[15] D. Li, G. Chen, X. Wu, Z. Yu, and M. Tan. Face anti-spoofing with cross-stage relation enhancement and spoof material perception. Neural Networks , 175:106275, July 2024. 7
+
+[16] S. Li and A. Jain. Handbook of Face Recognition . Springer, 2011. 1
+
+[17] C. Liao, W. Chen, H. Liu, Y. Yeh, M. Hu, and C. Chen. Domain invariant vision transformer learning for face anti-spoofing. IEEE/CVF Winter Conf. Applications of Comput. Vis. , pages 6087–6096, Jan. 2023. 7
+
+[18] A. Liu, S. Xue, J. Gan, J. Wan, L. Y., J. Deng, S. Escalera, and Z. Lei. CFPL-FAS: Class free prompt learning for gen-eralizable face anti-spoofing. IEEE/CVF Conf. Comput. Vis. Pattern Recog. , pages 222–232, 2024. 2, 7
+
+[19] A. Liu, H. Yuan, X. Guo, H. Ma, W. Zhuang, Y. Miao, C. Hong, C. Song, J. Lan, Q. Chu, T. Gong, Y. Liang, W. Wang, J. Wan, X. Liu, and Z. Lei. Benchmarking unified face attack detection via hierarchical prompt tuning. arXiv preprint , July 2025. 1, 2, 3, 6, 7
+
+[20] S. Liu, K. Zhang, T. Yao, M. Bi, S. Ding, J. Li, M. Huang, and L. Ma. Adaptive normalized representation learning for generalizable face anti-spoofing. ACM Int. Conf. Multime-dia , pages 1469–1477, Oct. 2021. 7
+
+[21] S. Liu, K. Zhang, T. Yao, K. Sheng, S. Ding, Y. Tai, J. Li, Y. Xie, and L. Ma. Dual reweighting domain generalization for face presentation attack detection. IJCAI , pages 867–873, 2021. 7
+
+[22] Y. Liu, A. Jourabloo, and X. Liu. Learning deep mod-els for face anti-spoofing: Binary or auxiliary supervision. 
+
+IEEE/CVF Conf. Comput. Vis. Pattern Recog. , pages 389– 398, June 2018. 2, 6
+
+[23] I. Loshchilov and F. Hutter. Decoupled weight decay regu-larization. Int. Conf. Learn. Represent., 2019. 6
+
+[24] S. Marcel, J. Fierrez, and N. Evans. Handbook of Biometric Anti-Spoofing . Springer, 2023. 1
+
+[25] A. Radford, J. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agar-wal, G. Sastry, A. Askell, P. Mishkin, J. Clark, G. Krueger, and I. Sutskever. Learning transferable visual models from natural language supervision. Int. Conf. Learn. Represent. ,pages 8748–8763, July 2021. 2
+
+[26] R. Shao, X. Lan, J. Li, and P. Yuen. Multi-adversarial dis-criminative deep domain generalization for face presenta-tion attack detection. IEEE/CVF Conf. Comput. Vis. Pattern Recog. , pages 10023–10031, June 2019. 1
+
+[27] K. Srivatsan, M. Naseer, and K. Nandakumar. FLIP: Cross-domain face anti-spoofing with language guidance. Int. Conf. Comput. Vis. , pages 19685–19696, Oct. 2023. 2, 7
+
+[28] C. Wang, Y. Lu, S. Yang, and S. Lai. PatchNet: A simple face anti-spoofing framework via fine-grained patch recognition. 
+
+IEEE/CVF Conf. Comput. Vis. Pattern Recog. , pages 20281– 20290, June 2022. 2, 7
+
+[29] G. Wang, H. Han, S. Shan, and X. Chen. Cross-domain face presentation attack detection via multi-domain disentangled representation learning. IEEE/CVF Conf. Comput. Vis. Pat-tern Recog. , pages 6677–6686, June 2020. 1
+
+[30] Z. Wang, Z. Wang, Z. Yu, W. Deng, J. Li, T. Gao, and Z. Wang. Domain generalization via shuffled style assem-bly for face anti-spoofing. IEEE/CVF Conf. Comput. Vis. Pattern Recog. , pages 4123–4133, June 2022. 1
+
+[31] Z. Wang, Z. Zhang, S. Ebrahimi, R. Sun, H. Zhang, C.-Y. Lee, X. Ren, G. Su, V. Perot, J. Dy, and T. Pfister. Dual-Prompt: Complementary prompting for rehearsal-free con-tinual learning. Eur. Conf. Comput. Vis. , page 631–648, Nov. 2022. 4
+
+[32] Z. Wang, Z. Zhang, C.-Y. Lee, H. Zhang, R. Sun, and X. Ren. Learning to prompt for continual learning. IEEE/CVF Conf. Comput. Vis. Pattern Recog. , pages 139–149, June 2022. 4
+
+[33] D. Wen, A. K. Jain, and H. Han. Face spoof detection with image distortion analysis. IEEE Trans. Inf. Forensics Secur. ,pages 746–761, Feb. 2015. 2, 5
+
+[34] Z. Xie, C. Miao, A. Liu, J. Guo, F. Li, D. Guo, and Y. Diao. Suede:shared unified experts for physical-digital face attack detection enhancement. arXiv preprint , Apr. 2025. 2, 6
+
+[35] Z. Yu, C. Zhao, Z. Wang, Y. Qin, Z. Su, X. Li, F. Zhou, and G. Zhao. Searching central difference convolutional net-works for face anti-spoofing. IEEE/CVF Conf. Comput. Vis. Pattern Recog. , pages 5295–5305, June 2020. 2, 6
+
+[36] G. Zhang, K. Wang, H. Yue, A. Liu, G. Zhang, K. Yao, E. Ding, and J. Wang. Interpretable face anti-spoofing: En-hancing generalization with multimodal large language mod-els. AAAI , pages 9896–9904, Feb. 2025. 7
+
+[37] Z. Zhang, J. Yan, S. Liu, Z. Lei, D. Yi, and S. Z. Li. Aface antispoofing database with diverse attacks. Int. Conf. Biometrics , pages 26–31, Mar. 2012. 2, 5
+
+[38] Q. Zhou, K. Zhang, T. Yao, X. Lu, R. Yi, S. Ding, and L. Ma. Instance-aware domain generalization for face anti-spoofing. 
+
+IEEE/CVF Conf. Comput. Vis. Pattern Recog. , pages 20453– 20463, June 2023. 7
