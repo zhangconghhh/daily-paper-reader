@@ -1,0 +1,172 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-27T20:58:20.911234+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2607.22068v1",
+      "source": "arxiv",
+      "title": "Rethinking Multi-Branch and Cross-Backbone Fusion for Vehicle Re-Identification in the Foundation-Model Era",
+      "abstract": "Multi-branch architectures and CNN-Transformer fusion have long been regarded as effective ways to improve vehicle re-identification (Re-ID) by combining complementary representations. In this work, we revisit this assumption in the foundation-model era through a comprehensive empirical study. A single DINOv3-pretrained ConvNeXt trained with a tuned recipe achieves 88.19 mAP on VeRi-Wild Small and 77.47 mAP on VeRi-Wild Large using visual cues alone, matching the strongest protocol-verified metadata-dependent multi-branch baseline. Applying training-free re-ranking further improves performance to 92.38 and 83.68 mAP, respectively. Using this strong baseline together with retrieval-level branch diagnostics, we evaluate whether increasing representational diversity still provides measurable gains. Across both benchmarks, concatenating multiple branches built on a shared backbone changes the best single-branch performance by less than one mAP point while increasing the embedding dimension by 4x, and the resulting representation has an effective rank close to the original feature dimension. We further study cross-backbone fusion using an asymmetric frozen-anchor strategy to combine ConvNeXt and Vision Transformer representations. Despite these favorable conditions, Transformer branches consistently remain 13-15 mAP below the ConvNeXt backbone, and paired per-query bootstrap analysis estimates the largest observed fusion gain to be only +0.11 mAP (95% confidence interval). Our results suggest that, under the evaluated setting, improving a single strong foundation-model backbone together with retrieval-stage re-ranking is more effective than increasing architectural complexity through additional branches or heterogeneous backbones. We restrict our conclusions to single-seed training and one family of foundation models and discuss conditions under which these observations may not hold.",
+      "authors": [
+        "Yu Wang",
+        "Hongyu Yang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-07-24T08:10:53+00:00",
+      "link": "https://arxiv.org/pdf/2607.22068v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Uses DINOv3 pretrained ConvNeXt for vehicle re-identification, a fine-grained task",
+      "llm_evidence_cn": "使用DINOv3预训练的ConvNeXt进行车辆重识别，属于细粒度任务",
+      "llm_evidence": "使用DINOv3预训练的ConvNeXt进行车辆重识别，属于细粒度任务",
+      "canonical_evidence": "使用DINOv3预训练的ConvNeXt进行车辆重识别，属于细粒度任务",
+      "llm_tldr_en": "This paper revisits multi-branch fusion for vehicle Re-ID in the foundation-model era, showing that a single DINOv3-pretrained ConvNeXt achieves state-of-the-art performance, demonstrating DINO's effectiveness for fine-grained visual recognition.",
+      "llm_tldr_cn": "本文在基础模型时代重新审视车辆重识别中的多分支和跨骨干融合问题。以往认为多分支结构不可或缺，但实验发现单一DINOv3预训练的ConvNeXt网络配合精心调优的训练策略即可达到甚至超越复杂多分支基线的性能。在VeRi-Wild数据集上，仅视觉特征就取得了88.19的mAP，结合训练后重排序更提升至92.38。这充分证明了DINO系列自监督基础模型在细粒度视觉任务中的强大能力，为后续研究提供了简洁高效的基线方案。",
+      "llm_tldr": "本文在基础模型时代重新审视车辆重识别中的多分支和跨骨干融合问题。以往认为多分支结构不可或缺，但实验发现单一DINOv3预训练的ConvNeXt网络配合精心调优的训练策略即可达到甚至超越复杂多分支基线的性能。在VeRi-Wild数据集上，仅视觉特征就取得了88.19的mAP，结合训练后重排序更提升至92.38。这充分证明了DINO系列自监督基础模型在细粒度视觉任务中的强大能力，为后续研究提供了简洁高效的基线方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "DINO model for fine-grained classification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.21973v1",
+      "source": "arxiv",
+      "title": "Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation",
+      "abstract": "Vision foundation models are increasingly reused as frozen backbones for downstream visual recognition, making parameter-efficient adaptation a central problem. Prompt-based adaptation, including Visual Prompt Tuning (VPT), provides a lightweight way to specialize these models, but its layer-wise behavior remains poorly understood: performance is sensitive to prompt depth, placement, and task distribution, and gains on standard in-domain benchmarks do not always translate into robust generalization. We argue that this limitation is not solely an optimization issue, but a layer-wise information allocation issue: existing prompt-based methods lack principled control over what prompt-conditioned representations should preserve, suppress, and propagate across depth. Inspired by the Information Bottleneck principle, we introduce Prompted Information Bottlenecks (PIB), a framework that regularizes layer-wise compression-sufficiency trade-offs and promotes a more coherent cross-layer information path. The key idea is that effective adaptation should be minimal yet sufficient, retaining task-relevant local evidence in earlier layers while progressively discarding nuisance factors and redundant details in deeper layers. Extensive experiments show that PIB achieves strong performance across 34 datasets, reaching 92.1% on FGVC, 93.01% on HTA, and 77.33% on VTAB-1k, while tuning only 0.35% parameters on average across the main settings. Beyond benchmark accuracy, PIB helps explain the non-monotonic behavior of prompt capacity scaling, reduces shortcut reliance, and improves robustness under distribution shift and fine-grained recognition settings. These results position PIB as both a practical method and an information-allocation perspective for adapting frozen vision foundation models. Our code is available at https://github.com/itsnotacie/MM-26-PIB",
+      "authors": [
+        "Yuqi Li",
+        "Xi Xiao",
+        "Yunbei Zhang",
+        "Lin Zhao",
+        "Yu Li",
+        "Aiden Zhao",
+        "Tianyang Wang",
+        "Hao Xu",
+        "Yingli Tian"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-24T04:39:55+00:00",
+      "link": "https://arxiv.org/pdf/2607.21973v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Analyzes layer-wise information allocation in vision foundation model adaptation, relevant to fine-tuning for fine-grained classification",
+      "llm_evidence_cn": "分析视觉基础模型适应的逐层信息分配，与细粒度分类微调相关",
+      "llm_evidence": "分析视觉基础模型适应的逐层信息分配，与细粒度分类微调相关",
+      "canonical_evidence": "分析视觉基础模型适应的逐层信息分配，与细粒度分类微调相关",
+      "llm_tldr_en": "Analyzes layer-wise information allocation in prompt-based adaptation of vision foundation models, proposing principled control to improve generalization, applicable to fine-grained classification.",
+      "llm_tldr_cn": "该论文探讨视觉基础模型在参数高效适应中的逐层信息分配问题。现有基于提示的微调方法在层间行为上缺乏原则性控制，导致泛化不足。论文提出新的视角，分析每层应保留该抑制的信息，从而优化适应策略。实验表明该方法能提升跨任务泛化性能，为将视觉基础模型（如DINO）应用于细粒度分类提供了重要指导。",
+      "llm_tldr": "该论文探讨视觉基础模型在参数高效适应中的逐层信息分配问题。现有基于提示的微调方法在层间行为上缺乏原则性控制，导致泛化不足。论文提出新的视角，分析每层应保留该抑制的信息，从而优化适应策略。实验表明该方法能提升跨任务泛化性能，为将视觉基础模型（如DINO）应用于细粒度分类提供了重要指导。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.21371v1",
+      "source": "arxiv",
+      "title": "DINOde: Continuous Vision-Text Alignment for Open-Vocabulary Semantic Segmentation",
+      "abstract": "Open-vocabulary semantic segmentation (OVSS) leverages textual semantics to segment objects beyond predefined categories. While the self-supervised model DINOv3 provides strong structured visual representations, its lack of native textual alignment hinders its direct application to OVSS. To bridge this gap, we propose DINOde, an ODE-based framework that continuously aligns CLIP text embeddings with the DINO visual manifold. Our approach employs two complementary components: (i) Semantic Text Flow (STF), which evolves text embeddings toward the DINO manifold through a continuous ODE trajectory, and (ii) Global Context Flow (GCF), which progressively refines the holistic image representation carried by DINO's CLS token. To preserve the hyperspherical geometry of the feature space during this evolution, we further introduce Velocity Tangent Projection, which constrains the learned velocity field to the tangent space. By modeling alignment as a continuous trajectory, DINOde avoids the manifold entanglement inherent in discrete MLP projections and yields more robust cross-modal alignment. Extensive experiments demonstrate that DINOde consistently outperforms existing methods and achieves state-of-the-art performance across multiple OVSS benchmarks. The code is available at https://github.com/yoon307/DINOde.",
+      "authors": [
+        "Sung-Hoon Yoon",
+        "Hoyong Kwon",
+        "Changgyoon Oh",
+        "Kuk-Jin Yoon"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-23T14:37:27+00:00",
+      "link": "https://arxiv.org/pdf/2607.21371v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses DINOv3 self-supervised model for visual representation; addresses alignment for segmentation but method bridges to classification",
+      "llm_evidence_cn": "使用DINOv3自监督模型作为视觉表示基础，方法可迁移至分类任务",
+      "llm_evidence": "使用DINOv3自监督模型作为视觉表示基础，方法可迁移至分类任务",
+      "canonical_evidence": "使用DINOv3自监督模型作为视觉表示基础，方法可迁移至分类任务",
+      "llm_tldr_en": "Proposes DINOde, an ODE-based framework aligning CLIP text with DINOv3 visual manifold for open-vocabulary semantic segmentation, leveraging DINO as a foundation model.",
+      "llm_tldr_cn": "针对开放词汇语义分割中DINOv3缺乏文本对齐的问题，提出DINOde框架，通过连续ODE轨迹将文本嵌入对齐到DINO视觉流形，同时利用全局上下文流优化图像表示。该方法展示了DINO作为基础模型在新任务中的可扩展性，虽直接用于分割，但其对齐思路对细粒度分类中的视觉-语义融合具有借鉴意义。",
+      "llm_tldr": "针对开放词汇语义分割中DINOv3缺乏文本对齐的问题，提出DINOde框架，通过连续ODE轨迹将文本嵌入对齐到DINO视觉流形，同时利用全局上下文流优化图像表示。该方法展示了DINO作为基础模型在新任务中的可扩展性，虽直接用于分割，但其对齐思路对细粒度分类中的视觉-语义融合具有借鉴意义。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.22351v1",
+      "source": "arxiv",
+      "title": "IQ-JEPA: A Joint-Embedding Predictive Architecture with a Hermitian Vision Transformer for Sound Speed and Attenuation Estimation from Ultrasound IQ Data",
+      "abstract": "The speed of sound in tissue is a prerequisite for well-focused imaging and has diagnostic value, but recovering it from raw pulse-echo channel data is fundamentally a nonlinear inverse problem. Learned solvers are fast yet label hungry. Simulated sound-speed labels are expensive, while abundant real channel data is unlabeled. We propose IQ-JEPA to exploit both data types. An encoder is pretrained without labels to predict the latent representation of masked in-phase and quadrature (IQ) regions from visible context, then fine-tuned on simulated maps. Sound speed appears in the IQ signal as a phase difference, invariant to the constant phase offset. The encoder is a Hermitian vision transformer that operates on the complex signal directly. Its attention is equivariant to that phase and its conjugate-product feed-forward is invariant to it, so the encoder reads a quantity analogous to the one classical coherence methods use. On 79,293 Fullwave 2.5 simulations at 2.5 MHz, pretraining on the 63,435 unlabeled acquisitions reaches 15.60 m/s at 10,000 labels. This is a roughly threefold gain in label efficiency over supervised training, growing to over fourfold at 1,000 labels. It is about 2.2x below an InversionNet baseline, and 8.71 m/s at full labels. The gain still grows with more unlabeled pretraining data. Our comparisons point to self-supervision as the dominant factor. The same encoder transfers. Its frozen features expose sound speed and attenuation, and cross-distribution pretraining between layered and abdominal phantoms costs little accuracy. We see this as a first step toward a foundation model for quantitative ultrasound.",
+      "authors": [
+        "Masashi Sode",
+        "Gianmarco Pinton"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "physics.med-ph"
+      ],
+      "published": "2026-07-24T14:31:54+00:00",
+      "link": "https://arxiv.org/pdf/2607.22351v1",
+      "tags": [
+        "keyword:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "self-supervised joint-embedding predictive architecture with Hermitian ViT for ultrasound",
+      "llm_evidence_cn": "基于Hermitian视觉Transformer的自监督联合嵌入预测架构用于超声",
+      "llm_evidence": "基于Hermitian视觉Transformer的自监督联合嵌入预测架构用于超声",
+      "canonical_evidence": "基于Hermitian视觉Transformer的自监督联合嵌入预测架构用于超声",
+      "llm_tldr_en": "Proposes IQ-JEPA, a self-supervised method using Hermitian ViT to predict latent representations of masked IQ regions, fine-tuned for sound speed estimation.",
+      "llm_tldr_cn": "该论文针对超声声速估计这一逆问题，提出IQ-JEPA方法。采用Hermitian视觉Transformer作为编码器，以自监督方式预测掩码IQ区域的隐表示，再在仿真标签上微调。该方法利用IQ信号中声速表现为相位差且对常数相移不变的特点。实验表明无标签预训练有效提升了估计准确性，减少了标签需求。该方法展示了自监督视觉Transformer在医学成像领域的应用潜力，与DINO在方法论上具有相似性。",
+      "llm_tldr": "该论文针对超声声速估计这一逆问题，提出IQ-JEPA方法。采用Hermitian视觉Transformer作为编码器，以自监督方式预测掩码IQ区域的隐表示，再在仿真标签上微调。该方法利用IQ信号中声速表现为相位差且对常数相移不变的特点。实验表明无标签预训练有效提升了估计准确性，减少了标签需求。该方法展示了自监督视觉Transformer在医学成像领域的应用潜力，与DINO在方法论上具有相似性。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

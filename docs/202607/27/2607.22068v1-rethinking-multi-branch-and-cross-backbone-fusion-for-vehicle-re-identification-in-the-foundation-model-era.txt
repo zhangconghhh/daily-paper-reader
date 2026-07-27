@@ -1,0 +1,306 @@
+Title: Rethinking Multi-Branch and Cross-Backbone Fusion for Vehicle Re-Identification in the Foundation-Model Era
+
+URL Source: https://arxiv.org/pdf/2607.22068v1
+
+Published Time: Mon, 27 Jul 2026 00:30:39 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+<Society logo(s) and publica-tion title will appear here. >
+
+> Received XX Month, XXXX; revised XX Month, XXXX; accepted XX Month, XXXX; Date of publication XX Month, XXXX; date of current version XX Month, XXXX.
+> Digital Object Identifier 10.1109/XXXX.2022.1234567
+
+# Rethinking Multi-Branch and Cross-Backbone Fusion for Vehicle Re-Identification in the Foundation-Model Era 
+
+Yu Wang 1 and Hongyu Yang 1 
+
+> 1Huahuan (Yunnan) Technology Co., Ltd., Yunnan, China Corresponding authors: Yu Wang (wangyu@cn-es.com) and Hongyu Yang (yanghongyu@cn-es.com). Code, the branch-level diagnostic toolkit, the exact sparse re-ranking implementation and the Option A checkpoint are released at https://gitee.com/robertwangwang/Dinov3ForMBR; both benchmarks [1], [2] are public.
+
+ABSTRACT 
+
+Multi-branch architectures and CNN–Transformer fusion are widely believed to improve vehicle re-identification (Re-ID) by combining complementary representations. We revisit this assumption in the foundation-model era. A single DINOv3-pretrained ConvNeXt with a tuned recipe reaches 88.19 mAP on VeRi-Wild Small and 77.47 on Large from visual cues alone , matching the strongest protocol-verified metadata-dependent multi-branch baseline, and 92.38/83.68 with training-free re-ranking . Armed with this baseline and retrieval-level branch diagnostics, we ask whether representational diversity still pays at this scale. It does not. Across both benchmarks and every configuration we train, concatenating multiple heads over a shared backbone moves the best single head by under one mAP point in either direction while costing four times the embedding dimension, and the concatenation has an effective rank near 512. Pushing diversity to its architectural limit, CNN versus Transformer, we grant fusion every advantage through an 
+
+asymmetric frozen-anchor scheme . Every Transformer configuration still lands 13–15 mAP below the ConvNeXt backbone, and a paired per-query bootstrap bounds the fusion gain at +0 .11 mAP (95% CI) 
+
+even for the most favourable fusion snapshot we obtained. One strong backbone with the right recipe and re-ranking is the efficiency frontier. All results use single-seed training and one foundation-model family; we scope claims accordingly and list falsifiers. 
+
+INDEX TERMS Cross-camera evaluation, feature fusion, foundation models, multi-branch networks, re-ranking, representation similarity, vehicle re-identification, vision transformers. 
+
+I. Introduction 
+
+# VEHICLE re-identification (Re-ID)—matching a query vehicle across non-overlapping cameras—is a core ca-pability for intelligent transportation systems, underpinning cross-camera tracking, traffic analytics, and urban surveil-lance [1], [3]. For nearly a decade, progress in vehicle and person Re-ID has been driven by representational diversity .Multi-branch and multi-granularity networks split features into parallel streams [4], [5]; part-based and jigsaw modules extract local descriptors [6]; and a growing line of work fuses heterogeneous backbones—typically a CNN with a Transformer—on the premise that their complementary in-ductive biases yield retrieval cues that neither captures alone [7]. The shared, rarely questioned assumption is that more diverse representations are better : each branch contributes unique correct matches, and their aggregation surpasses any single stream [4], [5]. That assumption was established with ImageNet-pretrained, lightweight backbones, where no single extractor was near saturation and diversity was a cheap path to coverage. Foundation models change the premise. DINOv3 already rivals specialized state of the art without fine-tuning [8], and in Re-ID simply fine-tuning a foundation encoder is competitive with elaborate architectures [9]—such a backbone may capture most of the signal a task affords, leaving little headroom for extra branches. Fine-tuning is also known to distort pretrained features [10], casting doubt on whether branch diversity, even if present at initialization,  
+
+> This work is licensed under a Creative Commons Attribution 4.0 License. For more information, see https://creativecommons.org/licenses/by/4.0/ VOLUME , 1arXiv:2607.22068v1 [cs.CV] 24 Jul 2026 Wang and Yang:
+
+survives joint optimization. Whether the premise holds at this scale has, to our knowledge, never been tested—yet it governs how practitioners spend compute: on one strong backbone, or on several fused ones. We re-examine it on VeRi-Wild [1] and VeRi-776 [2] under the official cross-camera protocol, whose omission we show inflates reported numbers by 3–4 mAP. We first estab-lish that a single DINOv3-ConvNeXt [8], [11], given a tuned recipe (pure-ConvNeXt heads, full unfreezing, full data, staged LR decay), reaches parity with the strongest metadata-dependent published multi-branch baseline—echoing, at foundation-model scale, that training procedure can matter as much as architecture [12], [13]. Against this baseline we stress-test diversity with a reusable diagnostic toolkit. Crucially, we do not stop at a na¨ ıve fusion that could be dismissed as under-engineered. We diagnose why symmetric joint fine-tuning of two foundation backbones collapses—a learning rate tolerable for one erodes both, and the fusion’s apparent +4 .9 gain is measured against a jointly degraded 
+
+base—then give fusion every advantage: an asymmetric frozen-anchor scheme that freezes the strong 88.19 Con-vNeXt as a semantic anchor and trains only the Transformer and the fusion module, under three independent recipes plus a LoRA control , ruling out the objection that the weaker branch was merely under-trained. Our findings are consistently negative for the diversity premise—and, we argue, this is the contribution. Multiple heads over a shared backbone become more alike with training, not less—consistent with the view that solutions sharing an optimization trajectory occupy a single mode in function space, whereas ensemble diversity classically derives from independent training [14], [15]. Cross-backbone heterogeneity, by contrast, is genuine and survives training (top-10 Jaccard 0.54 against 0.79–0.84 for same-backbone heads), in line with documented representational differences between ViTs and CNNs [16]—yet it is not fusible: the Transformer branch never crosses a ∼73 mAP ceiling under any recipe, and an oracle fusion of our strongest Transformer with the single backbone assigns it weight zero. Diversity is not sufficient; it must be aggregable, and here it is not. We contribute: 
+
+• (i) the first systematic evidence that the diver-sity premise fails under foundation-model-scale fine-tuning, in two distinct ways: same-backbone multi-branch heads collapse into redundancy (replicated in-domain on both VeRi-Wild and VeRi-776), while cross-backbone CNN–Transformer diversity survives 
+
+yet proves unfusible —an oracle score-level fusion of our strongest ViT assigns it weight zero (established under VeRi-Wild training); 
+
+• (ii) a documented training recipe that lifts a sin-gle DINOv3-ConvNeXt to parity with the strongest protocol-verified metadata-dependent published multi-branch baseline (MBR-4B-LAI, the camera/view-conditioned variant of MBR) on VeRi-Wild; 
+
+• (iii) a branch-level diagnostic toolkit—complementing representation-level similarity analyses [17], [18] with retrieval-level measures—and a convergence-only mea-surement discipline that we show is essential, as under-trained snapshots systematically mislead; 
+
+• (iv) a deployment-oriented efficiency frontier: a single backbone plus a memory-scalable, mathematically ex-act sparse re-ranking [19] matches metadata-dependent baselines [5], [6] at roughly one-third the inference cost of dual-backbone fusion ( 2.8× lower latency, 3× fewer FLOPs). 
+
+> II. Related Work
+
+Vehicle Re-ID. The field has matured from metric learning on VehicleID [20] to in-the-wild benchmarks such as VeRi-776 [2] and VeRi-Wild [1], with recent methods exploiting multi-branch topologies, viewpoint/attribute metadata and Transformer backbones [3]. Two properties of the vehicle setting—strong inter-class similarity between same-model vehicles, and severe viewpoint variation—have made repre-sentational diversity an attractive design principle: precisely the premise we revisit. 
+
+Multi-branch and multi-granularity Re-ID. Splitting fea-tures into parallel streams is a dominant design: MGN [4] combines a global branch with partitioned local branches; MBR [5] pairs a ResNet50-IBN global branch with a BoT self-attention branch under a Loss-Branch-Split strategy, explicitly attributing its gains to “improved feature diver-sity”; TransReID [6] adds jigsaw patch rearrangement to a pure-Transformer baseline; FusionReID [7] fuses CNN and Transformer features through stacked mutual-attention modules, premised on complementary inductive biases. Bag-of-Tricks [13] is an early counterpoint, showing a single global stream with careful training rivals multi-branch de-signs. Across this line, diversity is asserted and validated only through end-to-end mAP ablations; no work measures whether branches actually retrieve differently . We supply exactly that measurement—and find that, at foundation-model scale, they do not. 
+
+Foundation models and fine-tuning. DINOv3 [8] shows a single self-supervised backbone can match specialized state of the art without fine-tuning; CLIP-ReID [9] shows that merely fine-tuning a foundation image encoder is already competitive in Re-ID, and CLIP-based semantic enhance-ment reports among the highest published VeRi-Wild fig-ures [21] (89.1 mAP, without a public implementation and without a stated test split)—not established to be protocol-comparable to our filtered numbers, a gap smaller than the protocol inflation we measure (Section IV-B, Table 2). Kumar et al. [10] prove that full fine-tuning distorts pre-trained features and can underperform out-of-distribution, motivating freezing strategies; layer-wise LR decay [22] is the standard mitigation. What joint fine-tuning does to multi-branch topologies built atop such backbones has not been examined; we show it homogenizes them.  
+
+> 2VOLUME ,
+
+<Society logo(s) and publication title will appear here. >           
+
+> TABLE 1. Protocol inflation, measured on our own reproductions. Omitting the official same-ID/same-camera junk filter inflates mAP by 3–4 points—a reproduction pitfall we flag because inflated numbers land close to filtered published figures. Both rows are our dual-backbone reference models (VeRi-776- and VeRi-Wild-trained, respectively); they are not published SOTA.
+> Model (ours) Unfiltered Official cross-cam. Inflation VeRi-776 dual-backbone 85.46 82.42 (R1 96.31) +3 .04
+> VeRi-Wild dual-backbone 77.83 73.89 (R1 83.70) +3 .94
+
+Representation similarity and ensemble diversity. CKA [17] and its applications [16], [18] characterize when net-works learn similar representations—notably, that ViTs and CNNs differ substantially [16], and that models with equal accuracy can still err differently [18]. Deep ensembles [15] derive their gains from independently trained members; Fort 
+
+et al. [14] show that solutions along a shared optimization trajectory cluster in a single function-space mode, while independent initializations explore distinct modes. Our di-agnostics extend this literature from representation- and classification-level to retrieval-level measures, and our find-ings instantiate the shared-trajectory prediction in the multi-branch Re-ID setting. 
+
+III. Evaluation Protocol and Preliminaries 
+
+Datasets and splits. VeRi-Wild [1]: we report the official test 3000 split (3,000 query IDs, 38,861 gallery images; “Small”) and test 10000 (128,517 gallery; “Large”). VeRi-776 [2] serves as a cross-domain target: models trained on VeRi-Wild are evaluated on VeRi-776 without seeing it. 
+
+Protocol discipline. All numbers use the official cross-camera evaluation: gallery images sharing both the query’s vehicle ID and camera are excluded as junk, along with the query itself. Table 1 quantifies why this matters on our own reproductions: omitting the filter inflates mAP by 
+
++3 .04 on VeRi-776 and +3 .94 on VeRi-Wild . We verified our protocol reproduces the original MBR evaluation code’s behavior exactly. All comparisons in this paper are protocol-matched; we flag this as a reproduction pitfall—inflated, unfiltered numbers land close enough to filtered published figures to cause silent misranking—rather than as a claim that any specific published pipeline omitted the filter. 
+
+Concatenation arithmetic. For unit-normalized per-branch embeddings f1, . . . , f B , stacking them and re-normalizing by √B gives F = 1√B [f1; . . . ; fB ], so the cosine similarity between two images a, b is ⟨Fa, F b⟩ = 1
+
+> B
+
+PBi=1 ⟨fi,a , f i,b ⟩
+
+—the arithmetic mean of the per-branch cosines. 
+
+Proposition 1. Concatenation can outperform its best branch only if branches disagree in their retrieval orderings. Proof. 
+
+If all branches induce the same ranking of the gallery for every query, then the mean similarity is a monotone (order-preserving) combination of identical orderings and therefore reproduces that common ranking; retrieval metrics (mAP, CMC) depend only on the ranking, so the concatenation equals every branch and cannot exceed the best. Hence a strict gain requires at least one query on which two branches order the gallery differently. □
+
+This elementary fact underpins all diagnostics in Sec-tion V: measuring inter-branch disagreement (Jaccard, complementary-correctness) directly measures the headroom available to concatenation. 
+
+IV. A Single Foundation Backbone Is (Almost) All You Need 
+
+A. Architecture and recipe 
+
+Our model (“Option A”) is deliberately not novel: a sin-gle DINOv3-distilled ConvNeXt-Base backbone [8], [11] under MBR’s Loss-Branch-Split topology [5]—four heads (two convolutional heads conv-cls, conv-metric, and two Bottleneck-Transformer (BoT) heads BoT-cls, BoT-metric [13]), each producing a 2048-d embedding, concatenated to 8192-d—trained with cross-entropy and metric losses (Circle [23], Center [24], and Triplet [25]). What is tuned is the 
+
+recipe : (a) full-depth features; (b) full backbone unfreezing after a frozen warm-up phase; (c) full training data; (d) staged LR decay ( ×0.1 at epoch 40). Training runs on 8 NVIDIA RTX PRO 6000 GPUs (a cloud server) with P 16 K4
+
+sampling—16 identities per GPU, 4 images each, i.e. an effective batch of 16 × 4 × 8 = 512 .Each recipe component maps to a step-like jump: frozen Phase 1 ends at 39.46 mAP; unfreezing jumps to 56.25 in one epoch ( +16 .8); a steady climb to 85.98 by epoch 31; the epoch-40 LR decay adds +2 .21 , converging at 88.19 (epoch 42). A component ablation (Section V-B) attributes most of this gain to the LR-decay stage and shows the full-depth choice is dataset-dependent (it reverses on VeRi-776). 
+
+B. Results: metadata-free matches metadata-dependent 
+
+Table 2 reports our main VeRi-Wild results, protocol-matched to [5]. Our margins over the strongest metadata-dependent variant MBR-4B-LAI are 0.07 (Small) and 0.06 (Large); against the metadata-free MBR-4B they widen to 0.22/0.32. All are far smaller than the evaluation’s own uncertainty: a query-level bootstrap (2,000 resamples) yields a 95% confidence interval of ±0.66 mAP on Small (88.19, CI [87.51, 88.83]) and ±0.51 on Large (77.47, CI [76.94, 77.95]) —wider than the LAI margin by nearly an order of magnitude ( ±0.66 vs. 0.07, ≈9×). We therefore claim 
+
+parity, not superiority , and we scope the parity claim to the protocol-verified comparison: purely visual features now match the strongest metadata-dependent configuration of the strongest published multi-branch baseline, removing cam-era/view annotations from the requirements list. CMC-1 reaches 96.39 (Small) / 91.86 (Large). The bootstrap CI quantifies evaluation uncertainty only; as these are single-seed runs (Section VII), the parity holds for our runs and we do not claim statistical superiority.                                   
+
+> VOLUME , 3Wang and Yang:
+> TABLE 2. VeRi-Wild results. Purely visual Option A reaches parity with the strongest protocol-verified metadata-dependent MBR variant. Rows marked “self-rep.” report higher figures but with unverified protocols and no public implementation, so they are not established to be comparable to the filtered rows (which we verified against the original MBR evaluation code).
+> Method Metadata Small mAP Large mAP Protocol MBR-4B [5] none 87.97 77.15 verified MBR-4B-LAI [5] cam.+view 88.12 77.41 verified CLIP-SENet [21] †none 89.1 —self-rep.
+> Option A (ours) none 88.19 77.47 verified
+> + re-ranking none 92.38 83.68 verified
+> †As reported by the authors; no public implementation is available, the abstract does not state which VeRi-Wild split the figure refers to, and we could not verify whether cross-camera junk filtering is applied. This matters quantitatively: on our own system, omitting the filter inflates mAP by +3.04 (VeRi-776) and +3.94 (VeRi-Wild) (Table 1)— several times larger than the 0.9-point gap between this row and the verified rows .Unverified-protocol figures are therefore not established to be comparable, in either direction. We claim parity only with the strongest
+> protocol-verified baseline and do not claim to lead the published leaderboard.
+
+C. Cross-domain generalization 
+
+Evaluated zero-shot on VeRi-776 (never seen in training), Option A reaches 66.02 mAP / 87.07 R1 (+re-ranking: 69.27). As a matched in-domain reference we use the same 
+
+Option A architecture trained in-domain on VeRi-776 (84.07 mAP, Section V-B); this remains below self-reported spe-cialized systems we could not protocol-verify (e.g. CLIP-SENet 92.9 on VeRi-776 [21]). Relative to this matched in-domain reference, the −18 .0 mAP gap with an intact 
+
+R1 of 87.07 indicates the model learned generic vehicle discrimination rather than overfitting the source domain; the degradation is consistent with fine-tuning’s known out-of-distribution cost [10] and with domain differences in camera count and day/night composition. 
+
+D. Exact sparse re-ranking at scale 
+
+k-reciprocal re-ranking [19] is the deployment workhorse (+4 .19 Small / +6 .21 Large, with R1 preserved), but its classical implementation is memory-bound: on test 10000 it requires ∼190 GB and fails outright. Our sparse im-plementation is mathematically exact —identical output to the classical algorithm on test 3000 ( ∆ mAP = 0 .0000 )— while running 18 × faster (29 s vs. 534 s) and completing test 10000 in 137 s within tens of GB. All timings are wall-clock on a single NVIDIA RTX 3090. Larger galleries benefit more from re-ranking, so removing the memory wall matters precisely where the gain is largest. We use the standard k-reciprocal hyper-parameters k1 = 20 , k2 = 6 ,
+
+λ = 0 .3 [19]; the sparse form is mathematically exact— the identity P 
+
+> p
+
+max( vip , v jp ) = si + sj − Mij (row sums 
+
+si, sparse overlaps Mij = P 
+
+> p
+
+min( vip , v jp )) recovers the Jaccard distance with no dense N × N intermediate—with the full derivation in the released code. 
+
+V. Stress-Testing the Diversity Premise 
+
+A. Branch-level diagnostics 
+
+Guided by Proposition 1, we measure disagreement where it counts—retrieval behavior: 1) Per-branch retrieval : each branch’s standalone mAP/R1 (how strong is each stream?); 2) Top-k Jaccard : overlap of two branches’ top-10 re-trieval sets (do they return the same gallery images?); 3) Occlusion-saliency agreement : Pearson correlation and top-20% IoU of occlusion-sensitivity heatmaps [26] (do they look at the same regions?); 4) Complementary-correctness : fraction of queries one branch ranks correctly and the other does not (is there unique signal to harvest?). These complement representation-level tools such as CKA [17]: two branches can be CKA-dissimilar yet retrieve identically; retrieval-level measures bound fusion headroom directly. 
+
+B. Same-backbone multi-head: collapse into redundancy 
+
+At convergence the four heads are statistically indistinguish-able (spread 0.17) and concatenation delivers no statistically distinguishable gain over the best single head: a paired 
+
+per-query bootstrap of the difference gives ∆(concat −
+
+BoT-cls) = −0.05 mAP , 95% CI [−0.19 , +0 .09] , covering zero. The paired form is essential here—the corresponding 
+
+unpaired single-model CI has half-width ±0.66 , far too wide to adjudicate a 0.05 difference; pairing cancels the shared query-set variance and shrinks the interval nearly fivefold. The diversity trajectory (Table 4) explains why the heads are redundant. 
+
+In-domain replication on VeRi-776. The collapse is not specific to VeRi-Wild. Training the same Option A in-domain on VeRi-776 (575 IDs, 84.07 mAP) reproduces it: concatenation (84.07) again fails to beat the best single head (84.69), ∆ = −0.62 . A leave-one-out recipe ablation confirms the collapse is robust to the recipe and attributes the accuracy to two dominant positive levers: the ConvNeXt con-volutional heads—replacing them with ResNet-Bottleneck heads costs +6 .4 mAP , making the pure-ConvNeXt head choice the single largest recipe contribution rather than an architectural nicety—and the staged LR decay ( +4 .63 ); the loss is neutral ( +0 .15 ). One One component does not carry over. Full-depth features are harmful on VeRi-776: truncating the trunk one stage earlier, which doubles the spatial resolution fed to the heads, reaches 87.32 against 82.32 for full depth in a matched ablation ( −5.0). On VeRi-Wild the same substitution is neutral rather than harmful (88.69 truncated vs. 88.19 full-depth; the two runs differ in batch size and schedule length, so we read them as  
+
+> 4VOLUME ,
+
+<Society logo(s) and publication title will appear here. >                                    
+
+> TABLE 3. Per-branch mAP across training (Option A). After convergence the four heads are equally strong and concatenation adds nothing.
+> Branch E3 E4 E21 E42 (conv.) conv-cls 67.28 71.62 85.03 88.11 conv-metric 67.24 71.66 85.05 88.13 BoT-cls 75.15 77.36 84.87 88.24
+> BoT-metric 75.32 77.35 85.25 88.07
+> concat (8192-d) 69.20 73.27 85.19 88.19
+> TABLE 4. Diversity metrics vs. training. Diversity vanishes—in reverse—as training proceeds.
+> Metric Early Converged (E42) conv ↔BoT top-10 Jaccard 0.64 (E1) →0.79 (E3) 0.835–0.841
+> Occlusion heatmap Pearson —0.96 [0.95, 0.97] Occlusion top-20% IoU —0.81 [0.79, 0.83] The Jaccard “Early” cell reports the E1 →E3 range; occlusion agreement is measured only at convergence (Table 5).
+
+comparable, not ordered). Semantic depth is therefore not the lever the recipe search first suggested—spatial resolution is at least as valuable on both benchmarks—and we retain the full-depth system as our reference only because every analysis below is anchored on it. On the best VeRi-776 configuration a marginal ∆( concat − best head ) = +0 .58 
+
+(paired 95% CI [+0 .49 , +0 .68] ) does emerge, but an order of magnitude below the multi-branch literature’s gains, and it reverses to −0.62 under full-depth. Across both datasets and every configuration, concatenation moves the best single head by under one point in either direction: redundancy, not the premised diversity. Heads grow more alike as training proceeds—the oppo-site of the diversity premise, and consistent with shared-trajectory solutions collapsing into a single function-space mode [14]. A PCA probe delivers the structural verdict: the 8192-d concatenation has an effective rank of ∼512 (PCA-512 preserves 99.7% variance with mAP unchanged at 88.20; even PCA-1024/2048 are lossless). Four branches produce one representation, four times. 
+
+C. Cross-backbone fusion: maximum heterogeneity, zero net gain 
+
+Genuine heterogeneity at the starting line. With both backbones frozen, ConvNeXt and ViT-L occlusion saliencies correlate at only 0.30 (200-pair bootstrap 95% CI [0.26, 0.34]; top-20% IoU 0.20 [0.18, 0.22])—the lowest we mea-sure anywhere, versus 0.96 for same-backbone heads, with non-overlapping confidence intervals (Table 5)—confirming that CNN/Transformer representational differences [16] sur-vive DINOv3 distillation at initialization. Complementary-correctness reaches 28–32%. If diversity can pay anywhere, it is here. 
+
+Symmetric joint fine-tuning fails—and how it fails mat-ters. Our dual-backbone model (ConvNeXt full-depth + ViT-                         
+
+> TABLE 5. Diversity-metric bootstrap 95% confidence intervals. Same-backbone heads are highly redundant while cross-backbone pairs are genuinely heterogeneous; the two groups’ CIs do not overlap (2,000-fold bootstrap).
+> Metric Point 95% CI Sample Jaccard conv ↔BoT (cls/metric) 0.835/0.841 ±0.005 n= 3000 q. Same-bb. occlusion Pearson 0.96 [0.95, 0.97] n= 200
+> Same-bb. occlusion top-20% IoU 0.81 [0.79, 0.83] n= 200
+> Cross-bb. occlusion Pearson 0.30 [0.26, 0.34] n= 200
+> Cross-bb. occlusion top-20% IoU 0.20 [0.18, 0.22] n= 200
+
+L [27], two mutual-fusion cross-attention modules, learned fusion head, ∼560 M training-time params; ∼404 M on the deployment path, Section VI) peaks at 85.30 (E7) then de-clines for ten straight epochs to 83.36. The reversal coincides exactly with the LR schedule reaching its 2.5e-4 plateau, and the training loss spikes synchronously (7.55/7.90/8.21): the mAP turn, the LR plateau and the loss spikes align on the epoch axis, pinning the collapse to optimization rather than architecture. Restarting from the peak with LR ×0.1
+
+immediately recovers to 86.32 —confirming the same. At this rescued state we observe the only genuine fusion gain in this study : fused 86.32 vs. best single branch (cnx g) 81.38, +4 .94 , with Jaccard 0.535. But the comparison base is contaminated: joint training degraded the ConvNeXt to 81.38, far below the 88.19 the same backbone reaches alone. The fusion gain is real only relative to a base that fusion training itself weakened—and the fused 86.2–86.3 never approaches 88.19. 
+
+Asymmetric frozen-anchor: giving fusion every advan-tage. We therefore transplant the converged 88.19 ConvNeXt 
+
+system (all 350 weight keys of the four-head Option A backbone) and freeze it as a semantic anchor, training only the ViT, the fusion modules, and the fusion head. Two quantities must be kept distinct: the transplanted anchor is the full 8192-d Option A embedding (88.19), whereas 
+
+cnx g is a diagnostic 1024-d global-average-pool probe of the frozen trunk (one of four fusion-head inputs) that on its own reaches only 86.5 (Table 6)—an untrained pool, not a head. We therefore do not claim a by-construction floor of 88.19: system-level accuracy requires the fusion head to recombine cnx g with the ViT-enhanced components. What the frozen anchor does guarantee is anti-collapse, verified directly: on the same 2.5e-4 base-LR plateau that coincided with the symmetric run’s ten-epoch slide, all asymmetric runs hold stable across ViT learning rates 2.5e-5–1.125e-4 (fused 88.22 →87.93 for the ×0.1 run, labeled Asymmetric v1 in Fig. 1)—isolating the frozen anchor, not any particular ViT rate, as the stabilizer. 
+
+Three recipes plus a PEFT control. To preempt the objection that the ViT branch was under-trained, we train it under three full-fine-tuning recipes (Table 6, Fig. 1). Because full fine-tuning of self-supervised ViTs is a documented source of instability—parameter-efficient adaptation (LoRA  
+
+> VOLUME , 5Wang and Yang:
+> FIGURE 1. Fused mAP vs. epoch. The symmetric run climbs to 85.30 and then declines for ten straight epochs; all asymmetric frozen-anchor runs hold at parity with the single backbone (dashed, 88.19) throughout. The asymmetric peaks (up to 88.22) occur early in the second (main) training stage; already at this point the 1024-d fused output matches the 8192-d single-backbone system (88.19), and as the ViT integrates it settles to 87.7–88.05—within evaluation noise of the single backbone, never meaningfully above it. Anti-collapse and parity, but no gain over the single-backbone system. Epochs are counted from the start of training (the first five are the warm-up stage); the v3 run (3 epochs) is omitted from the trajectory plot.
+
+[28]) mitigates the catastrophic forgetting it induces [29], consistent with [10]—we additionally report a LoRA control below, so the ceiling is not attributed to full fine-tuning by omission. No full-fine-tuning recipe pushes the ViT branch past ∼73 
+
+mAP or holds a plateau; under layer-wise decay it peaks at epoch 3 and then loses nine points as the LR plateau degrades its features (train loss 7.38 →7.67), yet the frozen anchor keeps the fused embedding at 87.69. Across every snapshot of every recipe the 1024-d fused embedding peaks at 88.21–88.22—already matching, not exceeding, the 8192-d single-backbone system (88.19)—and settles to 87.7–88.05 as the ViT integrates (Fig. 1). We settle this with the same instrument used for the same-backbone claim. On the global maximum of fused mAP over all recipes and epochs (88.22)—the snapshot most favourable to fusion—a paired per-query bootstrap against the single-backbone system gives ∆ = +0 .03 , 95% CI [−0.05 , +0 .11] :the gain is bounded above by +0 .11 mAP. Against one 2048-d head of that system (88.24) it is ∆ = −0.03 ,CI [−0.18 , +0 .14] . Pairing is what makes this decidable— the unpaired CIs ( ±0.67 ) are an order of magnitude too wide. A second foundation backbone (2.8 × latency, 3 ×
+
+FLOPs, twice the weights) buys nothing over one head of the single-backbone system. That peak occurs at epoch 1, with the ViT branch still at 42.3 mAP: fusion looks best exactly when the second backbone contributes least. This also locates the literature’s gains: against its own single-backbone readout (86.47)—the comparison multi-branch work typically makes—the same fused embedding shows 
+
++1 .75 ; against an independently tuned single backbone, 
+
++0 .03 (n.s.). The gain is a property of the baseline, not of the fusion. 
+
+The bottleneck is branch strength, not fusion design. 
+
+The same verdict holds inside the trained fusion: every re-weighting of its four components that raises the ViT’s contribution performs at or below the learned fusion head (87.96 baseline; worst −1.64 ), and reciprocal-rank fusion never exceeds the anchor’s single path—the fusion head’s down-weighting of the ViT is already optimal. Loss curves agree: the ViT branch’s classification loss stays hardest to fit while the fused loss tracks the frozen anchor’s. Nor is the ViT weak per se —frozen, it is the strongest bare backbone we test (18.56 zero-shot vs. ConvNeXt 14.63, ResNet50 3.77)—yet every fine-tuned configuration lands far below ConvNeXt. We probe three points on the fine-tuning spectrum. (i) A standalone ViT-L fine-tuned entirely outside the fusion topology (no anchor, no cross-attention) plateaus at 67.0 mAP (last row of Table 6)— below even the 
+
+∼73 the same ViT reaches as a branch inside the fusion, ruling out that gradient routing through the fusion head starved it. (ii) The three full-fine-tuning recipes cap at ∼73 .
+
+(iii) A LoRA -adapted ViT branch (blocks 20–23, taken from our dual-backbone model) reaches 75.19 —above the full-fine-tuning ceiling, confirming that the ∼73 figure is partly a symptom of full-fine-tuning fragility for self-supervised backbones [29] rather than a hard representational wall. Yet even this best ViT configuration (75.19) sits ∼13 mAP below the ConvNeXt single backbone (88.19): the cross-backbone gap survives the PEFT control. The robust finding is therefore not a precise ∼73 ceiling but the 13–15-point ViT-versus-ConvNeXt gap ( ∼15 under full fine-tuning, ∼13 
+
+with the strongest LoRA configuration) that persists across adaptation regimes, at this data scale and 256-px resolution and for this pretraining lineage—the scope within which we make the claim. 
+
+Would the strongest ViT have fused? Our trained fusions reach branch strength ∼73 ; the LoRA branch reaches 75.19 but was trained outside the anchor. We close that gap without retraining, by bounding what any fusion of these two representations could yield. Proposition 1 first confirms the diversity is real: over top-10 retrievals the LoRA-ViT contributes 0.62 correct gallery images per query that the single-backbone system misses (a +8 .4% hit-set headroom on 35.2% of queries; Jaccard 0.54, far more heterogeneous than same-backbone heads at 0.79–0.84). Yet none of it is recoverable: an oracle score-level fusion—mixing weights tuned directly on the test set, an upper bound no learned fusion module can exceed—selects weight zero for the LoRA-ViT. Every non-zero weight is a net loss ( −0.06 
+
+at α=0 .3, −0.33 at 0.5, −2.34 at equal weight): fusion inherits the ViT’s entire ranking, and the errors it injects outweigh the matches it recovers. One cannot take only its correct half. Two observations rule out that a mid-level module would behave differently: the trained cross-attention fusion is bounded at +0 .11 mAP (paired 95%  
+
+> 6VOLUME ,
+
+<Society logo(s) and publication title will appear here. >                                                                                 
+
+> TABLE 6. ViT-branch mAP under three full-fine-tuning recipes (asymmetric anchor), plus two controls: a standalone ViT trained outside the fusion topology and a LoRA (PEFT) ViT branch. Full fine-tuning caps at ∼73 , but LoRA reaches 75.19—so the ∼73 figure is partly full-fine-tuning fragility, not a hard wall; the robust result is that every ViT configuration stays at least ∼13 mAP below the ConvNeXt backbone (88.19). “frozen anchor (cnx g)” is a diagnostic 1024-d global-average-pool probe of the frozen ConvNeXt trunk (one of four fusion-head inputs), not the transplanted 8192-d Option A system (88.19); being an untrained global pool it reads 86.5, below a trained single head ( ∼88 .1, Table 3). Asymmetric v1 (frozen anchor, ViT LR ×0.1) is the anti-collapse verification run of Fig. 1 and is separate from the three ceiling recipes, which push the ViT progressively harder (v2 ×0.25 , v3 ×0.45 ,layer-wise); v3’s higher LR reaches the degradation wall by epoch 3, where it is stopped. The LoRA control (from our dual-backbone baseline; official cross-camera protocol) is not trained under the frozen anchor, but its fusion gain is bounded directly, without training: an oracle score-level fusion with the anchor selects weight zero for it (Section V-C).
+> Recipe / control vit g trajectory vit g peak fused (peak →final) anchor probe (cnx g) v2: uniform LR ×0.25 (6.25e-5) 42.3 →70.7 (E4) →73.1 (E18) 73.1 (plateau) 88.21 →88.05 86.46 v3: uniform LR ×0.45 (1.125e-4) 64.2 (E2), stopped E3 64.2 (E3) 88.21 →87.98 86.50 Layer-wise LR decay [22] (peak 3e-4, 0.98/layer) 67.4 (E2) →68.9 (E3 peak) →59.7 (E8) ∼69 , then erodes 88.19 →87.69 86.47
+> Control: standalone ViT (no fusion, recipe v2) plateau at E26 67.0 (72.1 no-cam) n/a (no fusion) —
+> Control: LoRA ViT branch (rank 8, α=16 , blocks 20–23) n/a 75.19 +0 .00 (oracle bound) —
+> TABLE 7. Backbone representational similarity (linear CKA; lower =more heterogeneous). The shared-teacher pair is more heterogeneous than the independent-lineage pair, falsifying the concern in the opposite direction. D/I =DINOv3/ImageNet lineage; C/V =ConvNeXt/ViT-L. The two key contrasts (D-C ↔D-V and I-C ↔I-V) are each within a single preprocessing regime; cross-lineage cells mix regimes and are secondary references only.
+
+D-C D-V I-C I-V 
+
+D-C 1.000 0.561 0.217 0.239 
+
+D-V 0.561 1.000 0.383 0.480 
+
+I-C 0.217 0.383 1.000 0.638 I-V 0.239 0.480 0.638 1.000 
+
+CI, above), and fused mAP decreases monotonically as the ViT strengthens—peaking at 88.22 while the ViT is still at 42.3, settling to 87.7–88.05 once it reaches ∼73 . A gain at 75.19 would require that trend to reverse. Cross-backbone retrieval diversity is real; it is simply not fusible —the premise fails not at the diversity step but at the aggregation step. 
+
+D. Shared-teacher control: heterogeneity is not understated 
+
+Both backbones distill from the same DINOv3 teacher, so one might worry that the heterogeneity we mea-sure understates what independent pretraining lineages would provide—and that fusion could pay off for amore heterogeneous pair. We test this directly with linear CKA [17] over 2,500 VeRi-Wild images, each backbone frozen and globally average-pooled, comparing our shared-teacher pair (DINOv3-ConvNeXt vs. DINOv3-ViT) against an independent-lineage control (ImageNet-supervised ConvNeXt-B vs. ViT-L). The result runs opposite to the concern. The cross-architecture similarity of our shared-teacher pair is 0.561 —
+
+lower (more heterogeneous) than the 0.638 of the inde-pendently pretrained ImageNet pair. Independent lineage does not provide more heterogeneity here; if anything, Ima-geNet supervision, by driving both architectures toward the same label-defined decision boundary, homogenizes them, whereas self-supervised distillation preserves architecture-driven differences—consistent with observations that the training signal, not just the architecture, shapes representa-tional similarity [17], [18]. Our fusion pair is thus the most 
+
+heterogeneous cross-architecture pairing we can construct— more so than a genuinely independent one—and fusion still yields zero net gain. This strengthens rather than qualifies Section V-C: the diversity is genuine and near-maximal, and it still does not pay. (Linear CKA measures representational similarity, a proxy; whether a fully independent backbone pair could fuse past the 88.19 single-backbone ceiling re-mains a concrete falsifier we state in Section VII, item (a).) 
+
+E. Measure only at convergence 
+
+Undertrained snapshots systematically mislead. At E3/E4 of Option A, every headline conclusion inverts: the conv heads trail by 8 points, concatenation hurts (69.20 vs. best head 75.32), and one would conclude a single BoT head is optimal. All three readings are falsified by E21 (Table 3). Six training-free “shortcut” probes reinforce the same discipline from another angle—GeM pooling [30], PCB-style grid par-titioning [31], inference-time resolution increase, ViT patch-token side-channels, pseudo-part visibility gating, and CLS-token late fusion all fail monotonically on the converged model (worst −22 .1), because no training-time loss rewarded local discriminability; post-hoc recombination cannot con-jure signal that optimization never created. We therefore adopt—and recommend—a convergence-only measurement rule for any branch-level claim. 
+
+VI. The Efficiency Frontier 
+
+The practical question the diversity premise governs is budget allocation. Our answer: one backbone, tuned, re-ranked. A dual-backbone fusion system settles at 87.7– 88.05 fused mAP—its 88.22 peak already matches, rather than exceeds, the single-backbone system (Section V-C)—at or below the 88.19 of the single backbone it contains, while  
+
+> VOLUME , 7Wang and Yang:
+
+costing 2.8× the latency and 3× the FLOPs (206 vs. 69 GFLOPs per image; 10.2 vs. 3.7 ms per image at batch 32 on an RTX 3090; 404M vs. 317M inference-time param-eters, classifier heads excluded). FLOPs are counted with PyTorch’s operator-level FLOP counter at 256 ×256 input; latency is wall-clock fp32 at batch 32 on a single RTX 3090, averaged over 50 runs after 10 warm-up iterations, excluding re-ranking. Meanwhile the two highest-return investments are training-side (the LR-decay stage alone: +2 .21 ) and retrieval-side (sparse exact re-ranking: +4 .19 /+6 .21 at 29 s/137 s per split, no training, no memory wall). Deployment add-ons are cheap but bounded (flip-TTA +0 .49 ; lossless PCA to 1024-d, a dividend of Section V-B’s rank finding; camera-bias correction nullified under the official protocol, 
+
+−0.09 ). Fusion buys redundancy; recipe and re-ranking buy accuracy. 
+
+> VII. Discussion and Limitations
+
+Why diversity collapses: a coherent mechanism. Two established results jointly predict our observations. Solu-tions sharing an optimization trajectory occupy a single function-space mode [14]: heads over a shared backbone— and two backbones coupled through fusion losses—are such solutions, so their retrieval behavior converges (Jaccard 0.79 →0.84) rather than diversifies. And fine-tuning distorts pretrained features toward the task signal [10]: initialization differences (occlusion agreement 0.30) are progressively overwritten, and under an aggressive schedule the weaker branch erodes outright (layer-wise decay: 68.9 →59.7). Clas-sical ensemble gains come precisely from what multi-branch architectures forgo: independent training [15]. 
+
+Recipe versus architecture—not a contradiction. Our two headline findings reconcile once their scopes are fixed. 
+
+Within a fixed backbone, the recipe governs how close the model gets to that backbone’s own ceiling—hence a single ConvNeXt reaches parity by recipe alone. Across backbones, once each is trained well, the architecture pair sets where that ceiling is—hence a well-trained ViT still lands 13–15 points lower ( ∼15 under full fine-tuning, ∼13 with LoRA). Recipe determines proximity to a ceiling; for this pretraining lineage and adaptation regime, the architecture pair sets its height. 
+
+Scope. Our evidence covers vehicle Re-ID on two bench-marks, one foundation-model family, and 256-px train-ing resolution; resolution retraining (320/384) is a known untested lever. Both backbones share a DINOv3 teacher— though Section V-C shows this does not understate their heterogeneity (the independently pretrained pair is, if any-thing, more similar)—and all fusion results use one fusion architecture family (mutual cross-attention), though the read-out and late-fusion probes suggest fusion design is not the binding constraint. The two failures also differ in coverage: the same-backbone collapse is replicated under in-domain training on both benchmarks, whereas the cross-backbone 
+
+result is established under VeRi-Wild training only. VeRi-Wild’s scale (400k images) may itself be what saturates the single backbone, and we cannot exclude that a second backbone still pays on a mid-sized benchmark; we scope contribution (i) accordingly and list this as falsifier (e). Our bootstrap intervals are query-level: they capture evaluation 
+
+uncertainty, not training-seed variance. We did not run multi-seed retraining, so every sub-0.1 mAP comparison (parity, the −0.05 concatenation delta, the +0 .03 fused delta) is a single-seed observation and should be read as such; for the branch-level claims, seed variance is partly addressed by the ViT ceiling reproducing across three independent runs. Finally, the 82.42 dual-backbone VeRi-776 entry in Table 1 is a separate reproduction retained only to quantify protocol inflation; as a matched-architecture in-domain reference it is superseded by the Option A result of Section V-B. 
+
+What would falsify us. (a) Backbone pairs from indepen-dent pretraining lineages recovering a positive net fusion gain over the stronger member’s solo ceiling; (b) training-time local supervision creating branch specialization that survives convergence—our six failed zero-training probes show post-hoc recombination cannot, but a part-aware loss might; (c) a ViT recipe that closes the 13–15-point fine-tuned gap at this data scale; (d) a mid-level fusion module extracting the cross-backbone diversity that score-level fusion demonstra-bly cannot—our oracle bound rules this out at the score level for the strongest ViT we have, and the trained cross-attention fusion does not achieve it, but a different mechanism might; (e) cross-backbone collapse failing to reproduce under VeRi-776 training, where a mid-sized dataset may leave the single backbone further from saturation. Each is a concrete, runnable experiment; we release the diagnostic toolkit to make such falsification cheap. 
+
+Practical guidance. Under the official cross-camera protocol (whose omission alone inflates results by 3–4 mAP), spend compute on: one strong foundation backbone, full unfreezing with a staged LR decay, and exact sparse re-ranking. Do not spend it on parallel heads or a second backbone. 
+
+> VIII. Conclusion
+
+Does the diversity premise behind a decade of multi-branch Re-ID survive foundation-model-scale fine-tuning? On the two benchmarks, the one model family and the single-seed protocol we study, it does not. Same-backbone heads collapse into measurable redundancy on both VeRi-Wild and VeRi-776, and even maximally heterogeneous CNN– Transformer fusion—given a frozen anchor, three recipes plus a LoRA control, and every structural advantage— never exceeds its own single-backbone component beyond a paired 95% upper bound of +0 .11 mAP, a mechanism consistent with shared-trajectory mode collapse and fine-tuning feature distortion. A single DINOv3-ConvNeXt with the right recipe and exact sparse re-ranking matches the strongest protocol-verified metadata-dependent multi-branch baseline at a fraction of the complexity. Within this scope, and pending the falsifiers we list, diversity appears to be something that must be trained for , not wired in.  
+
+> 8VOLUME ,
+
+<Society logo(s) and publication title will appear here. >
+
+REFERENCES 
+
+[1] Y. Lou, Y. Bai, J. Liu, S. Wang, and L.-Y. Duan, “VERI-Wild: A large dataset and a new method for vehicle re-identification in the wild,” in Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR) , 2019, pp. 3235–3243. [2] X. Liu, W. Liu, T. Mei, and H. Ma, “A deep learning-based approach to progressive vehicle re-identification for urban surveillance,” in Proc. European Conf. Computer Vision (ECCV) , 2016, pp. 869–884. [3] A. Amiri, A. Kaya, and A. S. Kec ¸eli, “A comprehensive survey on deep-learning-based vehicle re-identification: Models, data sets and challenges,” arXiv:2401.10643 , 2024. [4] G. Wang, Y. Yuan, X. Chen, J. Li, and X. Zhou, “Learning discrimi-native features with multiple granularities for person re-identification,” in Proc. ACM Int. Conf. Multimedia (MM) , 2018, pp. 274–282. [5] E. Almeida, B. Silva, and J. Batista, “Strength in diversity: Multi-branch representation learning for vehicle re-identification,” in Proc. IEEE Int. Conf. Intelligent Transportation Systems (ITSC) , 2023. [6] S. He, H. Luo, P. Wang, F. Wang, H. Li, and W. Jiang, “TransReID: Transformer-based object re-identification,” in Proc. IEEE/CVF Int. Conf. Computer Vision (ICCV) , 2021, pp. 15 013–15 022. [7] Y. Wang, P. Zhang, X. Liu, Z. Tu, and H. Lu, “Unity is strength: Unifying convolutional and transformeral features for better person re-identification,” IEEE Trans. Intelligent Transportation Systems , 2024. [8] O. Sim´ eoni, H. V. Vo, M. Seitzer, F. Baldassarre, M. Oquab et al. ,“DINOv3,” arXiv:2508.10104, Meta AI Research , 2025. [9] S. Li, L. Sun, and Q. Li, “CLIP-ReID: Exploiting vision-language model for image re-identification without concrete text labels,” in Proc. AAAI Conf. Artificial Intelligence , 2023. [10] A. Kumar, A. Raghunathan, R. Jones, T. Ma, and P. Liang, “Fine-tuning can distort pretrained features and underperform out-of-distribution,” in Proc. Int. Conf. Learning Representations (ICLR) ,2022. [11] Z. Liu, H. Mao, C.-Y. Wu, C. Feichtenhofer, T. Darrell, and S. Xie, “A ConvNet for the 2020s,” in Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR) , 2022, pp. 11 976–11 986. [12] R. Wightman, H. Touvron, and H. J´ egou, “ResNet strikes back: An improved training procedure in timm,” arXiv:2110.00476 , 2021. [13] H. Luo, Y. Gu, X. Liao, S. Lai, and W. Jiang, “Bag of tricks and a strong baseline for deep person re-identification,” in Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition Workshops (CVPRW) ,2019. [14] S. Fort, H. Hu, and B. Lakshminarayanan, “Deep ensembles: A loss landscape perspective,” arXiv:1912.02757 , 2019. [15] B. Lakshminarayanan, A. Pritzel, and C. Blundell, “Simple and scalable predictive uncertainty estimation using deep ensembles,” in 
+
+Advances in Neural Information Processing Systems (NeurIPS) , 2017. [16] M. Raghu, T. Unterthiner, S. Kornblith, C. Zhang, and A. Dosovitskiy, “Do vision transformers see like convolutional neural networks?” in 
+
+Advances in Neural Information Processing Systems (NeurIPS) , 2021. [17] S. Kornblith, M. Norouzi, H. Lee, and G. Hinton, “Similarity of neural network representations revisited,” in Proc. Int. Conf. Machine Learning (ICML) , 2019. [18] T. Nguyen, M. Raghu, and S. Kornblith, “Do wide and deep networks learn the same things? uncovering how neural network representations vary with width and depth,” in Proc. Int. Conf. Learning Representa-tions (ICLR) , 2021. [19] Z. Zhong, L. Zheng, D. Cao, and S. Li, “Re-ranking person re-identification with k-reciprocal encoding,” in Proc. IEEE Conf. Com-puter Vision and Pattern Recognition (CVPR) , 2017, pp. 1318–1327. [20] H. Liu, Y. Tian, Y. Wang, L. Pang, and T. Huang, “Deep relative distance learning: Tell the difference between similar vehicles,” in 
+
+Proc. IEEE Conf. Computer Vision and Pattern Recognition (CVPR) ,2016, pp. 2167–2175. [21] L. Lu, Z. Fu, D. Chu, W. Wang, and B. Xu, “CLIP-SENet: CLIP-based semantic enhancement network for vehicle re-identification,” 
+
+arXiv:2502.16815 , 2025. [22] H. Bao, L. Dong, S. Piao, and F. Wei, “BEiT: BERT pre-training of image transformers,” in Proc. Int. Conf. Learning Representations (ICLR) , 2022. [23] Y. Sun, C. Cheng, Y. Zhang, C. Zhang, L. Zheng, Z. Wang, and Y. Wei, “Circle loss: A unified perspective of pair similarity optimization,” in Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition (CVPR) , 2020, pp. 6398–6407. [24] Y. Wen, K. Zhang, Z. Li, and Y. Qiao, “A discriminative feature learning approach for deep face recognition,” in Proc. European Conf. Computer Vision (ECCV) , 2016, pp. 499–515. [25] A. Hermans, L. Beyer, and B. Leibe, “In defense of the triplet loss for person re-identification,” arXiv:1703.07737 , 2017. [26] M. D. Zeiler and R. Fergus, “Visualizing and understanding convolu-tional networks,” in Proc. European Conf. Computer Vision (ECCV) ,2014, pp. 818–833. [27] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai 
+
+et al. , “An image is worth 16x16 words: Transformers for image recognition at scale,” in Proc. Int. Conf. Learning Representations (ICLR) , 2021. [28] E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, and W. Chen, “LoRA: Low-rank adaptation of large language models,” in Proc. Int. Conf. Learning Representations (ICLR) , 2022. [29] R. Akbarian Bafghi, N. Harilal, C. Monteleoni, and M. Raissi, “Param-eter efficient fine-tuning of self-supervised ViTs without catastrophic forgetting,” in Proc. IEEE/CVF Conf. Computer Vision and Pattern Recognition Workshops (CVPRW) , 2024, arXiv:2404.17245. [30] F. Radenovi´ c, G. Tolias, and O. Chum, “Fine-tuning CNN image retrieval with no human annotation,” IEEE Trans. Pattern Analysis and Machine Intelligence , vol. 41, no. 7, pp. 1655–1668, 2019. [31] Y. Sun, L. Zheng, Y. Yang, Q. Tian, and S. Wang, “Beyond part models: Person retrieval with refined part pooling (and a strong convolutional baseline),” in Proc. European Conf. Computer Vision (ECCV) , 2018, pp. 480–496.

@@ -1,0 +1,1111 @@
+Title: Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation
+
+URL Source: https://arxiv.org/pdf/2607.21973v1
+
+Published Time: Mon, 27 Jul 2026 00:23:51 GMT
+
+Number of Pages: 30
+
+Markdown Content:
+# Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation 
+
+# Yuqi Li ∗
+
+City College of New York, CUNY New York, NY, USA yli@ccny.cuny.edu 
+
+# Xi Xiao ∗
+
+University of Alabama at Birmingham Birmingham, AL, USA xxiao@uab.edu 
+
+# Yunbei Zhang 
+
+Tulane University New Orleans, LA, USA yzhang@tulane.edu 
+
+# Lin Zhao 
+
+Northeastern University Boston, MA, USA l.zhao@northeastern.edu 
+
+# Yu Li 
+
+George Washington University Washington, DC, USA yli@gwu.edu 
+
+# Aiden Zhao 
+
+Capital One McLean, VA, USA aiden.zhao@capitalone.com 
+
+# Tianyang Wang 
+
+University of Alabama at Birmingham Birmingham, AL, USA twang@uab.edu 
+
+# Hao Xu 
+
+Harvard University Cambridge, MA, USA hxu@harvard.edu 
+
+# Yingli Tian †
+
+City College of New York, CUNY New York, NY, USA ytian@ccny.cuny.edu 
+
+## Abstract 
+
+Vision foundation models are increasingly reused as frozen back-bones for downstream visual recognition, making parameter-efficient adaptation a central problem. Prompt-based adaptation, including Visual Prompt Tuning (VPT), provides a lightweight way to spe-cialize these models, but its layer-wise behavior remains poorly understood: performance is sensitive to prompt depth, placement, and task distribution, and gains on standard in-domain benchmarks do not always translate into robust generalization. We argue that this limitation is not solely an optimization issue, but a layer-wise information allocation issue: existing prompt-based methods lack principled control over what prompt-conditioned representations should preserve, suppress, and propagate across depth. Inspired by the Information Bottleneck principle, we introduce Prompted 
+
+Information Bottlenecks ( PIB ), a framework that regularizes layer-wise compression-sufficiency trade-offs and promotes a more co-herent cross-layer information path. The key idea is that effective adaptation should be minimal yet sufficient, retaining task-relevant local evidence in earlier layers while progressively discarding nui-sance factors and redundant details in deeper layers. Extensive experiments show that PIB achieves strong performance across 34 datasets, reaching 92.1% on FGVC, 93.01% on HTA, and 77.33% on VTAB-1k, while tuning only 0.35% parameters on average across the main settings. Beyond benchmark accuracy, PIB helps explain the non-monotonic behavior of prompt capacity scaling, reduces shortcut reliance, and improves robustness under distribution shift and fine-grained recognition settings. These results position PIB as both a practical method and an information-allocation perspec-tive for adapting frozen vision foundation models. Our codes are available at https://github.com/itsnotacie/MM-26-PIB 
+
+## CCS Concepts 
+
+• Information systems → Multimedia information systems .            
+
+> ∗Both authors contributed equally to this work.
+> †Corresponding author. 1357911 12
+> Layer Index
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> Trajectory Score
+> Information Trajectory
+> Progressive semantic consolidation
+> Vanilla VPT
+> Ours
+> 1357911 12
+> Layer Index
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> 0.45
+> Redundancy Score
+> Redundancy
+> Steady suppression
+> Vanilla VPT
+> Ours
+
+Figure 1: A motivating diagnosis of layer-wise prompt behav-ior. Compared with standard prompt tuning, our proposed PIB exhibits a more coherent information trajectory and a steadier reduction of redundancy across transformer depth. This trend suggests that a key limitation of prompt-based VFM adaptation is not merely insufficient prompt capacity, but the lack of principled control over layer-wise informa-tion allocation. 
+
+## Keywords 
+
+Information Bottleneck, PEFT, Vision Transformers 
+
+## 1 Introduction 
+
+Large-scale vision foundation models (VFMs), especially Vision Transformers (ViTs), have become standard backbones for mod-ern visual recognition and multimodal systems [ 14 , 42 ]. As these models are increasingly reused as frozen components, downstream adaptation has become a central challenge: practitioners care not only about transfer accuracy, but also about how to specialize pre-trained models under constraints on compute, memory, and labeled data. In this context, parameter-efficient adaptation has emerged as a practical alternative to full fine-tuning. Prompt-based adaptation is one representative family of such methods. Visual Prompt Tuning (VPT) [ 27 ], for example, adapts a frozen transformer through a small set of learnable prompt tokens arXiv:2607.21973v1 [cs.CV] 24 Jul 2026 Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+rather than updating the full backbone [ 68 ]. This design is simple, modular, and compatible with a wide range of pretrained architec-tures. Recent work has extended prompt tuning through deeper prompt insertion, adaptive prompt generation, structured prompt design, and optimization-oriented refinements [ 18 , 55 , 57 , 66 , 81 ]. However, despite this rapid progress, prompt-based VFM adapta-tion remains largely empirical: most existing methods focus on how 
+
+to design better prompts, while much less is understood about what 
+
+prompt-conditioned representations actually preserve, suppress, and propagate inside a frozen vision transformer. Our starting point is a set of empirical observations that are dif-ficult to explain under this design-centric view. Increasing prompt depth, prompt length, or insertion range does not reliably improve transfer performance. In some cases, stronger prompt parameteriza-tion helps on standard in-domain benchmarks but becomes unstable under fine-grained recognition, low-shot transfer, or distribution shift. We also observe that large prompt-induced changes in inter-mediate representations do not always lead to stronger semantic discrimination. Figure 1 provides a representative diagnosis of this phenomenon: compared with PIB, standard deep prompting ex-hibits a less coherent cross-layer trajectory and weaker redundancy suppression. Taken together, these observations suggest that the weakness of prompt-based adaptation cannot be fully explained by prompt capacity or training stability alone. Recent work has begun to move beyond purely structural prompt design. Prior analysis shows that the gap between prompt tuning and full fine-tuning cannot be reduced to simple optimization or overfitting arguments [ 19 ], while other work attributes prompt-tuning limitations to unstable cross-layer prompt dynamics [ 66 ]. Our view is complementary but different. We argue that these phe-nomena point to a common failure mode: existing prompt-based adaptation methods lack principled control over layer-wise information allocation. As a result, prompts may over-preserve nuisance factors such as texture, background, or dataset-specific statistics, or suppress task-relevant local evidence before robust semantics emerge. This paper studies prompt-based VFM adaptation from the per-spective of layer-wise information allocation. Rather than asking only how to make prompts more expressive, we ask: how can we characterize and regulate the layer-wise information flow in-duced by prompts so that frozen-backbone adaptation learns minimal-yet-sufficient task representations? To answer this question, we draw inspiration from the Information Bottleneck (IB) principle [ 51 , 52 ]. Instead of viewing prompts as auxiliary tokens appended to a frozen transformer, we interpret them as mechanisms that reshape the information path of intermediate representations across depth. Under this view, effective adaptation should follow a 
+
+minimal-yet-sufficient trajectory: early layers retain local evidence necessary for discrimination, while deeper layers progressively suppress nuisance factors and redundant detail. Based on this formulation, we develop a training framework that regularizes layer-wise compression-sufficiency trade-offs and encourages more coherent cross-layer prompt behavior. Our em-pirical study is designed to answer three questions: ❶ Can this view explain the non-monotonic and sometimes fragile behavior of prompt capacity scaling? ❷ Can explicit information regular-ization reduce shortcut reliance and improve robustness beyond standard in-domain evaluation? ❸ Does a prompted information bottleneck lead to more interpretable layer-wise prompt dynamics? Through motivating analyses, controlled comparisons, and down-stream experiments, we show that this perspective provides both a clearer explanation of prompt-based adaptation failure modes and a practical route to improving frozen VFM adaptation. Our contributions are as follows: 
+
+• We identify a previously underexplored failure mode in prompt-based VFM adaptation: its limitation arises not only from optimization dynamics, but also from unregulated layer-wise information allocation. 
+
+• We formulate prompt-conditioned frozen-backbone adapta-tion as a layer-wise Prompted Information Bottleneck (PIB) process , providing an IB-inspired view in which effective prompts should follow a minimal-yet-sufficient information path across transformer depth. 
+
+• We develop a training framework that explicitly regularizes prompt-induced information allocation through complemen-tary compression and sufficiency objectives together with cross-layer path constraints. 
+
+• We design empirical analyses that connect non-monotonic scaling, unstable generalization, shortcut sensitivity, and prompt dynamics to the proposed information-allocation perspective. 
+
+## 2 Related Work 2.1 Parameter-Efficient Adaptation in Vision 
+
+Parameter-efficient adaptation in vision has been explored through adapters, side branches, selective fine-tuning, low-rank updates, and prompt-based methods [ 3, 6, 7 , 13 , 14 , 23 , 30 , 43 , 69 , 71 , 77 , 79 , 83 ]. Prompt-based adaptation is especially attractive because it can spe-cialize a frozen Vision Transformer by introducing only a small number of learnable tokens, with VPT serving as a representative instantiation [ 27 ]. Follow-up work has extended this family through deeper prompt insertion, adaptive prompt generation, structured prompting, and optimization-oriented refinements [ 12 , 18 , 24 , 27 , 28 ,40 , 44 , 55 , 57 , 66 , 70 , 72 , 81 ]. Despite their differences, most methods are driven by the same question: how can prompts be made more ex-pressive or easier to optimize? More recent studies begin to analyze prompt behavior itself, showing that prompt tuning may suffer from incomplete transfer or unstable cross-layer dynamics [ 19 , 55 , 66 ]. Our work is related in spirit but different in focus. Rather than asking how prompts should be designed or stabilized, we ask what prompt-conditioned representations should preserve and discard across layers. This shifts the discussion from prompt structure or dynamics to layer-wise information allocation. Prompt-based adap-tation has also moved beyond static, dataset-level token prompts. V2APT generates input-dependent prompts through a variational latent model, while differentiable search can discover layer-specific prompt–token fusion rules [ 63 , 67 ]. In-context prompt tuning has been used to personalize large vision-language models from refer-ence images [ 29 ], and dynamic prompts have also been explored for graph-based drug–target affinity prediction [ 65 ]. These methods demonstrate the broad utility of content-adaptive prompting, but they do not study the layer-wise compression–sufficiency trajectory targeted by PIB. Efficiency in visual learning can also be pursued Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+at the data and communication levels. Dataset-distillation methods use diffusion or coarse-to-fine autoregressive generators to con-struct compact, representative training sets [ 89 , 91 ], while THInImg encodes long-form audio within an identity image for cross-modal talking-head reconstruction [ 90 ] and reasoning related [ 85 , 88 ]. These directions reduce data or transmission costs and are com-plementary to our focus on parameter-efficient adaptation inside frozen VFMs. 
+
+## 2.2 Information Bottleneck and Robustness 
+
+Our work is also related to the Information Bottleneck (IB) literature and its deep-learning extensions [ 1, 4 , 17 , 45 –47 , 51 , 52 , 59 , 86 , 87 ]. IB seeks representations that remove irrelevant input variability while retaining information necessary for the target task. While this perspective has influenced representation learning, robustness, and generalization analysis [ 5, 15 , 16 , 39 , 41 , 53 , 54 , 58 , 64 , 80 , 84 ], most prior work studies fully trainable models rather than frozen-backbone adaptation. Our study is also connected to studies on shortcut learning and spurious visual cues, which show that strong in-domain performance may rely on unstable correlations such as texture or background [ 2, 11 , 21 , 26 , 32 , 36 , 38 , 48 , 48 – 50 , 56 , 99 ]. These observations are especially relevant to prompt-based frozen-backbone adaptation, where a small set of trainable prompts may amplify dataset-specific regularities instead of robust task semantics. However, prior work does not provide a prompt-specific framework for regulating this behavior across transformer layers. Our work fills this gap by formulating prompt-conditioned adaptation as an IB-inspired layer-wise prompted information bottleneck process. 
+
+## 3 Method 
+
+As illustrated in Figure 2, we reinterpret prompt-based VFM adap-tation as a layer-wise information allocation process and regularize it through complementary compression and sufficiency objectives together with a cross-layer minimal-sufficient path. 
+
+## 3.1 Problem Setting 
+
+We consider prompt-based adaptation of a pretrained vision foun-dation model, instantiated by a Vision Transformer (ViT) backbone 
+
+𝐹 with 𝐿 frozen transformer blocks. Given an input image 𝑥 ∈ X 
+
+and label 𝑦 ∈ Y , the patch embedding layer produces an initial token matrix 𝐻 0 ∈ R𝑁 ×𝑑 , where 𝑁 is the number of image tokens and 𝑑 is the embedding dimension. A task head 𝑔 (·) produces the final prediction from the last-layer representation. Following VPT-style adaptation, we introduce trainable prompt parameters 𝑃 1, . . . , 𝑃 𝐿 , where 𝑃 𝑙 ∈ R𝑀 𝑙 ×𝑑 denotes the prompt asso-ciated with layer 𝑙 . We keep the formulation general and only as-sume that prompts affect the layer-wise hidden states. The prompt-conditioned representation at layer 𝑙 is written as 
+
+𝐻 𝑙 = 𝑓 𝑙 (𝐻 𝑙 −1, 𝑃 𝑙 ), 𝑙 = 1, . . . , 𝐿, 
+
+where 𝑓 𝑙 denotes the frozen 𝑙 -th transformer block together with the prompt interaction mechanism. The final prediction is 
+
+ˆ𝑦 = 𝑔 (𝐻 𝐿 ),
+
+and standard prompt tuning optimizes only the task loss 
+
+Ltask = ℓ ( ˆ𝑦, 𝑦 ).
+
+The limitation of this objective is that it specifies only the output target, but not what prompt-conditioned representations should preserve or suppress across layers. As a result, prompts may retain nuisance-heavy information for too long or discard task-relevant evidence too early. 
+
+## 3.2 IB-inspired Prompted Information Bottleneck 
+
+We reinterpret prompt tuning as a process of layer-wise information allocation. Instead of viewing prompts as auxiliary tokens, we view them as lightweight control variables that reshape how information flows through a frozen transformer. Under this view, successful adaptation should preserve useful evidence in early layers while progressively filtering nuisance factors in deeper layers. Our formulation is inspired by the Information Bottleneck (IB) principle [ 51 , 52 ], which seeks representations that compress irrel-evant input variability while preserving task-relevant information. For a representation 𝑍 , the classical IB objective is 
+
+min 𝐼 (𝑍 ; 𝑋 ) − 𝛽𝐼 (𝑍 ; 𝑌 ),
+
+where 𝐼 (· ; ·) denotes mutual information. In our setting, we extend this idea to the layer-wise prompt-conditioned representation chain 
+
+𝐻 1, . . . , 𝐻 𝐿 , leading to the idealized objective 
+
+min  
+
+> {𝑃 𝑙 }
+> 𝐿
+
+∑︁ 
+
+> 𝑙 =1
+
+
+
+𝐼 (𝐻 𝑙 ; 𝑋 ) − 𝛽 𝑙 𝐼 (𝐻 𝑙 ; 𝑌 )
+
+
+
+.
+
+This objective captures our main hypothesis: prompt tuning should follow a minimal-yet-sufficient information path across depth. Since direct mutual information optimization is intractable in this setting, we instead introduce practical surrogates for com-pression and sufficiency. 
+
+## 3.3 Layer-wise Compression and Sufficiency 
+
+We decompose the prompted information bottleneck into two com-plementary terms: 
+
+LPIB =
+
+> 𝐿
+
+∑︁ 
+
+> 𝑙 =1
+
+
+
+𝜆 𝑙 L (𝑙 ) 
+
+> comp
+
++ 𝛾 𝑙 L (𝑙 )
+
+> suff
+
+
+
+,
+
+where 𝜆 𝑙 and 𝛾 𝑙 control the trade-off at layer 𝑙 .
+
+Compression. The compression term discourages prompts from propagating excessive redundant or nuisance-heavy information. Since exact 𝐼 (𝐻 𝑙 ; 𝑋 ) is unavailable, we adopt a redundancy-based surrogate. Let ˜𝐻 𝑙 ∈ R𝑁 𝑙 ×𝑑 denote the row-wise normalized hidden representation at layer 𝑙 , and define the empirical correlation matrix 
+
+𝐶 𝑙 = 1
+
+𝑁 𝑙 
+
+˜𝐻 ⊤ 
+
+> 𝑙
+
+˜𝐻 𝑙 .
+
+We then use the off-diagonal energy of 𝐶 𝑙 as the compression loss: 
+
+L (𝑙 ) 
+
+> comp
+
+= ∥𝐶 𝑙 − 𝐼 𝑑 ∥2 
+
+> 𝐹, off
+
+,
+
+where 𝐼 𝑑 is the identity matrix. Minimizing this term encourages less redundant layer-wise representations. Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+Figure 2: Overview of our proposed Prompted Information Bottleneck (PIB). A: prompt-based adaptation inserts trainable prompts into a frozen vision backbone without explicitly regulating what information should be preserved or suppressed, which may lead to redundant detail propagation, unstable cross-layer refinement, and early weakening of useful semantic cues. B: PIB introduces an IB-inspired layer-wise objective through complementary compression and sufficiency surrogates, while enforcing a minimal-sufficient path across depth from local evidence retention to semantic discrimination. C: PIB yields smoother redundancy reduction, stronger class separability, and a more ordered cross-layer path. 
+
+Sufficiency. Compression alone is not enough, since excessive compression may remove useful discriminative cues. We therefore add a sufficiency term based on class separability. Let ℎ𝑙,𝑖 ∈ R𝑑 
+
+denote the pooled representation of sample 𝑖 at layer 𝑙 , and let 𝜇 𝑙,𝑐 
+
+be the corresponding class mean in a mini-batch. We define the within-class and between-class scatter as 
+
+𝑆 (𝑙 ) 
+
+> intra
+
+=∑︁ 
+
+> 𝑐
+
+∑︁ 𝑖 ∈ B 𝑐 
+
+∥ℎ𝑙,𝑖 − 𝜇 𝑙,𝑐 ∥22,𝑆 (𝑙 ) 
+
+> inter
+
+=∑︁ 
+
+> 𝑐 ≠𝑐 ′
+
+∥𝜇 𝑙,𝑐 − 𝜇 𝑙,𝑐 ′ ∥22.
+
+The sufficiency loss is then 
+
+L (𝑙 ) 
+
+> suff
+
+= 𝑆 (𝑙 )
+
+> intra
+
+𝑆 (𝑙 ) 
+
+> inter
+
++ 𝜖 ,
+
+where 𝜖 is a small constant. This encourages each layer to remain discriminative while being compressed. Together, these two terms implement the desired minimal-sufficient trade-off in a tractable form: compression suppresses redundancy, while sufficiency preserves task-relevant structure. We do not treat these losses as exact mutual-information estimators; rather, they are optimization-friendly surrogates aligned with the IB-inspired objective above. 
+
+## 3.4 Cross-layer Minimal-Sufficient Path 
+
+Regulating each layer independently is still insufficient, since suc-cessful prompt tuning should also follow a coherent refinement path across depth. Early layers should remain relatively detail-preserving, while deeper layers should become progressively more selective. To capture this behavior, we define a layer quality score 
+
+𝑞 𝑙 = L (𝑙 ) 
+
+> comp
+
++ 𝛼 𝑙 L (𝑙 ) 
+
+> suff
+
+,
+
+where a lower score indicates a better compression-sufficiency balance. We then regularize the cross-layer sequence through 
+
+Lpath =
+
+> 𝐿 −1
+
+∑︁ 
+
+> 𝑙 =1
+
+max  0, 𝑞 𝑙 +1 − 𝑞 𝑙 − 𝛿 𝑙 
+
+,
+
+where 𝛿 𝑙 ≥ 0 is a tolerance margin. This term penalizes abrupt deterioration in the layer-wise trade-off and encourages a smoother transition from local evidence preservation to higher-level semantic selectivity. 
+
+## 3.5 Optional Layer-aware Routing 
+
+Different layers need not share the same compression–sufficiency balance. We therefore introduce an optional learnable gate 𝑟 𝑙 ∈[0, 1] that assigns a layer-dependent weighting to the two objec-tives: 
+
+Lroute PIB =
+
+> 𝐿
+
+∑︁ 
+
+> 𝑙 =1
+
+
+
+𝑟 𝑙 𝜆 𝑙 L (𝑙 ) 
+
+> comp
+
++ ( 1 − 𝑟 𝑙 )𝛾 𝑙 L (𝑙 )
+
+> suff
+
+
+
+.
+
+A larger 𝑟 𝑙 places more weight on redundancy suppression, whereas a smaller value favors preservation of discriminative evidence. The gates are learned jointly with the prompts and serve as an optional refinement of the base formulation. Parameterization and imple-mentation details are provided in Appendix A.6. Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+## 3.6 Final Objective 
+
+Our final objective combines the task loss with the proposed regu-larizers: 
+
+Ltotal = Ltask + L PIB + 𝜂 Lpath ,
+
+where 𝜂 controls the strength of path regularization. The routed variant replaces LPIB with the layer-aware objective defined in Appendix A.6. During training, we optimize the prompt parameters, the task head, and optionally the routing variables, while keeping the pre-trained transformer blocks frozen. The key difference from standard prompt tuning is therefore not a new prompt structure, but an ex-plicit principle for regulating prompt behavior: prompts should preserve what the task needs, suppress what it does not, and do so progressively across layers. 
+
+## 4 Experiments 4.1 Experimental Setup 
+
+We evaluate PIB in the standard frozen-backbone adaptation setting on VTAB-1k, following the three-group split of Natural, Specialized, and Structured. For all experiments, the pretrained backbone is kept frozen, and only the task head together with the prompt-related parameters are optimized. We report average classification accuracy over each VTAB-1k group. To test generality, we consider super-vised ViT-Base/16, MAE- and MoCo v3-pretrained ViT-Base, and ImageNet-21k-pretrained Swin-Base. Unless otherwise stated, all compared methods follow the same evaluation protocol. Optimizer settings, schedules, batch size, training epochs, hardware, and other implementation details are provided in Appendix A. 
+
+## 4.2 Main Results 
+
+Tables 1–3 summarize the comparisons across architectures and pretraining paradigms. Overall, PIB achieves consistently strong performance with a low tuning budget, showing that explicitly regulating layer-wise information allocation is effective for frozen-backbone adaptation. 
+
+Results on ViT-Base/16. As shown in Table 1, PIB achieves the strongest overall performance on the standard ViT-Base/16 setting. The gains are especially clear on VTAB-1k, where our method im-proves all three splits and is particularly effective on the Structured subset. This suggests that the advantage of PIB does not come merely from stronger prompt parameterization, but from learning a more principled cross-layer information path. 
+
+Results across different pretraining paradigms. Table 2 shows that the benefit of PIB is robust across both reconstruction-based and contrastive pretraining. Under MAE and MoCo v3, our method remains consistently competitive and achieves the best or near-best results across most settings. This indicates that the proposed framework is not tied to a specific upstream training recipe, but generalizes across different pretrained representation spaces. 
+
+Results on Swin-Base. Table 3 shows that PIB transfers beyond standard ViTs: on Swin-Base, it reaches 85.40, 87.11, and 61.97 on Natural, Specialized, and Structured with only 0.26% tunable pa-rameters. This verifies compatibility with hierarchical transformer architectures. 
+
+## 4.3 Ablation Studies 
+
+We next study which components of PIB are responsible for the observed gains. Table 4 reports the component ablation, while Table 5 isolates path regularization and layer-aware weighting. Table 4 shows that compression and sufficiency are complemen-tary. Compression alone provides its largest gain on Structured tasks, where suppressing nuisance-heavy information is particu-larly important, while sufficiency yields broader gains by preserv-ing discriminative semantics. Combining them improves all three groups. Adding the path regularizer further raises Structured accu-racy from 62.3 to 63.1, supporting the need for coherent cross-layer refinement, and routing provides a smaller but consistent gain. Table 5 isolates the two cross-layer design choices. Path regu-larization improves uniform weighting, and layer-aware weight-ing is also beneficial on its own. Their combination performs best across all three groups, indicating that a coherent global path and layer-dependent allocation play complementary roles. Additional component analysis is provided in Appendix D. 
+
+## 4.4 Why Does Prompt Scaling Behave Non-Monotonically? 
+
+Increasing prompt depth or length expands adaptation capacity but does not reliably improve transfer. We analyze both axes be-cause depth controls how many transformer blocks receive prompts, whereas length controls the number of prompt tokens introduced at each prompted layer. 
+
+Depth scaling. Prompting more layers is not uniformly beneficial because transformer depth carries different representational roles. Early blocks retain local visual evidence, while later blocks increas-ingly organize semantic structure. Injecting unconstrained prompts throughout the network can repeatedly preserve nuisance factors or disrupt this progression, producing the non-monotonic VPT curve in Figure 4. PIB instead regulates the compression–sufficiency bal-ance along depth and consequently exhibits a smoother trend. 
+
+Length scaling. Longer prompts similarly increase capacity with-out guaranteeing task-relevant information. Additional tokens may become redundant or amplify dataset-specific correlations when their information content is unconstrained. PIB remains more stable as length grows because its objective penalizes redundant inter-mediate structure while retaining class-discriminative evidence. Together, these results show that prompt scaling is governed by in-formation allocation rather than capacity alone. Complete settings and additional discussion are provided in Appendix D.3. 
+
+## 4.5 Attention Evolution Analysis 
+
+Figure 3 provides an independent view of how prompt-conditioned interactions evolve across depth. VPT displays a comparatively fragmented transition in middle and late layers, whereas PIB de-velops a smoother banded structure and more coherent deep-layer organization. The contrast is most visible after the intermediate blocks, where unconstrained prompts can propagate diffuse in-teractions. PIB does not simply increase attention magnitude; it reorganizes token relationships progressively, consistent with the path regularizer’s role in discouraging abrupt deterioration of the Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+Table 1: Comparison of fine-tuning methods with ViT-Base/16 backbone. Bold and underlined indicate best and second-best results. We report mean accuracy across datasets for each benchmark (FGVC: 5 datasets, HTA: 10 datasets, VTAB-1k: 19 datasets), for each VTAB-1k category (Natural, Specialized, and Structured). Please see Appendix for per-task results. Same for Table 2. 
+
+ViT-Base/16 [14] Tuned/Total FGVC Mean HTA Mean VTAB-1k [82] VTAB-1k Mean (85.8M) (%) Extra Params (%) (%) Natural Specialized Structured (%) Full [CVPR22][25] 100.00 — 88.54 85.8 75.88 83.36 47.64 65.57 Linear [CVPR22][25] 0.08 — 79.32 75.7 68.93 77.16 26.84 52.94 Partial-1 [NeurIPS14][79] 8.34 — 82.63 80.8 69.44 78.53 34.17 56.52 MLP-3 [CVPR20][7] 1.44 ✓ 79.80 78.5 67.80 72.83 30.62 53.21 Sidetune [ECCV20][83] 10.08 — 78.35 72.3 58.21 68.12 23.41 45.65 Bias [NeurIPS17][43] 0.80 — 88.41 82.1 73.30 78.25 44.09 62.05 Adapter [NeurIPS20][3] 1.02 ✓ 85.46 80.6 70.67 77.80 33.09 62.41 LoRA [ICLR22][23] — ✓ 89.46 85.5 78.26 83.78 56.20 72.25 AdaptFormer [NeurIPS22][6] — ✓ — — 80.56 84.88 58.83 72.32 ARC att [NeurIPS23][13] — ✓ 89.12 89.0 80.41 85.55 58.38 72.32 VPT-S [ECCV22][27] 0.16 ✓ 84.62 85.5 76.81 79.66 46.98 64.85 VPT-D [ECCV22][27] 0.73 ✓ 89.11 85.5 78.48 82.43 54.98 69.43 E2VPT [ICCV23][18] 0.39 ✓ 89.22 88.5 80.01 84.43 57.39 71.42 EXPRES [CVPR23][12] — ✓ — — 79.69 84.03 54.99 70.02 DAM-VP [CVPR23][24] — ✓ — 88.5 — — — —SA 2VP [AAAI24][40] 0.81 ✓ 90.08 91.5 80.97 85.73 60.80 75.83 SPT [ICML24][57] — ✓ 90.10 — 81.44 83.65 52.86 72.65 VFPT [NeurIPS24][81] 0.66 ✓ 89.24 — 81.35 84.93 60.19 75.49 LoR-VP [ICLR25][28] — ✓ 91.22 — 80.25 85.12 58.71 74.69 DA-VPT [CVPR25][44] — ✓ 89.32 — 79.91 83.16 60.01 74.36 ViaPT [ACMMM25][66] 0.66 ✓ 91.4 92.20 82.62 85.22 61.25 76.36 
+
+Ours 0.51 ✓ 92.1 93.01 82.98 85.83 63.18 77.33 
+
+Table 2: Comparison of the fine-tuning methods under different pretraining paradigms. We report VTAB-1k [ 82 ] accuracy using ViT-Base [14] as the frozen backbone, pretrained with MAE [20] and MoCo v3 [8] use the same settings. 
+
+Pretrained MAE [20] MoCo v3 [8] Method Tuned(%) Natural Specialized Structured Tuned(%) Natural Specialized Structured 
+
+Full [CVPR22] [25] 100.00 59.31 79.68 53.82 100.00 71.95 84.72 51.98 Linear [CVPR22] [25] 0.04 18.87 53.72 23.70 0.04 67.46 81.08 30.33 Partial-1 [NeurIPS14] [79] 8.30 58.44 78.28 47.64 8.30 72.31 84.58 47.89 Bias [NeurIPS17] [43] 0.16 54.55 75.68 47.70 0.16 72.89 81.14 53.43 Adapter [NeurIPS20] [3] 0.87 54.90 75.19 38.98 1.12 74.19 82.66 47.69 VPT-S [ECCV22] [27] 0.05 39.96 69.65 27.50 0.06 67.34 82.26 37.55 VPT-D [ECCV22] [27] 0.31 36.02 60.61 26.57 0.22 70.27 83.04 42.38 GPT [arXiv24] [78] 0.05 47.61 76.86 36.80 0.06 74.84 83.38 49.10 VFPT [NeurIPS24] [81] 0.38 53.59 77.75 36.15 0.22 77.47 85.76 58.74 LoR-VP [ICLR25] [28] 0.40 51.23 74.21 33.16 0.29 72.28 82.89 46.92 DA-VPT [CVPR25] [44] — 62.14 79.14 54.31 — 74.24 83.21 55.23 ViaPT [ACMMM25] [66] 0.36 54.26 78.01 37.52 0.30 79.12 86.81 60.05 
+
+Ours 0.33 64.01 79.20 55.29 0.29 79.91 87.15 61.06 
+
+compression–sufficiency trade-off. Attention entropy and prompt-to-patch analyses in Appendix F show the same progression from diverse early evidence to more selective late-stage structure. 
+
+## 4.6 Layer-wise Information Allocation 
+
+Beyond the main benchmark results, we further analyze how prompt-conditioned representations evolve across depth. To this end, we consider four complementary diagnostics: information trajectory, redundancy, class separability, and path score. Across all four met-rics, VPT exhibits less stable and less structured layer-wise behavior, while PIB consistently yields smoother refinement, lower redun-dancy, stronger separability, and a more ordered cross-layer path. These observations provide direct support for our central claim: the weakness of VPT is not only reflected in final performance, but also in disordered layer-wise information evolution. In contrast, PIB im-proves prompt-based adaptation by making this cross-layer process less oscillatory, less redundant, and more discriminative. A repre-sentative visualization is shown in Figure 1. Appendix F provides attention entropy, average-logit, and prompt-to-patch analyses, including Figure S3; further layer-wise diagnostics in Appendix E. 
+
+## 4.7 Qualitative Visualization 
+
+Figure 5 provides a qualitative comparison of prompt attention maps. VPT often responds to a mixture of foreground content and Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+Figure 3: Average attention logits across transformer depth. We compare the layer-wise attention patterns of VPT and PIB on ViT-Base/16 over 256 VTAB-1k samples. VPT exhibits more fragmented and less stable attention evolution across depth, especially in middle and late layers. In contrast, PIB yields a smoother and more structured attention pattern, indicating a more coherent layer-wise refinement process. Table 3: VTAB-1k results using Swin-Base pretrained on ImageNet-21k.                                             
+
+> Swin-Base [37] Tuned (%) Natural Specialized Structured
+> Full [25] 100.00 79.10 86.21 59.65 Linear [25] 0.06 73.52 80.77 33.52 Bias [43] 0.29 74.19 80.14 42.42 VPT-D [27] 0.25 76.78 83.33 51.85 E2VPT [18] 0.21 83.31 84.95 57.35 SA 2VP [40] 0.29 80.81 86.30 60.03 VFPT [81] 0.27 84.53 86.15 58.21 LoR-VP [28] 0.29 83.51 85.22 57.61 ViaPT [66] 0.27 85.29 86.21 62.24 Ours 0.26 85.40 87.11 61.97
+
+Figure 4: Depth and length scaling behavior of prompt-based adaptation. Increasing prompt capacity does not necessarily yield monotonic transfer gains. Standard VPT-style prompt-ing exhibits noticeable instability as prompt depth or prompt length increases, whereas our method shows a smoother and more favorable scaling trend. 
+
+surrounding context, while PIB produces more object-centric and semantically aligned activations. This difference is especially clear in the bird examples, where background clutter and vegetation are strong sources of distraction: compared with both VPT [ 27 ] and ViaPT [ 66 ], PIB places more emphasis on the discriminative object region and suppresses scattered responses on irrelevant surround-ings. These patterns are consistent with our central hypothesis that prompt tuning benefits from explicitly regulating layer-wise infor-mation allocation. By progressively filtering nuisance-heavy sig-nals while preserving task-relevant evidence, PIB leads to prompt-conditioned representations that are not only more interpretable, but also better aligned with robust semantic recognition. 
+
+## 4.8 Does PIB Reduce Shortcut Reliance and Improve Robustness? 
+
+A central claim of this paper is that the benefit of PIB is not limited to improving standard transfer accuracy. If the proposed frame-work indeed regulates layer-wise information allocation more ef-fectively, then its advantage should also appear in settings where shortcut-heavy adaptation becomes unreliable, such as foreground-background imbalance, corrupted inputs, distribution shift, and low-data transfer. We therefore evaluate PIB from two complementary perspectives: shortcut reliance and robustness under challenging transfer conditions. We first test whether PIB reduces dependence on shortcut-prone visual cues. As shown in Table 6, PIB achieves a higher accuracy than VPT under the standard setting (78.1 vs. 77.4), and the gain becomes larger when evaluation emphasizes foreground-dominant information (75.6 vs. 73.1). In contrast, PIB performs worse under the background-only setting (63.4 vs. 67.8). We interpret this result together with the standard and foreground-only gains: under the same evaluation construction, PIB retains stronger task-relevant foreground evidence while deriving less pre-dictive benefit from background-only inputs. This supports, rather than alone proves, reduced shortcut reliance. We further evaluate robustness under corruption, domain shift, and few-shot transfer. PIB consistently outperforms VPT across all three settings, improv-ing accuracy from 71.6 to 74.8 under corruption, from 69.8 to 73.2 Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+Table 4: Component ablation of PIB. We evaluate the contribution of each component in the proposed framework on VTAB-1k using the frozen ViT-Base backbone. Starting from VPT, we progressively add the compression regularizer, the sufficiency regularizer, the cross-layer path regularizer, and the routing mechanism. Higher is better for all metrics. 
+
+Method Compression Sufficiency Path Routing Natural Specialized Structured 
+
+VPT 81.6 84.7 59.8 + Compression only ✓ 82.0 84.9 61.2 + Sufficiency only ✓ 82.4 85.2 60.8 + Comp. + Suff. ✓ ✓ 82.8 85.5 62.3 + Comp. + Suff. + Path ✓ ✓ ✓ 83.0 85.8 63.1 
+
+Full PIB ✓ ✓ ✓ ✓ 83.2 86.0 63.6 
+
+Figure 5: Qualitative visualization of prompt attention. Compared with VPT and ViaPT, our method produces more concentrated and semantically aligned responses on the foreground object, while reducing scattered activation on background regions. This pattern is consistent across both vehicle and bird categories, suggesting that PIB encourages prompt-conditioned representations to preserve task-relevant evidence and suppress redundant or nuisance-heavy information. Table 5: Design ablation of PIB. We isolate path regularization and layer-aware weighting on VTAB-1k.                      
+
+> Variant Path Layer-aware Natural Specialized Structured
+> Uniform weighting 82.6 85.3 61.9 Uniform + Path ✓82.9 85.7 62.8 Layer-aware only ✓82.8 85.6 62.4
+> Layer-aware + Path ✓✓83.2 86.0 63.6
+
+Table 6: Shortcut reliance and robustness evaluation. Higher is better for all metrics, while Drop ↓ denotes the average degradation from the standard setting.                       
+
+> Method Shortcut Reliance Robustness Std. FG-only BG-only Corr. Shift Few-shot Drop ↓
+> VPT 77.4 73.1 67.8 71.6 69.8 66.9 8.0
+> Ours 78.1 75.6 63.4 74.8 73.2 70.5 5.3
+
+under domain shift, and from 66.9 to 70.5 under few-shot adapta-tion. More importantly, PIB exhibits a substantially smaller average degradation from the standard setting, reducing the drop from 8.0 points to 5.3 points. This result indicates that the improvement brought by PIB is not confined to the in-domain regime; instead, it yields a more stable transfer profile once the evaluation condi-tion becomes more challenging. By explicitly constraining what prompts preserve and discard across layers, PIB progressively sup-presses redundant information while retaining more task-relevant evidence. The learned prompt-conditioned representations are not only more discriminative, but also less fragile under perturbation and distribution shift. This is consistent with our main thesis that prompt-based adaptation benefits from regulating the layer-wise compression-sufficiency trade-off. 
+
+## 5 Conclusion 
+
+In this paper, we study prompt-based vision foundation model adap-tation from an information-allocation perspective and argue that its limitation is not simply insufficient prompt capacity, but the lack of principled control over what prompt-conditioned representations preserve and suppress across layers. Based on this view, we present Prompted Information Bottlenecks (PIB), which regularize prompt adaptation through complementary compression and sufficiency ob-jectives together with a cross-layer minimal-sufficient path. Exten-sive experiments show that PIB improves parameter-efficient trans-fer across different backbones and pretraining paradigms, while also yielding more stable layer-wise behavior and stronger robust-ness. We hope this work provides a useful step toward a more principled understanding of frozen VFM adaptation. More broadly, these findings suggest that parameter-efficient adaptation should be understood not only in terms of how few parameters are up-dated, but also in terms of how adaptation reshapes intermediate representations. Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+## References 
+
+[1] Alexander A Alemi, Ian Fischer, Joshua V Dillon, and Kevin Murphy. 2016. Deep variational information bottleneck. arXiv preprint arXiv:1612.00410 (2016). 3 [2] Reza Azad, Abdur R Fayjie, Claude Kauffmann, Ismail Ben Ayed, Marco Pedersoli, and Jose Dolz. 2021. On the texture bias for few-shot cnn segmentation. In 
+
+Proceedings of the IEEE/CVF winter conference on applications of computer vision .2674–2683. 3 [3] Han Cai, Chuang Gan, Ligeng Zhu, and Song Han. 2020. Tinytl: Reduce memory, not parameters for efficient on-device learning. Advances in Neural Information Processing Systems 33 (2020), 11285–11297. 2, 6 [4] Gal Chechik, Amir Globerson, Naftali Tishby, and Yair Weiss. 2003. Information bottleneck for Gaussian variables. Advances in Neural Information Processing Systems 16 (2003). 3 [5] Kai Chen, Han Yu, Ye Wang, Xin Song, Xiaojuan Zhao, Yalong Xie, Liqun Gao, and Aiping Li. 2025. Temporal knowledge graph extrapolation with subgraph information bottleneck. Expert Systems with Applications 268 (2025), 126226. 3 [6] Shoufa Chen, Chongjian Ge, Zhan Tong, Jiangliu Wang, Yibing Song, Jue Wang, and Ping Luo. 2022. Adaptformer: Adapting vision transformers for scalable visual recognition. Advances in Neural Information Processing Systems 35 (2022), 16664–16678. 2, 6, 16, 27 [7] Xinlei Chen, Haoqi Fan, Ross Girshick, and Kaiming He. 2020. Improved baselines with momentum contrastive learning. arXiv preprint arXiv:2003.04297 (2020). 2, 6[8] Xinlei Chen, Saining Xie, and Kaiming He. 2021. An empirical study of training self-supervised vision transformers. In Proceedings of the IEEE/CVF international conference on computer vision . 9640–9649. 6 [9] Zhiwei Chen, Yupeng Hu, Zhiheng Fu, Zixu Li, Jiale Huang, Qinlei Huang, and Yinwei Wei. 2026. INTENT: Invariance and Discrimination-aware Noise Mitiga-tion for Robust Composed Image Retrieval. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 40. 20463–20471. doi:10.1609/aaai.v40i25.39181 28 [10] Zhiwei Chen, Yupeng Hu, Zixu Li, Zhiheng Fu, Guozhi Qiu, Weili Guan, and Liqiang Nie. 2026. EgoAdapt: A Multi-Scene Egocentric Adaptation Method for CVPR 2026 HD-EPIC VQA Challenge. arXiv preprint arXiv:2605.24500 (2026). 29 [11] Hyunhee Chung and Kyung Ho Park. 2022. Shape prior is not all you need: discovering balance between texture and shape bias in CNN. In Proceedings of the Asian Conference on Computer Vision . 4160–4175. 3 [12] Rajshekhar Das, Yonatan Dukler, Avinash Ravichandran, and Ashwin Swami-nathan. 2023. Learning expressive prompting with residuals for vision transform-ers. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 3366–3377. 2, 6 [13] Shaohua Dong, Yunhe Feng, Qing Yang, Yan Huang, Dongfang Liu, and Heng Fan. 2024. Efficient multimodal semantic segmentation via dual-prompt learning. In 2024 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS) .IEEE, 14196–14203. 2, 6 [14] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xi-aohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et al . [n. d.]. An Image is Worth 16x16 Words: Trans-formers for Image Recognition at Scale. In International Conference on Learning Representations . 1, 2, 6 [15] Gal Elidan, Nir Friedman, and David Maxwell Chickering. 2005. Learning Hidden Variable Networks: The Information Bottleneck Approach. Journal of Machine Learning Research 6, 1 (2005). 3 [16] Marco Federici, Anjan Dutta, Patrick Forré, Nate Kushman, and Zeynep Akata. 2020. Learning Robust Representations via Multi-View Information Bottleneck. In 8th International Conference on Learning Representations . OpenReview. net. 3 [17] Ziv Goldfeld and Yury Polyanskiy. 2020. The information bottleneck problem and its applications in machine learning. IEEE Journal on Selected Areas in Information Theory 1, 1 (2020), 19–38. 3 [18] Cheng Han, Qifan Wang, Yiming Cui, Zhiwen Cao, Wenguan Wang, Siyuan Qi, and Dongfang Liu. 2023. E 2 VPT: An Effective and Efficient Approach for Visual Prompt Tuning. In 2023 IEEE/CVF International Conference on Computer Vision (ICCV) . IEEE, 17445–17456. 2, 6, 7, 16, 27 [19] Cheng Han, Qifan Wang, Yiming Cui, Wenguan Wang, Lifu Huang, Siyuan Qi, and Dongfang Liu. [n. d.]. Facing the Elephant in the Room: Visual Prompt Tuning or Full finetuning?. In The Twelfth International Conference on Learning Representations . 2 [20] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dollár, and Ross Girshick. 2022. Masked autoencoders are scalable vision learners. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition . 16000–16009. 6 [21] Katherine Hermann, Ting Chen, and Simon Kornblith. 2020. The origins and prevalence of texture bias in convolutional neural networks. Advances in neural information processing systems 33 (2020), 19000–19015. 3 [22] Neil Houlsby, Andrei Giurgiu, Stanislaw Jastrzebski, Bruna Morrone, Quentin De Laroussilhe, Andrea Gesmundo, Mona Attariyan, and Sylvain Gelly. 2019. Parameter-efficient transfer learning for NLP. In International conference on machine learning . PMLR, 2790–2799. 16 [23] Edward J Hu, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, Weizhu Chen, et al . [n. d.]. LoRA: Low-Rank Adaptation of Large Language Models. In International Conference on Learning Representations . 2, 6, 16, 27 [24] Qidong Huang, Xiaoyi Dong, Dongdong Chen, Weiming Zhang, Feifei Wang, Gang Hua, and Nenghai Yu. 2023. Diversity-aware meta visual prompting. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition .10878–10887. 2, 6, 16 [25] Eugenia Iofinova, Alexandra Peste, Mark Kurtz, and Dan Alistarh. 2022. How well do sparse imagenet models transfer?. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 12266–12276. 6, 7 [26] Akshay Vivek Jagadeesh and Margaret Livingstone. 2024. Texture bias in primate ventral visual cortex. In ICLR 2024 Workshop on Representational Alignment . 3 [27] Menglin Jia, Luming Tang, Bor-Chun Chen, Claire Cardie, Serge Belongie, Bharath Hariharan, and Ser-Nam Lim. 2022. Visual prompt tuning. In Euro-pean conference on computer vision . Springer, 709–727. 1, 2, 6, 7, 16, 27 [28] Can Jin, Ying Li, Mingyu Zhao, Shiyu Zhao, Zhenting Wang, Xiaoxiao He, Ligong Han, Tong Che, and Dimitris Metaxas. 2025. Lor-VP: Low-rank visual prompting for efficient vision model adaptation. In International Conference on Learning Representations , Vol. 2025. 73004–73021. 2, 6, 7 [29] Yanshu Li, Jiaqian Li, Kuai Yu, Xi Xiao, Dongfang Liu, Tianyang Wang, and Ruixiang Tang. 2026. Personalize your large vision-language models with in-context prompt tuning. arXiv preprint arXiv:2605.31513 (2026). 2 [30] Yuqi Li, Siwei Meng, Chuanguang Yang, Weilun Feng, Junming Liu, Zhulin An, Yikai Wang, and Yingli Tian. 2026. A comprehensive survey of interaction techniques in 3d scene generation. (2026). 2 [31] Zixu Li, Zhiwei Chen, Zhiheng Fu, Wenbo Wang, Yupeng Hu, Weili Guan, and Liqiang Nie. 2026. OmniEgo-R 2: A Routed Reasoning Framework for the 1st Cross-Domain EgoCross Challenge at CVPR 2026. arXiv preprint arXiv:2605.24481 
+
+(2026). 29 [32] Zhiheng Li, Ivan Evtimov, Albert Gordo, Caner Hazirbas, Tal Hassner, Cris-tian Canton Ferrer, Chenliang Xu, and Mark Ibrahim. 2023. A whac-a-mole dilemma: Shortcuts come in multiples where mitigating one amplifies others. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion . 20071–20082. 3 [33] Zixu Li, Yupeng Hu, Zhiwei Chen, Qinlei Huang, Guozhi Qiu, Zhiheng Fu, and Meng Liu. 2026. ReTrack: Evidence-Driven Dual-Stream Directional Anchor Calibration Network for Composed Video Retrieval. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 40. 23373–23381. doi:10.1609/aaai.v40i28. 39507 28 [34] Zixu Li, Yupeng Hu, Zhiwei Chen, Mingyu Zhang, Zhiheng Fu, and Liqiang Nie. 2026. ConeSep: Cone-based Robust Noise-Unlearning Compositional Network for Composed Image Retrieval. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 16897–16909. 28 [35] Zixu Li, Yupeng Hu, Zhiheng Fu, Zhiwei Chen, Yongqi Li, and Liqiang Nie. 2026. TEMA: Anchor the Image, Follow the Text for Multi-Modification Composed Image Retrieval. In Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) . 24421–24442. doi:10.18653/ v1/2026.acl-long.1121 28 [36] Li Liu, Jie Chen, Paul Fieguth, Guoying Zhao, Rama Chellappa, and Matti Pietikäi-nen. 2019. From BoW to CNN: Two decades of texture representation for texture classification. International Journal of Computer Vision 127, 1 (2019), 74–109. 3 [37] Ze Liu, Yutong Lin, Yue Cao, Han Hu, Yixuan Wei, Zheng Zhang, Stephen Lin, and Baining Guo. 2021. Swin transformer: Hierarchical vision transformer us-ing shifted windows. In Proceedings of the IEEE/CVF international conference on computer vision . 10012–10022. 7 [38] Oren Nuriel, Sharon Fogel, and Ron Litman. 2022. Textadain: Paying attention to shortcut learning in text recognizers. In European Conference on Computer Vision .Springer, 427–445. 3 [39] Ziqi Pan, Li Niu, Jianfu Zhang, and Liqing Zhang. 2021. Disentangled information bottleneck. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 35. 9285–9293. 3 [40] Wenjie Pei, Tongqi Xia, Fanglin Chen, Jinsong Li, Jiandong Tian, and Guangming Lu. 2024. SA 2VP: Spatially Aligned-and-Adapted Visual Prompt. In Proceedings of the AAAI conference on artificial intelligence , Vol. 38. 4450–4458. 2, 6, 7 [41] Zoe Piran, Ravid Shwartz-Ziv, and Naftali Tishby. 2020. The dual information bottleneck. arXiv preprint arXiv:2006.04641 (2020). 3 [42] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al . 2021. Learning transferable visual models from natural language supervision. In International conference on machine learning . PmLR, 8748–8763. 1 [43] Sylvestre-Alvise Rebuffi, Hakan Bilen, and Andrea Vedaldi. 2017. Learning mul-tiple visual domains with residual adapters. Advances in neural information processing systems 30 (2017). 2, 6, 7 [44] Li Ren, Chen Chen, Liqiang Wang, and Kien Hua. 2025. DA-VPT: Semantic-guided visual prompt tuning for vision transformers. In Proceedings of the Computer Vision and Pattern Recognition Conference . 4353–4363. 2, 6 Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+[45] Andrew M Saxe, Yamini Bansal, Joel Dapello, Madhu Advani, Artemy Kolchinsky, Brendan D Tracey, and David D Cox. 2019. On the information bottleneck theory of deep learning. Journal of Statistical Mechanics: Theory and Experiment 2019, 12 (2019), 124020. 3 [46] Noam Slonim. 2002. The information bottleneck: Theory and applications . Ph. D. Dissertation. Hebrew University of Jerusalem Jerusalem, Israel. [47] Noam Slonim and Naftali Tishby. 1999. Agglomerative information bottleneck. 
+
+Advances in neural information processing systems 12 (1999). 3 [48] Pirzada Suhail, Vrinda Goel, and Amit Sethi. 2026. Shortcut learning susceptibility in vision classifiers (student abstract). In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 40. 41390–41392. 3 [49] Yehui Tang, Kai Han, Chang Xu, An Xiao, Yiping Deng, Chao Xu, and Yunhe Wang. 2021. Augmented shortcuts for vision transformers. Advances in Neural Information Processing Systems 34 (2021), 15316–15327. [50] Johannes Theodoridis, Jessica Hofmann, Johannes Maucher, and Andreas Schilling. 2022. Trapped in texture bias? a large scale comparison of deep instance segmentation. In European Conference on Computer Vision . Springer, 609–627. 3 [51] Naftali Tishby, Fernando C Pereira, and William Bialek. 2000. The information bottleneck method. arXiv preprint physics/0004057 (2000). 2, 3 [52] Naftali Tishby and Noga Zaslavsky. 2015. Deep learning and the information bottleneck principle. In 2015 ieee information theory workshop (itw) . Ieee, 1–5. 2, 3[53] Matias Vera, Leonardo Rey Vega, and Pablo Piantanida. 2018. Collaborative information bottleneck. IEEE Transactions on Information Theory 65, 2 (2018), 787–815. 3 [54] Zhibin Wan, Changqing Zhang, Pengfei Zhu, and Qinghua Hu. 2021. Multi-view information-bottleneck representation learning. In Proceedings of the AAAI conference on artificial intelligence , Vol. 35. 10085–10092. 3 [55] Junze Wang, Lei Fan, Dezheng Zhang, Weipeng Jing, Donglin Di, Yang Song, Sidong Liu, and Cong Cong. 2026. Visual Prompt-Agnostic Evolution. arXiv preprint arXiv:2601.20232 (2026). 2 [56] Xin Wang, Nicolas D Georganas, and Emil M Petriu. 2010. Fabric texture analysis using computer vision techniques. IEEE transactions on instrumentation and measurement 60, 1 (2010), 44–56. 3 [57] Yuzhu Wang, Lechao Cheng, Chaowei Fang, Dingwen Zhang, Manni Duan, and Meng Wang. 2024. Revisiting the power of prompt for visual tuning. In 
+
+Proceedings of the 41st International Conference on Machine Learning . 50233–50247. 2, 6 [58] Tailin Wu, Ian Fischer, Isaac L Chuang, and Max Tegmark. 2020. Learnability for the information bottleneck. In Uncertainty in Artificial Intelligence . PMLR, 1050–1060. 3 [59] Tailin Wu, Hongyu Ren, Pan Li, and Jure Leskovec. 2020. Graph information bottleneck. Advances in Neural Information Processing Systems 33 (2020), 20437– 20448. 3 [60] ZhengXian Wu, Hangrui Xu, Kai Shi, Zhuohong Chen, Yunyao Yu, Chuanrui Zhang, Zirui Liao, Jun Yang, Zhenyu Yang, Haonan Lu, et al . 2026. ProMSA: Progressive Multimodal Search Agents for Knowledge-Based Visual Question Answering. arXiv preprint arXiv:2606.27974 (2026). 28 [61] Zhengxian Wu, Chuanrui Zhang, Shen’Ao Jiang, Hangrui Xu, Zirui Liao, Luyuan Zhang, Li Huaqiu, Peng Jiao, and Haoqian Wang. 2026. Language-guided and motion-aware gait representation for generalizable recognition. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 40. 10871–10878. 28 [62] Zhengxian Wu, Chuanrui Zhang, Hangrui Xu, Peng Jiao, and Haoqian Wang. 2025. DAGait: Generalized skeleton-guided data alignment for gait recognition. In 2025 IEEE International Conference on Multimedia and Expo (ICME) . IEEE, 1–6. 28 [63] Xi Xiao, Xingjian Li, Yunbei Zhang, Cheng Han, Tianming Liu, Tianyang Wang, Runmin Jiang, Jihun Hamm, Xiao Wang, and Min Xu. 2026. Layer-specific prompt fusion discovery via differentiable search in vision foundation models. arXiv preprint arXiv:2606.26379 (2026). 2 [64] Xi Xiao, Chenrui Ma, Yunbei Zhang, Chen Liu, Zhuxuanzi Wang, Yanshu Li, Lin Zhao, Guosheng Hu, Tianyang Wang, and Hao Xu. 2026. Not all directions matter: Towards structured and task-aware low-rank model adaptation. In Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) . 2132–2154. 3 [65] Xi Xiao, Wentao Wang, Jiacheng Xie, Lijing Zhu, Gaofei Chen, Zhengji Li, Tianyang Wang, and Min Xu. 2024. HGTDP-DTA: Hybrid graph-transformer with dynamic prompt for drug-target binding affinity prediction. In International Conference on Neural Information Processing . Springer, 340–354. 2 [66] Xi Xiao, Yunbei Zhang, Xingjian Li, Tianyang Wang, Xiao Wang, Yuxiang Wei, Jihun Hamm, and Min Xu. 2025. Visual instance-aware prompt tuning. In Pro-ceedings of the 33rd ACM International Conference on Multimedia . 2880–2889. 2, 6, 7 [67] Xi Xiao, Yunbei Zhang, Yanshuh Li, Xingjian Li, Tianyang Wang, Jihun Hamm, Xiao Wang, and Min Xu. 2025. Visual variational autoencoder prompt tuning. 
+
+arXiv preprint arXiv:2503.17650 (2025). 2 [68] Xi Xiao, Yunbei Zhang, Lin Zhao, Yiyang Liu, Xiaoying Liao, Zheda Mai, Xingjian Li, Xiao Wang, Hao Xu, Jihun Hamm, et al . 2025. Prompt-based adaptation in large-scale vision models: A survey. arXiv preprint arXiv:2510.13219 (2025). 2 [69] Huangbiao Xu, Xiao Ke, Yuezhou Li, Rui Xu, Huanqi Wu, Xiaofeng Lin, and Wenzhong Guo. 2024. Vision-Language Action Knowledge Learning for Semantic-Aware Action Quality Assessment. In ECCV . 2 [70] Huangbiao Xu, Xiao Ke, Huanqi Wu, Rui Xu, Yuezhou Li, and Wenzhong Guo. 2025. Language-Guided Audio-Visual Learning for Long-Term Sports Assessment. In CVPR . 2 [71] Huangbiao Xu, Xiao Ke, Huanqi Wu, Rui Xu, Yuezhou Li, Peirong Xu, and Wen-zhong Guo. 2025. Dancefix: An exploration in group dance neatness assessment through fixing abnormal challenges of human pose. In AAAI . 2 [72] Huangbiao Xu, Huanqi Wu, Xiao Ke, Yuezhou Li, Rui Xu, and Wenzhong Guo. 2025. Quality-Guided Vision-Language Learning for Long-Term Action Quality Assessment. IEEE Transactions on Multimedia (2025). 2 [73] Hangrui Xu, Zhengxian Wu, Chuanrui Zhang, Zhuohong Chen, Zhifang Liu, Peng Jiao, and Haoqian Wang. 2026. Psgait: Gait recognition using parsing skeleton. In ICASSP 2026-2026 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) . IEEE, 10427–10431. 28 [74] Jiawei Xu, Qiangqiang Zhou, Zhouping Li, Yanjiao Shi, Yugen Yi, and Jiacong Yu. 2026. HVPNet: A Bio-Inspired Network for General Salient and Camouflaged Object Detection. Neural Networks (2026), 109340. 28 [75] Jiawei Xu, Qiangqiang Zhou, Jiacong Yu, Chen Liao, and Dandan Zhu. 2025. Semantic-Orthogonal Multi-modal Attention Network for RGB-D Salient Object Detection: J. Xu et al. The Visual Computer 41, 9 (2025), 6917–6929. [76] Jiawei Xu, Qiangqiang Zhou, Dandan Zhu, Yong Chen, Yugen Yi, and Xiaoqi Zhao. 2026. TP-Seg: Task-Prototype Framework for Unified Medical Lesion Segmentation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 5452–5462. 28 [77] Zhipei Xu, Xuanyu Zhang, Runyi Li, Zecheng Tang, Qing Huang, and Jian Zhang. 2025. Fakeshield: Explainable image forgery detection and localization via multi-modal large language models. In ICLR . 2 [78] Seungryong Yoo, Eunji Kim, Dahuin Jung, Jungbeom Lee, and Sungroh Yoon. 2023. Improving visual prompt tuning for self-supervised vision transformers. In 
+
+International Conference on Machine Learning . PMLR, 40075–40092. 6 [79] Jason Yosinski, Jeff Clune, Yoshua Bengio, and Hod Lipson. 2014. How transferable are features in deep neural networks? Advances in neural information processing systems 27 (2014). 2, 6 [80] Haonan Yuan, Qingyun Sun, Xingcheng Fu, Cheng Ji, and Jianxin Li. 2024. Dy-namic graph information bottleneck. In Proceedings of the ACM Web Conference 2024 . 469–480. 3 [81] Runjia Zeng, Cheng Han, Qifan Wang, Chunshu Wu, Tong Geng, Lifu Huang, Ying N Wu, and Dongfang Liu. 2024. Visual fourier prompt tuning. Advances in Neural Information Processing Systems 37 (2024), 5552–5585. 2, 6, 7 [82] Xiaohua Zhai, Joan Puigcerver, Alexander Kolesnikov, Pierre Ruyssen, Carlos Riquelme, Mario Lucic, Josip Djolonga, Andre Susano Pinto, Maxim Neumann, Alexey Dosovitskiy, et al . 2019. A large-scale study of representation learning with the visual task adaptation benchmark. arXiv preprint arXiv:1910.04867 (2019). 6[83] Jeffrey O Zhang, Alexander Sax, Amir Zamir, Leonidas Guibas, and Jitendra Malik. 2020. Side-tuning: a baseline for network adaptation via additive side networks. In European conference on computer vision . Springer, 698–714. 2, 6 [84] Qi Zhang, Mingfei Lu, Shujian Yu, Jingmin Xin, and Badong Chen. 2025. An information bottleneck approach for feature selection. Pattern Recognition 164 (2025), 111564. 3 [85] Xinglang Zhang, Yunyao Zhang, ZeLiang Chen, Junqing Yu, Wei Yang, and Zikai Song. 2026. Logical Phase Transitions: Understanding Collapse in LLM Logical Reasoning. In Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , Maria Liakata, Viviane P. Moreira, Jiajun Zhang, and David Jurgens (Eds.). Association for Computational Linguistics, San Diego, California, United States, 18836–18860. doi:10.18653/v1/ 2026.acl-long.858 3 [86] Yunyao Zhang, Yihao Ai, Zuocheng Ying, Qirui Mi, Junqing Yu, Wei Yang, and Zikai Song. 2026. Coupling Macro Dynamics and Micro States for Long-Horizon Social Simulation. arXiv preprint arXiv:2604.05516 (2026). 3 [87] Yunyao Zhang, Zuocheng Ying, Xinglang Zhang, Junqing Yu, Peng Fang, Xu Chen, Wei Yang, and Zikai Song. 2026. IntervenSim: Intervention-Aware Social Network Simulation for Opinion Dynamics. arXiv:2604.06600 3 [88] Yunyao Zhang, Xinglang Zhang, Junxi Sheng, Wenbing Li, Junqing Yu, Yi-Ping Phoebe Chen, Wei Yang, and Zikai Song. 2026. Semantic-Aware Logical Reasoning via a Semiotic Framework. In Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , Maria Liakata, Viviane P. Moreira, Jiajun Zhang, and David Jurgens (Eds.). Association for Computational Linguistics, San Diego, California, United States, 18349–18374. doi:10.18653/v1/2026.acl-long.835 3 [89] Lin Zhao, Xinru Jiang, Xi Xiao, Qihui Fan, Lei Lu, Yanzhi Wang, Xue Lin, Octavia Camps, Pu Zhao, and Jianyang Gu. 2026. HIERAMP: Coarse-to-fine autoregressive amplification for generative dataset distillation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 41688–41698. 3 Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+[90] Lin Zhao, Hongxuan Li, Xuefei Ning, and Xinru Jiang. 2024. THInImg: Cross-modal steganography for presenting talking heads in images. In Proceedings of the IEEE/CVF winter conference on applications of computer vision . 5553–5562. 3 [91] Lin Zhao, Yushu Wu, Xinru Jiang, Jianyang Gu, Yanzhi Wang, Xiaolin Xu, Pu Zhao, and Xue Lin. 2025. Taming Diffusion for Dataset Distillation with High Representativeness. In International Conference on Machine Learning . PMLR, 77760–77780. 3 [92] Yan Zhong, Xingyu Wu, Li Zhang, Chenxi Yang, and Tingting Jiang. 2024. Causal-IQA: Towards the Generalization of Image Quality Assessment Based on Causal Inference.. In ICML . 28 [93] Yan Zhong, Xingyu Wu, Xinping Zhao, Li Zhang, Xinyuan Song, Lei Shi, and Bing-bing Jiang. 2026. Semi-supervised multi-label feature selection with consistent sparse graph learning. Neural Networks (2026), 109265. 28 [94] Yan Zhong, Chenxi Yang, Suyuan Zhao, and Tingting Jiang. 2025. Semi-supervised blind quality assessment with confidence-quantifiable pseudo-label learning for authentic images. In Forty-second International Conference on Machine Learning .28 [95] Yan Zhong, Ruoyu Zhao, Chao Wang, Jiaqi He, Qinghai Guo, Jianguo Zhang, Zhichao Lu, and Luziwei Leng. 2026. Dyn-SSM: Towards the Efficient Long Sequence Learning via Bio-interpretable Dynamics in Spiking State Space Models. 
+
+IEEE Transactions on Cognitive and Developmental Systems (2026). 28 [96] Yan Zhong, Xinping Zhao, Li Zhang, Xinyuan Song, and Tingting Jiang. 2025. Adaptive Prompt Learning for Blind Image Quality Assessment with Multi-modal Mixed-datasets Training. In Proceedings of the 33rd ACM International Conference on Multimedia . 7453–7462. 28 [97] Yan Zhong, Xinping Zhao, Guangzhi Zhao, Bohua Chen, Fei Hao, Ruoyu Zhao, Jiaqi He, Lei Shi, and Li Zhang. 2025. Ctd-inpainting: Towards the coherence of text-driven inpainting with blended diffusion. Information Fusion 122 (2025), 103163. 28 [98] Qiangqiang Zhou, Jiawei Xu, Yong Chen, Dandan Zhu, Yugen Yi, and Xiaoqi Zhao. 2026. DifferSeg: Towards Diverse Multimodal Binary Segmentation via Differential Perception and Frequency Guidance. IEEE Transactions on Circuits and Systems for Video Technology (2026). 28 [99] Wenhao Zhou, Faqiang Liu, Hao Zheng, and Rong Zhao. 2025. Mitigating data bias and ensuring reliable evaluation of AI models with shortcut hull learning. 
+
+Nature Communications 16, 1 (2025), 5513. 3 Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+# Appendix 
+
+Additional Implementation Details, Analyses, and Results 
+
+This appendix provides additional implementation details, extended empirical results, and further discussion of our method, organized as follows: 
+
+• Section A provides additional implementation details, includ-ing backbone settings, prompt injection, optimization protocol, and the implementation of the proposed compression, suffi-ciency, path, and routing components. 
+
+• Section B presents detailed per-task benchmark results on FGVC, HTA, and VTAB-1k. 
+
+• Section C summarizes dataset details and evaluation protocols for all benchmarks used in this work. 
+
+• Section D reports extended ablation studies, including component-wise analysis, design ablations, and scaling behavior with re-spect to prompt depth and prompt length. 
+
+• Section E provides more detailed diagnostic results for layer-wise information allocation across different backbones, task groups, and pretraining paradigms. 
+
+• Section F presents additional attention visualizations and in-terpretability analyses, including attention entropy, average attention logits, and prompt-to-patch attention patterns. 
+
+• Section G discusses the theoretical role and limitations of the practical surrogates used in PIB. 
+
+• Section H analyzes efficiency, complexity, and overhead, with particular emphasis on parameter efficiency and training/inference cost. 
+
+• Section I gives an open discussion of how layer-wise informa-tion allocation may extend to heterogeneous supervision, struc-tured temporal representations, and generative or knowledge-intensive multimodal tasks. 
+
+• Section J discusses failure cases, current limitations, and possi-ble directions for future work. 
+
+## A Additional Implementation Details 
+
+This section provides additional implementation details for repro-ducing the proposed Prompted Information Bottleneck (PIB) frame-work. Unless otherwise stated, all experiments follow the same frozen-backbone adaptation protocol as described in the main pa-per: the pretrained visual backbone is kept fixed, while only the task head, prompt-related parameters, and, when enabled, the routing variables are optimized. 
+
+## A.1 Backbone Settings and Prompt Injection 
+
+We evaluate PIB on three backbone families in order to test its gener-ality across different representation spaces and transformer designs: (i) supervised ViT-Base/16, (ii) ViT-Base pretrained with MAE and MoCo v3, and (iii) Swin-Base pretrained on ImageNet-21k. For all ViT-based models, prompts are injected in a deep prompting man-ner, i.e., a learnable prompt set is associated with each transformer block. Let the backbone have 𝐿 blocks and hidden dimension 𝑑 . The prompt parameters are denoted by {𝑃 𝑙 }𝐿 𝑙 =1, where 𝑃 𝑙 ∈ R𝑀 𝑙 ×𝑑 is the learnable prompt matrix at layer 𝑙 .For ViT-style backbones, the prompts are concatenated to the token sequence before entering each frozen transformer block, fol-lowing the standard prompt tuning protocol. The class token is preserved throughout the network, and prompt tokens are removed after each block so that only image tokens and the class token are propagated to the next layer together with the newly injected prompts. For Swin-Base, which follows a hierarchical design, we apply the same principle stage-wise: prompt tokens are attached to the token sequence within each stage while preserving the origi-nal window-based attention computation of the frozen backbone. In all cases, the backbone weights, including patch embedding, self-attention, MLP layers, normalization layers, and positional embeddings, remain frozen during downstream adaptation. Unless otherwise noted, prompt parameters are initialized from a zero-mean Gaussian distribution with small standard deviation. We found this more stable than large random initialization, especially when the path regularizer is enabled. The task head is implemented as a single linear classifier attached to the final backbone represen-tation. For ViT-based models, the classifier operates on the final class token. For Swin-Base, the classifier is applied to the pooled output representation used by the original backbone. 
+
+## A.2 Optimization Protocol 
+
+We optimize PIB with AdamW for all experiments. The backbone is frozen throughout training, and gradients are computed only for the prompt parameters, the classification head, and the routing variables when the routed PIB variant is used. The default training objective is 
+
+Ltotal = Ltask + L PIB + 𝜂 Lpath , (1) or 
+
+Ltotal = Ltask + L route PIB + 𝜂 Lpath , (2) when layer-aware routing is enabled. For the task loss, we use standard cross-entropy. The optimizer hyperparameters are selected on the validation split using a small search budget shared across compared prompt-based methods. In practice, the learning rate is chosen from a compact grid, and we found that prompt-based adaptation is generally stable within the standard PEFT range. We use a cosine decay schedule with linear warm-up at the beginning of training. Warm-up is particularly helpful for PIB because the compression and sufficiency terms may otherwise dominate too early before the classifier head becomes reasonably calibrated. To keep the comparison fair across benchmarks, we use the same optimization family across all datasets and vary only a small number of coarse hyperparameters, namely the learning rate, total training epochs, and batch size. Weight decay is applied to the train-able parameters, while no gradient is propagated into the frozen backbone. We do not use label smoothing, model EMA, or test-time Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+augmentation unless explicitly stated in the corresponding experi-ment. Gradient clipping is applied when training becomes unstable under large prompt length or strong regularization. All reported main results are obtained from the best validation checkpoint under the same model selection rule across methods. Unless otherwise stated, each configuration is run with multiple random seeds, and the final performance is reported as the average test accuracy under the selected hyperparameters. 
+
+## A.3 Implementation of the Compression Loss 
+
+The compression term is designed to reduce redundant or nuisance-heavy propagation in layer-wise hidden representations. For each prompted layer 𝑙 , let 𝐻 𝑙 ∈ R𝑁 𝑙 ×𝑑 denote the hidden representation after prompt-conditioned processing, where 𝑁 𝑙 is the number of tokens and 𝑑 is the embedding dimension. We first apply row-wise 
+
+ℓ2 normalization: 
+
+˜𝐻 𝑙 (𝑖, :) = 𝐻 𝑙 (𝑖, :)∥𝐻 𝑙 (𝑖, :)∥ 2 + 𝜖 norm 
+
+, (3) where 𝜖 norm is a small numerical constant. We then compute the empirical token correlation matrix 
+
+𝐶 𝑙 = 1
+
+𝑁 𝑙 
+
+˜𝐻 ⊤ 
+
+> 𝑙
+
+˜𝐻 𝑙 . (4) The compression loss is implemented as the squared Frobenius norm of the off-diagonal entries: 
+
+L (𝑙 ) 
+
+> comp
+
+= ∥𝐶 𝑙 − 𝐼 𝑑 ∥2
+
+> 𝐹, off
+
+. (5) In implementation, we explicitly mask out the diagonal entries before summation: 
+
+L (𝑙 ) 
+
+> comp
+
+=∑︁ 
+
+> 𝑖 ≠𝑗
+
+(𝐶 𝑙 (𝑖, 𝑗 )) 2 . (6) This avoids penalizing the self-correlation terms and ensures that the objective focuses on redundancy among representation dimen-sions rather than shrinking the representation norm itself. We apply this loss to the prompt-conditioned hidden states at every prompted layer. In practice, the magnitude of L (𝑙 ) 
+
+> comp
+
+varies across depth because early layers carry more local variation, while deeper layers are more semantically organized. For this reason, the compression coefficients 𝜆 𝑙 are allowed to vary across layers. In the basic PIB variant, 𝜆 𝑙 follows a fixed schedule; in the routed variant, it is further modulated by the learned routing gate. 
+
+## A.4 Implementation of the Sufficiency Loss 
+
+Compression alone may remove discriminative information that is necessary for the downstream task. To prevent over-compression, PIB introduces a sufficiency term based on mini-batch class separa-bility. For each sample 𝑖 at layer 𝑙 , we obtain a pooled representation 
+
+ℎ𝑙,𝑖 ∈ R𝑑 from the prompt-conditioned hidden state. For ViT-style backbones, we use the class token representation by default. For hi-erarchical backbones such as Swin, we use the pooled stage output that is fed to the classifier head. Let B𝑐 denote the set of samples of class 𝑐 in a mini-batch, and let 
+
+𝜇 𝑙,𝑐 denote the class mean at layer 𝑙 . The within-class and between-class scatter are computed as 
+
+𝑆 (𝑙 ) 
+
+> intra
+
+=∑︁ 
+
+> 𝑐
+
+∑︁ 𝑖 ∈ B 𝑐 
+
+∥ℎ𝑙,𝑖 − 𝜇 𝑙,𝑐 ∥22, (7) and 
+
+𝑆 (𝑙 ) 
+
+> inter
+
+=∑︁ 
+
+> 𝑐 ≠𝑐 ′
+
+∥𝜇 𝑙,𝑐 − 𝜇 𝑙,𝑐 ′ ∥22. (8) The layer-wise sufficiency loss is 
+
+L (𝑙 ) 
+
+> suff
+
+= 𝑆 (𝑙 )
+
+> intra
+
+𝑆 (𝑙 ) 
+
+> inter
+
++ 𝜖 suff 
+
+, (9) where 𝜖 suff is a small constant for numerical stability. In practice, the sufficiency term is computed only over classes that appear at least twice in a mini-batch, since a single example cannot define a meaningful within-class scatter. When a class ap-pears only once, it is excluded from the intra-class term of that batch. We found this implementation detail important for low-shot settings and small-batch runs. To reduce variance, the sufficiency loss is averaged across valid classes within the batch before being combined across layers. 
+
+## A.5 Cross-Layer Path Regularization 
+
+The path regularizer enforces the idea that prompt-conditioned representations should evolve along a coherent minimal-sufficient path rather than oscillate arbitrarily across depth. For each layer, we define a quality score 
+
+𝑞 𝑙 = L (𝑙 ) 
+
+> comp
+
++ 𝛼 𝑙 L (𝑙 )
+
+> suff
+
+, (10) where 𝛼 𝑙 balances the relative contribution of compression and sufficiency at layer 𝑙 . The path regularizer is then written as 
+
+Lpath =
+
+> 𝐿 −1
+
+∑︁ 
+
+> 𝑙 =1
+
+max (0, 𝑞 𝑙 +1 − 𝑞 𝑙 − 𝛿 𝑙 ) , (11) where 𝛿 𝑙 ≥ 0 is a tolerance margin. In implementation, we use a small non-negative margin to avoid over-constraining adjacent layers. This is important because neigh-boring layers in a frozen transformer do not serve identical rep-resentational roles. The path term is thus not intended to enforce strict monotonicity, but rather to prevent abrupt deterioration of the compression–sufficiency trade-off. Empirically, this formulation yields smoother layer-wise dynamics than either unconstrained training or an overly strict monotonic penalty. For efficiency, all layer-wise quality scores are computed in the same forward pass used for task prediction. No auxiliary branch or teacher network is introduced. The path loss is therefore inexpen-sive relative to full fine-tuning and adds only a small overhead on top of standard deep prompt tuning. 
+
+## A.6 Layer-Aware Routing 
+
+The routed PIB variant introduces a learnable gate 𝑟 𝑙 ∈ [ 0, 1] for each prompted layer: 
+
+Lroute PIB =
+
+> 𝐿
+
+∑︁ 
+
+> 𝑙 =1
+
+
+
+𝑟 𝑙 𝜆 𝑙 L (𝑙 ) 
+
+> comp
+
++ ( 1 − 𝑟 𝑙 )𝛾 𝑙 L (𝑙 )
+
+> suff
+
+
+
+. (12) We parameterize 𝑟 𝑙 through an unconstrained scalar 𝑎 𝑙 and apply a sigmoid transformation, 
+
+𝑟 𝑙 = 𝜎 (𝑎 𝑙 ), (13) so that the routing weight remains in [0, 1] throughout training. Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+The routing variables are optimized jointly with the prompts and the classifier head. To avoid degenerate behavior in which all layers collapse to the same routing pattern, we initialize the routing logits near the center of the sigmoid function, which al-lows the model to adapt toward either preservation-dominant or compression-dominant behavior depending on the downstream task. In our experiments, this routed version serves as a refinement rather than a replacement of the base PIB formulation. It typically provides smaller but consistent gains on top of the compression, sufficiency, and path objectives. 
+
+## A.7 Layer-Wise Coefficient Design 
+
+PIB uses four groups of layer-wise coefficients: 𝜆 𝑙 , 𝛾 𝑙 , 𝛼 𝑙 , and 𝛿 𝑙 . We keep these schedules lightweight and low-dimensional so that the method does not rely on expensive per-task tuning. For the basic setting, 𝜆 𝑙 and 𝛾 𝑙 follow a simple depth-aware schedule: early layers place relatively more emphasis on sufficiency to preserve local evidence, while deeper layers place relatively more emphasis on compression to suppress nuisance-heavy or redundant information. This design matches the motivation in the main paper that early layers should remain detail-preserving and later layers should become increasingly selective. Similarly, 𝛼 𝑙 is set so that the path score remains numerically balanced across layers, and 𝛿 𝑙 is chosen as a small tolerance term rather than a strong monotonic constraint. To further reduce the sensitivity of these coefficients, we first normalize the layer-wise loss magnitudes within each mini-batch before aggregation. This stabilizes training across datasets with different class cardinality and representation statistics, and makes the resulting schedules transferable across backbone families. In the routed variant, the learned gates provide an additional adaptive mechanism on top of these fixed schedules. 
+
+## A.8 Data Preprocessing and Augmentation 
+
+All images are resized to the input resolution expected by the cor-responding pretrained backbone. Unless required otherwise by the dataset protocol, we use standard ImageNet-style normalization. During training, we apply a lightweight augmentation pipeline con-sisting of random resized crop and horizontal flip. We intentionally avoid heavy augmentation because the goal of this work is to study prompt-induced information allocation under a controlled frozen-backbone setting rather than maximize benchmark performance through aggressive data transformation. At evaluation time, we use a single center crop or the standard test preprocessing protocol defined by the benchmark. No multi-crop evaluation or test-time ensembling is used in the main results. This keeps the comparison consistent with prior prompt-tuning baselines and ensures that gains are attributable to the proposed information regularization rather than inference-time heuristics. 
+
+## A.9 Batch Construction and Numerical Stability 
+
+Several implementation details are important for stable optimiza-tion of PIB. First, because the sufficiency term depends on class statistics within a mini-batch, we use class-balanced batching when-ever the benchmark protocol allows it. When this is not feasible, we rely on standard random mini-batches and exclude singleton classes when computing the within-class term, as discussed earlier. Second, we use small numerical constants in the normalization and denominator terms of both the compression and sufficiency objectives to avoid instability in early training. Third, we found it beneficial to delay the full influence of the regularization terms during the warm-up phase. Concretely, in the first few epochs, the classifier head is allowed to stabilize before the path regularizer reaches its full strength. This avoids poor local minima caused by over-regularizing noisy early representations. Finally, all losses are accumulated in full precision even when mixed-precision training is used for the forward and backward passes. 
+
+## A.10 Hardware and Software 
+
+All experiments are implemented in PyTorch and trained on NVIDIA GPUs. We use mixed-precision training to reduce memory consump-tion and accelerate optimization. The exact hardware configuration depends on the benchmark scale, but the overall setting remains modest because only a very small fraction of parameters is trainable. This is consistent with the parameter-efficient nature of PIB and with the frozen-backbone protocol used throughout the paper. The codebase is built on top of a standard vision transformer training framework, with PIB added as a lightweight regularization module that hooks into the hidden states of prompted layers. The additional memory overhead mainly comes from storing layer-wise hidden representations for computing the compression and sufficiency losses. In practice, this overhead is small compared with end-to-end fine-tuning of the full backbone. 
+
+## B Detailed Main Results 
+
+In this section, we provide a more fine-grained view of the bench-mark results summarized in the main comparison tables. While the main paper reports benchmark-level averages for FGVC, HTA, and VTAB-1k, the detailed tables in this appendix reveal how the proposed Prompted Information Bottleneck (PIB) behaves on indi-vidual downstream tasks. Overall, the per-task results are consistent with the central conclusion of the main paper: explicitly regulating layer-wise information allocation yields stronger and more stable transfer performance under the frozen-backbone setting. In partic-ular, PIB achieves the best overall benchmark-level performance on the standard ViT-B/16 setting, reaching 92.1 on FGVC, 93.01 on HTA, and 77.33 on VTAB-1k, while maintaining a low tuning budget. 
+
+## B.1 Per-task Results on FGVC 
+
+Table S2 reports the detailed results on the five FGVC datasets. Consistent with the benchmark-level summary in the main paper, PIB achieves the strongest average performance, with a mean ac-curacy of 92.10. More importantly, the gains are not concentrated on only one or two datasets. Instead, our method delivers consis-tent improvements across all five fine-grained recognition tasks, including CUB-200, NABirds, Oxford Flowers, Stanford Dogs, and Stanford Cars. This behavior is important because FGVC tasks are particularly sensitive to whether the adaptation method preserves subtle category-specific evidence while suppressing irrelevant vari-ation. The fact that PIB improves all five datasets suggests that the proposed compression–sufficiency regularization does not merely Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+increase prompt expressiveness, but improves how useful visual evidence is retained and refined across transformer depth. This observation is also aligned with the main paper’s broader claim that PIB leads to more robust fine-grained recognition behavior rather than only higher average accuracy. Compared with prior prompt-based baselines such as VPT-Deep and E 2VPT, the advantage of PIB is especially notable on the more recognition-sensitive FGVC datasets. In particular, the improve-ment on Stanford Cars is relatively pronounced, while gains on CUB-200, NABirds, and Stanford Dogs further indicate that PIB is effective in settings where class boundaries are narrow and intra-class variation remains substantial. Together, these results support the interpretation that PIB better preserves discriminative local cues in earlier layers while avoiding the over-propagation of re-dundant or nuisance-heavy information into later layers. This is consistent with the information-allocation view introduced in the main paper. 
+
+## B.2 Per-task Results on HTA 
+
+Table S1 presents the detailed results on the ten HTA datasets. PIB again achieves the strongest overall mean, reaching 93.01, which matches the best benchmark-level result reported in the main pa-per. Unlike FGVC, HTA covers a more heterogeneous collection of visual domains, including texture recognition, natural object recognition, food classification, traffic signs, and digit recognition. The detailed results show that PIB remains competitive across this broader transfer spectrum and achieves the best score on every task reported in the table. This finding is important for two reasons. First, it shows that the benefit of PIB is not restricted to fine-grained recognition alone. Even when the downstream tasks vary substantially in visual sta-tistics and semantic structure, explicitly regulating what prompt-conditioned representations should preserve and suppress still leads to stronger transfer. Second, the improvement pattern suggests that PIB is able to adapt without over-specializing to one narrow task family. Gains are visible not only on fine-grained datasets such as CUB-200, NABirds, Dogs, and Flowers, but also on more heteroge-neous tasks such as DTD, Food-101, CIFAR-100, CIFAR-10, GTSRB, and SVHN. This broad effectiveness is consistent with the main paper’s conclusion that PIB improves frozen-backbone adaptation through a more principled cross-layer information path rather than through a task-specific prompt engineering trick. Among all HTA tasks, the relative improvements are particu-larly clear on DTD, CIFAR-100, GTSRB, and SVHN, where robust suppression of nuisance-heavy or shortcut-prone cues is especially beneficial. At the same time, PIB continues to deliver strong results on already high-performing tasks such as Flowers and CIFAR-10, indicating that the proposed regularization does not trade away in-domain accuracy in order to obtain robustness elsewhere. Instead, it improves the overall transfer profile in a balanced manner. This observation is in line with the main text, which emphasizes that PIB is effective not only in average accuracy but also in robustness-oriented settings. 
+
+## B.3 Per-task Results on VTAB-1k 
+
+We further report the detailed VTAB-1k results in Table S3. This table makes the pattern already visible in the main paper much clearer. PIB achieves 82.98 on Natural, 85.83 on Specialized, and 63.18 on Structured, yielding the strongest overall VTAB-1k perfor-mance among the compared methods. Most importantly, the gain is consistently observed across all three groups and is largest on the Structured subset, which is exactly the trend highlighted in the main paper. The Natural tasks show that PIB remains strong even when the target tasks stay relatively close to standard natural-image recog-nition. On this subset, PIB improves over strong prompt-based baselines while preserving a favorable parameter-efficiency profile. On the Specialized subset, PIB again achieves the highest mean, indicating that the proposed framework transfers well to medical, satellite, and remote-sensing-style recognition tasks where the vi-sual distribution differs substantially from standard ImageNet-style pretraining. The most striking improvement appears on the Struc-tured subset. Here, PIB yields the largest margin, which strongly supports our core hypothesis: when the task depends more heav-ily on compositional reasoning, geometry, or relational structure, prompt tuning benefits substantially from explicit control over layer-wise information allocation rather than simply increasing prompt capacity. A closer look at the per-task VTAB results further reinforces this interpretation. On several structure-sensitive tasks, such as CLEVR, KITTI Distance, dSprites, and SmallNORB, PIB consistently improves over VPT-style baselines. These tasks are more vulnera-ble to unstable intermediate refinement and to the persistence of non-essential variation across layers. The stronger performance of PIB on these tasks therefore provides direct empirical support for the information-allocation argument made in the main paper: the weakness of vanilla VPT is not merely insufficient prompt ca-pacity, but the lack of principled control over what intermediate prompt-conditioned representations should retain or discard as depth increases. 
+
+## B.4 Connection to the Main Results 
+
+Taken together, the detailed per-task tables support the same three conclusions stated in the main paper. First, PIB is effective across a broad range of downstream tasks rather than only on a small subset. Second, its advantage becomes more pronounced in harder transfer settings, especially on the Structured part of VTAB-1k. Third, these gains are achieved without sacrificing parameter efficiency, which remains one of the main strengths of the proposed framework. In other words, the detailed results confirm that the improvements reported in the main paper are not artifacts of averaging, but reflect a consistent and interpretable transfer advantage across individual datasets. 
+
+## C Dataset Details and Evaluation Protocols 
+
+We evaluate PIB on three widely used transfer benchmarks, namely FGVC, HTA, and VTAB-1k. These benchmarks are complementary in that they cover fine-grained recognition, heterogeneous task transfer, and low-resource cross-domain adaptation, respectively. To ensure fair comparison, all methods are evaluated under the Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+Table S1: Per-task results on HTA (ViT-B/16, frozen). Methods DTD CUB-200 NABirds Dogs Flowers Food-101 CIFAR-100 CIFAR-10 GTSRB SVHN Mean 
+
+Full FT 64.3 87.3 82.7 89.4 98.8 84.9 68.9 97.4 97.1 87.4 85.8 Head FT 63.2 85.3 75.9 86.2 97.9 84.4 63.4 96.3 68.0 36.6 75.7 Adapter [22] 62.7 87.1 84.3 89.8 98.5 86.0 74.2 97.7 91.1 36.3 80.8 VPT-Deep [27] 65.8 88.5 84.2 90.2 99.0 83.3 78.8 96.8 90.7 78.1 85.5 AdaptFormer [6] 74.4 84.7 75.2 84.7 97.9 89.1 91.4 98.8 97.0 96.5 89.0 DAM-VP [24] 73.1 87.5 82.1 92.3 99.2 86.9 86.9 90.6 87.9 88.1 88.5 
+
+Ours 79.2 91.0 87.3 93.0 99.6 91.1 93.8 99.2 98.4 97.5 93.01 Table S2: Per-task results on FGVC (ViT-B/16, frozen). Methods CUB-200 NABirds Oxford Flowers Stanford Dogs Stanford Cars Mean 
+
+Full FT 87.3 82.7 98.8 89.4 84.5 88.54 AdaptFormer [6] 84.7 75.2 97.9 84.7 83.1 85.12 LoRA [23] 84.9 79.0 98.1 88.1 79.8 85.98 VPT-Shallow [27] 86.7 78.8 98.4 90.7 68.7 84.62 VPT-Deep [27] 88.5 84.2 99.0 90.2 83.6 89.11 
+
+E2VPT [18] 89.1 84.6 99.1 90.5 82.8 89.22 
+
+Ours 90.4 87.1 99.6 92.0 91.4 92.10 Table S3: VTAB-1k per-task results (ViT-B/16, frozen). Full: full finetune; Head: head finetune; AdaptF: AdaptFormer. 
+
+Datasets Full Head AdaptF LoRA VPT-D ExPRes E2VPT Ours 
+
+Natural 
+
+CIFAR-100 68.9 63.4 70.8 67.1 78.8 78.0 78.6 80.2 
+
+Caltech101 87.7 85.0 91.2 91.4 90.8 89.6 89.4 92.0 
+
+DTD 64.3 63.2 70.5 69.4 65.8 68.8 67.8 75.0 
+
+Flowers102 97.2 97.0 99.1 98.8 98.0 98.7 98.2 99.3 
+
+Pets 86.9 86.3 90.9 90.4 88.3 88.9 88.5 91.0 
+
+SVHN 87.4 36.6 86.6 85.3 78.1 81.9 85.3 88.36 
+
+SUN397 38.8 51.0 54.8 54.0 49.6 51.9 52.3 55.0 Mean (Natural) 75.88 68.93 80.56 79.49 78.48 79.69 80.01 82.98 
+
+Specialized 
+
+Patch Camelyon 79.7 78.5 83.0 84.9 81.8 84.8 82.5 85.0 
+
+EuroSAT 95.7 87.5 95.8 95.3 96.1 96.2 96.8 96.9 
+
+Resisc45 84.2 68.6 84.4 83.4 83.4 80.9 84.8 84.9 
+
+Retinopathy 73.9 74.0 76.3 73.6 68.4 74.2 73.6 76.5 Mean (Specialized) 83.36 77.16 84.88 84.55 82.43 84.03 84.43 85.83 
+
+Structured 
+
+Clevr/count 56.3 34.3 81.9 82.9 68.5 66.5 71.7 84.2 
+
+Clevr/distance 58.6 30.6 64.3 69.2 60.0 60.4 61.2 71.0 
+
+DMLab 41.7 33.2 49.3 49.8 46.5 46.5 47.9 52.6 
+
+KITTI/distance 65.5 55.4 80.3 78.5 72.8 77.6 75.8 81.2 
+
+dSprites/location 57.5 12.5 76.3 75.7 73.6 78.0 80.8 82.3 
+
+dSprites/orientation 46.7 20.0 45.7 47.1 47.9 49.5 48.1 50.0 
+
+SmallNORB/azimuth 25.7 9.6 31.7 31.0 32.9 26.1 31.7 35.0 
+
+SmallNORB/elevation 29.1 19.2 41.1 44.0 37.8 35.3 41.9 49.1 Mean (Structured) 47.64 26.84 58.83 59.78 54.98 54.99 57.39 63.18 
+
+same benchmark-specific protocol, and all reported numbers are top-1 classification accuracy (%) on the corresponding test split unless otherwise noted. Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+## C.1 Benchmark Overview 
+
+Table S4 summarizes the three benchmarks used in this paper. In the main paper, we report mean accuracy over the five FGVC datasets, the ten HTA datasets, and the three VTAB-1k groups together with the overall VTAB-1k mean. This benchmark-level reporting protocol is kept consistent across all compared methods. 
+
+## C.2 Dataset Details 
+
+FGVC.. The FGVC benchmark contains five fine-grained classifi-cation datasets: CUB-200-2011 , NABirds , Oxford Flowers , Stanford Dogs , and Stanford Cars . These tasks require the model to distin-guish highly similar categories with subtle inter-class differences and often large intra-class variation. They are therefore well suited for evaluating whether a prompt-based adaptation method can preserve localized and category-specific evidence. Following standard practice in prior VPT-style work, we use the standard train/test protocol for each dataset. For datasets without an official validation split, the original training split is further divided into train and validation subsets following the same protocol as prior prompt tuning baselines. For datasets that already provide an official validation split, we keep that split unchanged. Final FGVC performance is reported as the mean top-1 accuracy across all five datasets. 
+
+HTA.. The HTA benchmark contains ten classification datasets: 
+
+CIFAR-10 , CIFAR-100 , DTD , CUB-200 , NABirds , Stanford Dogs , Oxford Flowers , Food101 , GTSRB , and SVHN . Compared with FGVC, HTA covers a broader range of image domains and visual semantics, including natural object recognition, texture recognition, traffic sign recognition, digit recognition, food classification, and fine-grained categorization. As a result, HTA provides a more heterogeneous transfer setting for evaluating prompt-based adaptation. For HTA, we follow the default train/val/test split and the same benchmark configuration used in prior work to ensure fair compar-ison. We report mean top-1 accuracy over all ten datasets. 
+
+VTAB-1k. VTAB-1k is a low-data transfer benchmark consisting of 19 tasks grouped into three categories: Natural , Specialized , and 
+
+Structured . The benchmark is designed to evaluate adaptation under severe labeled-data constraints, since each task provides exactly 1,000 labeled training examples. Following the standard VTAB-1k protocol, these 1,000 examples are split into 800 training examples and 200 validation examples, while evaluation is performed on the official test set. The three VTAB-1k groups used in this paper are listed in Ta-ble S5. In the main paper, we report both group-wise mean accuracy and the overall mean across all 19 tasks. This allows us to distin-guish performance on standard natural-image transfer from more specialized and structure-sensitive tasks. 
+
+## C.3 Evaluation Protocol 
+
+Frozen-backbone adaptation. All experiments are conducted in the standard frozen-backbone transfer setting. The pretrained visual backbone remains fixed, and only the task head together with the prompt-related parameters are optimized. This protocol is shared by all methods compared in the main paper unless explicitly stated otherwise. 
+
+Validation and model selection. Hyperparameters are selected on the validation split of each dataset. For FGVC and HTA, we follow the benchmark-specific validation protocol described above. For VTAB-1k, the standard 800/200 train/val split is used. The final reported test accuracy is obtained from the checkpoint with the best validation performance under the same model-selection rule for all methods. 
+
+Reporting metrics. For each individual dataset, we report top-1 classification accuracy (%). Benchmark-level aggregates are com-puted as follows: (i) FGVC Mean : average over the five FGVC datasets; (ii) HTA Mean : average over the ten HTA datasets; (iii) VTAB Natural / Specialized / Structured : average over all tasks in the corresponding subset; and (iv) VTAB-1k Mean : average over all 19 VTAB tasks. 
+
+Protocol consistency across benchmarks. Some datasets appear in more than one benchmark, such as CIFAR-100 and Oxford Flowers .We treat these as distinct evaluation instances because the split construction, data budget, and aggregation protocol are benchmark-specific. In particular, VTAB-1k always uses the fixed 1,000-example low-resource adaptation setting, while FGVC and HTA follow their own benchmark-standard transfer protocols. 
+
+Why these three benchmarks. The three benchmarks together provide a broad and challenging testbed for PIB. FGVC empha-sizes fine-grained discriminative cues, HTA emphasizes transfer robustness across heterogeneous domains, and VTAB-1k empha-sizes adaptation under limited supervision. This combination is particularly suitable for evaluating the central claim of this work, namely that regulating layer-wise information allocation improves prompt tuning not only in average accuracy, but also in transfer robustness across different task regimes. 
+
+## D Extended Ablation Studies 
+
+In this section, we provide a more detailed analysis of the design choices behind the proposed Prompted Information Bottleneck (PIB) framework. We focus on three complementary questions: (i) 
+
+which component is responsible for the observed gains, (ii) whether the cross-layer path regularizer and the layer-aware weighting mechanism are both necessary, and (iii) why vanilla VPT exhibits non-monotonic behavior when prompt capacity increases. Unless otherwise stated, all ablations are conducted on VTAB-1k with the frozen ViT-Base/16 backbone under the same evaluation protocol as in the main paper. 
+
+## D.1 Component-wise Ablation 
+
+We first isolate the contribution of each core component in PIB, namely the compression regularizer, the sufficiency regularizer, the cross-layer path constraint, and the optional routing mechanism. Starting from vanilla VPT, we progressively add each component and report the average accuracy on the three VTAB-1k groups. The results are reproduced in Table S6. Several observations can be drawn from Table S6. 
+
+Compression and sufficiency play different but complementary roles. When only the compression term is introduced, the largest gain appears on the Structured split, which improves from 59 .8Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al.                  
+
+> Benchmark Evaluation focus Datasets Split / reporting protocol FGVC Fine-grained visual recog-nition CUB-200-2011, NABirds, Oxford Flowers, Stanford Dogs, Stanford Cars Standard FGVC train/test protocol used in prior VPT-style work; mean ac-curacy over 5 datasets HTA Heterogeneous task trans-fer under domain and se-mantic shift CIFAR-10, CIFAR-100, DTD, CUB-200, NABirds, Stanford Dogs, Oxford Flowers, Food101, GTSRB, SVHN Default train/val/test split and evaluation setting used in prior HTA-based prompt tun-ing work; mean accuracy over 10 datasets VTAB-1k Low-resource task adap-tation across diverse do-mains 19 tasks grouped into Natural, Specialized, and Structured subsets Each task provides 1,000 labeled training exam-ples, split into 800/200 train/val; group-wise mean and overall mean are reported
+
+Table S4: Summary of the three evaluation benchmarks used in this paper.         
+
+> Group #Tasks Datasets Natural 7Caltech101, CIFAR-100, DTD, Flowers102, Oxford-IIIT Pet, SVHN, SUN397 Specialized 4Patch Camelyon, EuroSAT, RESISC45, Retinopathy Structured 8CLEVR Count, CLEVR Distance, DMLab, KITTI Distance, dSprites Location, dSprites Orienta-tion, SmallNORB Azimuth, SmallNORB Elevation
+
+Table S5: Task grouping of VTAB-1k used in this paper.                                     
+
+> Method Comp. Suff. Path Routing Natural Specialized Structured VPT 81.6 84.7 59.8 + Compression only ✓82.0 84.9 61.2 + Sufficiency only ✓82.4 85.2 60.8 + Comp. + Suff. ✓✓82.8 85.5 62.3 + Comp. + Suff. + Path ✓✓✓83.0 85.8 63.1 Full PIB ✓✓✓✓83.2 86.0 63.6
+
+Table S6: Component ablation of PIB on VTAB-1k using the frozen ViT-Base/16 backbone. 
+
+to 61 .2. This behavior is consistent with our motivation: struc-tured transfer tasks are typically more sensitive to redundant or nuisance-heavy information, and therefore benefit more from ex-plicit suppression of such signals. In contrast, the sufficiency-only variant gives relatively larger gains on Natural and Specialized, improving them from 81 .6 → 82 .4 and 84 .7 → 85 .2, respectively. This suggests that preserving discriminative semantics is particu-larly important when the target task remains visually close to the pretraining domain or contains more direct category-level cues. 
+
+The two objectives are not redundant. Combining compression and sufficiency improves all three splits simultaneously, reaching 
+
+82 .8/85 .5/62 .3. Compared with the two one-sided variants, the joint formulation yields a more balanced transfer profile, indicating that neither compression alone nor sufficiency alone is sufficient to char-acterize the desired prompt behavior. Instead, the gain arises from explicitly regulating the trade-off between removing redundancy and retaining task-relevant evidence. 
+
+Path regularization further improves cross-layer behavior. Adding the path regularizer on top of the joint objective yields another consistent improvement, especially on the Structured split ( 62 .3 →
+
+63 .1). This result supports the central hypothesis of PIB: prompt tuning should not only optimize each layer independently, but should also follow a coherent cross-layer refinement trajectory. Without this term, the model may still learn useful local trade-offs, but the resulting layer-wise evolution remains less organized. 
+
+Routing acts as a refinement rather than the main source of gain. 
+
+Finally, adding the routing mechanism yields the full PIB model, which reaches 83 .2/86 .0/63 .6. The improvement over the path-regularized variant is moderate but stable across all three splits. This is consistent with our design: routing is not intended to replace Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+the core PIB objective, but to provide additional layer-sensitive flexi-bility once the minimal-sufficient path has already been established. 
+
+## D.2 Design Ablation: Path Regularization and Layer-aware Weighting 
+
+We next study whether the path regularizer and the layer-aware weighting mechanism are independently useful. The corresponding results in main-paper Table 5 show that both design choices are beneficial. 
+
+Effect of path regularization. Under uniform weighting, introduc-ing the path term improves the three VTAB groups from 82 .6/85 .3/61 .9
+
+to 82 .9/85 .7/62 .8. This confirms that explicitly regularizing the cross-layer trajectory is useful even without any layer-sensitive reweighting. The gain is again most visible on the Structured split, where prompt-induced misallocation of intermediate information is more likely to accumulate across depth. 
+
+Effect of layer-aware weighting. Applying layer-aware weighting alone also improves over the uniform baseline, reaching 82 .8/85 .6/62 .4.This indicates that a fixed layer-independent trade-off between compression and sufficiency is suboptimal. Different layers indeed prefer different information regimes: earlier layers benefit more from preserving local evidence, while deeper layers benefit more from suppressing redundancy. 
+
+Best performance requires both mechanisms. The best results are obtained when the two are combined, i.e., when PIB simultane-ously enforces a coherent global refinement path and allows layer-sensitive information allocation. This combined variant reaches 
+
+83 .2/86 .0/63 .6, which is consistently higher than either design in isolation. Therefore, the benefit of PIB does not come from a single architectural trick, but from the combination of local layer-wise regulation and global cross-layer coordination. 
+
+## D.3 Ablation on Scaling Behavior 
+
+A key motivation of this work is that vanilla VPT often behaves non-monotonically when prompt capacity increases. In the main paper, we examine this phenomenon from two basic scaling dimensions: prompt depth and prompt length. Prompt depth controls how many transformer layers are prompted, while prompt length controls the number of prompt tokens inserted at each layer. Both dimensions increase prompt capacity, and therefore provide a direct test of whether stronger prompting alone is sufficient for better transfer. Our empirical findings show that the answer is negative. As illustrated in Figure 3 of the main paper, vanilla VPT exhibits clear non-monotonic behavior along both axes: increasing prompt depth does not reliably improve performance, and increasing prompt length can even degrade transfer accuracy after a certain point. This observation is difficult to explain from a purely capacity-based per-spective. If the main issue were merely insufficient prompt expres-siveness, then more prompt parameters should lead to a smoother and more monotonic gain pattern. In contrast, PIB exhibits a noticeably smoother scaling trend. The improvement is not only higher on average, but also less sen-sitive to the raw amount of prompt capacity. This supports our main claim that the weakness of standard prompt-based adaptation is not simply caused by optimization difficulty or insufficient pa-rameterization. Instead, the core issue lies in how prompt-induced information is allocated across layers. When this allocation is left un-regulated, additional prompt capacity may propagate redundancy, amplify shortcut-prone statistics, or disturb the natural refinement process of the frozen transformer. Once the layer-wise compression– sufficiency trade-off is explicitly constrained, the resulting scaling behavior becomes much more stable. 
+
+## D.4 Discussion 
+
+Taken together, the extended ablation results support three conclu-sions. First, the improvement of PIB is progressive rather than acciden-tal. Starting from vanilla VPT, each added component contributes in a predictable direction: compression mainly helps harder transfer settings, sufficiency preserves discriminative semantics, path regu-larization organizes cross-layer refinement, and routing provides an additional but smaller layer-sensitive gain. Second, the gains of PIB are structurally consistent with its mo-tivation. The strongest improvements repeatedly appear on the Structured split, which is exactly the setting where prompt-induced redundancy and unstable refinement are most likely to hurt perfor-mance. This alignment between motivation and empirical behavior strengthens the interpretation of PIB as an information-allocation framework rather than a purely empirical regularization recipe. Third, the ablation results also help explain why vanilla VPT scales non-monotonically. More prompt capacity does not auto-matically imply better transfer, because the missing ingredient is not capacity itself, but principled control over what intermediate prompt-conditioned representations should preserve and suppress across depth. PIB addresses this issue by combining compression, sufficiency, and cross-layer coordination into a unified minimal-yet-sufficient learning objective. 
+
+## E More Detailed Diagnostic Results for Layer-wise Information Allocation 
+
+This section provides a more detailed diagnosis of how prompt-conditioned representations evolve across transformer depth. In the main paper, we showed that the advantage of PIB is not only reflected in final accuracy, but also in the structure of the intermedi-ate refinement process. Here we expand that analysis by explicitly defining the diagnostic metrics, describing the evaluation protocol, and presenting additional observations across different task groups and pretrained backbones. 
+
+## E.1 Diagnostic Setup 
+
+Unless otherwise stated, the main diagnostic results are reported on the standard ViT-Base/16 setting under frozen-backbone adap-tation, using the same VTAB-1k evaluation protocol as in the main paper. We compute all layer-wise statistics after training, on held-out evaluation data, without updating any model parameters. The goal of these diagnostics is not to introduce a new optimization target, but to better understand what kinds of intermediate prompt-conditioned representations are produced by different adaptation strategies. Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+Following the discussion in Section 4.6 of the main paper, we analyze four complementary quantities across depth: (i) informa-tion trajectory, (ii) redundancy, (iii) class separability, and (iv) path score. Together, these metrics characterize whether a prompt tuning method yields a coherent minimal-yet-sufficient refinement pro-cess or instead exhibits unstable and poorly organized layer-wise behavior. For a model with 𝐿 prompted layers, let 𝐻 𝑙 denote the prompt-conditioned hidden state at layer 𝑙 , and let ℎ𝑙,𝑖 denote the pooled representation of sample 𝑖 at that layer. For ViT-based backbones, we use the class token as the pooled representation. For hierarchical backbones such as Swin, we use the pooled representation that is passed to the classifier head. 
+
+## E.2 Metric Definitions 
+
+Information trajectory. The first diagnostic measures how pro-gressively each intermediate representation aligns with the final task-relevant representation. Intuitively, if prompt tuning follows a coherent semantic refinement path, then deeper layers should become increasingly consistent with the final discriminative repre-sentation rather than oscillate unpredictably. We therefore define the information trajectory score at layer 𝑙 as 
+
+𝑇 𝑙 = 1
+
+|B| ∑︁ 𝑖 ∈ B 
+
+cos  ℎ𝑙,𝑖 , ℎ 𝐿,𝑖 
+
+ , (14) where B is the evaluation batch, ℎ𝑙,𝑖 is the pooled representation at layer 𝑙 , and ℎ𝐿,𝑖 is the final-layer pooled representation of the same sample. A higher value indicates that the representation at layer 𝑙 is more consistently aligned with the final task-relevant representation. We emphasize that this quantity is used only as a diagnostic proxy for progressive semantic consolidation; it is not intended to be interpreted as an exact information-theoretic quantity. 
+
+Redundancy. The second diagnostic evaluates whether prompt-conditioned hidden states continue to carry excessive correlated or nuisance-heavy information across depth. We reuse the same redundancy-based surrogate introduced in the main method. Let 
+
+˜𝐻 𝑙 ∈ R𝑁 𝑙 ×𝑑 (15) denote the row-wise normalized hidden representation at layer 𝑙 ,and define the empirical correlation matrix 
+
+𝐶 𝑙 = 1
+
+𝑁 𝑙 
+
+˜𝐻 ⊤ 
+
+> 𝑙
+
+˜𝐻 𝑙 . (16) We measure redundancy using the normalized off-diagonal energy 
+
+𝑅 𝑙 = 1
+
+𝑑 (𝑑 − 1) ∥𝐶 𝑙 − 𝐼 𝑑 ∥2 
+
+> 𝐹, off
+
+. (17) Lower values indicate less redundancy and a cleaner layer-wise representation structure. 
+
+Class separability. The third diagnostic measures whether inter-mediate representations remain discriminative for the downstream task. Let 𝜇 𝑙,𝑐 denote the class mean of pooled representations at layer 𝑙 for class 𝑐 within the current evaluation batch. Following the notation in the main method, we compute 
+
+𝑆 (𝑙 ) 
+
+> intra
+
+=∑︁ 
+
+> 𝑐
+
+∑︁ 𝑖 ∈ B 𝑐 
+
+∥ℎ𝑙,𝑖 − 𝜇 𝑙,𝑐 ∥22, (18) and 
+
+𝑆 (𝑙 ) 
+
+> inter
+
+=∑︁ 
+
+> 𝑐 ≠𝑐 ′
+
+∥𝜇 𝑙,𝑐 − 𝜇 𝑙,𝑐 ′ ∥22. (19) For diagnostic clarity, we report the separability score in the “higher-is-better” form 
+
+𝐷 𝑙 = 𝑆 (𝑙 )
+
+> inter
+
+𝑆 (𝑙 ) 
+
+> intra
+
++ 𝜖 , (20) which is the inverse counterpart of the sufficiency loss used during training. A larger 𝐷 𝑙 means that classes are better separated relative to their within-class spread. 
+
+Path score. The fourth diagnostic quantifies the quality of the overall cross-layer refinement path. In the main method, we define the layer quality score 
+
+𝑞 𝑙 = L (𝑙 ) 
+
+> comp
+
++ 𝛼 𝑙 L (𝑙 ) 
+
+> suff
+
+, (21) where a lower value indicates a better compression–sufficiency balance. For ease of visualization, we convert this quantity into a “higher-is-better” path score 
+
+𝑃 𝑙 = 1
+
+𝑞 𝑙 + 𝜖 . (22) This score does not replace the original path regularizer; it simply provides a more interpretable diagnostic view of how orderly the layer-wise trade-off becomes across depth. 
+
+## E.3 Visualization Protocol 
+
+To compare methods fairly, all layer-wise curves are extracted under the same evaluation protocol. For each trained model, we compute the four diagnostic scores at every prompted layer and then aver-age them over the evaluation split. For clarity of presentation, the figures in this section report the mean layer-wise trend, while the accompanying tables summarize the corresponding early-, middle-, and late-layer statistics. When comparing methods with different absolute scales, we preserve raw values for the quantitative tables and use consistent axis ranges in the plots whenever possible. This avoids artificially exaggerating the apparent differences between methods. We also keep the layer index unchanged, so that the diagnostic curves can be read directly as a function of transformer depth. 
+
+## E.4 Detailed Results on ViT-Base/16 
+
+Figure S1 summarizes all diagnostic results in a single unified vi-sualization. We begin with the standard ViT-B/16 setting, whose four metrics are shown in the top row. Several consistent patterns emerge. First, PIB produces a smoother and more progressive informa-tion trajectory. The trajectory score increases more steadily across transformer depth, indicating that intermediate representations gradually align with the final task-relevant representation. In con-trast, vanilla VPT exhibits a less regular trajectory, suggesting that some layers contribute less consistently to semantic refinement. Second, PIB suppresses redundancy more effectively. As shown in the top-row redundancy panel, the redundancy score decreases more steadily from shallow to deep layers, whereas vanilla VPT remains noticeably more correlated in the middle and late layers. This trend is important because it suggests that simply increasing Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+prompt capacity does not necessarily yield cleaner representations; without explicit regulation, prompt-conditioned features may con-tinue to propagate nuisance-heavy or redundant signals across depth. Third, PIB yields stronger class separability throughout most of the network. The gap is relatively small in the earliest layers, where both methods are still dominated by local evidence, but becomes increasingly visible in the middle and late layers, where seman-tic discrimination should emerge. This observation is consistent with the intended role of PIB: earlier layers preserve useful fine-grained evidence, while deeper layers progressively organize the representation into a more task-discriminative form. Finally, PIB leads to a more ordered path score profile. Rather than fluctuating sharply across adjacent layers, the path score evolves more smoothly and consistently, suggesting that the model follows a more coherent refinement trajectory from local evidence retention to semantic abstraction. 
+
+## E.5 Results on Hierarchical Backbones 
+
+The second row of Figure S1 reports the same diagnostic analysis on Swin-B. Although Swin follows a hierarchical stage-based archi-tecture rather than a plain ViT layout, the same qualitative trend remains clear. PIB still yields a more progressive information trajectory, stronger class separability, lower redundancy, and a more favorable path score than vanilla VPT. The separability advantage becomes more pronounced in the later stages, while the redundancy gap remains visible throughout the hierarchy. This result suggests that the pro-posed information allocation principle is not tied to one specific transformer architecture. Instead, its benefit appears to general-ize across both plain token-based transformers and hierarchical window-based backbones. 
+
+## E.6 Results Across Different Pretraining Paradigms 
+
+We next examine whether the above behavior is consistent under different pretraining paradigms. The pretraining comparison panels in Figure S1 report the corresponding trends for MAE-pretrained and MoCo v3-pretrained ViT-B models. Although the absolute scale of the diagnostic curves changes across pretraining recipes, the overall conclusion remains unchanged. In both MAE and MoCo v3 settings, PIB consistently improves the semantic trajectory, reduces redundancy, strengthens class separa-bility, and yields a smoother path profile. The gains again become clearer in the middle and later layers, which indicates that PIB af-fects not only local prompt-token interactions but also the global organization of the layer-wise refinement process. These observations are important because they show that the effectiveness of PIB does not depend on one specific representation space. Rather, it reflects a broader property of prompt-based adap-tation in frozen transformers: when layer-wise information flow is left unconstrained, prompt-induced refinement becomes less stable; once the compression–sufficiency trade-off is explicitly regulated, the refinement process becomes noticeably more structured. 
+
+## E.7 Breakdown by VTAB-1k Task Group 
+
+Finally, Figure S1 also reports the layer-wise diagnostics broken down by the three VTAB-1k groups: Natural, Specialized, and Struc-tured. The corresponding panels further support the interpretation given in the main paper. Across all three task groups, PIB produces smoother information trajectories, lower redundancy, stronger class separability, and bet-ter path scores than vanilla VPT. At the same time, the relative gap is most pronounced on the Structured subset. This observation is fully consistent with the main benchmark results, where the largest performance improvement also appears on Structured tasks. This behavior is intuitively reasonable. Structured tasks depend more heavily on composition, geometry, and relation-sensitive cues, and are therefore more vulnerable to disordered intermediate re-finement. In such settings, redundancy that survives too long or semantic evidence that is weakened too early is especially harm-ful. By explicitly regulating what each layer should preserve and suppress, PIB produces a more stable refinement trajectory and correspondingly larger gains. On the Natural subset, both methods already benefit from the strong prior of the pretrained backbone, so the diagnostic gap is smaller but still consistent. On the Specialized subset, PIB again shows a clearer reduction in redundancy together with stronger late-layer discrimination. Taken together, these results reinforce the central claim of this paper: the main limitation of vanilla VPT is not merely insufficient prompt capacity, but the lack of principled control over layer-wise information allocation. 
+
+## E.8 Quantitative Summary of Early-, Middle-, and Late-layer Trends 
+
+To complement the plots, Table S7 summarizes the four diagnostic metrics over three coarse depth ranges: early, middle, and late layers. This summary is useful because it makes the diagnostic trend easier to compare across backbones and task groups. The statistics again show the same pattern. Relative to VPT, PIB tends to (i) maintain a higher trajectory score in middle and late layers, (ii) reduce redundancy more strongly as depth increases, 
+
+(iii) improve class separability in the deeper half of the network, and (iv) produce a more favorable path score profile overall. These results explain why PIB is consistently stronger on harder transfer regimes: it is not simply learning a better endpoint, but learning a better path toward that endpoint. 
+
+## E.9 Discussion 
+
+The detailed diagnostics provide a more mechanistic explanation of the main results. Vanilla VPT does not fail simply because it lacks enough parameters. Rather, its intermediate prompt-conditioned representations evolve in a less controlled way: the semantic tra-jectory is less coherent, redundancy is suppressed less steadily, and discrimination emerges less reliably across depth. This disordered refinement process is particularly harmful on tasks that require robust composition and reduced shortcut reliance. PIB improves this behavior in a structurally consistent manner. By explicitly regularizing the compression–sufficiency trade-off at each layer and enforcing a smoother cross-layer path, it turns prompt tuning into a more organized refinement process. This is Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+Figure S1: Unified diagnostic visualization of layer-wise information allocation. The top row reports the four diagnostics on ViT-B/16, including class separability, path score, information trajectory, and redundancy. The second row shows the corresponding results on Swin-B. The remaining panels summarize the same diagnostics under different pretraining paradigms (MAE and MoCo v3) and across the three VTAB-1k task groups (Natural, Specialized, and Structured). Across all settings, PIB consistently exhibits a smoother semantic trajectory, lower redundancy, stronger class separability, and a more ordered cross-layer refinement path than vanilla VPT. 
+
+exactly the behavior suggested by the motivating diagnosis in Fig-ure 1 of the main paper and by the cross-layer design in Figure 2: early layers preserve useful local evidence, middle layers progres-sively filter irrelevant variation, and deeper layers become more selectively aligned with the final semantic decision. Overall, these additional results reinforce the main claim of the paper: the central limitation of vanilla VPT is not merely insufficient prompt capacity, but the lack of principled control over layer-wise information allocation. 
+
+## F Additional Attention Visualizations and Interpretability Results 
+
+This section provides additional attention-based evidence for the proposed Prompted Information Bottleneck (PIB) framework. While the main paper analyzes layer-wise information allocation through trajectory, redundancy, separability, and path diagnostics, the visu-alizations in this section offer a more direct view of how attention patterns evolve under vanilla VPT and PIB. Overall, the results con-sistently support the same conclusion: PIB does not merely improve the final prediction, but also induces a more stable, structured, and progressively organized attention refinement process across depth. 
+
+## F.1 Attention Entropy Across Layers 
+
+Figure S2 compares the layer-wise attention entropy of vanilla VPT and PIB on ViT-B/16. Several clear trends can be observed. First, PIB exhibits a noticeably smoother entropy trajectory across layers. From the shallow layers to the middle of the network, the entropy increases in a gradual and stable manner, indicating that the model progressively broadens its contextual aggregation rather than changing its attention pattern abruptly. In contrast, Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+Table S7: Quantitative summary of early-, middle-, and late-layer diagnostic trends.                                                                                                                                   
+
+> Backbone / setting Method Depth range Trajectory ↑Redundancy ↓Separability ↑Path score ↑
+> ViT-B/16 VPT Early layers 0.641 0.412 2.84 2.11 PIB Early layers 0.668 0.385 2.97 2.26 VPT Middle layers 0.703 0.371 3.26 2.48 PIB Middle layers 0.751 0.318 3.58 2.86 VPT Late layers 0.742 0.347 3.61 2.71 PIB Late layers 0.812 0.271 4.03 3.24 MAE-pretrained ViT-B VPT Early layers 0.618 0.438 2.63 1.98 PIB Early layers 0.646 0.402 2.78 2.14 VPT Middle layers 0.681 0.392 3.01 2.33 PIB Middle layers 0.732 0.336 3.34 2.69 VPT Late layers 0.724 0.361 3.37 2.57 PIB Late layers 0.791 0.286 3.82 3.06 MoCo v3-pretrained ViT-B VPT Early layers 0.629 0.427 2.71 2.03 PIB Early layers 0.655 0.396 2.86 2.19 VPT Middle layers 0.694 0.384 3.12 2.39 PIB Middle layers 0.742 0.331 3.43 2.74 VPT Late layers 0.736 0.352 3.48 2.63 PIB Late layers 0.803 0.279 3.91 3.12 Swin-B VPT Early stages 0.602 0.446 2.54 1.91 PIB Early stages 0.627 0.418 2.67 2.05 VPT Middle stages 0.661 0.401 2.92 2.24 PIB Middle stages 0.709 0.348 3.21 2.57 VPT Late stages 0.706 0.369 3.23 2.46 PIB Late stages 0.771 0.297 3.67 2.93
+
+vanilla VPT shows a less stable evolution, with sharper fluctuations in the deeper layers. Second, the middle-layer regime is particularly informative. PIB maintains relatively high entropy from the middle to upper-middle layers, suggesting that it preserves a richer set of token interactions while the representation is still being refined. This behavior is desirable because the model should not collapse too early into overly narrow attention patterns before sufficient semantic evidence has been consolidated. Third, the late-layer behavior is also more controlled under PIB. Rather than exhibiting abrupt oscillations, PIB transitions more smoothly toward lower-entropy attention in the final layers. This suggests a more orderly progression from broad contextual explo-ration to selective semantic consolidation. Vanilla VPT, by compar-ison, shows stronger late-layer instability, including abrupt drops and spikes, which indicates that its attention allocation is less con-sistent across depth. Overall, the entropy analysis suggests that PIB yields a more balanced refinement process: it avoids both premature attention collapse and unstable late-layer oscillation. This observation is fully consistent with the information-allocation view of the method, where early and middle layers should retain sufficient contextual diversity, while deeper layers should gradually become more selec-tive. 
+
+Figure S2: Attention entropy across transformer layers on ViT-B/16. PIB exhibits a smoother and more stable entropy evolution than vanilla VPT, indicating a more orderly transi-tion from broad contextual interaction to late-stage semantic consolidation. 
+
+## F.2 Average Attention Logits Visualization 
+
+Figure S3 visualizes the average attention logits on ViT-B/16, com-puted from 256 samples drawn from VTAB-1k. We compare repre-sentative layers from vanilla VPT and PIB in order to examine how token-level interaction patterns evolve across depth. A first observation is that both methods begin with a strong near-diagonal pattern in early layers, which reflects local token interactions and short-range dependency modeling. However, even Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+at this stage, PIB already appears slightly cleaner and less noisy, with a more regular diagonal structure and fewer irregular off-diagonal activations. As depth increases, the difference becomes more pronounced. In the middle layers, vanilla VPT still exhibits a relatively diffuse and uneven pattern, with attention mass spread across multiple regions in a less coordinated manner. PIB, in contrast, develops a smoother banded structure, suggesting that token interactions are becoming more organized rather than remaining scattered. This smoother transition is consistent with the role of PIB in regulating which intermediate information should be preserved and which should be progressively suppressed. In the deepest layers, PIB exhibits a more structured block-like organization, whereas vanilla VPT remains comparatively noisier and less coherent. This block emergence is important because it suggests that the model is no longer relying only on local adjacency, but is instead forming more stable higher-level token groupings. In other words, PIB promotes a clearer transition from local interac-tions to semantically organized global structure. Taken together, these attention-logit visualizations provide direct qualitative support for the proposed framework. They show that PIB does not simply rescale attention magnitudes; rather, it changes the way token interactions are organized across depth, leading to cleaner and more interpretable attention structure in later layers. 
+
+## F.3 Prompt-to-Patch Attention Evolution 
+
+To further understand how the learned prompts interact with image tokens, Figure S4 visualizes the prompt-to-patch attention maps of PIB at four representative layers. These maps provide a complemen-tary perspective to the token-to-token attention matrices above, since they directly show how prompt tokens allocate attention over the image patch sequence. In the earliest layer, prompt-to-patch attention is relatively di-verse and dispersed. Different prompt tokens attend to different sub-sets of image patches, which suggests that the prompt set initially explores multiple local evidence sources rather than immediately collapsing to a narrow subset of tokens. This diversity is desirable at the beginning of the network, where preserving complementary low-level cues is important. As the network goes deeper, the attention becomes progressively more structured. By the middle layers, the prompts begin to focus more consistently on a smaller subset of patches, and the row-wise patterns become less random and more aligned across prompts. This suggests that the prompt tokens are no longer acting as loosely independent feature probes, but are gradually coordinating around a shared set of informative regions. The deepest-layer map is particularly revealing. At this stage, prompt-to-patch attention becomes substantially smoother and more concentrated, with a clearer high-response region and stronger agreement across different prompt tokens. This indicates that PIB encourages the prompt set to converge toward semantically rele-vant evidence rather than maintaining noisy or redundant patch interactions into late layers. In other words, the prompts evolve from diverse early exploration to coordinated late-stage selection. This behavior is precisely what the proposed PIB framework is designed to encourage. The compression objective suppresses redundant intermediate structure, the sufficiency objective pre-serves task-relevant evidence, and the path regularizer promotes an orderly transition between these two regimes. The resulting prompt-to-patch maps therefore offer an intuitive interpretability view of PIB: prompts first cover diverse evidence, then progres-sively coordinate, and finally concentrate on the most relevant patch subset for downstream decision making. 
+
+## F.4 Discussion 
+
+The attention visualizations in this section reinforce the central claim of the paper from an interpretability perspective. Across entropy curves, token-level attention logits, and prompt-to-patch maps, PIB consistently produces more stable and structured behav-ior than vanilla VPT. These improvements are not limited to the final layer, but unfold progressively across depth. More specifically, the entropy analysis shows that PIB avoids unstable attention oscillation, the average attention logits reveal a cleaner transition from local to organized global structure, and the prompt-to-patch maps show that prompts evolve from early diver-sity to late-stage coordination. These three observations are highly consistent with the layer-wise information-allocation principle pro-posed in the main paper. Together, they suggest that PIB improves prompt tuning not merely by adding regularization, but by reshap-ing the internal refinement dynamics of the frozen transformer in a more interpretable and semantically organized way. 
+
+## G Theoretical Discussion of the Surrogates 
+
+Although PIB is motivated by the Information Bottleneck (IB) princi-ple, the objective used in practice is not an exact mutual-information optimization. Instead, it is implemented through tractable surro-gates that approximate the desired layer-wise compression–sufficiency trade-off. This design choice is necessary because direct estimation and optimization of 𝐼 (𝐻 𝑙 ; 𝑋 ) and 𝐼 (𝐻 𝑙 ; 𝑌 ) for every prompted layer in a frozen transformer are intractable in the present setting. The purpose of this subsection is therefore not to claim exact equiva-lence to the classical IB objective, but to clarify why the proposed surrogates are reasonable and why they are useful for prompt tun-ing. 
+
+From idealized IB to tractable layer-wise objectives. The idealized formulation in the main paper views prompt tuning as a layer-wise information allocation problem, where each prompt-conditioned hidden state should progressively suppress input-side nuisance variability while preserving task-relevant evidence. In the classical IB view, this corresponds to minimizing 𝐼 (𝐻 𝑙 ; 𝑋 ) while maximizing 
+
+𝐼 (𝐻 𝑙 ; 𝑌 ). However, both quantities are difficult to estimate reliably for high-dimensional hidden states, especially when this must be done repeatedly across all layers during optimization. PIB therefore adopts a more practical approach: instead of directly measuring mutual information, it regularizes representation structure using proxies that are easier to compute, more stable to optimize, and still aligned with the intended role of compression and sufficiency. 
+
+Why the redundancy surrogate is a reasonable compression proxy. 
+
+The compression term in PIB is implemented through the off-diagonal energy of the empirical correlation matrix of the normal-ized hidden states. Its purpose is not to estimate information in an Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+Figure S3: Visualization of average attention logits in ViT-B/16. We compare representative layers of vanilla VPT and PIB using 256 samples from VTAB-1k. PIB exhibits cleaner diagonal structure in early layers, smoother banded interactions in middle layers, and more organized block-like structure in deeper layers, indicating a more coherent refinement of token relationships across depth. 
+
+Figure S4: Prompt-to-patch attention maps of PIB on ViT-B/16 at different layers. Early layers show diverse prompt-specific exploration, while deeper layers exhibit progressively more coordinated and concentrated attention over a compact subset of image patches. This transition reflects the intended behavior of PIB: preserving useful early evidence while progressively suppressing redundancy and consolidating task-relevant structure. 
+
+exact Shannon-theoretic sense, but to discourage correlated, repeti-tive, or nuisance-heavy directions from being propagated across depth. Intuitively, if many hidden dimensions remain strongly cor-related, then the representation continues to carry redundant struc-ture that has not yet been filtered out. Reducing this off-diagonal correlation therefore encourages a more compact representation geometry. This surrogate is especially appropriate in the frozen-backbone prompt-tuning setting. Since the backbone itself is not updated, prompts act mainly by reshaping the organization of intermediate features rather than relearning the full feature extractor. In this regime, suppressing redundant co-activation patterns is a practical way to encourage compression without forcing the representation norm to collapse. Importantly, the surrogate is structural rather than probabilistic: it measures whether the current hidden representation remains overly entangled, not whether it achieves a literal minimum of 𝐼 (𝐻 𝑙 ; 𝑋 ).
+
+Why the separability surrogate is a reasonable sufficiency proxy. 
+
+The sufficiency term is based on the ratio between within-class compactness and between-class separation. This quantity is again Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+not an exact estimator of 𝐼 (𝐻 𝑙 ; 𝑌 ), but it captures whether the hidden states remain predictive of task labels. If samples from the same class become more compact while class centers move farther apart, then the representation is becoming more discriminative, which is precisely the role that the sufficiency term is intended to play. This proxy is particularly suitable for the benchmark setting considered in this paper, where all tasks are classification-oriented transfer problems. In such settings, label-relevant information should manifest as clearer class structure in the hidden space. The separa-bility surrogate therefore provides a simple and task-aligned signal for preserving useful semantic content while the compression term is filtering away irrelevant variation. It is also important that PIB does not use this term in isolation: sufficiency is always paired with compression, which prevents the model from trivially preserving all available information. 
+
+Why path regularization matters beyond per-layer surrogates. 
+
+Even if a representation at one layer achieves a favorable local trade-off between redundancy reduction and class discrimination, prompt tuning may still behave erratically across depth. For this reason, PIB introduces the path regularizer, which operates on the sequence of layer quality scores rather than on any single layer alone. Concep-tually, this regularizer expresses the idea that a good prompt tuning solution should follow a minimal-yet-sufficient refinement trajec-tory: earlier layers should preserve useful local evidence, while later layers should become progressively more selective and semantically organized. This term should not be interpreted as a theorem-level statement about optimal information flow. Rather, it is a structural prior on the refinement process. Its role is to discourage abrupt reversals or disordered transitions between adjacent layers. In this sense, the path regularizer complements the layer-wise surrogates: compres-sion and sufficiency define what a good local representation should look like, while the path term constrains how these representations should evolve across depth. 
+
+Scope and limitations of the surrogate view. The surrogate formu-lation necessarily has limitations. First, redundancy reduction is only one possible proxy for compression; it does not fully charac-terize all forms of nuisance variability. Second, class separability is tightly matched to classification-oriented transfer, but may not directly capture sufficiency for more open-ended tasks such as dense prediction, retrieval, or generative vision-language reason-ing. Third, the path score is a designed structural criterion rather than a derived information-theoretic quantity. For these reasons, PIB should be understood as an information-inspired and optimization-friendly approximation to the layer-wise IB principle, rather than as an exact realization of it. We believe this is an appropriate compromise for the present setting: it preserves the conceptual strength of the IB view while remaining practical enough for large-scale prompt tuning experiments. In future work, more faithful estimators of representation information, or tighter task-dependent sufficiency criteria, may further strengthen this connection. 
+
+Takeaway. In summary, the surrogates in PIB are justified not because they exactly equal mutual information, but because they op-erationalize the two core requirements of the proposed framework in a tractable way: remove persistent redundancy and preserve label-relevant structure, while ensuring that this trade-off evolves coherently across depth. This viewpoint is sufficient to explain why PIB improves both average transfer accuracy and the stability of layer-wise behavior in the experiments. 
+
+## H Efficiency, Complexity, and Overhead Analysis 
+
+A key motivation of PIB is to improve prompt tuning without sacrificing the parameter-efficiency advantage of frozen-backbone adaptation. In this subsection, we analyze the computational and memory overhead introduced by PIB and clarify why the method remains lightweight in practice. 
+
+Parameter efficiency. PIB follows the same frozen-backbone adap-tation protocol as standard prompt tuning: the pretrained backbone remains fixed, and only a small set of parameters is optimized. These trainable parameters consist of the prompt tokens, the task head, and, in the routed variant, the additional routing scalars. As a result, PIB inherits the same favorable scaling behavior as other prompt-based methods: the number of updated parameters is tiny compared with full fine-tuning, and remains in the low-percentage regime reported in the main paper. An important point is that the proposed regularization terms do not introduce large auxiliary networks. PIB does not require a teacher model, a second branch, a memory bank, or task-specific adapters stacked throughout the backbone. The improvement there-fore comes mainly from better regulation of the existing prompt-conditioned hidden states, rather than from adding substantial new model capacity. 
+
+Training-time computational overhead. Relative to vanilla deep prompt tuning, PIB introduces three additional sources of training-time cost: (1) computation of the layer-wise correlation matrices for the compression surrogate, (2) computation of class-wise scatter statistics for the sufficiency surrogate, and (3) aggregation of the layer quality scores for the path regular-izer. Suppose a prompted layer has hidden dimension 𝑑 and effective token count 𝑁 𝑙 . The compression surrogate requires forming the empirical correlation matrix 𝐶 𝑙 ∈ R𝑑 ×𝑑 from the normalized hid-den states, which has cost on the order of O( 𝑁 𝑙 𝑑 2) per layer. The sufficiency surrogate operates on pooled sample representations and therefore depends mainly on batch size and hidden dimension, rather than the full token sequence length. Its cost is modest com-pared with the backbone forward pass. The path regularizer itself is negligible, since it only combines scalar layer-level scores. Thus, the dominant extra computation in PIB comes from simple matrix statistics on already available hidden states. These opera-tions are considerably cheaper than updating the full transformer, and they do not alter the asymptotic cost of backbone self-attention. In practice, PIB therefore adds only a moderate overhead on top of Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+Table S8: Relationship between the ideal Information Bottleneck objective and the practical surrogates used in PIB. The proposed formulation does not directly optimize mutual information, but instead uses tractable proxies that are better aligned with frozen-backbone prompt tuning.                        
+
+> Component Ideal IB role PIB surrogate What it encourages Main limitation
+> Compression term Reduce irrelevant input-side information, i.e., lower
+> 𝐼 (𝐻 𝑙 ;𝑋 )
+> Off-diagonal energy of the nor-malized correlation matrix Suppresses correlated, repeti-tive, and nuisance-heavy feature directions; encourages a more compact hidden geometry Measures structural redundancy rather than exact information content Sufficiency term Preserve label-relevant infor-mation, i.e., higher 𝐼 (𝐻 𝑙 ;𝑌 )
+> Inter-class / intra-class separabil-ity ratio Maintains discriminative seman-tic structure and prevents over-compression Strongly tied to classification-style supervision; may not di-rectly generalize to dense or open-ended tasks Path regularizer Encourage coherent informa-tion evolution across depth Monotonic improvement of layer quality scores Promotes a stable minimal-yet-sufficient refinement trajectory across layers Encodes a structural prior rather than a theorem-level informa-tion constraint Layer-aware routing Adapt the compression– sufficiency balance to different layers Learned routing gates on layer-wise losses Allows early layers to preserve more detail and deeper layers to become more selective Adds flexibility, but still depends on surrogate-defined layer qual-ity
+
+Table S9: Efficiency comparison on ViT-B/16 under the frozen-backbone setting.                                    
+
+> Method Trainable Params (M) Trainable Ratio (%) Peak Train Memory (GB) Relative Train Time / epoch Inference Latency (ms/img)
+> Full FT 86.57 100.00 15.8 1.00 ×15.8 AdaptFormer [6] 1.92 2.22 7.6 0.44 ×16.2 LoRA [23] 0.74 0.86 6.8 0.39 ×15.1 VPT-Deep [27] 0.46 0.53 6.2 0.36 ×14.8 E2VPT [18] 0.69 0.80 6.5 0.38 ×14.9
+> Ours 0.30 0.35 6.7 0.40 ×14.9
+
+standard prompt tuning rather than changing the overall computa-tional regime. 
+
+Inference-time overhead. The inference cost of PIB is particularly favorable. During test time, the trained prompts are used in the same way as in standard prompt tuning, while the auxiliary training-only regularization terms are no longer computed. This means that the inference graph is essentially unchanged relative to the corresponding prompt-tuned backbone, except for the presence of the learned prompts themselves. In other words, PIB improves training behavior without requiring a more complicated inference pipeline. This distinction is important in practice. Many methods improve transfer performance by introducing additional modules that re-main active at deployment time. PIB instead places most of its extra complexity in the training objective, not in the final deployed model. As a result, its test-time efficiency remains close to that of vanilla prompt tuning. 
+
+Memory overhead. PIB requires storing layer-wise hidden states long enough to compute the compression and sufficiency terms. This introduces some additional activation memory compared with the most minimal prompt-tuning implementation. However, this overhead remains substantially smaller than full fine-tuning, since gradients are still not propagated through the frozen backbone parameters themselves. In addition, the path regularizer only oper-ates on low-dimensional per-layer summary statistics and therefore contributes negligible memory cost. In practice, the memory footprint of PIB is governed mainly by the same factors that already determine prompt-tuning cost: backbone size, input resolution, token sequence length, and number of prompted layers. The additional regularization statistics increase memory moderately, but do not fundamentally alter the favorable storage profile of frozen-backbone adaptation. 
+
+Complexity relative to stronger baselines. Compared with meth-ods that attach additional trainable modules throughout the net-work, PIB remains architecturally lightweight. It does not insert per-layer adapter MLPs, low-rank projection stacks, or external routing sub-networks with substantial parameter count. Its core complexity comes from statistics computed on existing hidden states, which is conceptually different from increasing the representational size of the adapted model. This distinction is important for interpreting the main results: PIB improves transfer accuracy primarily through better information regulation rather than through a large increase in trainable capacity. 
+
+Why the overhead is worthwhile. The main paper shows that PIB improves performance most clearly in harder transfer regimes, especially on Structured VTAB tasks, while also improving ro-bustness under corruption, domain shift, and few-shot evaluation. These gains suggest that the extra training-time cost is not spent on redundant machinery, but on regularizing the layer-wise re-finement process that vanilla VPT leaves unconstrained. From this perspective, PIB represents a favorable trade-off: it introduces only Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+Table S10: Training and inference overhead of PIB components relative to vanilla VPT-Deep. The main additional cost of PIB comes from training-time layer-wise statistics, while test-time complexity remains essentially unchanged because the auxiliary losses are not used during inference.                         
+
+> Variant Relative Train FLOPs Relative Peak Memory Relative Inference Cost Remarks
+> VPT-Deep baseline 1.00 ×1.00 ×1.00 ×Prompt-only adaptation without auxiliary regularization + Compression surrogate 1.04 ×1.05 ×1.00 ×Adds correlation-matrix statistics on hidden states + Compression + Sufficiency 1.07 ×1.07 ×1.00 ×Adds class-wise scatter statistics on pooled features + Compression + Sufficiency + Path 1.10 ×1.08 ×1.00 ×Adds cross-layer quality aggregation with negligible test-time cost + Full PIB (with routing) 1.11 ×1.08 ×1.00 ×Routing adds only a very small extra optimization overhead
+
+lightweight statistical overhead during training, preserves the de-ployment simplicity of prompt tuning at inference time, and yields a stronger and more stable transfer profile. 
+
+Takeaway. Overall, PIB remains firmly within the parameter-efficient adaptation regime. Its added complexity is dominated by lightweight layer-wise statistics rather than large trainable modules, its inference-time overhead is minimal, and its memory increase is modest compared with full fine-tuning. This makes PIB a practical extension of visual prompt tuning: it strengthens transfer behavior without giving up the efficiency advantages that motivate frozen-backbone adaptation in the first place. 
+
+## I Open Discussion: Extending Layer-wise Information Allocation 
+
+The present study focuses on classification-oriented frozen-backbone adaptation, where sufficiency can be operationalized through class-discriminative structure. The broader principle of layer-wise infor-mation allocation is not restricted to this setting, but extending it requires task-specific definitions of what should be preserved and suppressed. We discuss several research directions suggested by recent work in adjacent multimedia domains. These directions are hypotheses for future study rather than claims validated by the current experiments. 
+
+Heterogeneous data and limited supervision. Image quality as-sessment provides a natural test bed because models must gener-alize across acquisition conditions, distortion types, and datasets. Adaptive prompt learning on multimodal mixed datasets [ 96 ] sug-gests that prompt behavior can be studied under heterogeneous training distributions, while causal generalization [ 92 ] offers a com-plementary perspective on separating task-relevant factors from dataset-specific correlations. Semi-supervised quality assessment with confidence-aware pseudo-labels [ 94 ] and consistent sparse-graph feature selection [ 93 ] further raise the question of how suf-ficiency should be defined when labels are incomplete or uncer-tain. In such settings, a future PIB variant could couple layer-wise compression with confidence-weighted or cross-view consistency objectives, so that uncertain supervision does not force nuisance information to persist across depth. This extension would require dedicated experiments because class-separability surrogates alone may be unreliable under pseudo-label noise. 
+
+Structured and temporal representations. Recent gait-recognition methods emphasize skeleton-guided alignment [ 62 ], language-guided motion representation [ 61 ], and joint parsing-skeleton structure [ 73 ]. These approaches illustrate that task-relevant evidence may be dis-tributed across appearance, pose, language, and time rather than concentrated in a single image representation [ 74 –76 , 98 ]. Efficient long-sequence modeling with dynamic state-space mechanisms [ 95 ]raises a related issue: an information path may span recurrent or state-space transitions instead of transformer blocks alone. Ex-tending PIB to these models would therefore require temporal or stage-aware path scores. The regularizer should preserve motion discontinuities and identity-bearing dynamics rather than enforc-ing an overly smooth trajectory, while compression should target repeated or misaligned temporal evidence. 
+
+Generative and knowledge-intensive multimodal tasks. Text-driven inpainting places emphasis on visual-textual coherence during gen-eration [ 97 ], whereas knowledge-based visual question answering may depend on progressive search and externally retrieved evi-dence [ 60 ]. In both cases, label separability is an incomplete no-tion of sufficiency. A generative extension could define sufficiency through text-image consistency, reconstruction fidelity, or preserva-tion of user-specified content; a retrieval-and-reasoning extension could instead preserve evidence that remains useful for interme-diate queries and final answers. Compression would then act on redundant context, conflicting retrievals, or prompt-induced repeti-tion. A central open problem is to design these task-conditioned objectives without suppressing low-frequency evidence that be-comes important only at later generation or reasoning steps. 
+
+Compositional retrieval under noisy multimodal queries. Com-posed retrieval requires preserving the reference content that re-mains relevant while incorporating text-specified changes. Multi-modification image retrieval [ 35 ] and evidence-driven composed video retrieval [ 33 ] illustrate that this balance depends on entity-level modifications, modality contribution, and temporal evidence. Robust variants further address noisy triplet correspondence through targeted noise unlearning [ 34 ] or invariance- and discrimination-aware mitigation [ 9 ]. These problems closely mirror the compression– sufficiency tension studied by PIB: irrelevant visual content and annotation noise should be suppressed, but the reference evidence needed to realize the requested modification must remain available. A retrieval-oriented extension could therefore define layer-wise sufficiency through query-target alignment and modification con-sistency, while using compression to remove modality-specific dis-tractors. This connection is conceptual and would require direct retrieval experiments rather than being inferred from the current classification results. Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation Conference acronym ’XX, June 03–05, 2018, Woodstock, NY 
+
+Egocentric adaptation and routed reasoning. Egocentric video tasks introduce heterogeneous temporal, spatial, and semantic ev-idence. EgoAdapt uses category-conditioned adaptation and test-time consistency for multi-scene egocentric VQA [ 10 ], while OmniEgo-R2 uses routed reasoning for cross-domain egocentric video under-standing [ 31 ]. These settings suggest moving from globally learned layer gates to input- or domain-conditioned routing, so that differ-ent examples can preserve distinct temporal windows and semantic cues. They also expose an important boundary: a smooth layer-wise path may be insufficient when relevant evidence appears sparsely or when the reasoning route changes across domains. Future work could combine PIB-style information allocation with conditional routing while explicitly testing calibration and cross-domain ro-bustness. 
+
+Research outlook. These domains suggest that the main transfer-able idea in PIB is not a fixed pair of losses, but the explicit sepa-ration of three questions: what information is dispensable, what evidence is sufficient for the task, and how this balance should evolve through the model. Future work should replace the current classification-oriented surrogates with objectives matched to super-vision quality, temporal structure, generation, or external knowl-edge, and should evaluate whether the resulting information paths predict robustness independently of the optimized losses. Such studies would clarify which parts of PIB generalize beyond visual classification and which require domain-specific reformulation. 
+
+## J Failure Cases, Limitations, and Discussion 
+
+Although PIB consistently improves frozen-backbone prompt tun-ing across FGVC, HTA, and VTAB-1k, the present study still has several limitations. We discuss them here in order to clarify the current scope of the method and to identify directions for future improvement. 
+
+Failure cases and weak-improvement regimes. While PIB improves the overall transfer profile, its advantage is not equally large on all task types. In particular, the gains are typically more pronounced on harder transfer settings, especially the Structured subset of VTAB-1k, whereas the margin is often smaller on Natural tasks that remain closer to the original pretraining distribution. This behavior is consistent with the main empirical observations of the paper: when the target task already aligns well with pretrained representations, the room for improving layer-wise information allocation is naturally more limited. In such cases, PIB still tends to produce a more stable refinement process, but the resulting accuracy gain may be modest. We also note that some tasks may be less sensitive to redundancy suppression or path regularization than others. If a downstream task can already be solved using relatively shallow or direct semantic cues, then stronger cross-layer control may not lead to a dramatic improvement. Similarly, if the prompt-tuned model is already close to saturation on a given benchmark, the additional regularization introduced by PIB may mainly improve stability and interpretability rather than final accuracy. 
+
+Sensitivity to the balance between compression and sufficiency. PIB is built on the idea that effective prompt tuning requires balancing two competing goals: removing redundant or nuisance-heavy struc-ture while preserving task-relevant semantic evidence. Although the proposed layer-wise coefficients and routing mechanism make this trade-off more robust, the balance is still not entirely task-independent. Excessive compression may suppress fine-grained evidence that remains useful for classification, while insufficient compression may allow shortcut-prone or redundant structure to persist too deep into the network. This limitation is particularly relevant in fine-grained settings, where useful discriminative cues may be subtle and spatially lo-calized. In such cases, overly aggressive regularization may lead to underfitting of rare but important visual details. Conversely, on tasks that require more compositional abstraction, weak regulariza-tion may fail to sufficiently organize the intermediate refinement path. Therefore, although PIB is much less brittle than vanilla VPT, it should still be understood as a controlled trade-off rather than a universally optimal objective. 
+
+Surrogates are useful but not exact. A more fundamental lim-itation is that PIB does not directly optimize layer-wise mutual information. Instead, it uses practical surrogates for redundancy reduction, label-related sufficiency, and cross-layer path quality. These quantities are designed to be optimization-friendly and em-pirically aligned with the Information Bottleneck perspective, but they do not constitute exact estimates of 𝐼 (𝐻 𝑙 ; 𝑋 ) or 𝐼 (𝐻 𝑙 ; 𝑌 ).This means that PIB should be interpreted as an information-inspired framework rather than a theorem-level realization of the classical IB objective. The current surrogates capture important aspects of the desired behavior, but they may not fully characterize all forms of useful information or nuisance variability. In particular, the separability-based sufficiency term is naturally well matched to classification-oriented transfer, but may be less appropriate for tasks where label structure is weaker, more open-ended, or spatially dense. 
+
+Task scope is still limited. All benchmarks considered in this paper belong to the broad family of classification-oriented trans-fer problems. This makes them appropriate for studying prompt-conditioned layer-wise information allocation, but it also limits the current empirical scope of the conclusions. It remains unclear how PIB would behave on dense prediction tasks, open-vocabulary retrieval, vision-language generation, or multimodal reasoning, where the notion of sufficiency may differ substantially from class separability. Similarly, although we evaluate PIB across multiple pretrained backbones and pretraining paradigms, the experiments still focus on standard frozen-backbone adaptation rather than more complex deployment settings such as continual adaptation, online test-time updating, or multi-task prompt sharing. These scenarios may in-troduce new optimization challenges that are not captured by the current design. 
+
+The path constraint may over-regularize in some scenarios. The path regularizer is one of the key ingredients of PIB, but it also intro-duces an inductive bias: it assumes that good prompt-conditioned representations should evolve along a relatively smooth and pro-gressively improving cross-layer path. While this assumption is effective in the benchmarks studied here, it may not hold equally Conference acronym ’XX, June 03–05, 2018, Woodstock, NY Li et al. 
+
+well for every downstream task. Some tasks may benefit from more abrupt representational transitions or more heterogeneous layer roles than the current path regularizer encourages. For this reason, PIB should not be interpreted as claiming that every optimal prompt-tuning solution must follow a strictly mono-tonic or uniform refinement pattern. Rather, the proposed path term encodes a useful prior that works well in practice, especially for frozen transformers, but may still be too restrictive in tasks with more irregular or highly specialized representation dynamics. 
+
+Interpretability evidence remains primarily qualitative. The at-tention visualizations and diagnostic curves in this paper provide a coherent and intuitive picture of why PIB works, but part of this evidence is still qualitative in nature. For example, smoother attention evolution, cleaner block structure, and more organized prompt-to-patch interactions strongly support the proposed inter-pretation, but they do not on their own prove causality. A more rigorous causal analysis of which internal structural changes are necessary and sufficient for the final performance gains remains an open problem. This limitation is common in studies of internal transformer dy-namics, but it is especially relevant here because one of the goals of PIB is not only to improve accuracy but also to provide a more prin-cipled explanation of prompt tuning behavior. We therefore view the current interpretability analysis as strong supporting evidence, but not yet as a complete mechanistic account. 
+
+Discussion and future directions. Despite these limitations, the current results suggest a clear broader message. A key weakness of standard prompt-based VFM adaptation is not simply insufficient prompt capacity, but the absence of principled control over how prompt-conditioned information should evolve across depth. PIB addresses this issue with lightweight, optimization-friendly surro-gates and yields consistent gains in both performance and stability. At the same time, the limitations above indicate several promising directions for future work. A first direction is to develop tighter information-theoretic esti-mators that better connect the practical objective to the underlying IB principle. A second direction is to extend the framework beyond classification-oriented transfer, for example to dense prediction or multimodal settings where sufficiency must be defined differ-ently. A third direction is to design more adaptive path constraints that can preserve the benefits of cross-layer coordination without imposing an overly rigid refinement prior. 
+
+Takeaway. Overall, PIB should be viewed as a principled but still approximate step toward understanding and improving prompt-based adaptation of frozen vision foundation models. Its current form already demonstrates that explicitly regulating layer-wise information allocation is both effective and practical. However, the method is not the final word on the problem: its surrogates are approximate, its task scope is still limited, and some regimes leave less room for improvement than others. These limitations are not contradictions of the proposed framework, but natural boundaries that help define the next stage of research.
