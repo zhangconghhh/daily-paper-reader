@@ -1,0 +1,54 @@
+{
+  "label": "2026-07-28",
+  "date": "2026-07-28",
+  "generated_at": "2026-07-28T21:33:14",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202607/28/2607.24424v1-mavie-a-multi-scale-adaptive-vision-encoder-for-fine-grained-visual-perception-and-efficient-multimodal-reasoning",
+      "section": "deep",
+      "title_en": "MAViE: A Multi-scale Adaptive Vision Encoder for Fine-grained Visual Perception and Efficient Multimodal Reasoning",
+      "authors": "Shaofei Lei",
+      "date": "2026-07-27",
+      "pdf": "https://arxiv.org/pdf/2607.24424v1",
+      "score": "8.0",
+      "evidence": "提出一种多尺度自适应视觉编码器，利用视觉Transformer进行细粒度视觉感知",
+      "tldr": "现有视觉语言模型使用最后一层特征丢失文本、局部属性等细粒度信息，且高分辨率输入导致token过多、推理延迟大。提出MAViE多尺度自适应视觉编码器，通过位置门控融合浅、中、深层特征，并基于问题相关性、局部信息、全局语义和空间覆盖进行自适应token路由与预算分配，同时采用全到压缩表示蒸馏和空间多样性正则化减少压缩损失。在统一7B语言模型框架下，将SigLIP-SO400M视觉token从729降至146（减少80%），在VQAv2等五个基准上平均提升2.2个百分点，单图首token时间从228ms降至129ms。该方法平衡了细粒度感知与高效推理，为多模态模型提供了可扩展的视觉编码方案。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Vision-language models commonly project all tokens produced by a pretrained vision encoder into a large language model. However, final-layer features can discard text, local attributes, and spatial relationships, while high-resolution inputs substantially increase context length and inference latency. We introduce \\method, a Multi-scale Adaptive Vision Encoder. \\method uses position-dependent gates to fuse shallow, intermediate, and deep features from a vision Transformer, preserving global semantics while enhancing edges, text, and local structure. It then performs question-conditioned token routing according to question relevance, local information content, global semantics, and spatial coverage, with a token budget that adapts to image complexity. To mitigate compression loss, we further introduce full-to-compressed representation distillation and a spatial diversity regularizer. In an illustrative simulation under a unified 7B language-model framework, \\method reduces the average number of SigLIP-SO400M visual tokens from 729 to 146 (approximately 80.0\\%) and improves the mean score on VQAv2, GQA, TextVQA, ScienceQA-IMG, and MMBench by 2.2 percentage points, while reducing single-image time to first token from 228\\,ms to 129\\,ms. We provide the full model design and evaluation protocol. All reported numbers currently serve only as placeholders for paper organization and experimental design; formal claims require real training runs, independent replications, and official benchmark evaluation.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/28/biorxiv-10-64898-2026-07-14-738462-v1-interpretable-peripheral-blood-cell-classification-via-vision-language-concept-bottleneck-and-soft-decision-tree",
+      "section": "quick",
+      "title_en": "Interpretable Peripheral Blood Cell Classification via Vision-Language Concept Bottleneck and Soft Decision Tree",
+      "authors": "Chen, K., Hu, T.",
+      "date": "2026-07-20",
+      "pdf": "https://www.biorxiv.org/content/10.64898/2026.07.14.738462v1.full.pdf",
+      "score": "7.0",
+      "evidence": "利用视觉-语言概念瓶颈进行细粒度血细胞分类",
+      "tldr": "现有深度学习外周血细胞分类模型缺乏可解释性，无法基于形态学概念推理。本文提出两阶段可解释流水线：先由ConceptCLIP零样本提取70维形态概念分数，再由软决策树(SDT)基于分数分类。在BloodMNIST上达94.86%准确率，决策逻辑与血液学标准一致，且无监督分离早幼粒细胞与中幼粒细胞亚型。该方法在保持高性能的同时提供透明决策路径，具有临床审计价值。",
+      "tags": "query:dino-fg",
+      "abstract_en": "MotivationDeep learning classifiers for medical image analysis typically function as black boxes, disclosing neither the image features underlying their predictions nor the reasoning by which individual decisions are reached. Peripheral blood cell classification exemplifies this challenge: experienced laboratory professionals identify cell types through structured morphological criteria--nucleus shape, chromatin texture, nucleus-to-cytoplasm ratio, granularity, and staining properties--yet existing automated systems cannot express their reasoning in these same terms, impeding clinical audit and verification.\n\nResultsWe present a two-stage interpretable pipeline that addresses both levels of opacity. In the first stage, a frozen domain-adapted vision-language model (ConceptCLIP) projects each cell image onto a 70-dimensional vector of morphological concept scores via zero-shot cosine similarity, eliminating the need for per-image concept annotations. In the second stage, a Soft Decision Tree (SDT) classifies cells solely on these concept scores, producing a deterministic, concept-based decision path for each prediction. On BloodMNIST (eight cell types, 3,421 test images), the full pipeline achieves 94.86% test accuracy--approximately 3 percentage points below the black-box ceiling--while providing fully traceable decision logic. Post-training histological annotation confirms that the learned routing logic aligns with established hematological morphology criteria and reveals an emergent separation of immature granulocyte subtypes (promyelocyte versus metamyelocyte) without subtype supervision, demonstrating that concept-based decision trees can recover clinically meaningful distinctions beyond the granularity of the training labels.\n\nAvailability and implementationThe source code, trained SDT weights, precomputed concept score data, and inference scripts are publicly available at https://github.com/aquamarineaqua/CLIP-CBM-SoftDecisionTree.",
+      "source": "biorxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/28/2607.24453v1-esrvs-extreme-semi-supervised-retinal-vessel-segmentation-with-a-single-annotated-image",
+      "section": "quick",
+      "title_en": "ESRVS: Extreme Semi-Supervised Retinal Vessel Segmentation with a Single Annotated Image",
+      "authors": "Mingzhi Xu, Yizhe Zhang",
+      "date": "2026-07-27",
+      "pdf": "https://arxiv.org/pdf/2607.24453v1",
+      "score": "6.0",
+      "evidence": "使用DINOv3特征进行半监督视网膜血管分割",
+      "tldr": "针对医学图像中密集标注成本高昂的问题，本文提出ESRVS方法，在仅有一张标注图像和大量未标注图像的极端半监督设定下进行视网膜血管分割。ESRVS通过目标域适应的DINOv3特征传递血管线索，构建多粒度原型并融合物理先验生成伪标签，再经加权训练与对抗微调优化。在八个公开数据集上，ESRVS以仅一张标注图像超越使用10%-20%标注数据的半监督方法，在六项指标上取得最优，并分别保留全监督93.7%的Dice和95.1%的clDice，证明了基础模型标签传播在高效标注中的潜力。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Learning from minimal human supervision is a long-standing goal in medical image analysis, where dense expert annotations are costly. We study retinal vessel segmentation in an extreme semi-supervised setting with one annotated image and a pool of unlabeled images. We propose ESRVS, which selects a representative reference image for manual annotation and transfers vessel cues using target-domain-adapted DINOv3 features. ESRVS constructs a multi granular vessel prototype, combines prototype-similarity maps with a physics-inspired prior to generate initial pseudo-labels, and refines the transferred supervision through weighted pseudo-label training and adversarial refinement. Across eight public datasets, ESRVS achieves the best Dice and clDice on six datasets, and the best HD95 on all eight datasets among the compared semi-supervised methods, although those methods use 10 to 20% labeled data. With Mask2Former, ESRVS retains on average 93.7% of fully supervised Dice and 95.1% of fully supervised clDice. These results demonstrate the potential of foundation-model label propagation for highly label-efficient retinal vessel segmentation. Code is available at https://github.com/IAANNH/ESRVS.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

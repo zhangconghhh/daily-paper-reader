@@ -1,0 +1,126 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-28T21:30:47.859977+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2607.24424v1",
+      "source": "arxiv",
+      "title": "MAViE: A Multi-scale Adaptive Vision Encoder for Fine-grained Visual Perception and Efficient Multimodal Reasoning",
+      "abstract": "Vision-language models commonly project all tokens produced by a pretrained vision encoder into a large language model. However, final-layer features can discard text, local attributes, and spatial relationships, while high-resolution inputs substantially increase context length and inference latency. We introduce \\method, a Multi-scale Adaptive Vision Encoder. \\method uses position-dependent gates to fuse shallow, intermediate, and deep features from a vision Transformer, preserving global semantics while enhancing edges, text, and local structure. It then performs question-conditioned token routing according to question relevance, local information content, global semantics, and spatial coverage, with a token budget that adapts to image complexity. To mitigate compression loss, we further introduce full-to-compressed representation distillation and a spatial diversity regularizer. In an illustrative simulation under a unified 7B language-model framework, \\method reduces the average number of SigLIP-SO400M visual tokens from 729 to 146 (approximately 80.0\\%) and improves the mean score on VQAv2, GQA, TextVQA, ScienceQA-IMG, and MMBench by 2.2 percentage points, while reducing single-image time to first token from 228\\,ms to 129\\,ms. We provide the full model design and evaluation protocol. All reported numbers currently serve only as placeholders for paper organization and experimental design; formal claims require real training runs, independent replications, and official benchmark evaluation.",
+      "authors": [
+        "Shaofei Lei"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-27T13:36:08+00:00",
+      "link": "https://arxiv.org/pdf/2607.24424v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Proposes a multi-scale adaptive vision encoder for fine-grained visual perception using vision Transformer",
+      "llm_evidence_cn": "提出一种多尺度自适应视觉编码器，利用视觉Transformer进行细粒度视觉感知",
+      "llm_evidence": "提出一种多尺度自适应视觉编码器，利用视觉Transformer进行细粒度视觉感知",
+      "canonical_evidence": "提出一种多尺度自适应视觉编码器，利用视觉Transformer进行细粒度视觉感知",
+      "llm_tldr_en": "Introduces MAViE, a Multi-scale Adaptive Vision Encoder with position-dependent gates to fuse multi-level features and question-conditioned token routing for fine-grained perception.",
+      "llm_tldr_cn": "该论文提出MAViE多尺度自适应视觉编码器，用于细粒度视觉感知。它通过位置相关门融合浅层、中层和深层特征以保留全局语义同时增强局部结构，并根据问题相关性进行令牌路由。该方法可显著提升细粒度分类和多模态推理的效率与准确性，直接满足使用视觉Transformer进行细粒度分类的需求。",
+      "llm_tldr": "该论文提出MAViE多尺度自适应视觉编码器，用于细粒度视觉感知。它通过位置相关门融合浅层、中层和深层特征以保留全局语义同时增强局部结构，并根据问题相关性进行令牌路由。该方法可显著提升细粒度分类和多模态推理的效率与准确性，直接满足使用视觉Transformer进行细粒度分类的需求。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "biorxiv-10-64898-2026-07-14-738462-v1",
+      "source": "biorxiv",
+      "title": "Interpretable Peripheral Blood Cell Classification via Vision-Language Concept Bottleneck and Soft Decision Tree",
+      "abstract": "MotivationDeep learning classifiers for medical image analysis typically function as black boxes, disclosing neither the image features underlying their predictions nor the reasoning by which individual decisions are reached. Peripheral blood cell classification exemplifies this challenge: experienced laboratory professionals identify cell types through structured morphological criteria--nucleus shape, chromatin texture, nucleus-to-cytoplasm ratio, granularity, and staining properties--yet existing automated systems cannot express their reasoning in these same terms, impeding clinical audit and verification.\n\nResultsWe present a two-stage interpretable pipeline that addresses both levels of opacity. In the first stage, a frozen domain-adapted vision-language model (ConceptCLIP) projects each cell image onto a 70-dimensional vector of morphological concept scores via zero-shot cosine similarity, eliminating the need for per-image concept annotations. In the second stage, a Soft Decision Tree (SDT) classifies cells solely on these concept scores, producing a deterministic, concept-based decision path for each prediction. On BloodMNIST (eight cell types, 3,421 test images), the full pipeline achieves 94.86% test accuracy--approximately 3 percentage points below the black-box ceiling--while providing fully traceable decision logic. Post-training histological annotation confirms that the learned routing logic aligns with established hematological morphology criteria and reveals an emergent separation of immature granulocyte subtypes (promyelocyte versus metamyelocyte) without subtype supervision, demonstrating that concept-based decision trees can recover clinically meaningful distinctions beyond the granularity of the training labels.\n\nAvailability and implementationThe source code, trained SDT weights, precomputed concept score data, and inference scripts are publicly available at https://github.com/aquamarineaqua/CLIP-CBM-SoftDecisionTree.",
+      "authors": [
+        "Chen, K.",
+        "Hu, T."
+      ],
+      "primary_category": "bioinformatics",
+      "categories": [
+        "bioinformatics"
+      ],
+      "published": "2026-07-20T00:00:00+00:00",
+      "link": "https://www.biorxiv.org/content/10.64898/2026.07.14.738462v1.full.pdf",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "fine-grained blood cell classification using vision-language bottleneck",
+      "llm_evidence_cn": "利用视觉-语言概念瓶颈进行细粒度血细胞分类",
+      "llm_evidence": "利用视觉-语言概念瓶颈进行细粒度血细胞分类",
+      "canonical_evidence": "利用视觉-语言概念瓶颈进行细粒度血细胞分类",
+      "llm_tldr_en": "Proposes an interpretable pipeline for blood cell classification using a vision-language concept bottleneck and soft decision tree, achieving fine-grained recognition with explainability.",
+      "llm_tldr_cn": "医学图像中的外周血细胞分类需要细粒度区分和可解释性。本文提出两阶段可解释流程：第一阶段使用视觉-语言概念瓶颈提取可解释的形态学特征，第二阶段使用软决策树进行分类。该方法在保持高分类精度的同时，提供了与临床实践一致的推理依据，解决了现有深度学习模型在黑盒预测与临床需求之间的鸿沟。",
+      "llm_tldr": "医学图像中的外周血细胞分类需要细粒度区分和可解释性。本文提出两阶段可解释流程：第一阶段使用视觉-语言概念瓶颈提取可解释的形态学特征，第二阶段使用软决策树进行分类。该方法在保持高分类精度的同时，提供了与临床实践一致的推理依据，解决了现有深度学习模型在黑盒预测与临床需求之间的鸿沟。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.24453v1",
+      "source": "arxiv",
+      "title": "ESRVS: Extreme Semi-Supervised Retinal Vessel Segmentation with a Single Annotated Image",
+      "abstract": "Learning from minimal human supervision is a long-standing goal in medical image analysis, where dense expert annotations are costly. We study retinal vessel segmentation in an extreme semi-supervised setting with one annotated image and a pool of unlabeled images. We propose ESRVS, which selects a representative reference image for manual annotation and transfers vessel cues using target-domain-adapted DINOv3 features. ESRVS constructs a multi granular vessel prototype, combines prototype-similarity maps with a physics-inspired prior to generate initial pseudo-labels, and refines the transferred supervision through weighted pseudo-label training and adversarial refinement. Across eight public datasets, ESRVS achieves the best Dice and clDice on six datasets, and the best HD95 on all eight datasets among the compared semi-supervised methods, although those methods use 10 to 20% labeled data. With Mask2Former, ESRVS retains on average 93.7% of fully supervised Dice and 95.1% of fully supervised clDice. These results demonstrate the potential of foundation-model label propagation for highly label-efficient retinal vessel segmentation. Code is available at https://github.com/IAANNH/ESRVS.",
+      "authors": [
+        "Mingzhi Xu",
+        "Yizhe Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-07-27T13:57:07+00:00",
+      "link": "https://arxiv.org/pdf/2607.24453v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses DINOv3 features for semi-supervised retinal vessel segmentation",
+      "llm_evidence_cn": "使用DINOv3特征进行半监督视网膜血管分割",
+      "llm_evidence": "使用DINOv3特征进行半监督视网膜血管分割",
+      "canonical_evidence": "使用DINOv3特征进行半监督视网膜血管分割",
+      "llm_tldr_en": "ESRVS proposes extreme semi-supervised retinal vessel segmentation using DINOv3 features, achieving state-of-the-art Dice across eight datasets by transferring vessel cues via adapted DINOv3 and prototype-similarity maps.",
+      "llm_tldr_cn": "该论文针对医学图像分割中标注数据稀缺的问题，提出极端半监督视网膜血管分割方法ESRVS。方法利用目标域适应的DINOv3特征构建多粒度血管原型，结合原型相似度图和物理启发先验生成初始伪标签，并通过加权伪标签训练和对抗细化提升质量。在八个公共数据集上，ESRVS取得了最佳Dice分数，展示了DINOv3作为基础模型在医学图像分割中的强大迁移能力。这项研究为利用自监督视觉基础模型解决极低标注下的密集预测任务提供了有效范例。",
+      "llm_tldr": "该论文针对医学图像分割中标注数据稀缺的问题，提出极端半监督视网膜血管分割方法ESRVS。方法利用目标域适应的DINOv3特征构建多粒度血管原型，结合原型相似度图和物理启发先验生成初始伪标签，并通过加权伪标签训练和对抗细化提升质量。在八个公共数据集上，ESRVS取得了最佳Dice分数，展示了DINOv3作为基础模型在医学图像分割中的强大迁移能力。这项研究为利用自监督视觉基础模型解决极低标注下的密集预测任务提供了有效范例。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

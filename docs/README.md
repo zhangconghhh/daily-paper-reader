@@ -6,32 +6,31 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-27
-- 运行时间：2026-07-27 21:01:24 UTC
+- 最新运行日期：2026-07-28
+- 运行时间：2026-07-28 21:33:07 UTC
 - 运行状态：成功
-- 本次总论文数：4
+- 本次总论文数：3
 - 精读区：1
-- 速读区：3
+- 速读区：2
 
 ### 今日简报（AI）
-今日聚焦基础模型时代的多分支跨骨干融合车辆重识别，并探讨视觉基础模型分层适配策略与开放词汇语义分割新方法。最值得精读的《Rethinking Multi-Branch and Cross-Backbone Fusion for Vehicle Re-Identification》获9.0高分，提出了在基础模型下重新思考融合范式；速读的《Rethinking Layer-Wise Information Allocation》和《DINOde》分别从信息分配与连续视觉-文本对齐给出新思路。建议优先精读车辆重识别论文以把握融合最新趋势，再根据兴趣浏览其他三篇了解开放词汇分割与超声估计的前沿进展。
-- 详情：[/202607/27/README](/202607/27/README)
+今日精读多尺度自适应视觉编码器MAViE，速读可解释血细胞分类与半监督血管分割，共3篇论文。  
+最值得关注的是MAViE（8分），其多尺度设计在细粒度视觉感知与高效多模态推理上优于传统编码器。  
+下步可重点探索MAViE在医学影像或机器人视觉中的应用潜力。
+- 详情：[/202607/28/README](/202607/28/README)
 
 ### 精读区论文标签
-1. [Rethinking Multi-Branch and Cross-Backbone Fusion for Vehicle Re-Identification in the Foundation-Model Era](/202607/27/2607.22068v1-rethinking-multi-branch-and-cross-backbone-fusion-for-vehicle-re-identification-in-the-foundation-model-era)  
-   标签：评分：9.0/10、query:dino-fg
-   evidence：使用DINOv3预训练的ConvNeXt进行车辆重识别，属于细粒度任务
+1. [MAViE: A Multi-scale Adaptive Vision Encoder for Fine-grained Visual Perception and Efficient Multimodal Reasoning](/202607/28/2607.24424v1-mavie-a-multi-scale-adaptive-vision-encoder-for-fine-grained-visual-perception-and-efficient-multimodal-reasoning)  
+   标签：评分：8.0/10、query:dino-fg
+   evidence：提出一种多尺度自适应视觉编码器，利用视觉Transformer进行细粒度视觉感知
 
 ### 速读区论文标签
-1. [Rethinking Layer-Wise Information Allocation for Vision Foundation Model Adaptation](/202607/27/2607.21973v1-rethinking-layer-wise-information-allocation-for-vision-foundation-model-adaptation)  
+1. [Interpretable Peripheral Blood Cell Classification via Vision-Language Concept Bottleneck and Soft Decision Tree](/202607/28/biorxiv-10-64898-2026-07-14-738462-v1-interpretable-peripheral-blood-cell-classification-via-vision-language-concept-bottleneck-and-soft-decision-tree)  
    标签：评分：7.0/10、query:dino-fg
-   evidence：分析视觉基础模型适应的逐层信息分配，与细粒度分类微调相关
-2. [DINOde: Continuous Vision-Text Alignment for Open-Vocabulary Semantic Segmentation](/202607/27/2607.21371v1-dinode-continuous-vision-text-alignment-for-open-vocabulary-semantic-segmentation)  
+   evidence：利用视觉-语言概念瓶颈进行细粒度血细胞分类
+2. [ESRVS: Extreme Semi-Supervised Retinal Vessel Segmentation with a Single Annotated Image](/202607/28/2607.24453v1-esrvs-extreme-semi-supervised-retinal-vessel-segmentation-with-a-single-annotated-image)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：使用DINOv3自监督模型作为视觉表示基础，方法可迁移至分类任务
-3. [IQ-JEPA: A Joint-Embedding Predictive Architecture with a Hermitian Vision Transformer for Sound Speed and Attenuation Estimation from Ultrasound IQ Data](/202607/27/2607.22351v1-iq-jepa-a-joint-embedding-predictive-architecture-with-a-hermitian-vision-transformer-for-sound-speed-and-attenuation-estimation-from-ultrasound-iq-data)  
-   标签：评分：6.0/10、query:dino-fg
-   evidence：基于Hermitian视觉Transformer的自监督联合嵌入预测架构用于超声
+   evidence：使用DINOv3特征进行半监督视网膜血管分割
 
 
 <div class="dpr-home-promo-card">
