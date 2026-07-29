@@ -6,31 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-28
-- 运行时间：2026-07-28 21:33:07 UTC
+- 最新运行日期：2026-07-29
+- 运行时间：2026-07-29 20:49:20 UTC
 - 运行状态：成功
-- 本次总论文数：3
+- 本次总论文数：1
 - 精读区：1
-- 速读区：2
+- 速读区：0
 
 ### 今日简报（AI）
-今日精读多尺度自适应视觉编码器MAViE，速读可解释血细胞分类与半监督血管分割，共3篇论文。  
-最值得关注的是MAViE（8分），其多尺度设计在细粒度视觉感知与高效多模态推理上优于传统编码器。  
-下步可重点探索MAViE在医学影像或机器人视觉中的应用潜力。
-- 详情：[/202607/28/README](/202607/28/README)
+今日精读一篇细粒度食物图像理解论文，提出目标感知数据对齐方法，评分8.0。
+最值得关注的是该方法通过目标感知对齐显著提升细粒度分类的精度，适用于食品识别等细节区分场景。
+建议读者尝试将数据对齐思路应用于自己的图像分类任务，注意标注和特征匹配。
+- 详情：[/202607/29/README](/202607/29/README)
 
 ### 精读区论文标签
-1. [MAViE: A Multi-scale Adaptive Vision Encoder for Fine-grained Visual Perception and Efficient Multimodal Reasoning](/202607/28/2607.24424v1-mavie-a-multi-scale-adaptive-vision-encoder-for-fine-grained-visual-perception-and-efficient-multimodal-reasoning)  
+1. [Fine-Grained Food Image Understanding via Target-Aware Data Alignment](/202607/29/2607.25794v1-fine-grained-food-image-understanding-via-target-aware-data-alignment)  
    标签：评分：8.0/10、query:dino-fg
-   evidence：提出一种多尺度自适应视觉编码器，利用视觉Transformer进行细粒度视觉感知
+   evidence：使用基础视觉语言模型进行细粒度食物图像理解
 
 ### 速读区论文标签
-1. [Interpretable Peripheral Blood Cell Classification via Vision-Language Concept Bottleneck and Soft Decision Tree](/202607/28/biorxiv-10-64898-2026-07-14-738462-v1-interpretable-peripheral-blood-cell-classification-via-vision-language-concept-bottleneck-and-soft-decision-tree)  
-   标签：评分：7.0/10、query:dino-fg
-   evidence：利用视觉-语言概念瓶颈进行细粒度血细胞分类
-2. [ESRVS: Extreme Semi-Supervised Retinal Vessel Segmentation with a Single Annotated Image](/202607/28/2607.24453v1-esrvs-extreme-semi-supervised-retinal-vessel-segmentation-with-a-single-annotated-image)  
-   标签：评分：6.0/10、query:dino-fg
-   evidence：使用DINOv3特征进行半监督视网膜血管分割
+- 本次无速读推荐。
 
 
 <div class="dpr-home-promo-card">

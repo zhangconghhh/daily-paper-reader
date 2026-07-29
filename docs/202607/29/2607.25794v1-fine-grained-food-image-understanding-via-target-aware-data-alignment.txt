@@ -1,0 +1,264 @@
+Title: Fine-Grained Food Image Understanding via Target-Aware Data Alignment
+
+URL Source: https://arxiv.org/pdf/2607.25794v1
+
+Published Time: Wed, 29 Jul 2026 01:06:02 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Fine-Grained Food Image Understanding via Target-Aware Data Alignment 
+
+Jui-Feng Chi *, Wei-Lun Chu *, Bruce Coburn, Jinge Ma, Fengqing Zhu 
+
+> *
+
+Equal contribution. Elmore Family School of Electrical and Computer Engineering 
+
+Purdue University, West Lafayette, IN, USA 
+
+Abstract —Fine-grained food visual–semantic understanding requires models to capture subtle distinctions across ingredients, cooking methods, doneness, color, texture, and plate composition. Although CLIP-style vision-language models provide a natural framework for this task, their effectiveness is limited when train-ing relies on heterogeneous web-collected image–text pairs. Such data often exhibit a web-to-target domain gap and cross-modal misalignment, where images differ from the target distribution and captions are noisy, multilingual, or weakly grounded in visual content. We propose a data-centric multimodal alignment method for fine-grained food description and recognition. Our method first performs target-aware data selection to identify visually rele-vant training subsets, then applies VLM-based caption refinement to generate visually grounded, target-style descriptions. Using these curated image–caption pairs, we train complementary CLIP-style retrieval experts and further combine their decisions through a hierarchical VLM-assisted multi-expert decision-level fusion strategy that invokes the VLM only when experts disagree. Experiments show that our data refinement strategy significantly improves retrieval performance over naive web supervision, with VLM-based caption refinement alone yielding an average performance gain of approximately 19%. Our full method also achieves more than twice the retrieval score of pure VLM-based retrieval while remaining substantially more efficient. 
+
+Index Terms —food recognition, image-text retrieval, data cu-ration, CLIP, vision-language models 
+
+I. I NTRODUCTION 
+
+Understanding food semantics from images is a particu-larly challenging computer vision problem [1]. Unlike generic object recognition, food image understanding often requires models to capture fine-grained details across food categories, ingredient composition, cooking methods, doneness, color, texture, and plate composition. For example, two images may both contain chicken and vegetables, but one may show grilled chicken with charred textures served with roasted carrots, while the other may depict tender pan-seared chicken coated in sauce and served with saut´ eed broccoli. Their differences are not limited to food categories, but also lie in fine-grained attributes such as cooking method, ingredient state, and visual texture. These distinctions are particularly important for dietary monitoring, nutritional analysis, and food-safety applications, where systems must go beyond the capabilities of conventional food classification models [2]. Contrastive vision-language models, such as CLIP [4] and its successors [5]–[7], provide a natural solution for fine-grained food image–text retrieval by mapping food images and fixed or expressive textual descriptions into a shared embedding space. However, such fine-grained cross-modal alignment is limited not only by model capacity, but also by the quality of large-scale training data. For food image anal-ysis, large-scale training data often consists of web-collected image–text pairs, where both image and text modalities are highly heterogeneous: images may come from recipe websites, menus, or social media, with diverse shooting conditions and presentation styles; texts may be multilingual dish names, user tags, menu descriptions, or website comments. While this diversity enables data scaling, it also introduces substantial noise, cross-modal misalignment, and a source-to-target do-main gap between the available web training data and the target data distribution. Fig. 1 illustrates this in both image and text spaces. Without selecting, cleaning, and improving the semantic alignment between images and texts, directly training on raw image–text pairs can make it difficult for models to acquire fine-grained visual–semantic understanding and may even degrade retrieval performance due to noisy supervision. We argue that when training data exhibits substantial het-erogeneity and alignment bias, improving data quality is more critical than solely modifying model architectures or training objectives. We distill this intuition into a three-stage data-centric multimodal alignment strategy for fine-grained food description and recognition: 1) Target-aware data selection : We rank web images by their proximity to the target distribution and select compact, relevant subsets. We show that a strategically selected 5k subset can outperform a naively selected 25k subset under raw web supervision, challenging the assumption that more data is always better even when the data are noisy. 2) VLM-based caption refinement : We replace noisy web captions with visually grounded descriptions generated by a vision-language model, providing richer training su-pervision without collecting or generating new images. This single step yields a roughly 19% performance gain and is even more effective than the choice of backbone or fine-tuning strategy. 3) Hierarchical multi-expert decision-level fusion : We fuse decisions from complementary experts through VLM-assisted disagreement resolution, invoking the VLM only when their predictions disagree. arXiv:2607.25794v1 [cs.CV] 28 Jul 2026 Web image pool  
+
+> Test images (a) Image-space source-to-target domain gap. Web captions
+> Test captions (b) Text-space source-to-target domain gap with raw web captions. Test2 · fs103_0.jpg
+> A colorful plate featuring
+> tender chicken paired with
+> creamy rice and vibrant snow
+> peas, creating a balanced and
+> appetizing meal.
+> web · 00001.tar/000019720
+> IMG_5855.jpg Salad Nga picture
+> by hoangmai66
+> (c) Test target pair vs. web training pair. Fig. 1. t-SNE visualization of the source-to-target domain gap in the available training data, illustrated using Dishcovery Mission II challenge [3]. The example pair in (c) further shows that web captions can be weakly aligned with the visible food content.
+
+II. R ELATED WORK 
+
+A. CLIP-Based Image-Text Retrieval 
+
+CLIP [4] learns a shared image–text embedding space through large-scale contrastive pretraining. ALIGN [5] scales contrastive vision-language learning to noisy web data, and OpenCLIP [6] enables open-source CLIP training at scale. However, mismatches between web-collected training pairs and target data can still limit retrieval performance. We address this issue by selecting target-relevant web images and refining their captions to better match the target style. 
+
+B. Food Recognition and Food Retrieval 
+
+Food recognition is a fine-grained problem because food images often contain multiple ingredients, sauces, side dishes, and visually similar cooking styles. Food-101 [2] supports large-scale food classification, while Recipe1M+ [8] connects food images with structured recipe information for cross-modal retrieval. Recent food retrieval tasks require finer alignment between images and descriptive text. Unlike conventional classification and recipe retrieval, Dishcovery Mission II [3] evaluates multi-ingredient recognition and single-caption retrieval. The latter matches an image to a detailed caption describing ingredients, side items, textures, colors, sauces, and plate composition. Our work follows this fine-grained food image-to-text retrieval setting. 
+
+C. Decision-Level Expert Fusion and Reranking 
+
+Reranking and rank fusion are common strategies for improving retrieval results by refining or combining initial predictions. Neural rerankers use stronger models to rescore retrieved candidates [9], while rank fusion methods combine outputs from multiple retrieval systems to exploit comple-mentary strengths [10]. Recent work has also explored large language models as zero-shot reranking agents for information retrieval, where they reorder candidate results according to their relevance to a query [11]. Inspired by this line of work, we use a VLM to resolve prediction disagreements among complementary CLIP-style experts. III. M ETHODS 
+
+A. Overview 
+
+We propose a three-stage data-centric multimodal alignment method for fine-grained food visual-semantic understanding. The method is designed to reduce both the source-to-target visual distribution gap and the image–text semantic misalign-ment in web-collected training data. In this work, we instan-tiate it in a food image-to-text retrieval setting. As shown in Fig. 2, the method first selects compact target-relevant subsets from noisy web-collected image–caption pairs, then regener-ates their captions to better match the target evaluation style. Finally, multiple CLIP-style retrieval experts trained from different curated subsets and backbones are combined through hierarchical VLM-assisted decision-level fusion, where the VLM is invoked only when expert predictions disagree. 
+
+B. Target-Aware Data Selection 
+
+Our goal is to select web images that are visually closer to the test-time retrieval distribution. We therefore summarize the target visual distribution with an image prototype and rank web images by their similarity to this prototype. Let gI (·) denote a fixed pretrained CLIP image encoder used only for data selection. Here, the target set refers to the unlabeled test images. Given these images {xtar  
+
+> j
+
+}Nj=1 , we compute an average normalized target prototype: 
+
+ptar = 1
+
+N
+
+> N
+
+X
+
+> j=1
+
+gI (xtar  
+
+> j
+
+)
+
+∥gI (xtar  
+
+> j
+
+)∥2
+
+. (1) Thus, ptar represents the centroid of the normalized target image embeddings in the CLIP feature space. For each web image xweb  
+
+> i
+
+, we compute its similarity to the target prototype: 
+
+ri =
+
+ gI (xweb  
+
+> i
+
+)
+
+∥gI (xweb  
+
+> i
+
+)∥2
+
+⊤ ptar 
+
+∥ptar ∥2
+
+. (2) Since both vectors in Eq. (2) are ℓ2-normalized, ri is their cosine similarity and serves as a scalar target-alignment score. A higher ri indicates that the corresponding web image is Target-Aware Data Selection Multi-Expert CLIP Fine-tuning Hierarchical VLM-Assisted Multi-Expert Decision-Level Fusion Web Image Pool             
+
+> noisy web-collected data
+> Target-Prototype Ranking
+> rank data by similarity score
+> Nearest-5k Subset
+> top 5k nearest
+> Random-5k
+> randomly-picked 5k Selected 5k subsets for caption refinement
+> VLM Caption Refinement
+> web captions →VLM captions caption style alignment
+> Four CLIP Retrieval Experts
+> two backbones × trained on two curated datasets
+> Subset Expert 1 DFN5B CLIP + Nearest-5k
+> Expert 2 DFN5B CLIP + Random-5k
+> Expert 3 MetaCLIP 2 + Nearest-5k
+> Expert 4 MetaCLIP 2 + Random-5k
+> Disagreement-only VLM resolution
+> VLM is used only when predictions differ
+> Hierarchical fusion: 4 experts →2 fused outputs →1 final
+> Step 1 Fusion Fused A
+> Expert 1 + Expert 2
+> Fused B
+> Expert 3 + Expert 4
+> Step 2 Fusion
+> Fused A + B
+> Final Prediction Nearest-5k Subset Random-5k Subset VLM-Assisted Multi-Expert Decision-Level Fusion
+
+Fig. 2. Overview of the proposed three-stage data-centric food image–text retrieval framework. 
+
+more closely aligned with the target prototype. We rank all web images in descending order of ri and retain the top 5k as the target-aware subset, denoted as Nearest-5k . This subset is designed to reduce the source-to-target visual distribution gap by selecting web images that are closest to the target image distribution. In addition, we construct a second subset, denoted as 
+
+Random-5k , by randomly sampling 5k images from the available web image pool. Unlike Nearest-5k, Random-5k does not explicitly optimize for target similarity. Instead, it preserves broader diversity from the original web data distri-bution, which can lead to different expert prediction patterns and provide complementary signals during later multi-expert decision-level fusion. 
+
+C. VLM-Based Caption Refinement 
+
+Because raw web captions are often short, noisy, or weakly aligned with the visible food content, we regenerate captions for the selected images using a VLM. Specifically, we use Gemma 4 [19] to generate one English caption for each selected web image. To make the generated captions closer to the target evaluation style, we randomly sample unpaired target captions as in-context examples and prompt the VLM to de-scribe only observable food details, such as visible ingredients, side dishes, sauces, textures, colors, and plate composition. The prompt constrains the output to a concise food caption without bullet points, explanations, or irrelevant non-food details. We then apply simple text cleaning to remove common prefixes, quotation marks, line breaks, and formatting artifacts. This produces curated image–caption pairs (xweb 
+
+i , ˆtvlm 
+
+i ) for retrieval expert training. 
+
+D. Retrieval Expert Construction 
+
+We construct retrieval experts using two pretrained CLIP-style backbones: DFN5B-CLIP-ViT-H-14 [17], hereafter re-ferred to as DFN5B, and MetaCLIP 2 [18]. Each backbone is trained on both curated subsets, producing four experts in total. This results in four retrieval experts: 
+
+• E1: DFN5B trained on Nearest-5k. 
+
+• E2: DFN5B trained on Random-5k. 
+
+• E3: MetaCLIP 2 trained on Nearest-5k. 
+
+• E4: MetaCLIP 2 trained on Random-5k. Each expert is trained with the standard CLIP contrastive objective, implemented as a symmetric InfoNCE loss [4], [20]. This stage simply produces retrieval experts with different backbones and curated datasets, rather than introducing a new training objective. At inference time, each expert independently predicts re-trieval results. For single-caption retrieval, the expert selects the candidate caption with the highest image–text similarity. For multi-ingredient recognition, it ranks ingredient labels by image–text similarity and selects labels using thresholding. 
+
+E. Hierarchical VLM-Assisted Multi-Expert Decision-Level Fusion 
+
+The four experts may produce different predictions because they are trained on different curated datasets and pretrained backbones. Instead of merging all outputs by simple voting or score averaging, we use a VLM to resolve prediction disagreements. Fusion follows a simple disagreement-based rule: if two expert predictions agree, we keep the shared prediction; oth-erwise, the VLM reviews the image and the disagreement to make a visual judgment. For single-caption retrieval, the disagreement is represented as two candidate captions, and the VLM selects the caption that better matches the image. For multi-label ingredient retrieval, common ingredients are kept unchanged, and disputed ingredients are resolved one by one through visual yes/no questions, which is more efficient than asking the VLM to predict the full ingredient set. Thus, the VLM is used selectively for decision-level fusion between experts rather than as a full retrieval model. We apply this rule hierarchically to the outputs of the four experts defined above. First, the predictions from E1 and E2
+
+are fused into a DFN5B branch output MDFN , while the TABLE I THE EFFECTS OF DATA SELECTION AND CAPTION REFINEMENT ACROSS FINE -T UNING METHODS                                                                                   
+
+> Data and Caption Setting Full FT Last Few Layers FT CLIP Adapter [12] LoRA [13] DoRA [14] NegCLIP [15] WiSE-FT [16]
+> Backbone: DFN5B CLIP [17] (Pretrained: 0.509)
+> Random-5k + Raw Cap. 0.464 0.500 0.424 0.380 0.375 0.440 0.504 Random-25k + Raw Cap. 0.380 0.443 0.332 0.324 0.320 0.380 0.478 Nearest-5k + Raw Cap. 0.477 0.506 0.431 0.412 0.413 0.484 0.514 Random-5k + VLM Cap. 0.592 0.599 0.455 0.565 0.565 0.497 0.580
+> Nearest-5k + VLM Cap. 0.589 0.607 0.476 0.574 0.575 0.457 0.570
+> Backbone: MetaCLIP 2 [18] (Pretrained: 0.450)
+> Random-5k + Raw Cap. 0.466 0.474 0.441 0.475 0.471 0.475 0.459 Random-25k + Raw Cap. 0.490 0.443 0.415 0.474 0.477 0.449 0.478 Nearest-5k + Raw Cap. 0.498 0.496 0.453 0.489 0.489 0.480 0.470 Random-5k + VLM Cap. 0.584 0.574 0.485 0.588 0.587 0.509 0.550
+> Nearest-5k + VLM Cap. 0.587 0.575 0.486 0.583 0.585 0.493 0.537
+
+predictions from E3 and E4 are fused into a MetaCLIP 2 branch output MMeta . Second, MDFN and MMeta are fused with the same VLM-assisted rule to obtain the final output. IV. R ESULTS 
+
+A. Experimental Setup 
+
+We evaluate the proposed method on the official Dishcovery Mission II challenge test set [3], which combines a multi-ingredient recognition task and a descriptive caption retrieval task. Following the challenge protocol, we report the official score, defined as the harmonic mean of the multi-ingredient recognition F1-score and the descriptive caption retrieval ac-curacy. For each potential retrieval expert, we compare seven CLIP training strategies to select a strong checkpoint: full fine-tuning, last-few-layers fine-tuning, CLIP-Adapter [12], LoRA [13], DoRA [14], NegCLIP [15], and WiSE-FT [16]. Unless otherwise specified, all settings use the same training budget: 6 epochs, batch size 128, warmup ratio 0.1, and AdamW with cosine decay. For the last-few-layers fine-tuning setting, both DFN5B and MetaCLIP 2 unfreeze the last 8 layers of the vision encoder and the last 4 layers of the text encoder. All pretrained model weights are initialized from publicly available checkpoints hosted on the Hugging Face Hub [21]. Backbone-specific learning rates and unfrozen-layer configurations are kept consistent across data subsets to ensure fair comparison. 
+
+B. Effect of Data and Caption Refinement 
+
+Table I summarizes the effects of data selection and caption refinement across different fine-tuning methods and two CLIP-style backbones. The strongest overall result is achieved by DFN5B with last-few-layers fine-tuning on Nearest-5k + VLM Cap., reaching 0.607. More importantly, the comparison shows that caption refinement is critical: for DFN5B, fine-tuning with raw web captions often degrades performance compared with the pretrained model, whose zero-shot score is 0.509. Even the best raw-caption setting only slightly exceeds the pretrained DFN5B score, and increasing the raw web data to 25k samples                    
+
+> TABLE II PERFORMANCE AND EFFICIENCY COMPARISON WITH PURE VLM RETRIEVAL . I NFERENCE TIME IS MEASURED ON 2×H100 GPU S FOR
+> PURE GEMMA 4AND ON A GB10 MACHINE FOR OUR FULL METHOD .
+> Method Score VLM calls VLM tokens (M) Inf. time (min) Pure Gemma 4 [19] 0.226 24,107 431.2 1760.4
+> Ours: full method 0.653 15,235 6.1 247.6
+
+still fails to match the VLM-captioned 5k settings. Although MetaCLIP 2 does not show the same degradation relative to its pretrained score, it follows a similar overall trend, where raw-caption fine-tuning remains limited and VLM-captioned settings are substantially stronger. This suggests that noisy and weakly aligned web captions, rather than data scale alone, are a major bottleneck for food image–text retrieval. Overall, VLM caption refinement improves model performance by approximately 19% on average. The effect of data selection is also clear before caption re-finement. Under raw-caption settings, Nearest-5k consistently outperforms Random-5k across all fine-tuning methods and both backbones, indicating that target-aware image selection helps reduce the visual domain gap. However, after VLM cap-tion refinement, this trend becomes less uniform: the relative benefit of Nearest-5k depends on the backbone and fine-tuning method. This suggests that once captions are rewritten into a more visually grounded form, the remaining bottleneck shifts from data similarity alone toward the quality of VLM caption refinement and its interaction with each fine-tuning strategy. 
+
+C. Complete Method Performance 
+
+Table II compares our full method with directly using Gemma 4 as a pure zero-shot retrieval model. For the pure VLM baseline, ideally all candidate captions would be pro-vided in a single prompt for retrieval. However, doing so exceeds practical GPU memory limits due to the extremely long context length, so we instead split the candidates into TABLE III ABLATION OF TRAINING DATA SELECTION WITH VLM-G ENERATED                           
+
+> CAPTIONS
+> Subset Selection Criterion DFN5B CLIP MetaCLIP 2 Random-5k Random sampling 0.599 0.584 Nearest-25k Top visual similarity 0.581 0.584 Nearest-5k Top visual similarity 0.607 0.587 𝐸 1
+> DFN5B Nearest-5k
+> 0.607
+> 𝐸 2
+> DFN5B Random-5k
+> 0.599
+> 𝐸 3
+> MetaCLIP 2 Nearest-5k
+> 0.587
+> 𝐸 4
+> MetaCLIP 2 Random-5k
+> 0.584
+> 𝑀 DFN =𝐸 1⊕𝐸 2
+> 0.616
+> 𝑀 Meta =𝐸 3⊕𝐸 4
+> 0.610
+> +0.009 +0.023
+> 𝐹 =𝑀 DFN ⊕𝑀 Meta
+> 0.653 +0.037 Stage 3
+> Stage 2
+> Stage 1
+> Fig. 3. Hierarchical VLM-assisted multi-expert decision-level fusion.
+
+chunks of at most 1,000 captions and let Gemma 4 select the best match within each chunk before performing a merge step for the final prediction. Even with this memory-aware strat-egy, direct VLM retrieval remains expensive and ineffective, achieving only 0.226 while requiring 24,107 VLM calls and 431.2M tokens. In contrast, our full method uses Gemma 4 selectively. Following the expert construction described earlier, we in-stantiate four VLM-caption-trained retrieval experts, E1–E4,using the selected adaptation setting for each backbone in Table I: last-few-layers fine-tuning for DFN5B and full fine-tuning for MetaCLIP 2. Since full fine-tuning and LoRA show comparable performance on MetaCLIP 2, we select full fine-tuning for its simpler and more reproducible setup. With these adaptation settings, the decision-level fusion of the four experts achieves 0.653, improving over direct Gemma 4 retrieval by 0.427 absolute points, while reducing token usage from 431.2M to 6.1M. These results show that targeted VLM usage is both more accurate and more token-efficient than using the VLM as a full retrieval model. For inference time, we report the measured runtime and hardware for reference. Since runtime is hardware-dependent, we primarily use VLM calls and token counts as hardware-independent efficiency indicators. 
+
+D. Ablation Study 
+
+Fig. 3 illustrates the proposed hierarchical VLM-assisted decision-level fusion process. The best single expert, E1,achieves a score of 0.607. By combining the predictions of the two DFN5B experts, the score improves to 0.616, while applying the same fusion strategy to the MetaCLIP 2 experts yields 0.610. The final cross-backbone fusion between the DFN5B and MetaCLIP 2 branches further increases the score to 0.653. This progression shows that VLM-assisted disagree-ment resolution can effectively integrate complementary expert decisions and improve beyond the strongest individual expert. Table III isolates the effect of training data selection when all settings use VLM-generated captions. We use the same tuning settings as the final retrieval experts: last-few-layers fine-tuning for DFN5B and full fine-tuning for MetaCLIP 2. Nearest-5k achieves the best result for both backbones, reach-ing 0.607 and 0.587, respectively. Increasing the selected data to 25k does not further improve performance, suggesting that once captions are refined, a compact and target-aligned 5k subset already provides sufficient supervision. 
+
+E. Qualitative Analysis 
+
+Fig. 4 provides a qualitative view of the proposed data refinement method. After Nearest-5k selection, the selected web images become closer to the Test 2 image distribution, reducing the source-to-target visual distribution gap observed before selection. After VLM-based caption refinement, the regenerated captions largely overlap with the target caption distribution in the t-SNE visualization, suggesting that caption refinement effectively reduces the text-space distribution gap. The example pair in Fig. 4 further illustrates this effect. Compared with the raw web example in Fig. 1, the selected Nearest-5k sample contains a clearer food image and a caption that describes visible ingredients, textures, and plate compo-sition. This shows that our method improves both source-to-target visual relevance and the image–text semantic misalign-ment. V. C ONCLUSION 
+
+We presented a three-stage data-centric multimodal align-ment method for fine-grained food understanding under weak web supervision. Our method improves heterogeneous web-collected image–text pairs through target-aware data selection, VLM-based caption refinement, and complementary multi-expert decision-level fusion, producing training pairs that are more visually relevant and semantically grounded. Experi-ments on both multi-ingredient recognition and single-caption retrieval show that caption refinement yields an average gain of approximately 19%. By combining complementary retrieval experts with hierarchical VLM-assisted multi-expert decision-level fusion, our full method achieves more than twice the image-to-text retrieval score of pure VLM-based retrieval while requiring substantially lower VLM resource usage. These findings highlight the importance of principled data curation and selective VLM usage when training data is noisy, heterogeneous, or cross-modally misaligned. REFERENCES [1] W. Min, Z. Wang, Y. Liu, M. Luo, L. Kang, X. Wei, X. Wei, and S. Jiang, “Large scale visual food recognition,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 45, no. 8, pp. 9932–9949, August 2023. [Online]. Available: http://dx.doi.org/10. 1109/TPAMI.2023.3237871 Nearest-5k images 
+
+Test images (a) Image-space distribution after Nearest-5k selection. Nearest-5k image captions 
+
+(VLM-regenerated) 
+
+Test captions 
+
+(b) Text-space distribution after VLM caption refinement. Test2 · fs103_0.jpg 
+
+> A colorful plate featuring
+> tender chicken paired with
+> creamy rice and vibrant snow
+> peas, creating a balanced and
+> appetizing meal.
+> Nearest5k · 000100801 · VLM
+> A delicious plate featuring
+> grilled chicken breast with
+> charred marks, a cheesy baked
+> potato with a golden crust,
+> and sautéed zucchini and
+> mushrooms.
+
+(c) Example alignment between a target pair and a VLM-captioned Nearest-5k pair. Fig. 4. Effect of data selection and caption refinement. Nearest-5k selection narrows the visual domain gap, while VLM-generated captions reduce the text-space distribution gap. Panel (c) shows an aligned training pair after both stages. [2] L. Bossard, M. Guillaumin, and L. Van Gool, “Food-101: Mining discriminative components with random forests,” Proceedings of the European Conference on Computer Vision , vol. 8694, pp. 446–461, September 2014, Zurich, Switzerland. [Online]. Available: http://dx.doi.org/10.1007/978-3-319-10599-4 29 [3] P. Radeva, B. Nagarajan, I. G. Estepa, and J. M. Rodr´ ıguez de Vera, “Dishcovery Mission II Challenge: Where VLM meets food,” https: //dishcoveryvlmchallenge.com/, February 2026, IEEE/CVF Conference on Computer Vision and Pattern Recognition 2026 MetaFood Workshop Challenge. Accessed: 2026-05-08. [4] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark, G. Krueger, and I. Sutskever, “Learning transferable visual models from natural language supervision,” Proceedings of the 38th International Conference on Machine Learning , vol. 139, pp. 8748–8763, July 2021, Virtual Event. [Online]. Available: http://proceedings.mlr.press/v139/radford21a.html [5] C. Jia, Y. Yang, Y. Xia, Y.-T. Chen, Z. Parekh, H. Pham, Q. V. Le, Y.-H. Sung, Z. Li, and T. Duerig, “Scaling up visual and vision-language representation learning with noisy text supervision,” 
+
+Proceedings of the 38th International Conference on Machine Learning ,vol. 139, pp. 4904–4916, July 2021, Virtual Event. [Online]. Available: http://proceedings.mlr.press/v139/jia21b.html [6] G. Ilharco, M. Wortsman, R. Wightman, C. Gordon, N. Carlini, R. Taori, A. Dave, V. Shankar, H. Namkoong, J. Miller, H. Hajishirzi, A. Farhadi, and L. Schmidt, “OpenCLIP,” https://github.com/mlfoundations/open clip, July 2021, software repository. Accessed: 2026-05-29. [Online]. Available: http://dx.doi.org/10.5281/zenodo.5143773 [7] X. Zhai, B. Mustafa, A. Kolesnikov, and L. Beyer, “Sigmoid loss for language image pre-training,” Proceedings of the IEEE/CVF International Conference on Computer Vision , pp. 11 975–11 986, October 2023, Paris, France. [Online]. Available: http://dx.doi.org/10. 1109/ICCV51070.2023.01100 [8] J. Marin, A. Biswas, F. Ofli, N. Hynes, A. Salvador, Y. Aytar, I. Weber, and A. Torralba, “Recipe1M+: A dataset for learning cross-modal embeddings for cooking recipes and food images,” 
+
+IEEE Transactions on Pattern Analysis and Machine Intelligence ,vol. 43, no. 1, pp. 187–203, January 2021. [Online]. Available: http://dx.doi.org/10.1109/TPAMI.2019.2927476 [9] R. Nogueira and K. Cho, “Passage re-ranking with BERT,” 
+
+arXiv preprint arXiv:1901.04085 , January 2019. [Online]. Available: http://dx.doi.org/10.48550/arXiv.1901.04085 [10] G. V. Cormack, C. L. A. Clarke, and S. Buettcher, “Reciprocal rank fusion outperforms Condorcet and individual rank learning methods,” Proceedings of the 32nd International ACM SIGIR Conference on Research and Development in Information Retrieval ,pp. 758–759, July 2009, Boston, MA, USA. [Online]. Available: http://dx.doi.org/10.1145/1571941.1572114 [11] W. Sun, L. Yan, X. Ma, S. Wang, P. Ren, Z. Chen, D. Yin, and Z. Ren, “Is ChatGPT good at search? Investigating large language models as re-ranking agents,” Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing ,pp. 14 918–14 937, December 2023, Singapore. [Online]. Available: http://dx.doi.org/10.18653/v1/2023.emnlp-main.923 [12] P. Gao, S. Geng, R. Zhang, T. Ma, R. Fang, Y. Zhang, H. Li, and Y. Qiao, “CLIP-Adapter: Better vision-language models with feature adapters,” International Journal of Computer Vision , vol. 132, no. 2, pp. 581–595, February 2024. [Online]. Available: http://dx.doi.org/10.1007/s11263-023-01891-x [13] E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, and W. Chen, “LoRA: Low-rank adaptation of large language models,” Proceedings of the International Conference on Learning Representations , April 2022, Virtual Event. [Online]. Available: https://openreview.net/forum?id=nZeVKeeFYf9 [14] S.-Y. Liu, C.-Y. Wang, H. Yin, P. Molchanov, Y.-C. F. Wang, K.-T. Cheng, and M.-H. Chen, “DoRA: Weight-decomposed low-rank adaptation,” Proceedings of the 41st International Conference on Machine Learning , vol. 235, pp. 32 100–32 121, July 2024, Vienna, Austria. [Online]. Available: http://proceedings.mlr.press/v235/liu24bn. html [15] M. Yuksekgonul, F. Bianchi, P. Kalluri, D. Jurafsky, and J. Zou, “When and why vision-language models behave like bags-of-words, and what to do about it?” Proceedings of the International Conference on Learning Representations , May 2023, Kigali, Rwanda. [Online]. Available: https://openreview.net/forum?id=KRLUvxh8uaX [16] M. Wortsman, G. Ilharco, J. W. Kim, M. Li, S. Kornblith, R. Roelofs, R. G. Lopes, H. Hajishirzi, A. Farhadi, H. Namkoong, and L. Schmidt, “Robust fine-tuning of zero-shot models,” Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 7959– 7971, June 2022, New Orleans, LA, USA. [Online]. Available: http://dx.doi.org/10.1109/CVPR52688.2022.00780 [17] A. Fang, A. M. Jose, A. Jain, L. Schmidt, A. Toshev, and V. Shankar, “Data filtering networks,” Proceedings of the International Conference on Learning Representations , May 2024, Vienna, Austria. [Online]. Available: https://openreview.net/forum?id=KAk6ngZ09F [18] Y.-S. Chuang, Y. Li, D. Wang, C.-F. Yeh, K. Lyu, R. Raghavendra, J. Glass, L. Huang, J. Weston, L. Zettlemoyer, X. Chen, Z. Liu, S. Xie, W.-t. Yih, S.-W. Li, and H. Xu, “Meta CLIP 2: A worldwide scaling recipe,” arXiv preprint arXiv:2507.22062 , July 2025. [Online]. Available: http://dx.doi.org/10.48550/arXiv.2507.22062 [19] Google DeepMind, “Gemma 4 31B Instruct,” https://huggingface.co/ google/gemma-4-31B-it, March 2026, model card. Accessed: 2026-05-29. [20] A. van den Oord, Y. Li, and O. Vinyals, “Representation learning with contrastive predictive coding,” arXiv preprint arXiv:1807.03748 , July 2018. [Online]. Available: http://dx.doi.org/10.48550/arXiv.1807.03748 [21] Hugging Face, “Hugging Face Hub,” https://huggingface.co/docs/hub, May 2026, documentation. Accessed: 2026-05-29.

@@ -1,0 +1,55 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-29T20:48:20.114653+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 0,
+    "quick_skim_target": 11,
+    "quick_selected": 0
+  },
+  "deep_dive": [
+    {
+      "id": "2607.25794v1",
+      "source": "arxiv",
+      "title": "Fine-Grained Food Image Understanding via Target-Aware Data Alignment",
+      "abstract": "Fine-grained food visual--semantic understanding requires models to capture subtle distinctions across ingredients, cooking methods, doneness, color, texture, and plate composition. Although CLIP-style vision-language models provide a natural framework for this task, their effectiveness is limited when training relies on heterogeneous web-collected image--text pairs. Such data often exhibit a web-to-target domain gap and cross-modal misalignment, where images differ from the target distribution and captions are noisy, multilingual, or weakly grounded in visual content. We propose a data-centric multimodal alignment method for fine-grained food description and recognition. Our method first performs target-aware data selection to identify visually relevant training subsets, then applies VLM-based caption refinement to generate visually grounded, target-style descriptions. Using these curated image--caption pairs, we train complementary CLIP-style retrieval experts and further combine their decisions through a hierarchical VLM-assisted multi-expert decision-level fusion strategy that invokes the VLM only when experts disagree. Experiments show that our data refinement strategy significantly improves retrieval performance over naive web supervision, with VLM-based caption refinement alone yielding an average performance gain of approximately 19%. Our full method also achieves more than twice the retrieval score of pure VLM-based retrieval while remaining substantially more efficient.",
+      "authors": [
+        "Jui-Feng Chi",
+        "Wei-Lun Chu",
+        "Bruce Coburn",
+        "Jinge Ma",
+        "Fengqing Zhu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-28T14:44:56+00:00",
+      "link": "https://arxiv.org/pdf/2607.25794v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "fine-grained food image understanding using foundation vision-language model",
+      "llm_evidence_cn": "使用基础视觉语言模型进行细粒度食物图像理解",
+      "llm_evidence": "使用基础视觉语言模型进行细粒度食物图像理解",
+      "canonical_evidence": "使用基础视觉语言模型进行细粒度食物图像理解",
+      "llm_tldr_en": "Proposes target-aware data alignment for fine-grained food description and recognition using CLIP-style vision-language models, addressing domain gap and misalignment.",
+      "llm_tldr_cn": "该论文针对细粒度食物图像理解中CLIP模型因跨域和跨模态不对齐导致性能受限的问题，提出了一种数据驱动的多模态对齐方法。通过目标感知数据选择和多模态对齐，在细粒度食物描述与识别任务上显著提升了性能，验证了基础模型在细粒度视觉分类中的有效性。",
+      "llm_tldr": "该论文针对细粒度食物图像理解中CLIP模型因跨域和跨模态不对齐导致性能受限的问题，提出了一种数据驱动的多模态对齐方法。通过目标感知数据选择和多模态对齐，在细粒度食物描述与识别任务上显著提升了性能，验证了基础模型在细粒度视觉分类中的有效性。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Foundation models for fine grained visual classification",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": []
+}

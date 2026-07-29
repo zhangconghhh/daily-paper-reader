@@ -1,0 +1,24 @@
+{
+  "label": "2026-07-29",
+  "date": "2026-07-29",
+  "generated_at": "2026-07-29T20:49:27",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202607/29/2607.25794v1-fine-grained-food-image-understanding-via-target-aware-data-alignment",
+      "section": "deep",
+      "title_en": "Fine-Grained Food Image Understanding via Target-Aware Data Alignment",
+      "authors": "Jui-Feng Chi, Wei-Lun Chu, Bruce Coburn, Jinge Ma, Fengqing Zhu",
+      "date": "2026-07-28",
+      "pdf": "https://arxiv.org/pdf/2607.25794v1",
+      "score": "8.0",
+      "evidence": "使用基础视觉语言模型进行细粒度食物图像理解",
+      "tldr": "针对细粒度食品图像理解中网络图文数据存在的域差距和跨模态错位问题，提出一种数据中心的多模态对齐方法。通过目标感知数据选择和VLM字幕精炼生成视觉相关描述，训练互补CLIP专家模型，并结合分层VLM辅助决策融合。实验表明，该方法显著提升检索性能，VLM字幕精炼带来平均19%增益，整体效果优于纯VLM检索且更高效。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Fine-grained food visual--semantic understanding requires models to capture subtle distinctions across ingredients, cooking methods, doneness, color, texture, and plate composition. Although CLIP-style vision-language models provide a natural framework for this task, their effectiveness is limited when training relies on heterogeneous web-collected image--text pairs. Such data often exhibit a web-to-target domain gap and cross-modal misalignment, where images differ from the target distribution and captions are noisy, multilingual, or weakly grounded in visual content. We propose a data-centric multimodal alignment method for fine-grained food description and recognition. Our method first performs target-aware data selection to identify visually relevant training subsets, then applies VLM-based caption refinement to generate visually grounded, target-style descriptions. Using these curated image--caption pairs, we train complementary CLIP-style retrieval experts and further combine their decisions through a hierarchical VLM-assisted multi-expert decision-level fusion strategy that invokes the VLM only when experts disagree. Experiments show that our data refinement strategy significantly improves retrieval performance over naive web supervision, with VLM-based caption refinement alone yielding an average performance gain of approximately 19%. Our full method also achieves more than twice the retrieval score of pure VLM-based retrieval while remaining substantially more efficient.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
