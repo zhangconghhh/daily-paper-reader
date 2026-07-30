@@ -1,0 +1,24 @@
+{
+  "label": "2026-07-30",
+  "date": "2026-07-30",
+  "generated_at": "2026-07-30T20:52:14",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202607/30/2607.26600v1-jepadepth-masked-predictive-representation-learning-for-self-supervised-monocular-depth-estimation",
+      "section": "quick",
+      "title_en": "JEPADepth: Masked Predictive Representation Learning for Self-Supervised Monocular Depth Estimation",
+      "authors": "Ionuţ Grigore, Călin-Adrian Popa",
+      "date": "2026-07-29",
+      "pdf": "https://arxiv.org/pdf/2607.26600v1",
+      "score": "6.0",
+      "evidence": "使用预训练的DINOv3视觉Transformer进行深度估计中的掩码预测",
+      "tldr": "自监督单目深度估计通常依赖光度重建损失，该损失耦合深度、姿态和外观假设，限制了表示学习的有效性。本文提出JEPADepth，在标准光度管线中引入基于预训练DINOv3编码器的掩码预测损失，通过预测器从可见上下文嵌入推断目标区域嵌入。在KITTI上，该方法始终优于相同基线且不改变推理架构，与最先进的transformer方法竞争；零样本迁移到Make3D和Cityscapes取得最佳或接近最佳性能。JEPADepth在不增加部署成本的前提下，有效提升了深度估计的准确性和泛化能力。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Self-supervised monocular depth estimation typically relies on photometric reconstruction losses that couple depth, pose, and appearance assumptions. In this paper, we propose JEPADepth, a self-supervised monocular depth framework that incorporates a complementary training objective inspired by Image Joint-Embedding Predictive Architectures (I-JEPA) for self-supervised depth learning. Our method augments a standard photometric pipeline with a masked prediction loss computed in the representation space of a pretrained DINOv3 Vision Transformer encoder. A predictor infers target-region embeddings from visible context-region embeddings under structured masking, and is discarded along with the target encoder at inference time, adding no deployment cost. On KITTI, adding the JEPA objective consistently improves performance over the same DINOv3-based photometric baseline, without changing the inference-time architecture. Compared to prior monocular self-supervised methods, JEPADepth is competitive with state-of-the-art transformer-based approaches and outperforms strong CNN-based baselines on the standard benchmark. In zero-shot transfer (trained on KITTI and evaluated without fine-tuning), JEPADepth achieves the best or near-best performance among the compared methods on both Make3D and Cityscapes across multiple metrics.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

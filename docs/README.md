@@ -6,26 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-29
-- 运行时间：2026-07-29 20:49:20 UTC
+- 最新运行日期：2026-07-30
+- 运行时间：2026-07-30 20:52:07 UTC
 - 运行状态：成功
 - 本次总论文数：1
-- 精读区：1
-- 速读区：0
+- 精读区：0
+- 速读区：1
 
 ### 今日简报（AI）
-今日精读一篇细粒度食物图像理解论文，提出目标感知数据对齐方法，评分8.0。
-最值得关注的是该方法通过目标感知对齐显著提升细粒度分类的精度，适用于食品识别等细节区分场景。
-建议读者尝试将数据对齐思路应用于自己的图像分类任务，注意标注和特征匹配。
-- 详情：[/202607/29/README](/202607/29/README)
+今日推荐1篇自监督单目深度估计新框架论文《JEPADepth》。
+该工作通过掩码预测表示学习提升深度估计性能，值得关注其无监督训练效率。
+建议跟踪后续开源进展，验证其在实际场景中的泛化能力。
+- 详情：[/202607/30/README](/202607/30/README)
 
 ### 精读区论文标签
-1. [Fine-Grained Food Image Understanding via Target-Aware Data Alignment](/202607/29/2607.25794v1-fine-grained-food-image-understanding-via-target-aware-data-alignment)  
-   标签：评分：8.0/10、query:dino-fg
-   evidence：使用基础视觉语言模型进行细粒度食物图像理解
+- 本次无精读推荐。
 
 ### 速读区论文标签
-- 本次无速读推荐。
+1. [JEPADepth: Masked Predictive Representation Learning for Self-Supervised Monocular Depth Estimation](/202607/30/2607.26600v1-jepadepth-masked-predictive-representation-learning-for-self-supervised-monocular-depth-estimation)  
+   标签：评分：6.0/10、query:dino-fg
+   evidence：使用预训练的DINOv3视觉Transformer进行深度估计中的掩码预测
 
 
 <div class="dpr-home-promo-card">

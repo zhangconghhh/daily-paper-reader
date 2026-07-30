@@ -1,0 +1,53 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-07-30T20:50:58.138826+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.26600v1",
+      "source": "arxiv",
+      "title": "JEPADepth: Masked Predictive Representation Learning for Self-Supervised Monocular Depth Estimation",
+      "abstract": "Self-supervised monocular depth estimation typically relies on photometric reconstruction losses that couple depth, pose, and appearance assumptions. In this paper, we propose JEPADepth, a self-supervised monocular depth framework that incorporates a complementary training objective inspired by Image Joint-Embedding Predictive Architectures (I-JEPA) for self-supervised depth learning. Our method augments a standard photometric pipeline with a masked prediction loss computed in the representation space of a pretrained DINOv3 Vision Transformer encoder. A predictor infers target-region embeddings from visible context-region embeddings under structured masking, and is discarded along with the target encoder at inference time, adding no deployment cost. On KITTI, adding the JEPA objective consistently improves performance over the same DINOv3-based photometric baseline, without changing the inference-time architecture. Compared to prior monocular self-supervised methods, JEPADepth is competitive with state-of-the-art transformer-based approaches and outperforms strong CNN-based baselines on the standard benchmark. In zero-shot transfer (trained on KITTI and evaluated without fine-tuning), JEPADepth achieves the best or near-best performance among the compared methods on both Make3D and Cityscapes across multiple metrics.",
+      "authors": [
+        "Ionuţ Grigore",
+        "Călin-Adrian Popa"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-29T08:23:46+00:00",
+      "link": "https://arxiv.org/pdf/2607.26600v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "uses pretrained DINOv3 Vision Transformer for masked prediction in depth estimation",
+      "llm_evidence_cn": "使用预训练的DINOv3视觉Transformer进行深度估计中的掩码预测",
+      "llm_evidence": "使用预训练的DINOv3视觉Transformer进行深度估计中的掩码预测",
+      "canonical_evidence": "使用预训练的DINOv3视觉Transformer进行深度估计中的掩码预测",
+      "llm_tldr_en": "JEPADepth augments photometric depth loss with a masked prediction loss using a pretrained DINOv3 ViT encoder for self-supervised monocular depth estimation.",
+      "llm_tldr_cn": "针对自监督单目深度估计中光度损失与外观假设耦合的问题，JEPADepth引入基于DINOv3 ViT的掩码预测损失作为互补训练目标。该方法利用DINOv3预训练表示进行跨区域预测，在深度估计任务上取得改善。虽然任务非分类，但直接使用了DINO系列模型，展示了其表示迁移能力。",
+      "llm_tldr": "针对自监督单目深度估计中光度损失与外观假设耦合的问题，JEPADepth引入基于DINOv3 ViT的掩码预测损失作为互补训练目标。该方法利用DINOv3预训练表示进行跨区域预测，在深度估计任务上取得改善。虽然任务非分类，但直接使用了DINO系列模型，展示了其表示迁移能力。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
