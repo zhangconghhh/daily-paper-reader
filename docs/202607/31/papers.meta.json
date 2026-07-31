@@ -1,0 +1,54 @@
+{
+  "label": "2026-07-31",
+  "date": "2026-07-31",
+  "generated_at": "2026-07-31T21:47:57",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202607/31/2607.28065v1-bladeyolo-wind-turbine-blade-defect-detection-with-limited-annotations-and-weak-saliency-awareness",
+      "section": "deep",
+      "title_en": "BladeYOLO: Wind Turbine Blade Defect Detection with Limited Annotations and Weak-Saliency Awareness",
+      "authors": "Yabin Xu, Fangtao Zhang, Fan Wang, Zhan Wang, Honghua Chen, Mingqiang Wei, Haoran Xie, Sam Kwong",
+      "date": "2026-07-30",
+      "pdf": "https://arxiv.org/pdf/2607.28065v1",
+      "score": "8.0",
+      "evidence": "使用DINOv3自监督ViT骨干进行细粒度叶片缺陷检测",
+      "tldr": "针对风电叶片缺陷检测中标注数据有限、缺陷尺度小且对比度低的问题，提出BladeYOLO框架。该方法采用DINOv3自监督预训练ViT骨干融入YOLOv12-L，利用Mamba引导模块增强弱缺陷感知，并通过傅里叶风格注入提升跨环境鲁棒性。在WTBlade-Defect数据集上取得最优性能，公开数据集上mAP50和mAP50-95分别提升3.5%和2.5%，验证了有限标注下的有效性与泛化性。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Wind turbine blade defect detection remains highly challenging in real-world inspection scenarios due to limited on-site data and the subtle visual characteristics of defects. In practice, blade defects are often small-scale, low-contrast, and difficult to distinguish from complex backgrounds, which significantly limits the robustness of existing detectors. To address these challenges, we propose BladeYOLO, a defect detection framework for wind turbine blades. Specifically, we integrate a Vision Transformer (ViT) backbone initialized with DINOv3 self-supervised pre-trained weights into YOLOv12-L, enabling the transfer of large-scale generic visual priors to blade defect detection and improving feature representation under limited training annotations. To enhance the perception of subtle defects, we further develop a Mamba-guided Weak-Defect Enhancement module, which consists of a Detail-Enhanced Multi-scale Branch for preserving high-frequency structural cues and a Cross-Mamba module for progressively propagating high-level semantic guidance to shallow features. In addition, we introduce a lightweight Style-Injector module that captures environment-related style information via Fourier decomposition and injects it into selected ViT self-attention layers, thereby improving robustness against environment-induced appearance variations. Extensive experiments demonstrate that BladeYOLO achieves superior performance on the WTBlade-Defect dataset, with additional annotation-budget experiments showing its favorable performance under reduced training annotations. Evaluation on the public Wind Surface Defect dataset further provides supportive evidence for the cross-dataset robustness of BladeYOLO. In particular, on this public dataset, BladeYOLO outperforms the best competing method by 3.5\\% in mAP$_{50}$ and 2.5\\% in mAP$_{50-95}$.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/31/2607.26993v2-foundation-models-for-face-presentation-attack-detection-a-unified-linear-probing-benchmark",
+      "section": "quick",
+      "title_en": "Foundation Models for Face Presentation Attack Detection: A Unified Linear-Probing Benchmark",
+      "authors": "Peter Lorenz, Anjith George, Sébastien Marcel",
+      "date": "2026-07-29",
+      "pdf": "https://arxiv.org/pdf/2607.26993v2",
+      "score": "7.0",
+      "evidence": "通过统一线性探测协议评估24种视觉基础模型用于图像分类的能力",
+      "tldr": "人脸呈现攻击检测在跨数据集评估中因域偏移性能下降，且标注数据稀缺。为此，本文系统评估了24种冻结的预训练视觉编码器（含自监督ViT、视觉语言模型与监督CNN），在MCIO基准上仅训练线性头进行统一探测。结果显示，冻结基础模型表征可支撑强组内PAD精度，但跨数据集迁移不稳定；InternViT-6B组内误差最低，CLIP ViT-B/32在迁移-计算权衡上最优。结论表明预训练表征蕴含PAD信息，但显式适应仍是解决域偏移的关键。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Face presentation attack detection (PAD) remains challenging under cross-dataset evaluation, where domain shift degrades models trained on a single dataset. The scarcity of large-scale labeled data motivates adapting pretrained vision models rather than training task-specific architectures from scratch, raising a fundamental question: do general-purpose vision foundation models encode PAD-relevant information accessible with minimal task-specific training? To investigate, we systematically evaluate 24 frozen encoders, including self-supervised vision transformers, vision-language encoders, and supervised CNNs, using a unified linear-probing protocol on the MCIO benchmark (MSU-MFSD, CASIA-FASD, Replay-Attack, OULU-NPU). The backbone remains fixed, and only a lightweight linear head is trained to isolate the PAD information already present in the pretrained representation. Results show that frozen foundation-model representations can support strong intra-dataset PAD performance with only a linear classifier, but this performance does not reliably transfer across datasets. Model scale is beneficial within several families, although the effect is not monotonic and is strongly mediated by architecture and pretraining. InternViT-6B achieves the lowest mean intra-dataset error, whereas CLIP ViT-B/32 offers the most favorable cross-dataset transfer-compute trade-off among the evaluated probes. These findings suggest that while pretrained representations contain PAD-relevant information, explicit adaptation remains necessary to address domain shift.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202607/31/2607.28589v1-mixfrag-fragility-guided-mixed-precision-post-training-quantization-for-vision-transformers",
+      "section": "quick",
+      "title_en": "MixFrag: Fragility-Guided Mixed-Precision Post-Training Quantization for Vision Transformers",
+      "authors": "Md. Mehrab Hossain Opi, Robiul Islam Ryad, Md. Umar Faruk",
+      "date": "2026-07-30",
+      "pdf": "https://arxiv.org/pdf/2607.28589v1",
+      "score": "6.0",
+      "evidence": "视觉Transformer架构与量化，面向分类部署",
+      "tldr": "ViT后训练量化（PTQ）常用统一位宽，忽略了不同组件对量化的异构敏感性，导致精度分配低效。MixFrag提出脆弱性引导的混合精度PTQ：先以KL散度衡量组件级量化脆弱性，再将其位分配转为多选背包问题，在目标位预算下自适应确定各层精度。在ImageNet-1K分类上取得有竞争力的结果，在COCO检测与分割上刷新混合精度PTQ最优性能，MP3/MP3设置下AP提升最高达9.6。该工作为ViT高效部署提供了可行的量化方案。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Post-training quantization (PTQ) has emerged as an effective solution for deploying Vision Transformers (ViTs) on resource-constrained devices. However, existing PTQ methods typically employ uniform bit-widths across transformer components, overlooking their heterogeneous sensitivity to quantization and leading to inefficient precision allocation. In this paper, we propose {MixFrag, a fragility-guided mixed-precision PTQ framework for Vision Transformers. MixFrag first estimates component-level quantization fragility by measuring the Kullback--Leibler (KL) divergence between full-precision and isolated quantized output distributions using a small calibration set. It then formulates bit allocation as a Multiple-Choice Knapsack Problem (MCKP), enabling adaptive layer-wise precision assignment under a target bit budget. Extensive experiments on ImageNet-1K across multiple Vision Transformer architectures demonstrate that MixFrag achieves competitive classification performance under practical mixed-precision settings. Furthermore, evaluations on COCO object detection and instance segmentation show that MixFrag achieves state-of-the-art performance among existing mixed-precision PTQ methods, improving the previous best method by up to 9.6 AP under the challenging MP3/MP3 setting. Additional analyses validate the proposed fragility metric and demonstrate its strong correlation with the learned bit allocation. These results establish MixFrag as an effective framework for mixed-precision post-training quantization of Vision Transformers.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
