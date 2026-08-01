@@ -1,0 +1,2751 @@
+Title: Representation Trajectories Matters: Complementary Evidence for OOD Detection and Image Classification
+
+URL Source: https://arxiv.org/pdf/2607.26565v1
+
+Published Time: Thu, 30 Jul 2026 00:33:02 GMT
+
+Number of Pages: 33
+
+Markdown Content:
+# Representation Trajectories Matters: Complementary Evidence for OOD Detection and Image Classification 
+
+## Ignacio M. De la Jara 1, 3 , Cristian Rodriguez-Opazo 2, Hamed Damirchi 1, 3 , Stephen Gould 2,Damith Ranasinghe 1,3 
+
+> 1
+
+University of Adelaide, 2Australian National University, 3Naval Group Pacific ignacio.mezadelajara@adelaide.edu.au 
+
+Abstract 
+
+Vision models do not form a representation at once; each block revises it. We ask whether the resulting computa-tion path contains evidence that the final representation dis-cards, and whether that evidence improves OOD detection and image classification on clean and shifted data. Unlike ap-proaches that treat intermediate layers as separate snapshots, we retain sample identity across depth and study the trans-formations connecting successive states. We separate class-coherent transport from input-specific innovation, and coor-dinate movement from relational reorganization. Across su-pervised, self-supervised, vision–language, hierarchical, and convolutional encoders, these paths show strong sample-specific continuity and architecture-specific depth profiles that recur across datasets. They are also practically useful. An ID-only transition-surprise score complements strong final-state detectors, reducing FPR95 in 131/152 non-saturated com-parisons on a balanced OpenOOD grid; gains are largest for visually disruptive and semantically far shifts, and remain pos-itive on near-OOD for most detectors. Frozen update probes improve 71/72 clean model–dataset cases, while shifted-data gains vary with architecture and corruption type. Computa-tion paths therefore provide a broadly useful reliability signal whose value is determined jointly by model organization and the shift encountered. 
+
+## 1 Introduction 
+
+A vision encoder does not simply output an image represen-tation; it computes one. Each block updates the current state, progressively changing its geometry and class evidence. Yet most analyses and downstream systems retain only the end-point of this computation. This endpoint is natural for recog-nition, but it discards the route by which the model arrived there. This raises a fundamental question: does the path through a vision encoder contain evidence that is not captured by its endpoint? We study this question at three levels: whether an image’s state at one layer predicts its later states, whether classes follow coherent routes, and whether architectures or-ganise those routes differently. We then ask whether such path evidence improves reliability under distribution shift. Prior work has visualised intermediate features (Zeiler and Fergus 2014), compared representations across layers and Inputs L1 L3 L6 L9 L12           
+
+> final representation
+> ID-only route learning
+> learned
+> ID routes
+> near-OOD detour
+> early layers
+> Junco
+> ID
+> Goldfinch
+> ID
+> Dark-eyed junco
+> near OOD
+> path evidence final
+> representation OOD detection
+> FPR95 reduction (points)
+> FM +8.7
+> Plain ViT +8.0
+> Hierarch. +2.1
+> CNN +6.2
+> Classification
+> gain vs final state (points)
+> FM +1.4
+> Plain ViT +6.3
+> Hierarch. +4.6
+> CNN +3.9
+> FM = Foundation Models
+
+## +
+
+Figure 1: The trajectories matters. Images with similar final representations can follow different computational routes. Typical ID samples remain close to learned class trajectories, whereas OOD samples deviate despite similar endpoints. Trajectory evidence complements the final representation for both OOD detection and image classification; bars report average gains across architecture families. models (Kornblith et al. 2019), and scored individual layers for OOD detection (Lee et al. 2018). Closer to the compu-tation itself are between-layer transformation smoothness in text encoders (Jelenić et al. 2024) and fusion of intermediate CLIP evidence (M. De la Jara et al. 2025). All score layers or adjacent pairs, within a single modality or encoder family. We instead ask whether the same input’s path through the network has coherent structure across depth, and whether it provides evidence complementary to the final representation. Our approach links the layer states of each input into a trajectory rather than treating them as independent snapshots. For each class, we estimate a typical ID route and express individual samples relative to it. This separates class-shared motion from input-specific deviations. We first verify that these trajectories are not arbitrary col-lections of layer states. Paired and shuffled controls show that the same image retains predictable cross-layer structure, arXiv:2607.26565v1 [cs.CV] 29 Jul 2026 while direction controls prevent us from interpreting depth as a physical-time process. Structured trajectories need not look the same across ar-chitectures. Different encoders may distribute class evidence, geometric movement, and relational change across different layers. For this reason, we study trajectories in each model’s native block sequence rather than imposing a common mid-dle layer. Our evaluation spans supervised, self-supervised, vision–language, hierarchical, and convolutional encoders. We evaluate whether trajectory structure matters beyond analysis using OOD detection and image classification. OOD detection asks whether atypical routes reveal distribution shift, while recognition asks whether intermediate updates retain class evidence that the final state does not fully ex-pose. For OOD detection, an ID-only transition-surprise score complements a final-state density score. Across the non-saturated balanced OpenOOD evaluation, this lowers FPR95 in 131 of 152 backbone–benchmark comparisons, includ-ing every CIFAR-10 and CIFAR-100 case. Gains are largest for visually disruptive and semantically far shifts, and hold on near-OOD for most detectors; the residual limitation is confined to the hardest ImageNet near splits. For recognition, frozen probes on native block updates are selected and fused with a final-state probe using ID/source validation only. This improves 71 of 72 clean model–dataset cases. Under label-preserving shift, however, the benefit de-pends on architecture and corruption type. The trajectory therefore complements rather than replaces the final repre-sentation, providing a reliability signal whose value depends jointly on the model and the shift encountered.  
+
+> In short. The final representation says what the model rep-resents, confidence says how certain the prediction is, and the trajectory says whether the computation followed a fa-miliar class route. We use deviations from that route as complementary evidence for OOD detection and recogni-tion.
+
+Contributions. 
+
+1. We formulate representation trajectories as a reliability object and decompose native updates into class-coherent transport and sample-specific innovation. 2. We establish sample-specific continuity through paired, shuffled, history, gap, and direction controls, while docu-menting the absence of a privileged forward arrow. 3. We show that architecture families allocate class evi-dence and representational change differently across na-tive blocks, motivating architecture-balanced trajectory analysis. 4. We introduce an ID-only trajectory-surprise complement to final-state OOD scores and map when intermediate computation helps recognition, including broad gains and explicit neutral or negative results. 
+
+## 2 Related Work 
+
+Final-representation reliability. Post-hoc OOD detec-tors typically score the final prediction or representa-tion: MSP (Hendrycks and Gimpel 2017), ODIN (Liang, Li, and Srikant 2018), energy (Liu et al. 2020), MaxLogit (Hendrycks et al. 2022), ReAct (Sun, Guo, and Li 2021), and ASH (Djurisic et al. 2023) operate on logits or final-state activations. Feature-space methods include Ma-halanobis distance (Lee et al. 2018), deep k-NN (Sun et al. 2022), ViM (Wang et al. 2022), Relative Mahalanobis (Ren et al. 2021), and Mahalanobis++ (Müller and Hein 2025). Vision–language detectors similarly score the final image– text representation, as in MCM (Ming et al. 2022). These methods estimate final-state typicality or confidence. Our trajectory score instead asks whether the computation lead-ing to that state provides complementary ID-only evidence. 
+
+Intermediate representations. Early work visualised in-termediate features, analysed their evolution across depth, and linked units to semantic concepts (Zeiler and Fergus 2014; Yosinski et al. 2014; Bau et al. 2017). Subsequent studies used linear probes and representation similarity to characterise the emergence of class information and feature geometry (Alain and Bengio 2017; Kornblith et al. 2019; Raghu et al. 2021), including for foundation encoders (Bolya et al. 2025). OOD methods further exploit intermediate rep-resentations by combining per-layer Mahalanobis scores (Lee et al. 2018), learning feature mixtures (Wei et al. 2025), fus-ing intermediate evidence (M. De la Jara et al. 2025), using intermediate-layer classifiers (Uselis and Oh 2025), or mea-suring between-layer transformations (Jelenić et al. 2024). These approaches treat intermediate representations as ob-servations to combine rather than modelling the computation connecting them. Related work also shows that represen-tations learned under the same objective can remain com-plementary, motivating adaptive combinations across back-bones (M. De la Jara et al. 2023; Rodriguez-Opazo et al. 2025). 
+
+Representation trajectories. Representation trajectories have recently emerged as a distinct line of work. Population-level studies characterise neural networks as paths through representation space, describing how feature geometry evolves across layers (Lange et al. 2022). More recently, tra-jectories in large language models have been used to analyse reasoning dynamics and predict reasoning correctness and truthfulness (Damirchi et al. 2026). We instead preserve the identity of each sample across depth and study the compu-tation trajectory of a frozen vision model, asking whether it provides complementary evidence beyond the final represen-tation for OOD detection and image classification.  
+
+> The missing comparison .Previous work studies final rep-resentations, individual intermediate states, learned combina-tions of representations, or reasoning trajectories. We instead ask whether the recorded computation trajectory of each sample provides complementary evidence beyond the final representation.
+
+## 3 Representation Trajectories 
+
+Vision models compute representations through a sequence of intermediate transformations, yet most methods retain C10              
+
+> IN200
+> DeiT3-B
+> 12 blocks
+> input →output
+> Within-block
+> movement
+> input →output
+> Relational deformation
+> √1 − CKA
+> input →output
+> Prototype-accuracy
+> gain
+> input →output
+> Within-class
+> residual share
+> C10
+> IN200
+> ViT-B AugReg
+> 12 blocks
+> C10
+> IN200
+> Swin-B
+> 4 stages: 2|2|18|2 blocks
+> C10
+> IN200
+> ConvNeXt-B
+> 4 stages: 3|3|27|3 blocks
+> C10
+> IN200
+> ResNet-50
+> 4 stages: 3|4|6|3 blocks
+> one cell = one native block •dark rule = stage boundary
+> light → dark = low → high •prototype gain: gray < 0, white = 0, green > 0
+
+Figure 2: Architectures allocate work differently. Each strip follows one checkpoint–dataset pair across its native blocks. Movement, relational deformation √1 − CKA , class-evidence gain, and residual share peak at different depths; colour is normalised within each row except residual share. only the endpoint of this process. We represent the forward pass as a representation trajectory ,
+
+τ (x) = ( z1(x), . . . , z L(x)) , (1) where zL is the final representation used by downstream tasks. The corresponding update between consecutive repre-sentations is ul(x) = zl+1 (x) − zl(x), which captures the local movement of the trajectory between adjacent layers. For architectures with varying dimensionality, updates are computed within each stage, while cross-stage comparisons use a fixed Gaussian random projection (Johnson and Lin-denstrauss 1984; Dasgupta and Gupta 2003). 
+
+The trajectory is the complete dynamical evolution of a sample through the network, characterized by its states and the transitions between them. 
+
+3.1 Class routes and innovations 
+
+A trajectory describes how one image evolves through the network, but not what is shared across a class. We therefore estimate the mean trajectory of each ID class, 
+
+μcl = E[zl(X) | Y = c], (2) which we call the class route . Every sample is then expressed relative to its class route, 
+
+rl(x, c ) = zl(x) − μcl . (3) The residual trajectory therefore isolates the computation that remains specific to each sample. Each update naturally decomposes into: 
+
+zl+1 − zl
+
+| {z }
+
+> total update
+
+= μcl+1 − μcl
+
+| {z }
+
+> class-coherent transport
+
++ rl+1 − rl
+
+| {z }
+
+> sample-specific innovation
+
+. (4) Equation 4 separates computation shared across a class from computation that is specific to an individual image. At test time, when the class label is unknown, the class route is estimated from the model’s final representation. 
+
+3.2 Locating the quantity that must be measured 
+
+The remaining question is whether a trajectory contains in-formation beyond the final representation. Two inputs may ar-rive at similar final representations while following different computational routes. If so, the trajectory preserves informa-tion that cannot be recovered from the endpoint alone. The following decomposition identifies where such information would have to reside. Let R = ( Z1, . . . , Z L−1) denote the trajectory and E =
+
+ZL the final representation, and let P and Q denote the in-distribution and shifted joint distributions over (R, E ).Whenever the corresponding KL divergences are well de-fined, the chain rule gives 
+
+DKL (PR,E ∥QR,E ) = DKL (PE ∥QE )+ Ee∼PE DKL 
+
+ PR|E=e∥QR|E=e
+
+ .
+
+(5) Equation 5 separates the divergence between two distribu-tions into a component visible from the final representation and a residual component that survives after conditioning on that endpoint. This is an identity: the residual term is non-negative by construction, and vanishes whenever the blocks are invertible. It does not does not assert that a computa-tion path carries additional evidence; it specifies where such evidence would have to reside, and which quantity an exper-iment would have to estimate. 
+
+The endpoint need not determine the route. Condition-ing on the final representation leaves a residual divergence that may or may not be exploitable. Equation 5 says where to look; Section 4 builds a score that looks there, and Sec-tion 5.2 reports what it finds. 
+
+3.3 Four complementary measurements 
+
+Figure 2 uses four measurements to show that a trajectory is not captured by a single layer statistic. Movement mea-sures the size of the local update. Relational deformation measures how pairwise geometry changes between adjacent states. Prototype-accuracy gain measures where class evi-dence increases. Within-class residual share measures how much of the update remains sample-specific after subtracting the class route. The four measurements peak at different lay-ers. A block can move features substantially without rewrit-ing pairwise relations, or add class evidence with only mod-est movement. Thus trajectory analysis should distinguish movement, geometry, class evidence, and sample-specific innovation rather than reduce the path to one score. 
+
+The profiles also differ across architectures. Two 12-block plain ViTs exhibit different schedules despite identical depth, while Swin and ConvNeXt concentrate some changes around stage boundaries and continue accumulating class evidence inside their longest stages. Across CIFAR-10 and ImageNet-200, movement and relational deformation are more stable than the timing of prototype-accuracy gain. These patterns motivate studying each model’s native trajectory rather than relying on a hand-picked middle layer. 
+
+## 4 Using the Recorded Path 
+
+We use the trajectory representation in two complementary tasks. OOD detection uses an ID-only transition-surprise score derived from residual trajectories, while image clas-sification combines probes on native updates with the final representation. Both keep the backbone frozen and learn only from ID. 
+
+4.1 ID-only transition surprise 
+
+For each training sample, we assign the class route and form residual states r1: L. A single MLP fθ , shared across tran-sitions and conditioned by a learned depth embedding el,predicts brl+1 = fθ (rl + el). On ID fitting data, we estimate the component-wise prediction-error scale 
+
+bσ2 
+
+> l,d
+
+= N −1 X
+
+> i
+
+(ri,l +1 ,d − [fθ (ri,l + el)] d)2 .
+
+The trajectory surprise is 
+
+D(x) = 
+
+> L−1
+
+X
+
+> l=1
+
+X
+
+> d
+
+(rl+1 ,d (x) − brl+1 ,d (x)) 2
+
+bσ2
+
+> l,d
+
+. (6) Component-wise scaling emphasises reliably predictable ID transitions, while summation allows small departures to ac-cumulate across depth. 
+
+Novel-evidence fusion. Let S0 be a final-state OOD score such as normalised Mahalanobis++. We standardise S0 and 
+
+D on held-out ID data, denoting the resulting scores by eS0
+
+and eD, regress eD on eS0, and retain the residual path evidence: 
+
+S(x) = eS0(x) + 0 .3
+
+h eD(x) − a eS0(x) − b
+
+i
+
+. (7) The coefficient 0.3 is fixed a priori and never adjusted per checkpoint, benchmark, or split. It is deliberately conserva-tive, keeping the final-state score dominant so that the trajec-tory acts as a correction rather than a replacement. As shown in Fig L3, larger weights provide only marginal additional average improvement while increasing both benchmark-to-benchmark variability and the worst-case degradation. The choice of 0.3 therefore favours robust complementary evi-dence over aggressive score replacement. The offsets (a, b )0.0 0.4 0.8          
+
+> held-out transition R2
+> DeiT3
+> ViT
+> BeiT
+> Swin
+> ConvNeXt
+> ResNet
+> CLIP
+> DINOv2
+> aMatched vs. shuffled
+> identity-shuffled matched trajectory
+> C10 IN-200
+> 0.00
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> history Δ R2
+> bHistory
+> 1234
+> layer gap
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> held-out  R2
+> cGap decay
+> C10
+> IN-200
+
+Figure 3: Matched trajectories preserve sample-specific continuity. (a) Matched transitions yield higher held-out prediction R2 than identity-shuffled pairs in all 16 cases. (b) History adds predictive information. (c) Predictability decays with layer gap. Full values are in Appendix Table J1. and all standardisation statistics are estimated from ID data only. This tests whether the trajectory provides evidence be-yond the final representation. We repeat the same sequen-tial test after absorbing Relative Mahalanobis and compare against random-noise and redundant-score partners. 
+
+4.2 Update probes for recognition 
+
+For every compatible native update ul, we train a linear probe ql(y | ul) (Alain and Bengio 2017). An inner source-validation split selects probe regularisation. Using a separate fusion-validation split, we rank probes, learn non-negative ensemble weights and temperatures, and fit a final-state mar-gin gate: 
+
+qpath (y | x) = X
+
+> l
+
+wlql(y | ul(x)) , (8) 
+
+qfuse = (1 − α)qL + αq path . (9) The gate can restrict path corrections to final-state-ambiguous samples. After selection, every setting is frozen for the clean test set, corruptions, or an unseen target domain. A separately seeded final-state ensemble is the matched con-trol for generic ensembling. 
+
+4.3 Validating trajectory continuity 
+
+Before using paths downstream, we test whether consecutive residuals preserve sample-specific information. In Figure 3, the matched-trajectory condition predicts rl+1 (x) from rl(x)
+
+for the same input. The identity-shuffled control instead pairs 
+
+rl+1 (x) with rl(x′) from another image, preserving both layer marginals while breaking their identity link. Their held-out R2 difference therefore isolates cross-depth continuity. Matched trajectories win in all 16 checkpoint–dataset com-parisons (a); preceding-state history adds information (b), and predictability decays as the target moves farther ahead (c). Separate MLP, GRU, LSTM, causal-attention, and temporal-convolution predictors all find reverse prediction easier (Appendix L.4). We therefore use the one-step MLP because it gives the best median forward prediction, while interpreting the result as evidence of cross-depth continuity 0 10 20 30 40 50 60 
+
+> Mean FPR95 (%, ↓)
+> CIFAR-10
+> CIFAR-100
+> ImageNet-200
+> ImageNet-1K
+> 17.4→12.2
+> 15.0→7.8
+> 15.2→12.3
+> 19.1→10.7
+> 39.5→30.2
+> 43.0→22.6
+> 34.8→28.1
+> 43.7→25.5
+> 26.5→25.2
+> 24.0→20.9
+> 30.3→29.2
+> 31.8→28.7
+> 43.5→42.0
+> 43.4→39.5
+> 45.2→45.0
+> 56.2→50.9
+
+a Final-only vs. trajectory FPR95 
+
+> M++
+> 131
+> +4.3
+> Rel
+> 142
+> +8.7
+> X
+> 106
+> +2.7
+> kNN
+> 127
+> +8.7
+> 0
+> 20
+> 40
+> FPR95 reduction (points)
+
+b Casewise reduction                      
+
+> Maha++ RelMaha X-Maha kNN
+> DeiT3-B
+> 12 blocks
+> ViT-B AugReg
+> 12 blocks
+> Swin-B
+> 2|2|18|2
+> ConvNeXt-B
+> 3|3|27|3
+> ResNet-50
+> 3|4|6|3
+> Foundations
+> DINOv2 + CLIP
+> +6.3
+> 3/4 +8.8
+> 3/4 +5.8
+> 4/4 +20.9
+> 4/4
+> +2.7
+> 4/4 +9.7
+> 4/4 -0.8
+> 1/4 +10.5
+> 4/4
+> +1.9
+> 2/4 +4.0
+> 2/4 +3.3
+> 4/4 -0.8
+> 2/4
+> +1.4
+> 3/4 +4.5
+> 3/4 +3.6
+> 3/4 +3.7
+> 3/4
+> +6.3
+> 4/4 +17.0
+> 4/4 +5.6
+> 4/4 +7.4
+> 4/4
+> +7.0
+> 12/12 +11.0
+> 12/12 +3.8
+> 10/12 +13.0
+> 12/12
+
+c Architecture × score      
+
+> Maha++ RelMaha X-Maha kNN final only +trajectory
+
+Figure 4: Trajectory gains depend on score and architecture. (a) Final-layer-only (open) and trajectory-augmented (filled) FPR95; (b) 152 paired reductions with improved-case counts, interquartile ranges, and mean ∆; (c) mean reduction and improved/total cases by architecture and score. rather than a temporal arrow. Consistent performance under fixed layer permutations further argues against privileged ordering. 
+
+## 5 Experiments 
+
+5.1 Evaluation protocol 
+
+To evaluate the trajectory signals introduced in the previous sections, we study their predictive utility on complementary OOD detection and recognition tasks using fixed backbones, ID-only training, and standard benchmarks throughout. 
+
+OOD detection. We evaluate the fixed path-surprise method on OpenOOD v1.5 (Yang et al. 2022; Zhang et al. 2024), covering MNIST, CIFAR-10, CIFAR-100, ImageNet-200, and ImageNet-1K with their prescribed OOD splits. The balanced evaluation comprises 190 backbone–benchmark pairs, using the same 38 supervised, self-supervised, vision– language, hierarchical, and CNN checkpoints on each bench-mark; four additional ImageNet-only checkpoints are re-ported in Appendix C but excluded from the balanced com-parison. The method is fitted using labelled ID data only with three random seeds and no OOD exposure. We report AUROC and FPR95, using Mahalanobis++ as the primary final-state baseline together with Relative Mahalanobis, X-Mahalanobis, and final-state kNN (Sun et al. 2022). 
+
+Recognition and shift. Recognition uses the same six rep-resentative architectures (CLIP ViT-B/16, DeiT3-B, super-vised ViT-B, Swin-B/SwinV2-B, ConvNeXt-B, and ResNet-50) across twelve datasets spanning generic objects, textures, scenes, remote sensing, and fine-grained recognition, report-ing mean top-1 accuracy over three probe seeds. Shift robust-ness is evaluated on CIFAR-100-C, PACS, and Office-Home: for CIFAR-100-C, probes and fusion are selected on clean CIFAR-100 before evaluation on all corruption types and severities, while PACS and Office-Home follow leave-one-domain-out evaluation, where the target domain is never used to tune probes, temperatures, ensemble weights, or gates. 
+
+5.2 OOD: Trajectory Information for Detection 
+
+We begin by evaluating whether trajectory information con-sistently complements final-state OOD detectors across ar-chitectures, benchmarks, and detector families. Figure 4 sum-marises the answer. Across the 152 non-saturated cases, mean FPR95 falls by 4.33 points with Mahalanobis++, 8.67 
+
+with Relative Mahalanobis, 2.69 with X-Mahalanobis, and 
+
+8.75 with kNN, corresponding to 131, 142, 106, and 127 improved cases, respectively. Mahalanobis++ improves ev-ery CIFAR comparison, while 28/38 ImageNet-200 and 27/38 ImageNet-1K architecture–benchmark pairs improve. AUROC and FPR95 remain strongly aligned (Spearman 
+
+ρ = 0 .87 ), indicating that the gains are not specific to a single detector or evaluation metric. Beyond these overall improvements, Figure 4(c) reveals that the dominant pattern is an architecture–score interaction rather than a simple ordering by family or depth. DeiT3-B and ViT-B AugReg both contain 12 transformer blocks, yet their kNN reductions are 20 .95 and 10 .49 , while their X-Mahalanobis reductions are +5 .78 and −0.80 . Swin-B is similarly detector dependent: kNN worsens by 0.84 points on average, whereas X-Mahalanobis improves all four bench-marks by 3.30 . Among CNNs, ResNet-50 improves every benchmark for every detector and is strongest with Rela-tive Mahalanobis ( +17 .03 ), whereas ConvNeXt-B gains only 
+
++4 .55 and improves 3/4 cases. These contrasts suggest that trajectory information depends on how intermediate com-putation is organised rather than on architectural family or depth alone. The foundation models reinforce this picture. DINOv2 together with the two CLIP checkpoints improve all 12 benchmark combinations with both kNN ( +13 .01 ) and Rel-ative Mahalanobis ( +11 .03 ). Strong final-state representa-tions learned through large-scale self-supervised and vision-language pretraining therefore retain complementary trajec-tory information. The detector-specific behaviour helps explain these dif-ferences. X-Mahalanobis already pools multiple intermedi-ate layers, so its smaller marginal gain is consistent with partial overlap with trajectory information. Relative Maha-lanobis and kNN instead correct global or local final-state density, leaving more complementary trajectory information available. Baseline FPR95 and reduction correlate only mod-erately ( ρ = 0 .30 –0.49 across detectors), showing that the improvements are not simply a consequence of larger base-line headroom. Figure 4 therefore focuses on detectors for Table 1: Clean classification. Final state linear-probe → residual-path fusion accuracy (top-1 %, three seeds). Green ∆ is the absolute gain; the right margin summarizes relative dataset gains. 
+
+Dataset VLM Plain ViTs Hierarchical CNNs Row CLIP-B DeiT3-B ViT-B Swin ConvNeXt-B ResNet-50 Rel. gain 
+
+CIFAR-100 80 .80 → 83 .53 
+
+> ∆ = +2 .72
+
+83 .22 → 86 .65 
+
+> ∆ = +3 .43
+
+77 .07 → 82 .12 
+
+> ∆ = +5 .05
+
+80 .96 → 83 .89 
+
+> ∆ = +2 .93
+
+78 .95 → 81 .51 
+
+> ∆ = +2 .57
+
+72 .75 → 77 .31  
+
+> ∆ = +4 .55
+
+4.5% DTD 75 .41 → 77 .16 
+
+> ∆ = +1 .76
+
+67 .43 → 74 .70 
+
+> ∆ = +7 .27
+
+63 .79 → 70 .99 
+
+> ∆ = +7 .20
+
+69 .43 → 75 .48 
+
+> ∆ = +6 .05
+
+69 .66 → 75 .94 
+
+> ∆ = +6 .28
+
+67 .52 → 73 .48  
+
+> ∆ = +5 .96
+
+8.4% EuroSAT 95 .86 → 97 .49 
+
+> ∆ = +1 .64
+
+95 .70 → 98 .05 
+
+> ∆ = +2 .35
+
+95 .72 → 97 .93 
+
+> ∆ = +2 .21
+
+96 .38 → 97 .78 
+
+> ∆ = +1 .40
+
+94 .69 → 97 .48 
+
+> ∆ = +2 .79
+
+95 .70 → 97 .59  
+
+> ∆ = +1 .89
+
+2.1% Caltech-101 96 .91 → 97 .27 
+
+> ∆ = +0 .36
+
+94 .68 → 97 .27 
+
+> ∆ = +2 .59
+
+91 .86 → 95 .24 
+
+> ∆ = +3 .38
+
+94 .82 → 95 .78 
+
+> ∆ = +0 .96
+
+92 .82 → 94 .51 
+
+> ∆ = +1 .69
+
+93 .55 → 95 .39  
+
+> ∆ = +1 .84
+
+1.9% CIFAR-10 95 .24 → 95 .46 
+
+> ∆ = +0 .22
+
+96 .77 → 97 .42 
+
+> ∆ = +0 .65
+
+93 .88 → 95 .08 
+
+> ∆ = +1 .20
+
+95 .51 → 96 .00 
+
+> ∆ = +0 .49
+
+94 .75 → 95 .20 
+
+> ∆ = +0 .44
+
+91 .48 → 92 .99  
+
+> ∆ = +1 .51
+
+0.8% CUB-200 79 .28 → 80 .54 
+
+> ∆ = +1 .26
+
+73 .18 → 81 .53 
+
+> ∆ = +8 .34
+
+63 .14 → 70 .03 
+
+> ∆ = +6 .89
+
+70 .64 → 78 .10 
+
+> ∆ = +7 .46
+
+66 .21 → 66 .75 
+
+> ∆ = +0 .54
+
+64 .75 → 65 .08  
+
+> ∆ = +0 .33
+
+6.0% Stanford Cars 84 .81 → 86 .16 
+
+> ∆ = +1 .35
+
+59 .12 → 75 .14 
+
+> ∆ = +16 .02
+
+39 .54 → 55 .02 
+
+> ∆ = +15 .48
+
+50 .38 → 62 .16 
+
+> ∆ = +11 .78
+
+50 .61 → 53 .30 
+
+> ∆ = +2 .69
+
+48 .28 → 59 .81  
+
+> ∆ = +11 .54
+
+17.7% Oxford-IIIT Pets 92 .54 → 92 .75 
+
+> ∆ = +0 .21
+
+92 .79 → 93 .78 
+
+> ∆ = +0 .99
+
+91 .00 → 91 .74 
+
+> ∆ = +0 .74
+
+93 .06 → 94 .13 
+
+> ∆ = +1 .07
+
+92 .15 → 92 .43 
+
+> ∆ = +0 .28
+
+92 .68 → 92 .60   
+
+> ∆ = −0.07
+
+0.6% Food-101 91 .99 → 92 .39 
+
+> ∆ = +0 .40
+
+78 .07 → 83 .23 
+
+> ∆ = +5 .16
+
+72 .11 → 78 .40 
+
+> ∆ = +6 .29
+
+79 .44 → 82 .47 
+
+> ∆ = +3 .03
+
+76 .38 → 79 .01 
+
+> ∆ = +2 .63
+
+68 .08 → 75 .98  
+
+> ∆ = +7 .89
+
+5.5% Flowers-102 95 .63 → 96 .58 
+
+> ∆ = +0 .95
+
+82 .37 → 94 .31 
+
+> ∆ = +11 .94
+
+76 .72 → 88 .47 
+
+> ∆ = +11 .75
+
+81 .13 → 90 .61 
+
+> ∆ = +9 .48
+
+71 .39 → 82 .97 
+
+> ∆ = +11 .58
+
+77 .91 → 86 .47  
+
+> ∆ = +8 .57
+
+11.2% FGVC-Aircraft 50 .17 → 55 .50 
+
+> ∆ = +5 .33
+
+45 .94 → 59 .27 
+
+> ∆ = +13 .32
+
+36 .96 → 46 .47 
+
+> ∆ = +9 .51
+
+41 .56 → 48 .44 
+
+> ∆ = +6 .88
+
+46 .16 → 46 .75 
+
+> ∆ = +0 .59
+
+38 .63 → 46 .65  
+
+> ∆ = +8 .02
+
+16.8% SUN397 77 .10 → 78 .11 
+
+> ∆ = +1 .00
+
+64 .04 → 68 .92 
+
+> ∆ = +4 .88
+
+58 .21 → 63 .86 
+
+> ∆ = +5 .65
+
+63 .43 → 67 .25 
+
+> ∆ = +3 .82
+
+60 .42 → 64 .73 
+
+> ∆ = +4 .31
+
+59 .35 → 63 .54  
+
+> ∆ = +4 .20
+
+6.2% 
+
+Table 2: Near versus Far OOD. Balanced mean FPR95 over the same 152 cases as Figure 4. Cells report final state →
+
+final state + trajectory, mean ∆, and improved cases; bold marks the larger reduction within each score. 
+
+Score Near OOD Far OOD 
+
+Maha++ 42 .9 → 40 .8
+
+> ∆ = +2 .09 ; 101/152
+
+24 .8 → 19 .2
+
+> ∆ = + 5.60 ; 141/152
+
+RelMaha 43 .6 → 38 .0
+
+> ∆ = +5 .66 ; 119/152
+
+24 .1 → 13 .7
+
+> ∆ = + 10 .43 ; 151/152
+
+X-Maha 46 .2 → 45 .5
+
+> ∆ = +0 .64 ; 74/152
+
+22 .4 → 18 .6
+
+> ∆ = + 3.79 ; 121/152
+
+kNN 51 .9 → 46 .6
+
+> ∆ = +5 .31 ; 117/152
+
+29 .2 → 18 .5
+
+> ∆ = + 10 .63 ; 134/152
+
+which an identical final-state/trajectory pairing is well de-fined; MSP is reported in the appendix as a conventional confidence reference. To understand where trajectory information contributes most, Table 2 separates Near and Far OOD. Every detector improves more on Far OOD, with Far/Near reduction ra-tios ranging from 1.84 × for Relative Mahalanobis to 5.97 ×
+
+for X-Mahalanobis. This cannot be explained by additional baseline headroom, since Far-OOD FPR95 is already sub-stantially lower than Near-OOD FPR95 for every detector. Instead, far shifts alter both low-level evidence and semantic destination, producing trajectories that depart more visibly from labelled ID trajectories. Near-OOD examples are often confidently assigned to a plausible in-distribution class, so they follow that class’s characteristic trajectory despite being semantically novel. The additional signal is correspondingly smaller, but it does not disappear: Mahalanobis++, Relative Mahalanobis, and kNN all still improve most Near cases, and only X-Mahalanobis is neutral there ( +0 .64 , 74/152), consistent with its multi-layer coverage already capturing much of the weaker Near-OOD signal. The shortfalls instead concentrate on the hardest ImageNet near splits. To isolate the contribution of trajectory information, Fig-ure 5 compares it against alternative complements to Maha-lanobis++. Added individually, trajectory information pro-vides the largest average reduction ( 3.40 FPR95 points), ex-ceeding Relative Mahalanobis ( 3.12 ), X-Mahalanobis ( 1.46 ), while random scores provide no benefit ( −0.79 ). The se-quential analysis then asks whether this gain disappears once Relative Mahalanobis is already present. It does not. Adding trajectory information after Relative Mahalanobis still reduces FPR95 by a further 2.71 points (21/24 cases), while adding Relative Mahalanobis after trajectory informa-tion contributes an additional 2.45 points (22/24 cases). The two signals therefore remain complementary regardless of order, showing that trajectory information captures reliabil-ity cues that are not absorbed by strong final-state detectors. Across the full benchmark suite, trajectory information low-ers FPR95 in 131/152 non-saturated cases and every CIFAR comparison. 0 2 4          
+
+> Path
+> RelMaha
+> X-Maha
+> Random
+> 3.40 22/24
+> 3.12 22/24
+> 1.46 21/24
+> −0.79 0/24
+> aAdded to Maha++
+> 0246
+> 1st: RelMaha
+> +3.12
+> 2nd: Path
+> +2.71
+> 1st: Path
+> +3.40
+> 2nd: RelMaha
+> +2.45
+> 21/24
+> 22/24
+> bSequential from Maha++
+> mean FPR95 reduction (points) →
+
+Figure 5: Path evidence is complementary. It gives the largest gain over Maha++ (a), and remains useful with RelMaha in either order (b). Counts report improvements out of 24 cases. 
+
+5.3 Recognition: Trajectory Information for Classification 
+
+Image classification provides a complementary test of whether trajectory information extends beyond the final rep-resentation. Table 1 reports the complete evaluation across architectures and datasets. Fusing trajectory information im-PACS Office-             
+
+> Home
+> CLIP-B
+> DeiT3-B
+> ViT-B
+> SwinV2-B
+> ConvNeXt-B
+> ResNet-50
+> -0.03 -0.34
+> +5.28 +0.70
+> +3.69 +1.28
+> +2.84 +0.79
+> +3.83 +0.88
+> +2.44 +0.56
+> A. Natural Δctl
+> mean
+> +0.99
+> +1.12
+> +2.24
+> +1.40
+> +1.36
+> +3.11
+> B. C100-C Δctl
+> clean 12345
+> corruption severity
+> 20
+> 30
+> 40
+> 50
+> 60
+> route disagreement (%)  C. Route disagreement
+
+Figure 6: Trajectory information under label-preserving shift remains architecture dependent. For the same six checkpoints, (a–b) report gain beyond a matched final-state ensemble and (c) reports disagreement by severity. Full nat-ural and synthetic shift tables are in Appendices K and O. proves 71/72 model–dataset cases by +4 .41 accuracy points on average. The largest dataset means occur on Cars ( +9 .81 ), Flowers ( +9 .04 ), and Aircraft ( +7 .28 ), where subordinate classes share broad object structure. This suggests that final representations preserve category semantics while compress-ing part- and texture-level cues that remain linearly accessible along the trajectory. Baseline error and gain have Spearman 
+
+ρ = 0 .65 over the 72 cells ( 0.73 between dataset means), indicating that harder tasks benefit more, although difficulty alone does not determine the improvement. The architecture analysis strengthens the result: all six backbones improve, with mean gains ranging from +1 .43 to 
+
++6 .41 points. The two plain ViTs lead with +6 .41 and +6 .28 ,followed by ResNet-50 ( +4 .68 ), Swin ( +4 .61 ), ConvNeXt (+3 .03 ), and CLIP ( +1 .43 ). The low correlation between baseline headroom and gain ( ρ = 0 .37 across model means) shows that these improvements reflect architecture-specific use of information across depth, rather than only easier re-covery on weaker baselines. Even CLIP improves despite its high mean final-state accuracy of 84 .65 . A matched state-probe ablation provides a complementary mechanistic view without changing this task-level result. Residual coordinates contribute a further +0 .63 to +1 .39 points for both plain ViTs, CLIP, and ResNet-50, while Swin and ConvNeXt re-main within 0.25 points of their matched state-based variants. Thus every evaluated architecture benefits from information distributed across depth, and four of six obtain an additional advantage from representing the layer-to-layer updates ex-plicitly. Taken together with the OOD analysis, these results show that no single architecture extracts trajectory infor-mation most effectively for every objective. Plain ViTs ob-tain the largest clean-recognition gains, whereas ResNet-50 remains consistently trajectory-sensitive across both tasks. Conversely, CLIP has relatively little clean-recognition head-room yet belongs to the foundation-model group with the strongest OOD improvements. Trajectory information there-fore complements different aspects of the final representation depending on the downstream objective. 
+
+5.4 Classification under shift 
+
+Distribution shift provides a complementary test of whether trajectory information generalises beyond clean recognition. Figure 6 shows that it largely does. On CIFAR-100-C, fusing trajectory information improves 169/180 conditions, and ev-ery checkpoint has a positive control-adjusted mean. ResNet-50 is strongest ( +3 .11 ), while ViT-B still gains +2 .24 , show-ing that the effect is not CNN-specific. PACS and Office-Home retain gains of +3 .01 and +0 .65 beyond the matched control across 39/48 positive folds. CLIP marks the boundary on natural shift, whereas synthetic failures are concentrated on additive noise and severe contrast. Trajectory information therefore generalises beyond clean recognition, although the magnitude of the gain depends on architecture, shift type, and final-state headroom. Complete per-model and per-domain results appear in Appendices K and O. 
+
+## 6 Interpretation and Limitations 
+
+Three reliability objects. The experiments are most co-herent when final representations, confidence estimates, and trajectories are not forced into one role. Final representa-tions concentrate class information and remain the primary recogniser. Confidence scores are better suited to identifying the model’s own errors. Trajectories instead measure com-putational typicality, namely whether an input evolves like labelled ID examples assigned to the same class. This ex-plains why trajectory information is particularly effective for OOD detection while contributing different information for recognition. 
+
+Checkpoint evidence and practical limitations. Cross-family comparisons should be interpreted as replicated checkpoint evidence rather than causal architecture interven-tions because checkpoints differ in pretraining, scale, and op-timisation. The OOD branch combines trajectory and final-state scores using a fixed weight without OOD validation, whereas the classification branch relies on labelled source data and is therefore not zero-shot. Recording intermediate representations introduces a modest computational cost of only 0.29 –0.36 ms per image and 35 .6–82 .3 MiB at batch size one across six backbones (Appendix G). 
+
+What the path does not create. Because a frozen network is deterministic, its trajectory cannot manufacture distribu-tional information absent from earlier states. It can only retain and organise evidence that later blocks compress. The prac-tical result is therefore not that paths always contain more usable information, but that a final state can discard evidence useful for reliability. 
+
+## 7 Conclusion 
+
+In this work, we propose a new way to think about rep-resentations in vision models: vision models expose final representations but compute trajectories that provide com-plementary evidence. Controls reveal coherent, architecture-dependent routes rather than a temporal process. Trajectory information improves OOD detection and classification on clean and shifted images, although its benefit depends on the architecture and the shift encountered. Final representations carry content, confidence conveys uncertainty, and trajecto-ries indicate whether computation follows a familiar route. Thus, reliable vision should ask both what representation was produced? and how did the model arrive there? References 
+
+Alain, G.; and Bengio, Y. 2017. Understanding Intermediate Lay-ers Using Linear Classifier Probes. International Conference on Learning Representations Workshop . ArXiv:1610.01644. Bao, H.; Dong, L.; Piao, S.; and Wei, F. 2022. BEiT: BERT Pre-Training of Image Transformers. In International Conference on Learning Representations (ICLR) .Bau, D.; Zhou, B.; Khosla, A.; Oliva, A.; and Torralba, A. 2017. Network Dissection: Quantifying Interpretability of Deep Visual Representations. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 6541–6549. Bolya, D.; Huang, P.-Y.; Sun, P.; Cho, J. H.; Madotto, A.; Wei, C.; Ma, T.; Zhi, J.; Rajasegaran, J.; Rasheed, H.; Wang, J.; Monteiro, M.; Xu, H.; Dong, S.; Ravi, N.; Li, D.; Dollár, P.; and Feichtenhofer, C. 2025. Perception Encoder: The Best Visual Embeddings Are Not at the Output of the Network. In Advances in Neural Information Processing Systems (NeurIPS) . Oral. Damirchi, H.; Meza De la Jara, I.; Abbasnejad, E.; Shamsi, A.; Zhang, Z.; and Shi, J. 2026. Truth as a Trajectory: What Internal Representations Reveal About Large Language Model Reasoning. 
+
+arXiv preprint arXiv:2603.01326 .Dasgupta, S.; and Gupta, A. 2003. An Elementary Proof of the Johnson-Lindenstrauss Lemma. In Random Structures & Algo-rithms .Djurisic, A.; Bozanic, N.; Ashok, A.; and Liu, R. 2023. Extremely Simple Activation Shaping for Out-of-Distribution Detection. In 
+
+International Conference on Learning Representations (ICLR) .Dosovitskiy, A.; Beyer, L.; Kolesnikov, A.; Weissenborn, D.; Zhai, X.; Unterthiner, T.; Dehghani, M.; Minderer, M.; Heigold, G.; Gelly, S.; Uszkoreit, J.; and Houlsby, N. 2021. An Image Is Worth 16x16 Words: Transformers for Image Recognition at Scale. In Interna-tional Conference on Learning Representations (ICLR) .Fang, Y.; Sun, Q.; Wang, X.; Huang, T.; Wang, X.; and Cao, Y. 2023. EVA-02: A Visual Representation for Neon Genesis. arXiv preprint arXiv:2303.11331 .He, K.; Chen, X.; Xie, S.; Li, Y.; Dollár, P.; and Girshick, R. 2022. Masked Autoencoders Are Scalable Vision Learners. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) ,16000–16009. He, K.; Zhang, X.; Ren, S.; and Sun, J. 2016a. Deep Residual Learning for Image Recognition. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 770–778. He, K.; Zhang, X.; Ren, S.; and Sun, J. 2016b. Identity Mappings in Deep Residual Networks. In European Conference on Computer Vision (ECCV) , 630–645. Hendrycks, D.; Basart, S.; Mazeika, M.; Zou, A.; Kwon, J.; Mosta-jabi, M.; Steinhardt, J.; and Song, D. 2022. Scaling Out-of-Distribution Detection for Real-World Settings. In International Conference on Machine Learning (ICML) .Hendrycks, D.; and Gimpel, K. 2017. A Baseline for Detecting Mis-classified and Out-of-Distribution Examples in Neural Networks. In International Conference on Learning Representations (ICLR) .Huang, G.; Liu, Z.; van der Maaten, L.; and Weinberger, K. Q. 2017. Densely Connected Convolutional Networks. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 4700–4708. Jelenić, F.; Jukić, J.; Tutek, M.; Puljiz, M.; and Šnajder, J. 2024. Out-of-Distribution Detection by Leveraging Between-Layer Trans-formation Smoothness. In International Conference on Learning Representations (ICLR) .Johnson, W. B.; and Lindenstrauss, J. 1984. Extensions of Lipschitz mappings into a Hilbert space. Contemporary Mathematics , 26: 189–206. Kornblith, S.; Norouzi, M.; Lee, H.; and Hinton, G. 2019. Similar-ity of Neural Network Representations Revisited. In International Conference on Machine Learning (ICML) .Lange, R. D.; Kwok, D.; Matelsky, J.; Wang, X.; Rolnick, D. S.; and Kording, K. P. 2022. Neural Networks as Paths through the Space of Representations. arXiv preprint arXiv:2206.10999 .Lee, K.; Lee, K.; Lee, H.; and Shin, J. 2018. A Simple Unified Framework for Detecting Out-of-Distribution Samples and Adver-sarial Attacks. In Advances in Neural Information Processing Sys-tems (NeurIPS) .Liang, S.; Li, Y.; and Srikant, R. 2018. Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks. In 
+
+International Conference on Learning Representations (ICLR) .Liu, W.; Wang, X.; Owens, J. D.; and Li, Y. 2020. Energy-based Out-of-distribution Detection. In Advances in Neural Information Processing Systems (NeurIPS) .Liu, Z.; Hu, H.; Lin, Y.; Yao, Z.; Xie, Z.; Wei, Y.; Ning, J.; Cao, Y.; Zhang, Z.; Dong, L.; Wei, F.; and Guo, B. 2022a. Swin Trans-former V2: Scaling Up Capacity and Resolution. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) ,12009–12019. Liu, Z.; Lin, Y.; Cao, Y.; Hu, H.; Wei, Y.; Zhang, Z.; Lin, S.; and Guo, B. 2021. Swin Transformer: Hierarchical Vision Transformer Using Shifted Windows. In IEEE/CVF International Conference on Computer Vision (ICCV) , 10012–10022. Liu, Z.; Mao, H.; Wu, C.-Y.; Feichtenhofer, C.; Darrell, T.; and Xie, S. 2022b. A ConvNet for the 2020s. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 11976–11986. M. De la Jara, I.; Rodriguez-Opazo, C.; Marrese-Taylor, E.; and Bravo-Marquez, F. 2023. An empirical study of the effect of video encoders on Temporal Video Grounding. In 2023 IEEE/CVF In-ternational Conference on Computer Vision Workshops (ICCVW) ,2842–2847. M. De la Jara, I.; Rodriguez-Opazo, C.; Teney, D.; Ranasinghe, D.; and Abbasnejad, E. 2025. Mysteries of the Deep: Role of Intermediate Representations in Out-of-Distribution Detection. In 
+
+Advances in Neural Information Processing Systems (NeurIPS) .Ming, Y.; Cai, Z.; Gu, J.; Sun, Y.; Li, W.; and Li, Y. 2022. Delving into Out-of-Distribution Detection with Vision-Language Repre-sentations. In Advances in Neural Information Processing Systems (NeurIPS) .Müller, M.; and Hein, M. 2025. Mahalanobis++: Improving OOD Detection via Feature Normalization. In Proceedings of the 42nd International Conference on Machine Learning , volume 267 of 
+
+Proceedings of Machine Learning Research , 45151–45184. PMLR. Oquab, M.; Darcet, T.; Moutakanni, T.; Vo, H. V.; Szafraniec, M.; Khalidov, V.; Fernandez, P.; Haziza, D.; Massa, F.; El-Nouby, A.; Assran, M.; Ballas, N.; Galuba, W.; Howes, R.; Huang, P.-Y.; Li, S.-W.; Misra, I.; Rabbat, M.; Sharma, V.; Synnaeve, G.; Xu, H.; Jégou, H.; Mairal, J.; Labatut, P.; Joulin, A.; and Bojanowski, P. 2024. DINOv2: Learning Robust Visual Features without Supervision. 
+
+Transactions on Machine Learning Research (TMLR) .Peng, Z.; Dong, L.; Bao, H.; Ye, Q.; and Wei, F. 2022. BEiT v2: Masked Image Modeling with Vector-Quantized Visual Tokenizers. 
+
+arXiv preprint arXiv:2208.06366 .Radford, A.; Kim, J. W.; Hallacy, C.; Ramesh, A.; Goh, G.; Agarwal, S.; Sastry, G.; Askell, A.; Mishkin, P.; Clark, J.; Krueger, G.; and Sutskever, I. 2021. Learning Transferable Visual Models from Natural Language Supervision. In International Conference on Machine Learning (ICML) .Radosavovic, I.; Kosaraju, R. P.; Girshick, R.; He, K.; and Dol-lár, P. 2020. Designing Network Design Spaces. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) ,10428–10436. Raghu, M.; Unterthiner, T.; Kornblith, S.; Zhang, C.; and Doso-vitskiy, A. 2021. Do Vision Transformers See Like Convolutional Neural Networks? In Advances in Neural Information Processing Systems (NeurIPS) , volume 34, 12116–12128. Ren, J.; Fort, S.; Liu, J.; Roy, A. G.; Padhy, S.; and Lakshmi-narayanan, B. 2021. A Simple Fix to Mahalanobis Distance for Improving Near-OOD Detection. arXiv preprint arXiv:2106.09022 .Rodriguez-Opazo, C.; Abbasnejad, E.; Teney, D.; Damirchi, H.; Marrese-Taylor, E.; and van den Hengel, A. 2025. Synergy and Di-versity in CLIP: Enhancing Performance Through Adaptive Back-bone Ensembling. arXiv:2405.17139. Shapley, L. S. 1953. A Value for n-Person Games. In Kuhn, H. W.; and Tucker, A. W., eds., Contributions to the Theory of Games II ,307–317. Princeton University Press. Siméoni, O.; Vo, H. V.; Seitzer, M.; Baldassarre, F.; Oquab, M.; et al. 2025. DINOv3. arXiv preprint arXiv:2508.10104 .Steiner, A.; Kolesnikov, A.; Zhai, X.; Wightman, R.; Uszkoreit, J.; and Beyer, L. 2022. How to Train Your ViT? Data, Augmenta-tion, and Regularization in Vision Transformers. Transactions on Machine Learning Research (TMLR) .Sun, Y.; Guo, C.; and Li, Y. 2021. ReAct: Out-of-distribution Detec-tion with Rectified Activations. In Advances in Neural Information Processing Systems (NeurIPS) .Sun, Y.; Ming, Y.; Zhu, X.; and Li, Y. 2022. Out-of-Distribution De-tection with Deep Nearest Neighbors. In International Conference on Machine Learning (ICML) .Tan, M.; and Le, Q. V. 2021. EfficientNetV2: Smaller Models and Faster Training. In International Conference on Machine Learning (ICML) , 10096–10106. Touvron, H.; Cord, M.; and Jégou, H. 2022. DeiT III: Revenge of the ViT. In European Conference on Computer Vision (ECCV) ,516–533. Tschannen, M.; Gritsenko, A.; Wang, X.; Naeem, M. F.; Alab-dulmohsin, I.; Parthasarathy, N.; Evans, T.; Beyer, L.; Xia, Y.; Mustafa, B.; Hénaff, O.; Harmsen, J.; Steiner, A.; and Zhai, X. 2025. SigLIP 2: Multilingual Vision–Language Encoders with Im-proved Semantic Understanding, Localization, and Dense Features. 
+
+arXiv preprint arXiv:2502.14786 .Uselis, A.; and Oh, S. J. 2025. Intermediate Layer Classifiers for OOD Generalization. arXiv preprint arXiv:2504.05461 .Wang, H.; Li, Z.; Feng, L.; and Zhang, W. 2022. ViM: Out-Of-Distribution with Virtual-logit Matching. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Wei, T.; Wang, B.-L.; Shi, J.-X.; Li, Y.-F.; and Zhang, M.-L. 2025. X-Mahalanobis: Transformer Feature Mixing for Reliable OOD Detection. In Advances in Neural Information Processing Systems (NeurIPS) .Woo, S.; Debnath, S.; Hu, R.; Chen, X.; Liu, Z.; Kweon, I. S.; and Xie, S. 2023. ConvNeXt V2: Co-Designing and Scaling ConvNets with Masked Autoencoders. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 16133–16142. Yang, J.; Wang, P.; Zou, D.; Zhou, Z.; Ding, K.; Peng, W.; Wang, H.; Chen, G.; Li, B.; Sun, Y.; Du, X.; Zhou, K.; Zhang, W.; Hendrycks, D.; Li, Y.; and Liu, Z. 2022. OpenOOD: Benchmarking Generalized Out-of-Distribution Detection. In Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchmarks Track .Yosinski, J.; Clune, J.; Bengio, Y.; and Lipson, H. 2014. How Transferable Are Features in Deep Neural Networks? In Advances in Neural Information Processing Systems (NeurIPS) , volume 27. Zagoruyko, S.; and Komodakis, N. 2016. Wide Residual Networks. In British Machine Vision Conference (BMVC) , 87.1–87.12. Zeiler, M. D.; and Fergus, R. 2014. Visualizing and Understanding Convolutional Networks. In European Conference on Computer Vision (ECCV) , 818–833. Zhang, J.; Yang, J.; Wang, P.; Wang, H.; Lin, Y.; Zhang, H.; Sun, Y.; Du, X.; Zhou, K.; Zhang, W.; Li, Y.; Liu, Z.; Chen, Y.; and Li, H. 2024. OpenOOD v1.5: Enhanced Benchmark for Out-of-Distribution Detection. Journal of Data-centric Ma-chine Learning Research (DMLR) . Accepted Nov. 2024; preprint arXiv:2306.09301. A Appendix Roadmap 
+
+The appendix follows the paper’s evidence chain and remains in the AAAI two-column format throughout. Section links below separate empirical audits from reproduction details while keeping the order of the main claims. 
+
+Scope and extensions. Appendix B defines the validated global-readout scope and develops local patch and spatial trajec-tories as a complementary future extension. 
+
+Models and reproduction. Appendix C lists every frozen checkpoint by exact timm /Hugging Face identifier. Appendix D maps every recognition, distribution-shift, and OOD dataset to the visual family and evaluation role it represents. Appendix E gives learning rates, optimizers, splits, seeds, stopping, calibration, and ID-only selection. Appendix G gives executable pseudocode and a fresh per-architecture latency/memory audit. Appendix I fixes met-rics, uncertainty, recognition controls, qualitative layer examples, architecture-wise layer attributions, the dataset-conditioned depth audit, hardware, and result provenance. 
+
+Formal scope. Appendix F collects the minimal information, geometry, and class-scatter identities needed by the paper. Each consequence is paired with an existing empirical control, and the section explicitly separates what the identities permit from what the experiments establish. 
+
+Mechanism and ablations. Appendix J reports every paired, shuffled-identity, history, and layer-gap control behind Fig. 3. Ap-pendix L compares raw, globally centred, final-state-only, and class-route residual coordinates, then varies transition context, CNN/Swin stage alignment, predictor family, and prediction direc-tion. Appendix M separates native-block movement from relational rewrite, and Appendix N tests whether depth profiles recur across model scale and evaluation dataset. 
+
+Reliability evidence. Appendix H holds the Mahalanobis++ base and the fusion rule fixed and varies only the added score, com-paring path surprise against Relative Mahalanobis, X-Mahalanobis, and random noise, then adding Relative Mahalanobis and path sur-prise in both orders. Appendices K and O contain every held-out natural-domain and synthetic-corruption result. Finally, Appendix P moves from a layer-wise view of ID/near/far neighbourhoods to the exhaustive gain distribution and complete checkpoint-level AU-ROC/FPR95 tables. 
+
+Suggested reading paths. For mechanism verification: for-mal scope → continuity → complementarity → architecture breadth → shifted classification → complete OOD results. For reproduction: checkpoint inventory → dataset family map → optimization setup → deployment cost → protocol and provenance. 
+
+## B Scope, Limitations, and Future Directions 
+
+A deliberate global scope. The experiments retain one image-level vector at each selected depth. For token-based encoders this is the checkpoint’s native global readout— usually the cls token, and a mean- or attention-pooled read-out when the model does not use one. Hierarchical Trans-formers and CNNs contribute globally pooled stage features. This is a useful common abstraction for the two tasks stud-ied here: both OOD detection and classification require an image-level decision, and the same readout can be evaluated 
+
+Section index 
+
+App. Question answered 
+
+A How is the evidence organised? B What does the global study establish, and how can local paths extend it? C Which 42 checkpoints are evaluated? D Which datasets and visual or shift families are evalu-ated? E How are fitting, selection, and calibration separated? F Why can a path matter, and what does the formalism not prove? G What are the exact test-time rules and deployment costs? H Does the gain come from trajectory information or from adding any second score? I Which metrics, controls, and layer-wise recognition audits are used? J Is continuity sample-specific across identity, history, and gap? K Does classification transfer across natural domains? L Which representation, context, map, and predictor choices matter? M Is coordinate movement distinct from relational rewrite? N Do schedules recur across scale, datasets, and inter-ventions? O What happens under every CIFAR-100-C corruption? P Where are the complete checkpoint-level MSP, kNN, and Mahalanobis-family results? 
+
+across diverse architectures. It also enables the low-overhead implementation in Appendix G. The broad gains in the pa-per therefore establish that global computation paths already contain useful complementary evidence. 
+
+Local features offer complementary resolution. Patch tokens and spatial feature maps retain where evidence oc-curs, so their trajectories could complement the global route when a texture, object part, background region, or anomaly is spatially concentrated. A local path could pool per-location surprise for image-level OOD detection while also produc-ing a spatial anomaly map. The gains on visually disruptive shifts motivate this extension and the focused question of whether its largest additional benefit occurs for near OOD, localized corruptions, or dense anomaly localization. 
+
+An architecture-aware extension. Local trajectories pose an architecture-aware correspondence problem: patch mix-ing, shifted windows, downsampling, and resolution changes prevent naive index matching across depth, favoring token matching, learned transport, or coordinate-free neighbour-hood changes over raw subtraction. A matched extension should compare global-only, local-only, and joint scores against an equal-capacity local final-representation control, and report localization, image-level accuracy, latency, and memory. Local states arise in the same backbone pass; re-taining and scoring them, rather than immediately pooling, is the additional cost to measure. Validated scope with a clear extension. Global image-level paths already improve both tasks across architectures, so the conclusions do not depend on local features. Lo-cal trajectories are the complementary next step: they add spatial resolution while testing the same matched-control question— whether the route contributes beyond the final representation. 
+
+Table B1: Validated global scope and complementary lo-cal extension. The same matched-control principle carries from image-level to spatial paths.            
+
+> Axis Global path (this work) Local extension
+> Readout One global vector per depth Patch tokens or spatial feature maps Evidence Image-level route typicality Spatially concentrated route ev-idence Output Image score or class prediction Image score plus anomaly map Alignment Native vector or stage projec-tion Token matching across mixing and resolution changes Key control Matched global final represen-tation Matched local final representa-tion Cost Measured low overhead after pooling One-pass maps plus local scor-ing to be benchmarked
+
+## C Frozen Model Inventory 
+
+The empirical grid is intentionally broader than the represen-tative models in the main figures. Table C1 gives the exact identifier needed to resolve every checkpoint and marks the four ImageNet-only additions. 
+
+Coverage logic. The 38 unstarred checkpoints form the protocol-matched grid used for balanced counts. Four starred foundation encoders add current self-supervised and vision– language coverage on ImageNet without silently chang-ing the common denominator. The inventory spans 14 plain or masked-image ViTs, four hierarchical Transformers, two self-supervised encoders, 17 CNNs, and five vision– language encoders. Each row is one public checkpoint, not a training seed or an architecture-level replicate. 
+
+Native readouts. Plain, self-supervised, and vision– language Transformers expose every native vision block. Swin and CNN checkpoints expose stage outputs after global average pooling. A seed-0 Gaussian projection maps each stage to the largest stage width before per-stage ℓ2 normal-isation; this makes the predictor dimensionally compatible but does not assert that native stage coordinates are geomet-rically identical. 
+
+Identifier policy. Names are recorded exactly as resolved by timm or Hugging Face so the evaluation set can be re-constructed without guessing a recipe, pretraining corpus, image resolution, or fine-tuning variant. Cross-family con-clusions are therefore checkpoint evidence; controlled archi-tecture claims are reserved for the matched breadth audits in Appendix N. Table C1: Frozen vision models (42 checkpoints). Exact timm / Hugging Face identifiers; unstarred models form the balanced 38-model grid and ∗ marks four ImageNet-only additions.     
+
+> Exact timm / Hugging Face identifier Plain and masked-image ViTs (14)
+> beit_base_patch16_224.in22k_ft_in22k_in1k beit_large_patch16_224.in22k_ft_in22k_in1k beitv2_base_patch16_224.in1k_ft_in22k_in1k deit3_base_patch16_224.fb_in1k deit3_base_patch16_224.fb_in22k_ft_in1k deit3_large_patch16_224.fb_in1k deit3_small_patch16_224.fb_in1k eva02_base_patch14_224.mim_in22k vit_base_patch16_224.mae vit_base_patch16_224.augreg_in21k_ft_in1k vit_base_patch16_224.augreg_in1k vit_base_patch32_224.augreg_in21k_ft_in1k vit_large_patch16_224.augreg_in21k_ft_in1k vit_small_patch16_224.augreg_in21k_ft_in1k
+> Hierarchical Transformers (4)
+> swin_base_patch4_window7_224.ms_in22k_ft_in1k swinv2_base_window16_256.ms_in1k swinv2_base_window12to16_192to256.ms_in22k_ft_in1k swinv2_tiny_window16_256.ms_in1k
+> Self-supervised foundation encoders (2)
+> vit_base_patch14_dinov2.lvd142m facebook/dinov3-vitb16-pretrain-lvd1689m ∗
+> Exact timm / Hugging Face identifier Convolutional encoders (17)
+> convnext_base.fb_in1k convnext_base.fb_in22k_ft_in1k convnext_large.fb_in1k convnext_tiny.fb_in1k convnextv2_base.fcmae_ft_in1k convnextv2_base.fcmae_ft_in22k_in1k convnextv2_tiny.fcmae_ft_in1k densenet121.ra_in1k tf_efficientnetv2_l.in21k_ft_in1k tf_efficientnetv2_m.in21k_ft_in1k tf_efficientnetv2_s.in21k_ft_in1k regnety_040.pycls_in1k resnet101.a1h_in1k resnet152.a1h_in1k resnet50.a1_in1k resnetv2_50.a1h_in1k wide_resnet50_2.racm_in1k
+> Vision–language encoders (5)
+> vit_large_patch14_clip_224.openai vit_base_patch16_clip_224.openai openai/clip-vit-base-patch16 ∗
+> PE-Core-B16-224 ∗
+> google/siglip2-base-patch16-512 ∗
+
+Architecture sources. Plain and masked-image Vision Transformers include ViT (Dosovitskiy et al. 2021) (including the AugReg training recipe (Steiner et al. 2022)), MAE (He et al. 2022), BEiT/BEiT-v2 (Bao et al. 2022; Peng et al. 2022), DeiT III (Touvron, Cord, and Jégou 2022), and EVA-02 (Fang et al. 2023). Hierarchical Transformers comprise Swin/Swin V2 (Liu et al. 2021, 2022a). Convolutional architectures include ResNet, ResNet V2, and WideResNet (He et al. 2016a,b; Zagoruyko and Komodakis 2016), DenseNet (Huang et al. 2017), EfficientNet V2 (Tan and Le 2021), RegNet (Radosavovic et al. 2020), and ConvNeXt/ConvNeXt V2 (Liu et al. 2022b; Woo et al. 2023). Foundation encoders include DINOv2/DINOv3 (Oquab et al. 2024; Siméoni et al. 2025), CLIP (Radford et al. 2021), Perception Encoder (PE-Core) (Bolya et al. 2025), and SigLIP 2 (Tschannen et al. 2025). 
+
+D Datasets and Evaluation Families 
+
+The suite is heterogeneous by design. Table D1 names the visual or shift family contributed by each dataset, rather than treating all accuracy or OOD benchmarks as interchangeable. A dataset may legitimately serve more than one role: DTD tests clean texture recognition and also supplies an ImageNet far-OOD texture shift, while CIFAR-10 and CIFAR-100 exchange ID and near-OOD roles. Near/far assignments follow the OpenOOD v1.5 protocol (Yang et al. 2022; Zhang et al. 2024); “family” describes the intended evaluation axis, not a claim that it is the only factor present in the images. 
+
+Table D1: Datasets and the evaluation families they represent. The recognition rows cover all 12 clean datasets; the remaining rows make the natural-shift, synthetic-shift, and OpenOOD roles explicit. 
+
+Evaluation role Datasets / prescribed splits Family represented and diagnostic purpose Clean recognition 
+
+Broad object categories CIFAR-10, CIFAR-100, Caltech-101 Coarse-to-medium-grained natural objects; tests general class transfer across label-set size. Fine-grained objects CUB-200, Stanford Cars, Oxford-IIIT Pets, Flowers-102, FGVC-Aircraft Subordinate categories with shared global shape; stresses transient part, texture, and attribute cues. Appearance-centric labels DTD, Food-101 Texture/material attributes and visually defined food categories; tests local appearance evidence. Scenes and environment SUN397, EuroSAT Scene layout and remote-sensing land use; extends beyond centred object recognition. 
+
+Label-preserving distribution shift 
+
+Natural domain shift PACS; Office-Home Photo/art/cartoon/sketch and art/clipart/product/real-domain changes with the class vocabulary fixed. Synthetic corruption CIFAR-100-C Six matched corruption types across noise, blur, weather, and digital families at five severities; labels remain fixed. 
+
+OpenOOD detection 
+
+ID benchmarks MNIST; CIFAR-10; CIFAR-100; ImageNet-200; ImageNet-1K Digits, coarse objects, and medium/full-scale object taxonomies; tests scale and semantic granularity. CIFAR near OOD Other CIFAR dataset; Tiny ImageNet Semantically adjacent natural objects and a broader small-image object vocabulary. CIFAR far OOD MNIST, SVHN, Textures, Places365 Digits, street numbers, texture, and scenes; changes visual statistics and semantic destination. MNIST near / far OOD notMNIST, FashionMNIST / Textures, CIFAR-10, Tiny Ima-geNet, Places365 Glyph/apparel neighbours versus natural-image, texture, object, and scene shifts. ImageNet near OOD SSB-hard, NINCO Semantically difficult or natural-object novelty close to the ImageNet sup-port. ImageNet far OOD iNaturalist, DTD, OpenImage-O Fine-grained species, texture/style, and novel-object families; the same five splits are used for ImageNet-200 and ImageNet-1K. 
+
+Table D2: Complete learned-component setup. “Selection” always means held-out ID or source validation; no OOD, corrup-tion, or target-domain sample chooses a hyperparameter. 
+
+Component Training configuration Selection 
+
+Path-surprise MLP AdamW; lr 3×10 −4; wd 10 −5; 80 epochs; batch 512; hidden 1024 fixed recipe; seeds 0, 1, 2 Recognition probes AdamW; lr 3×10 −3; wd grid 10 −4, 10 −3, 10 −2, 10 −1; at most 90 epochs; batch 2048; patience 10 inner source split; seeds 0, 1, 2 Direction screen AdamW; lr 3×10 −4; wd 10 −4; at most 22 epochs; batch 512; patience 5 ID validation only Continuity controls Closed-form ridge regression, λ = 1 ; one shared 64-D projection held-out ID rows Temperatures / fusion Bounded scalar and L-BFGS-B solves; weights [0 , 3] ; gate quantiles .10, .20, .35, .50, .75, 1 disjoint fusion validation 
+
+## E Optimization and Calibration Setup 
+
+No encoder is trained. Every checkpoint in Table C1 re-mains frozen. Learning is restricted to small transition pre-dictors and linear recognition probes on cached features. Final state densities, class means, covariance estimates, stan-dardisation, and score residualisation are fitted in closed form. Thus a “training epoch” below never updates a public vision backbone. 
+
+Path-surprise predictor. For each transition, the predictor is a two-hidden-layer MLP with GELU activations and a learned depth embedding. It predicts the next class-residual state by mean-squared error. For component d at transition 
+
+l, the reported σ2 
+
+> l,d
+
+is exactly the mean squared prediction residual on ID fitting data plus 10 −6. The score divides by this quantity, sums across dimensions and transitions, and is added at the globally fixed weight 0.3 after ID-only linear residualisation against the baseline detector. Score evaluation uses batches of 256. 
+
+Support and calibration sizes. The manifests use separate fit/calibration examples per class. MNIST uses 1000 /300 ,CIFAR-100 uses 200 /30 , and the ImageNet benchmarks use 
+
+50 /30 . CIFAR-10 uses 1000 /300 except for the four IN21k-fine-tuned rows (DeiT3-B, ConvNeXt-B, ConvNeXtV2-B, and SwinV2-B), whose original matched manifests use 
+
+2000 /300 . Every comparison holds this support fixed be-tween the final representation and +path arms. Three in-dependently sampled seeds are reported. The recognition branch standardises each probe input using probe-training rows, selects weight decay and stopping epoch on an inner split, refits on the full probe pool, and reserves a disjoint split for temperatures, non-negative weights, candidate depth sets, and the final-state margin gate. Five-fold out-of-fold selec-tion is used when choosing residual-probe ensembles. With the training and selection protocol fixed, Appendix F states the minimal formal conditions under which the path can matter and the controls required to support each inter-pretation. 
+
+## F Why Intermediate Paths Can Matter 
+
+Purpose and status. This section records only the for-mal consequences needed to interpret the paper’s empirical claims. They are standard information and second-moment identities, not a claim of a new learning theory. They estab-lish when a recorded path can complement a final represen-tation and which stronger interpretations require additional controls; they do not guarantee that the finite predictor in Section 4.1 will recover the available signal. 
+
+F.1 Information can be retained, not created 
+
+Let R = ( Z1, . . . , Z L−1) denote the recorded intermediate states and E = ZL the final state. Equation 5 decomposes the joint ID–OOD divergence into final-state divergence and a non-negative conditional-route term. The same observation has an operational form. Because E is a projection of (R, E ),
+
+TV( PR,E , Q R,E ) ≥ TV( PE , Q E ), R∗ 
+
+> R,E
+
+≤ R ∗ 
+
+> E
+
+,
+
+(10) where R∗ is the equal-prior Bayes OOD error. An optimal rule with the path available cannot be less informative than one restricted to the final state. A learned high-dimensional rule can still be worse because of finite support, misspecifi-cation, or optimization; this is why all reported comparisons use held-out data and a matched final-state control. The path does not manufacture divergence. A frozen feed-forward network is deterministic, so data processing gives 
+
+DKL (PZl+1 ∥QZl+1 ) ≤ DKL (PZl ∥QZl ). (11) Moreover, if recording begins at Zk, the deterministic path 
+
+Zk:L contains Zk itself and therefore preserves its diver-gence: DKL (PZk:L ∥QZk:L ) = DKL (PZk ∥QZk ) under the usual absolute-continuity and measurability conditions. In-termediate states may retain evidence that later blocks com-press; they cannot create evidence absent from the earlier state. 
+
+F.2 State access is not order information 
+
+Let T = ( Z1, . . . , Z L) be the ordered path and let B = b(T )
+
+be a permutation-invariant bag containing the same states. For a class or domain variable A, because B is a deterministic function of T ,
+
+I(A; T ) = I(A; B) + I(A; T | B). (12) The last term is the information attributable specifically to or-der. A fixed global layer permutation is invertible and hence does not remove it. Thus the paper’s fixed-permutation result rules out sensitivity to the literal forward index, but it can-not establish that an ordered predictor beats the same states given to a capacity-matched set encoder. Identity shuffling answers a different question: it destroys same-image continu-ity while preserving layer marginals. These distinctions jus-tify the deliberately narrower “cross-depth continuity” claim in Section 4.2. 
+
+F.3 Movement, innovation, and class separation 
+
+For a common-coordinate block update Ul = Zl+1 − Zl, de-fine Ml(Y ) = E[Ul | Y ] and Vl = Ul − Ml(Y ). Conditional expectation is an orthogonal projection in L2, so 
+
+E∥Ul∥2 = E∥Ml(Y )∥2 + E∥Vl∥2. (13) This is the population squared-energy version of the class-transport and innovation decomposition in Equation 4. It is exact for RMS energy, not for a mean unsquared norm, and it requires aligned coordinates; the paper switches to relational measurements at width-changing transitions. Movement still need not reorganize the sample geometry. If the rows of H ∈ Rn×d are centered sample states, U is the centered update, and K = HH ⊤, then 
+
+K+ − K = HU ⊤ + U H ⊤ + U U ⊤. (14) The cross terms depend on update orientation, not only on ∥U ∥F . For example, H+ = HR with R⊤R = I can move every coordinate while leaving K and linear CKA unchanged. This is the exact reason movement and CKA deformation are reported separately in Appendix M. Nor does a large update necessarily improve classification. Let SB and SW be between- and within-class scatter, ac =
+
+μc − μ, bc = E[U | c] − EU , X = Z − μY , and V =
+
+U − E[U | Y ]. The trace changes are 
+
+∆B = 2 X
+
+> c
+
+πc⟨ac, b c⟩ + X
+
+> c
+
+πc∥bc∥2,
+
+∆W = 2 E⟨X, V ⟩ + E∥V ∥2. (15) Consequently, the Fisher trace ratio J = tr( SB )/ tr( SW ) in-creases exactly when ∆B / tr( SB ) > ∆W / tr( SW ). Class-differential transport must build between-class structure faster than sample-specific innovation builds within-class variation. This explains why movement peaks, CKA changes, and linear-probe gains need not coincide. 
+
+F.4 Reverse predictability is not a time arrow 
+
+Predictive asymmetry depends on the representation and predictor family. Let X ∼ N (0 , 1) , Zl = (X, 0) , and 
+
+Zl+1 = ( X, M (X2 − 1)) . The computation is determin-istically forward, yet for affine predictors 
+
+R2 
+
+> l→l+1
+
+= 11 + 2 M 2 , R2 
+
+> l+1 →l
+
+= 1 . (16) The restricted forward predictor cannot represent the quadratic component, whereas the later state contains X ex-actly. Reverse-easier prediction can therefore reflect projec-tion or model restriction rather than causality, irreversibility, or a learned arrow of time. The multi-family direction audit in Appendix L.4 is interpreted within this boundary. Table F1: Formal consequence to empirical test. Each iden-tity narrows the claim supported by an existing control; none predicts universal gain.                       
+
+> Consequence What it permits Required evidence
+> Conditional KL Route evidence beyond amatched final state Final-state-only versus final-state + path Order identity Information may reside in or-dering Capacity-matched unordered-state control Gram update Movement and relational rewrite can separate CKA plus invariant rotation control Scatter update Updates help only if relative separation grows Layer probes and class-wise depth profiles Restricted R2Reverse prediction need not imply reverse computation Predictor-family and direction audit
+
+The section therefore supports a limited but sufficient con-clusion: recording intermediate states can expose evidence unavailable to a final-state rule, while the usefulness, or-dering, and recoverability of that evidence remain empirical properties of each architecture, task, and shift. 
+
+## G Deployment Cost and Algorithm Summary 
+
+Measurement boundary. Table G1 is a fresh audit of the method in Equations 6–7, not the older recurrent prototype used during development. Both arms execute the check-point’s ordinary head in one frozen-backbone pass from an already resident CUDA image tensor. The path arm imme-diately pools each selected block/stage output, so token and spatial maps are never retained. It then performs the seed-0 common-width stage map, 1,000-class route assignment, and the current two-hidden-layer, width-1024 MLP score in FP32; backbone inference uses FP16 autocast. Image decod-ing and CPU preprocessing are excluded. Table G1: Current-method deployment cost. Batch-1 base-line → baseline + path on one RTX 4090. Bold latency incre-ments are absolute ms/image; memory increments are MiB.                                              
+
+> Backbone States Latency (ms/img) Peak (MiB)
+> CLIP-B 12 ×768 1.49 →1.78 (+ 0.29 )348 .1→399 .9 (+51 .8)
+> DeiT3-B 12 ×768 1.56 →1.89 (+ 0.33 )349 .7→401 .6 (+51 .8)
+> ViT-B AugReg 12 ×768 1.50 →1.80 (+ 0.30 )349 .7→401 .5 (+51 .8)
+> Swin-B 4×1024 5.30 →5.61 (+ 0.31 )368 .8→404 .5 (+35 .6)
+> ConvNeXt-B 4×1024 3.10 →3.45 (+ 0.35 )360 .5→396 .3 (+35 .8)
+> ResNet-50 4×2048 1.56 →1.93 (+ 0.36 )119 .3→201 .5 (+82 .3)
+
+Latency is the median of seven groups of 50 it-erations after 20 warm-up iterations. Peak allocation is torch.cuda.max_memory_allocated and in-cludes the resident checkpoint plus all path-only pa-rameters, class-route statistics, error scales, and stage maps. The absolute latency increment is narrowly con-centrated at 0.29 –0.36 ms/image, with 35 .6–82 .3 MiB additional peak allocation across the six representatives. The corresponding percentage depends strongly on back-bone speed, so Table G1 reports added time directly rather than a denominator-sensitive ratio. Swin-B’s four-stage trajectory adds 0.31 ms/image; ResNet-50 pays the largest memory increment because its common stage width is 2,048. Script 219_benchmark_current_path.py 
+
+and deployment_cost_current_path.json con-tain the exact checkpoints, software versions, raw timing groups, and measurement settings. 
+
+Algorithm 1 Test-time path evidence with ID-fitted compo-nents 
+
+Require: States z1: L; class paths μc
+
+> 1: L
+
+; predictors fl; error scales bσ2 
+
+> l
+
+; final score S0
+
+1: bc ← arg min c∥zL − μcL∥22
+
+2: for l = 1 , . . . , L do 
+
+3: rl ← zl − μbcl
+
+4: end for 
+
+5: D ← P
+
+> l,d
+
+(rl+1 ,d − fl(rl)d)2/bσ2
+
+> l,d
+
+6: OOD: S ← z(S0) + 0 .3 [ z(D) − a z (S0) − b]
+
+7: Recognition: qpath ← P 
+
+> l
+
+wlql(y | zl+1 − zl)
+
+8: qfuse ← (1 − α)qL + αq path using the fitted gate 
+
+9: return S for OOD, or qfuse for recognition Algorithm 1 omits fitting for compactness: every displayed component is learned, standardised, residualised, or selected on ID/source data under Appendix E; no test OOD, corrup-tion, or target-domain sample enters that process. 
+
+## H Complementarity Controls 
+
+We test whether the gain comes from trajectory information rather than from adding an arbitrary second score. We keep Mahalanobis++, the ID-only calibration, the decorrelated fu-sion rule, and the fixed weight 0.3 unchanged, and vary only the added score. The expanded audit covers 12 checkpoints on CIFAR-10 and ImageNet-200, using three seeds and all prescribed OOD splits. Table H1: Expanded partner control from Mahalanobis++. Mean FPR95 reduction from adding each score to the same base; positive values are better. “Improved” counts checkpoint–benchmark cells with lower FPR95.                                 
+
+> CIFAR-10 ImageNet-200 Overall Added score ∆FPR95 Improved ∆FPR95 Improved ∆FPR95 Improved
+> Path surprise +4.75 12/12 +2.05 10/12 +3.40 22/24
+> Relative Mahalanobis +3.71 12/12 +2.54 10/12 +3.12 22/24 X-Mahalanobis +2.10 11/12 +0.82 10/12 +1.46 21/24 Random noise −0.51 0/12 −1.07 0/12 −0.79 0/24
+
+Table H2: Expanded sequential complementarity. Relative Mahalanobis and path surprise are added in both orders to the same Mahalanobis++ base. “First” and “second” are the reductions contributed at each step; “total” is the reduction after both additions.                                           
+
+> Addition order Benchmark First First improved Second Second improved Total
+> Relative Maha →path CIFAR-10 +3.70 12/12 +3.32 11/12 +7.03
+> ImageNet-200 +2.54 10/12 +2.11 10/12 +4.65
+> Overall +3.12 22/24 +2.71 21/24 +5.84
+> Path →Relative Maha CIFAR-10 +4.75 12/12 +2.27 12/12 +7.03
+> ImageNet-200 +2.04 10/12 +2.62 10/12 +4.66
+> Overall +3.40 22/24 +2.45 22/24 +5.84
+
+Path surprise produces the largest direct reduction, low-ering mean FPR95 by 3.40 points and improving 22/24 cells. Relative Mahalanobis reaches the same coverage with a slightly smaller 3.12 -point reduction. X-Mahalanobis also helps broadly, but its 1.46 -point reduction is less than half the path gain. Random noise improves no cell and worsens both benchmarks, ruling out the combination rule itself as the source of improvement. The sequential control provides the stronger complemen-tarity test. After Relative Mahalanobis reduces FPR95 by 
+
+3.12 points, path surprise contributes another 2.71 points and improves 21/24 cells. In the reverse order, path sur-prise contributes 3.40 points before Relative Mahalanobis adds another 2.45 points in 22/24 cells. Both orders reach the same 5.84 -point total reduction, showing that final-representation distance and trajectory surprise provide com-plementary rather than interchangeable evidence. Having established score complementarity, Appendix I reports the complete per-dataset OOD results and matched trajectory controls. 
+
+## I Experimental Protocol and Result Provenance 
+
+I.1 Evaluation and uncertainty 
+
+Appendix E gives the complete data-separation and opti-mizer protocol. Path-paired OOD scores and fitted MSP/kNN references average the prescribed OOD splits and three ID-support seeds; native-head MSP is deterministic. AU-ROC and FPR95 are percentages; larger anomaly scores in-dicate OOD, and positive ∆FPR95 means FPR95 final −
+
+FPR95 path > 0. Recognition gains are top-1 percentage-point changes from the final state probe, while ∆ctl addi-tionally subtracts a separately seeded final state ensemble. CIFAR-100-C intervals resample the 15 corruption fami-lies 20,000 times after averaging severities and probe seeds within a family, rather than treating individual images as independent. 
+
+I.2 Recognition controls 
+
+The final-representation ensemble repeats the final-state probe with an independent optimisation seed and fuses it through the same validation protocol. State probes use zl;native-update probes use zl+1 − zl only where coordinates are compatible. Comparing these branches separates generic ensembling, access to intermediate states, and the resid-ual/update parameterisation. For corruption experiments, clean model selection is frozen before loading any corrupted images. For PACS and Office-Home, source-domain splits are recreated inside each held-out-domain fold so that the target domain cannot influence the gate. 
+
+I.3 What becomes readable across depth? 
+
+Aggregate accuracy does not show how class evidence changes for one image. Figure I1 therefore follows six real DTD test images through DeiT3-B. DTD is useful for this diagnostic because its labels name visible attributes such as 
+
+gauzy , paisley , and crosshatched . Each column is an inde-pendently trained linear probe on a frozen block output; it reports the predicted texture and the validation-calibrated probability assigned to the true class. The cases expose two behaviours hidden by an aggre-gate score. First, evidence can sharpen across depth: for the crosshatched image, the early spiralled prediction becomes the correct texture after block 6. Second, useful evidence can be compressed or reorganised before the final represen-tation: block 9 decodes the visible attribute correctly even when block 12 and the post-normalisation final represen-tation confuse related textures. The fixed late-output vote recovers these cases by retaining agreement that no single final-state decision exposes. This is a diagnostic of linearly readable class evidence, not a claim that a block reconstructs the depicted concept. 
+
+I.4 Which depths carry classification utility? 
+
+The image cases show what becomes readable in one archi-tecture; they do not compare where architectures store classi-fication evidence. We therefore form an exact Shapley game over native readouts (Shapley 1953). A player is an indepen-dently tuned linear probe on one block or stage, including the final representation. A coalition’s value is the top-1 accuracy of its equally weighted, calibrated-logit vote. One stratified half of the CIFAR-100 fusion-validation set fits temperatures and the other half evaluates every coalition. Enumerating all subsets gives exact marginal contributions without access-ing test predictions or labels. This measures probe-readable utility, not a causal effect of deleting a backbone block. Figure I2 reveals different schedules. CLIP concentrates utility in its last blocks, ViT-B grows gradually, and DeiT3-B forms a late plateau in which several readouts are almost equally useful. The hierarchical models are more concen-trated: SwinV2-B and ConvNeXt-B place nearly all utility in their last two stages. ResNet-50 is similar but retains a smoother rise through the preceding stage. In every family, the penultimate readout remains competitive with the final representation. Thus path fusion is not exploiting one uni-versally privileged depth; it combines multiple late readouts whose class evidence is strong but not identical. 
+
+I.5 Does useful depth move with the dataset? 
+
+The CIFAR-100 attribution isolates architecture, but cannot establish task dependence. Figure I3 therefore retains the complete validation-accuracy profile for every native read-out in all 72 dataset–architecture cells. Unlike a best-layer summary, the curves expose whether class evidence rises smoothly, saturates, forms a broad plateau, or is reorganised near the final representation. No test labels or predictions enter the audit. The central observation is the absence of an architecture-independent curve. CIFAR-10, CIFAR-100, and Caltech-101 mostly improve toward a late plateau, whereas EuroSAT sat-urates by mid-depth for nearly every family and DTD has broad intermediate optima. Food-101 and SUN397 already separate the schedules: supervised Transformers plateau or decline late, while CLIP continues consolidating evidence. The contrast becomes largest on fine-grained recognition. DeiT3-B, ViT-B, and Swin peak around the last quarter on Cars, Flowers-102, and Aircraft, but CLIP gains sharply at its final representation; the CNNs remain dataset-specific. Thus there is no dataset- or architecture-independent “best layer,” monotonic refinement law, or common movement magni-tude. This variability is a feature of the framework rather than a violation of its assumptions. Each checkpoint is analysed in its native depth sequence, and its class-relative route and tran-sition typicality are learned within that model. The method therefore does not require architectures to move alike or even to use comparable coordinates; it can expose and exploit whichever schedule a particular architecture–dataset pair im-plements. 
+
+Different movement is the signal. The framework assumes neither a shared best layer nor monotonic semantic refine-ment. It measures each model in its native sequence, mak-ing architecture-specific plateaus, late jumps, and reorgani-sations directly comparable outcomes rather than confounds. 
+
+I.6 Result provenance 
+
+The complete OOD tables are the numerical source parsed by the balanced summary plot and retain the ImageNet-only rows excluded from its common grid. Clean recognition values are saved per dataset, backbone, representation, and seed. CIFAR-100-C aggregates all 10,000 images within each corruption–severity condition before the corruption-family bootstrap. The paper reports checkpoint-level evidence; it does not treat images or corruption severities as independent runs. Experiments used PyTorch 2.x on Linux, primarily with one 24-GB RTX 4090. Feature extraction dominates com-pute; probes, calibrators, and score combinations operate on cached frozen features. 
+
+## J Path Continuity Controls 
+
+The ID-only controls use a stratified eight-checkpoint sub-set on CIFAR-10 and ImageNet-200. One 64-D projection is shared across depths within a run, and true-class means exclude held-out prediction rows. Linear predictors are eval-uated out of sample. Identity shuffling permutes the source state across images while preserving the target layer and its marginal distribution. The history control compares rl with 
+
+(rl−1, r l) on matched rows. Gap experiments use the same protocol for rl → rl+k, k ∈ { 1, 2, 3, 4}. These complete controls support the continuity interpretation of Fig. 3; they are not OOD-accuracy measurements. Table J1: Complete identity-pairing control behind Fig-ure 3. Mean adjacent held-out R2: P uses true image pairs, S fits with shuffled source identities, and ∆ = P − S. Layer marginals are unchanged.                                                        
+
+> Model CIFAR-10 ImageNet-200 PS∆PS∆
+> DeiT3 .772 −.007 +.779 .723 −.010 +.733
+> ViT AugReg .770 −.013 +.783 .717 −.006 +.722
+> BeiT .739 −.012 +.752 .713 −.017 +.730
+> Swin .428 −.011 +.439 .356 −.012 +.368
+> ConvNeXt .417 −.003 +.419 .302 −.014 +.316
+> ResNet .548 −.007 +.555 .440 −.012 +.453
+> CLIP .726 −.012 +.738 .666 −.006 +.672
+> DINOv2 .665 −.005 +.670 .671 −.002 +.673
+
+## K Classification under Natural Domain Shift 
+
+PACS and Office-Home keep the label space fixed while changing visual domain. Every fold trains and validates on source domains only; the six checkpoints exactly match the clean-classification architecture columns. The path branch concatenates source-selected intermediate states (excluding the final state), and the matched control ensembles two inde-pendently seeded final state probes. Input / true class After B3 After B6 After B9 After B12 Final repr. 
+
+(post-norm) Path vote 
+
+> true: gauzy
+> gauzy
+> p(true)=48%
+
+✓
+
+> gauzy
+> p(true)=87%
+
+✓
+
+> gauzy
+> p(true)=89%
+
+✓
+
+> pleated
+> p(true)=31%
+
+×
+
+> pleated
+> p(true)=35%
+
+×
+
+> gauzy
+> p(true)=93%
+
+✓
+
+> true: paisley
+> paisley
+> p(true)=30%
+
+✓
+
+> paisley
+> p(true)=68%
+
+✓
+
+> paisley
+> p(true)=85%
+
+✓
+
+> banded
+> p(true)=22%
+
+×
+
+> banded
+> p(true)=16%
+
+×
+
+> paisley
+> p(true)=93%
+
+✓
+
+> true: pleated
+> gauzy
+> p(true)=23%
+
+×
+
+> pleated
+> p(true)=49%
+
+✓
+
+> pleated
+> p(true)=95%
+
+✓
+
+> gauzy
+> p(true)=25%
+
+×
+
+> gauzy
+> p(true)=23%
+
+×
+
+> pleated
+> p(true)=91%
+
+✓
+
+> true: crosshatched
+> spiralled
+> p(true)=3%
+
+×
+
+> crosshatched
+> p(true)=98%
+
+✓
+
+> crosshatched
+> p(true)=92%
+
+✓
+
+> smeared
+> p(true)=28%
+
+×
+
+> smeared
+> p(true)=32%
+
+×
+
+> crosshatched
+> p(true)=85%
+
+✓
+
+> true: flecked
+> flecked
+> p(true)=45%
+
+✓
+
+> flecked
+> p(true)=79%
+
+✓
+
+> flecked
+> p(true)=92%
+
+✓
+
+> knitted
+> p(true)=18%
+
+×
+
+> knitted
+> p(true)=16%
+
+×
+
+> flecked
+> p(true)=80%
+
+✓
+
+> true: frilly
+> frilly
+> p(true)=60%
+
+✓
+
+> frilly
+> p(true)=97%
+
+✓
+
+> frilly
+> p(true)=96%
+
+✓
+
+> pleated
+> p(true)=25%
+
+×
+
+> pleated
+> p(true)=26%
+
+×
+
+> frilly
+> p(true)=90%
+
+✓Figure I1: Class evidence can peak before the final representation. Cards probe the actual outputs of blocks 3, 6, 9, and 12; green/rose denotes correct/incorrect and bars give calibrated true-class probability. The final representation applies DeiT3’s terminal LayerNorm after block 12, so those columns are distinct but adjacent computations. The path vote averages the four block outputs ranked highest on validation data (blocks 8–11). Shown cases are the highest-margin, distinct-class final-representation errors corrected by that fixed vote; they illustrate the mechanism, while the tables quantify its frequency. Table K1: Matched natural-domain shifts. The same six checkpoints as clean classification. Mean source-only top-1 gain (positive domains/4); ∆ctl subtracts the final-state ensemble gain.                                        
+
+> PACS Office-Home Checkpoint Gain (pos.) ∆ctl Gain (pos.) ∆ctl
+> CLIP-B +0 .16 (2/4) −0.03 −0.05
+> (2/4)
+> −0.34
+> DeiT3-B +5 .47 (4/4) +5 .28 +0 .97 (4/4) +0 .70
+> ViT-B +3 .90 (3/4) +3 .69 +1 .40 (4/4) +1 .28
+> SwinV2-B +2 .99 (3/4) +2 .84 +0 .94 (4/4) +0 .79
+> ConvNeXt-B +3 .84 (4/4) +3 .83 +1 .04 (4/4) +0 .88
+> ResNet-50 +2 .67 (4/4) +2 .44 +0 .69 (4/4) +0 .56
+
+Architecture and domain both matter. DeiT3-B has the largest mean PACS gain, driven especially by Photo, whereas Office-Home improvements are smaller and more uniform. CLIP starts from the strongest final state but is the only architecture with a negative Office-Home mean. Thus headroom alone does not explain the ordering: the path is most useful when the frozen final state has not already ab-sorbed the source-to-target invariances. 
+
+## L Ablations and Design Choices 
+
+We isolate implementation choices on frozen CIFAR-10 fea-tures while retaining the deployed OOD protocol: 1,000 fit and 300 calibration examples per class, seed 0, an 80-epoch transition MLP, Mahalanobis++ as the final state member, and a fixed path weight of 0.3. The deterministic evalua-tion screen contains 5,000 ID examples and at most 3,000 examples from each of the six OpenOOD splits. These ex-1 3 6 9 F
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+> normalised Shapley value
+> (% of classification utility)
+
+CLIP ViT-B 
+
+1 3 6 9 F
+
+DeiT3-B 
+
+1 3 6 9 F
+
+ViT-B 
+
+1 2 3 F
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+> normalised Shapley value
+> (% of classification utility)
+
+SwinV2-B 
+
+1 2 3 F
+
+ConvNeXt-B 
+
+1 2 3 4 F
+
+ResNet-50 
+
+native block/stage readout (F = final representation) Figure I2: Where is classification evidence readable? Exact Shapley values for CIFAR-100 validation accuracy under the calibrated probe-voting game, normalised to 100% within each architecture. Bars are native block/stage readouts; the outlined hatched bar (F) is the final representation. The decomposition is a held-out decoding audit and is not used to select or evaluate the reported test method. Table K2: Complete natural-domain shift results. Source-only final state → residual-path top-1 accuracy for every held-out domain (three seeds). The last columns give the mean path gain and the gain beyond an independently seeded final state ensemble. 
+
+PACS Photo Art Cartoon Sketch Mean ∆ ∆ctl 
+
+CLIP-B 99 .1 → 99 .8
+
+> ∆ = +0 .62
+
+96 .4 → 96 .1 
+
+> ∆ = −0.24
+
+98 .2 → 97 .7 
+
+> ∆ = −0.44
+
+87 .2 → 87 .9 
+
+> ∆ = +0 .70
+
++0 .16 −0.03 
+
+DeiT3-B 75 .0 → 89 .4
+
+> ∆ = +14 .47
+
+87 .3 → 90 .4
+
+> ∆ = +3 .16
+
+64 .9 → 66 .7
+
+> ∆ = +1 .85
+
+53 .2 → 55 .6 
+
+> ∆ = +2 .40
+
++5 .47 +5 .28 
+
+ViT-B 88 .4 → 96 .0
+
+> ∆ = +7 .58
+
+65 .6 → 69 .2
+
+> ∆ = +3 .68
+
+57 .1 → 62 .3
+
+> ∆ = +5 .25
+
+36 .5 → 35 .6  
+
+> ∆ = −0.89
+
++3 .90 +3 .69 
+
+SwinV2-B 75 .8 → 84 .1
+
+> ∆ = +8 .26
+
+81 .7 → 85 .0
+
+> ∆ = +3 .34
+
+61 .0 → 61 .9
+
+> ∆ = +0 .85
+
+41 .4 → 40 .9  
+
+> ∆ = −0.51
+
++2 .99 +2 .84 
+
+ConvNeXt-B 80 .2 → 87 .8
+
+> ∆ = +7 .62
+
+81 .0 → 84 .1
+
+> ∆ = +3 .11
+
+60 .2 → 63 .5
+
+> ∆ = +3 .36
+
+56 .7 → 58 .0 
+
+> ∆ = +1 .26
+
++3 .84 +3 .83 
+
+ResNet-50 94 .3 → 94 .4
+
+> ∆ = +0 .06
+
+75 .1 → 77 .3
+
+> ∆ = +2 .16
+
+57 .8 → 60 .6
+
+> ∆ = +2 .77
+
+52 .4 → 58 .1 
+
+> ∆ = +5 .68
+
++2 .67 +2 .44 
+
+Office-Home Art Clipart Product Real Mean ∆ ∆ctl 
+
+CLIP-B 80 .5 → 80 .7
+
+> ∆ = +0 .23
+
+69 .1 → 68 .7 
+
+> ∆ = −0.35
+
+90 .0 → 89 .9 
+
+> ∆ = −0.11
+
+89 .2 → 89 .3 
+
+> ∆ = +0 .02
+
+−0.05 −0.34 
+
+DeiT3-B 75 .0 → 76 .2
+
+> ∆ = +1 .11
+
+56 .9 → 57 .7
+
+> ∆ = +0 .78
+
+84 .5 → 85 .1
+
+> ∆ = +0 .63
+
+84 .7 → 86 .1 
+
+> ∆ = +1 .35
+
++0 .97 +0 .70 
+
+ViT-B 64 .7 → 66 .0
+
+> ∆ = +1 .22
+
+48 .6 → 50 .1
+
+> ∆ = +1 .42
+
+79 .6 → 80 .7
+
+> ∆ = +1 .10
+
+79 .5 → 81 .3 
+
+> ∆ = +1 .87
+
++1 .40 +1 .28 
+
+SwinV2-B 74 .8 → 76 .0
+
+> ∆ = +1 .17
+
+55 .3 → 55 .9
+
+> ∆ = +0 .53
+
+84 .9 → 85 .8
+
+> ∆ = +0 .89
+
+85 .4 → 86 .6 
+
+> ∆ = +1 .16
+
++0 .94 +0 .79 
+
+ConvNeXt-B 73 .5 → 74 .4
+
+> ∆ = +0 .96
+
+53 .7 → 54 .5
+
+> ∆ = +0 .76
+
+83 .1 → 84 .2
+
+> ∆ = +1 .17
+
+84 .1 → 85 .4 
+
+> ∆ = +1 .28
+
++1 .04 +0 .88 
+
+ResNet-50 68 .6 → 69 .0
+
+> ∆ = +0 .41
+
+47 .4 → 47 .6
+
+> ∆ = +0 .22
+
+79 .5 → 80 .6
+
+> ∆ = +1 .13
+
+82 .3 → 83 .3 
+
+> ∆ = +1 .01
+
++0 .69 +0 .56 
+
+periments are diagnostic rather than a replacement for the three-seed complete tables. 
+
+L.1 Why class residuals rather than raw activations? 
+
+Table L1 changes only the coordinates supplied to the path member. Raw states retain between-class transport; global 50 
+
+> 75
+
+CIFAR-10 
+
+> 30
+> 60
+
+CIFAR-100  
+
+> 50
+> 75
+> 100
+
+Caltech-101 
+
+> 40
+> 80
+
+Pets 
+
+> 0
+> 30
+> 60
+
+DTD  
+
+> 60
+> 80
+> 100
+
+EuroSAT 
+
+> 30
+> 60
+> 90
+
+Food-101 
+
+> 30
+> 60
+
+SUN397    
+
+> .25 .50 .75 F
+> 30
+> 60
+
+CUB-200    
+
+> .25 .50 .75 F
+> 0
+> 30
+> 60
+
+Cars    
+
+> .25 .50 .75 F
+> 30
+> 60
+> 90
+
+Flowers-102    
+
+> .25 .50 .75 F
+> 20
+> 40
+
+Aircraft       
+
+> linear-probe validation accuracy (%)
+> normalised native depth (points are measured readouts; F = final representation)
+> general texture / scene fine-grained
+> CLIP-B DeiT3-B ViT-B Swin ConvNeXt-B ResNet-50
+
+Figure I3: There is no universal layer-readout trajectory. Validation top-1 accuracy of an independently tuned frozen linear probe at every available native readout for the 12 datasets and six architectures in Table 1. Depth is normalised within each checkpoint; filled markers are intermediate readouts and the open marker F is the final representation. Panels use separately labelled y-scales so both low- and high-accuracy tasks retain their shape. DTD has block-resolved supervised caches; the other hierarchical-model cells use stage readouts. Lines only connect measured points, and no test data are accessed. Table L1: Class-specific route residualization exposes OOD evidence hidden in raw activations (FPR95 ↓). Within each panel, examples, layers, detector recipe, and ID calibration are identical; only the coordinates given to the path detector change. Positive ∆ is the reduction from raw activations. 
+
+> (a) Deployed MLP+Mahalanobis++ screen, CIFAR-10 ID
+
+Path coordinates DeiT3 ConvN RN50 Swin Near Far Mean ∆
+
+Raw states 16.29 22.97 24.74 6.73 25.99 13.53 17.68 —Global-centred 16.12 23.02 24.82 6.80 26.07 13.50 17.69 −0.01 
+
+Final-state residual 15.84 22.84 24.32 6.79 25.75 13.30 17.45 +0 .23 
+
+Class-route residual 15.39 23.12 23.75 6.58 25.25 13.19 17.21 +0.47                             
+
+> (b) Standalone trajectory replication, ImageNet-1K ID Path coordinates DINOv3 DINOv2 CLIP PE SigLIP2 Mean ∆
+> Raw states 43.19 37.38 50.63 53.52 45.97 46.14 —Global-centred 44.75 45.35 54.02 47.63 42.89 46.93 −0.79
+> Class-route residual 30.46 35.72 47.74 41.62 34.99 38.11 +8.03
+
+centring removes one layer mean; final-state-only residual-ization subtracts the assigned class prototype only at the last state; the proposed representation subtracts the assigned class path at every depth. All evaluation assignments use the nearest ID class at the final state—never an evaluation label. Under the deployed MLP+Mahalanobis++ protocol (panel a), the class route has the best architecture-mean AUROC and lowers mean FPR95 from 17 .68 to 17 .21 . Final-state-only subtraction reaches 17 .45 , so approximately half of this reduction requires class conditioning along the inter-mediate route rather than only at its destination. The effect is architecture-dependent: class-route residuals win mean FPR95 on DeiT3, ResNet, and Swin; ConvNeXt is 0.15 
+
+points worse than raw on the six-split mean despite improv-ing near-OOD FPR95 by 1.09 and mean AUROC by 0.25 .Panel b removes the strong final state partner and repeats the representation test with one matched autoregressive-plus-static trajectory detector on five ImageNet foundation en-coders. Class-route residuals win all 5/5 backbones, reducing average FPR95 from 46 .14 to 38 .11 . Global centring instead gives 46 .93 ; all arms are ID-standardised before combina-tion, ruling out generic mean subtraction or score scale as the cause. Residualization does not create information: con-ditional on the selected anchor it is deterministic. It exposes input-specific innovation by removing the dominant class-coherent route, which makes that information easier for a finite-capacity ID predictor and density model to use.  
+
+> What the representation controls rule out. The gain is not caused by evaluation-label access, generic centring, final state class conditioning alone, a single foundation encoder, or the absence of a strong final state detector. Its magnitude varies by architecture, but the independent ImageNet-1K replication shows that the residual advantage is broad.
+
+L.2 How much history does the OOD predictor need? 
+
+Table L2a compares the deployed Markov input rl with 
+
+(rl−1, r l) and with rl plus the mean of every preceding residual. Full-prefix context lowers mean FPR95 for all four checkpoints, but the average reduction is only 0.34 points; the two-state variant is mixed and is worse on ConvNeXt-B. The largest prefix benefit occurs for the 12-block DeiT3 path (0.71 ), whereas the four-stage Swin path changes by only 
+
+0.08 . This is consistent with the current state already carry-ing most earlier computation, while longer paths leave more non-redundant context to aggregate. We retain the current-only member in the main benchmark because it is the simpler fixed design; the stronger prefix result establishes that addi-tional history is a small, consistently positive extension rather than a missing prerequisite. 
+
+L.3 Does the common-width map have to be random? 
+
+Table L2b replaces the seed-0 Gaussian stage map for Con-vNeXt, ResNet, and Swin. Channel interpolation is deter-ministic and lowers mean FPR95 for every checkpoint ( 0.44 
+
+points on average, 1.10 on ResNet-50), so the result cannot be attributed to a fortunate random matrix. Zero-padding is worse for all three models ( 1.46 points on average). A plau-sible explanation is that its stage-dependent inactive coordi-nates expose width changes to the predictor, whereas Gaus-sian and interpolated maps keep every common coordinate active. Because channels from different stages need not be se-mantically aligned, the main protocol keeps the architecture-agnostic Gaussian map; interpolation is a promising deter-ministic alternative. The original pooled stage directions are recovered exactly from the cached Gaussian trajectories using the right in-verse P ⊤ 
+
+> l
+
+(PlP ⊤ 
+
+> l
+
+)−1, then remapped and renormalized. Thus this comparison changes the common-width map without re-extracting images or changing the backbone, examples, final state score, or class anchors. 
+
+L.4 Predictor capacity and direction 
+
+The reverse-prediction advantage is not an artifact of using a weak linear predictor. MLP, gated recurrent, attention, and temporal-convolution models all receive the same projected ID paths and are trained separately in each direction. In-creasing sequence-model capacity changes error magnitude but not the ordering: reverse prediction remains easier in every architecture–benchmark case. The prefix-mean result in Table L2a shows that earlier states contain some additional information, but does not es-tablish that a recurrent or attention-based predictor is nec-essary. We therefore replace the shared depth-conditioned MLP with approximately parameter-matched GRU, LSTM, causal-attention, and causal-TCN predictors. At transition l,these models receive the complete preceding trajectory r1: l;all residuals, data partitions, OOD-score partner, calibration statistics, and fusion coefficients remain unchanged. Model fitting and selection remain ID-only. Figure L2 separates the availability of history from the value of additional sequence-model capacity. No pre-dictor family improves consistently across architectures. ConvNeXt-B benefits from the GRU, LSTM, and causal-attention variants, while ResNet-50 benefits most from causal attention and the TCN. In contrast, every sequence model de-grades DeiT3-B, and the changes for Swin-B are small but consistently negative. These opposing effects largely cancel in the aggregate: the LSTM is effectively tied with the shared MLP, whereas the GRU, causal-attention, and causal-TCN variants are slightly worse on average. The result also clarifies why prediction accuracy and OOD utility should not be conflated. A more expressive model may predict ID transitions differently without producing errors that separate ID from OOD more reliably. The current resid-ual state already summarizes much of the preceding com-putation, and the small benefit of the explicit prefix mean does not translate into a general advantage for learned full-prefix models. We therefore retain the shared MLP: it is simpler, competitive across architectures, and avoids intro-ducing architecture-dependent sequence-model choices. 
+
+L.5 How much should the path count? 
+
+The path weight in Equation 7 was fixed at 0.3 before evalu-ation and held constant across every checkpoint, benchmark, and OOD split reported in this paper. It is not selected per case, per architecture, or per benchmark, and no OOD sample enters the choice. The value is conservative by design. Our claim is that computation paths complement final-state detectors rather than replace them, so the weight was set low enough that the final-state score remains the dominant term and the path acts as a correction to it. A weight chosen to maximise average performance would test a different and weaker claim, since it would make the reported gains partly a property of the tuning procedure rather than of the trajectory signal. Figure L3 audits the choice after the fact. Mean benefit is positive across the entire range [0 .1, 1] , so the reported Table L2: OOD design ablations on CIFAR-10 ID (FPR95 ↓). The final state member, fit/calibration split, whitening, and fixed path weight are unchanged. Positive ∆ is the FPR95 reduction relative to the deployed current-only/Gaussian choice. No OOD sample is used for fitting or selection. 
+
+(a) Residual context supplied to the transition MLP Checkpoint Context Near Far Mean ∆
+
+DeiT3-B current 25.30 10.43 15.39 —two-state 24.70 10.33 15.12 +0 .27 
+
+full prefix 24.85 9.59 14.68 +0.71 
+
+ConvNeXt-B current 26.58 21.39 23.12 —two-state 26.55 21.91 23.46 −0.33 
+
+full prefix 26.25 21.32 22.96 +0.16 
+
+ResNet-50 current 29.58 20.83 23.75 —two-state 29.25 20.37 23.33 +0.42 
+
+full prefix 29.37 20.35 23.36 +0 .39 
+
+Swin-B current 19.52 0.11 6.58 —two-state 19.38 0.06 6.50 +0.08 
+
+full prefix 19.35 0.07 6.50 +0.08 
+
+Architecture mean current 25.25 13.19 17.21 —two-state 24.97 13.17 17.10 +0 .11 
+
+full prefix 24.95 12.83 16.87 +0.34 
+
+(b) Common-width map for variable-width stages Checkpoint Stage map Near Far Mean ∆
+
+ConvNeXt-B Gaussian 26.58 21.39 23.12 —zero-pad 27.22 24.97 25.72 −2.60 
+
+interpolate 25.78 21.48 22.92 +0.21 
+
+ResNet-50 Gaussian 29.58 20.83 23.75 —zero-pad 28.93 21.92 24.26 −0.51 
+
+interpolate 28.78 19.58 22.65 +1.10 
+
+Swin-B Gaussian 19.52 0.11 6.58 —zero-pad 21.85 0.83 7.83 −1.26 
+
+interpolate 19.45 0.13 6.57 +0.01 
+
+Architecture mean Gaussian 25.23 14.11 17.82 —zero-pad 26.00 15.91 19.27 −1.46 
+
+interpolate 24.67 13.73 17.38 +0.44 one-step MLP     
+
+> GRU
+> LSTM
+> causal attention
+> causal TCN
+> −0.150
+> −0.125
+> −0.100
+> −0.075
+> −0.050
+> −0.025
+> 0.000
+> forward  R2 − reverse  R2
+> (positive = forward arrow)
+> Does any architecture recover direction?
+> one-step MLP
+> GRU
+> LSTM
+> causal attention
+> causal TCN
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> 0.45
+> 0.50
+> held-out forward  R2
+> Which model predicts best?
+> 0.2 0.3 0.4 0.5
+> forward R2
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> 0.45
+> 0.50
+> 0.55
+> reverse  R2
+> Same-data comparison
+> CIFAR-10
+> ImageNet-200
+
+More sequence capacity does not reveal a forward time arrow 
+
+Figure L1: More sequence capacity does not reveal a forward time arrow. MLP, GRU, LSTM, causal-attention, and temporal-convolution predictors are trained separately in both directions on the same projected ID paths. Reverse prediction remains easier throughout. conclusions do not depend on the exact value. Benefit also continues to rise past 0.3 and saturates near 0.5, meaning the deployed weight is not the one that maximises mean FPR95 reduction. Two properties motivate keeping it anyway. First, the largest FPR95 increase on any single OOD split grows steadily with w while mean benefit flattens, so higher weights trade tail reliability for little additional average gain. Second, case-to-case dispersion widens in the same direction: the in-terquartile range in panel (a) is substantially broader at w = 1 
+
+than at w = 0 .3, so a larger weight also makes the outcome less predictable for an unseen checkpoint or benchmark. The main results therefore understate what a tuned weight would achieve, which is the intended trade. A single fixed value that transfers across 42 checkpoints and five bench-marks without per-case selection is more useful in deploy-ment than an optimal value that would require OOD data to find. 
+
+L.6 Robustness analyses beyond representation choice 
+
+Appendix J provides complementary analyses of sample identity, temporal context, and prediction horizon. Paired his-tory improves held-out ID prediction in all 16 architecture– dataset combinations, whereas shuffling that history removes the gain. Prediction quality also degrades progressively as GRU LSTM Causal                   
+
+> attention
+> Causal
+> TCN
+> DeiT3-B
+> ConvNeXt-B
+> ResNet-50
+> Swin-B
+> -0.38 -0.13 -0.51 -0.82
+> +0.27 +0.25 +0.18 -0.07
+> +0.03 +0.01 +0.25 +0.17
+> -0.09 -0.03 -0.18 -0.09
+> AChange from MLP (+ = better)
+> −0.8
+> −0.6
+> −0.4
+> −0.2
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Δ FPR95
+> GRU LSTM Causal
+> attention
+> Causal
+> TCN
+> −0.4
+> −0.2
+> 0.0
+> 0.2
+> mean Δ FPR95
+> -0.04
+> +0.03
+> -0.07
+> -0.20
+> BAggregate effect (mean ±s.d.; 3 seeds)
+> Sequence capacity does not consistently improve
+> OOD detection
+
+Figure L2: More sequence capacity does not consistently improve OOD detection. We compare the shared depth-conditioned MLP with approximately parameter-matched GRU, LSTM, causal-attention, and causal-TCN predictors that use the preceding trajectory. Results use CIFAR-10 as ID, six near/far OOD datasets, four backbones, and three seeds. (A) Mean FPR95 change relative to the shared MLP for each architecture; positive values indicate improvement. (B) Aggregate change across backbones, reported as mean ±
+
+standard deviation across seeds. Full-prefix models provide no consistent advantage over the shared MLP. the target is moved one to four layers ahead. These results indicate that the modest OOD improvement obtained from a representation prefix arises from meaningful sample-specific temporal context rather than simply increasing the input di-mensionality. Appendix H further evaluates different final-state partners (Maha++, RelMaha, X-Maha, kNN, and trajectory density) under the same ID-only calibration protocol. Collectively, these analyses examine coordinate alignment, temporal con-text, predictor family, sample identity, transition horizon, and score combination while varying one design component at a time. 
+
+Summary of robustness analyses. Representation choice: Table L1. Context length: Table L2a. Sample identity: Ta-ble L2b and Table J1. Prediction horizon: Fig. L1. Score complementarity: Table H1. 0 0.2 0.3 0.5 0.7 1        
+
+> path weight w
+> 0
+> 5
+> 10
+> 15
+> 20
+> mean FPR95 reduction
+> fixed 0.3
+> 10.1 pts; 15/17
+> aBroad mean benefit
+> 010 20 30
+> worst-split FPR95 increase
+> 0
+> 5
+> 10
+> 15
+> mean FPR95 reduction
+> 0
+> 0.1
+> 0.2 0.3
+> 0.5 0.7
+> 1
+> better
+> bBenefit–risk knee
+
+Figure L3: The fixed path weight is not a tuned parameter. 
+
+The weight w = 0 .3 was fixed a priori; this sweep is a post-hoc audit rather than a selection procedure. (a) Mean FPR95 reduction against w over 17 checkpoint–benchmark cases; the band is the interquartile range. Every w ∈ [0 .1, 1] yields a positive mean reduction. (b) The same sweep against the largest FPR95 increase on any single OOD split. Mean bene-fit saturates while worst-split risk keeps growing, so weights beyond 0.3 buy little average improvement at substantially higher tail cost. 
+
+## M Movement versus Relational Reorganization 
+
+A shared rotation can move every state without changing pairwise relations, while a smaller step can still reorganize neighbourhoods. We therefore report movement and CKA deformation separately in Fig. M1. Across the ten checkpoint–dataset profiles, the median within-profile Spearman association between the two axes is only 0.355 (IQR 0.140 –0.636 ), and two profiles are negative. The exact rotation control shows why this is not a noisy version of one quantity: coherent transport can be large while pairwise geometry is unchanged. Conversely, stage entries can rewrite neighbours without producing the largest vector step. This separation prevents us from interpreting a generic “velocity peak” as a universal semantic event. 
+
+## N Architecture Breadth and Intervention Stability 
+
+The five representative checkpoints establish native every-block behavior; the breadth audit then repeats the analysis for small/base/large DeiT3, Swin, ConvNeXt, and ResNet-50/101/152. A fingerprint concatenates depth-standardised rewrite, final state alignment, prototype accuracy, Fisher sep-aration, and innovation-share profiles. Within-family similar-ity exceeds between-family similarity on CIFAR-10 ( 0.750 
+
+vs. 0.654 , permutation p = 3 .25 × 10 −4) and ImageNet-200 ( 0.785 vs. 0.697 , p = 4 .55 × 10 −4). More decisively, a CIFAR-10 fingerprint retrieves the exact ImageNet-200 checkpoint for 11/12 models; same-checkpoint correlation is 
+
+0.843 versus 0.638 off diagonal. The controlled perturbation screen provides a different test: it asks where a fixed 5% channel perturbation is con-tracted or amplified. The depth response is architecture-specific—ViT-B usually contracts, Swin amplifies toward the end of stage 3, ConvNeXt amplifies strongly in late stage 3 before a stage-4 reset, and ResNet is most sensitive early. Yet one shared update 
+
+for every sample 
+
+large movement 
+
+no relational rewrite       
+
+> centered Gram: G0=G
+> d= 1.22 · r= 0.00
+
+a different update 
+
+for each sample 
+
+smaller movement 
+
+geometry changes       
+
+> centered Gram: G0≠G
+> d= 0.26 · r= 0.26
+
+A Exact counterexample 
+
+> same six inputs · paired arrows show their outputs
+
+0.00 0.25 0.50 0.75 1.00 
+
+movement (profile max) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> relational rewrite  (profile max)
+> 196 blocks nested in
+> 10 model–dataset profiles
+
+B Blocks populate both axes 
+
+−0.4 0.0 0.4 0.8 
+
+within-profile Spearman ρ
+
+DeiT3 
+
+ViT 
+
+Swin 
+
+ConvNeXt 
+
+ResNet 
+
+> med 0.35 · IQR 0.14–0.64
+
+C Coupling varies 
+
+How far features move is not how much their relationships change 
+
+Transport vs. centered-Gram deformation · exact invariance + 196 native blocks in 10 model–dataset profiles 
+
+> Empirical axes are normalized within each checkpoint–dataset profile; dots are descriptive, not independent replicates.
+
+input state CIFAR-10 ImageNet-200 Figure M1: Coordinate movement does not determine relational rewrite. A shared rotation preserves the centered sample Gram matrix despite moving every state, whereas smaller sample-specific updates can rewrite it. Here d is RMS paired-feature displacement and r = √1 − CKA . Native blocks likewise show only an imperfect within-profile association between the two axes. 
+
+Computation schedules recur across model scale and datasets between 
+
+family 
+
+within 
+
+family 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> fingerprint correlation  gaps +0.096, +0.088
+> exact p=0.000325, 0.000455
+
+a Family structure survives scale 
+
+CIFAR-10 
+
+ImageNet-200 
+
+0.6 0.8 1.0 
+
+best different-checkpoint r 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+0.9 
+
+1.0 
+
+> same-checkpoint r
+> ConvNeXt-B
+
+self-match wins 11/12 
+
+> above diagonal = exact checkpoint recovered
+
+b Cross-data recovery 
+
+> DeiT3
+> Swin
+> ConvNeXt
+> ResNet
+
+Computation schedules recur across model scale and evaluation datasets 
+
+> Twelve supervised ImageNet-1K checkpoints (three sizes per family); one public checkpoint per size, not training seeds.
+
+between 
+
+family 
+
+within 
+
+family 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> fingerprint correlation
+
+gaps +0.096, +0.088 
+
+exact p=0.000325, 0.000455 
+
+a Family structure survives scale 
+
+CIFAR-10 
+
+ImageNet-200 
+
+0.6 0.8 1.0 
+
+best different-checkpoint r 
+
+0.5 
+
+0.6 
+
+0.7 
+
+0.8 
+
+0.9 
+
+1.0 
+
+> same-checkpoint r
+
+ConvNeXt-B 
+
+self-match wins 11/12 
+
+above diagonal = exact checkpoint recovered 
+
+b Cross-data recovery 
+
+DeiT3 
+
+Swin 
+
+ConvNeXt 
+
+ResNet 
+
+Computation schedules recur across model scale and evaluation datasets 
+
+Twelve supervised ImageNet-1K checkpoints (three sizes per family); one public checkpoint per size, not training seeds. 
+
+Audit Evidence 
+
+Family recurrence CIFAR-10: 0.750 vs. 0.654 (p = 3 .25 ×10 −4); ImageNet-200: 0.785 vs. 0.697 (p = 4 .55 ×10 −4). Checkpoint recovery 11/12 exact cross-dataset matches; correlation 0.843 for the same checkpoint vs. 0.638 off diagonal. 
+
+Figure N1: Architecture-associated schedules survive scale and dataset. (a) Within-family fingerprints are more similar than between-family ones on both evaluation sets. (b) Cross-dataset matching identifies the exact checkpoint in 11/12 cases. These are descriptive properties of public checkpoints, not a controlled causal architecture comparison. the response profile transfers from CIFAR-10 to ImageNet-200 with correlations 0.94 –1.00 across the five checkpoints (direction-specific range 0.884 –0.999 ). This intervention ev-idence rules out a universal late-layer protection story and independently supports stable computation schedules. 
+
+N.1 Texture-label replication 
+
+DTD changes both image statistics and the semantic target: its 47 classes are texture attributes rather than object identities. Nevertheless, native-block movement, relational rewrite, and within-class innovation schedules transfer strongly from the object datasets. Across checkpoint–reference pairs, median DTD profile correlations are 0.993 for movement, 0.933 for rewrite, and 0.912 for within-class residual share. Prototype-accuracy gain is much less stable ( 0.350 ), showing that me-chanics recur more strongly than the depth at which a new label space becomes separable. The per-class analysis reaches the same conclusion at finer resolution. The median cross-checkpoint rank correlation of formation order across 47 textures is 0.381 (class-bootstrap 95% interval [0 .226 , 0.535] ) and remains 0.399 after control-ling for both checkpoints’ final class difficulty. Variance de-composition assigns 13 .3% to checkpoint, 32 .4% to texture class, and 54 .3% to their interaction. Architecture therefore supplies a recurring schedule, but class formation is not a universal depth clock; it is jointly conditioned on checkpoint and label semantics. 0.0 0.2 0.4 0.6 0.8 1.0 
+
+10 0
+
+10 1
+
+DeiT3-B 
+
+1
+
+1  
+
+> pooled r= 1.00
+
+0.0 0.2 0.4 0.6 0.8 1.0 
+
+10 0
+
+10 1
+
+ViT-B AugReg 
+
+1
+
+1 pooled r = 0.96 
+
+0.0 0.2 0.4 0.6 0.8 1.0 
+
+10 0
+
+10 1   
+
+> radial final-state amplification
+> S1 S2 S3 S4
+
+Swin-B 
+
+1
+
+1  
+
+> ImageNet-200 amplification
+> pooled r= 0.95
+
+0.0 0.2 0.4 0.6 0.8 1.0 
+
+10 0
+
+10 1 S1 S2 S3 S4 
+
+ConvNeXt-B 
+
+1 10 
+
+1
+
+10 pooled r = 0.98 
+
+0.0 0.2 0.4 0.6 0.8 1.0 
+
+normalized injection depth 
+
+10 0
+
+10 1 S1 S2 S3 S4 
+
+ResNet-50 
+
+1
+
+CIFAR-10 amplification 
+
+1  
+
+> pooled r= 0.94
+
+## Perturbation-response profiles replicate across evaluation datasets 
+
+Left: class-radial depth profile. Right: all blocks and directions; disjoint balanced 50-image sets, three trials each. 
+
+A Response by injection depth B Cross-dataset agreement     
+
+> CIFAR-10 ImageNet-200 class-radial class-tangential random
+
+Figure N2: Perturbation-response schedules replicate across datasets. The same radial, tangential, and random channel interventions are injected at every native block on disjoint CIFAR-10 and ImageNet-200 samples. Absolute amplification is read within a checkpoint; the replicated depth profile is the cross-dataset result. DeiT3 
+
+Movement 
+
+median r = 0.99 
+
+Rewrite 
+
+median r = 0.93 
+
+Evidence gain 
+
+median r = 0.35 
+
+Residual share 
+
+median r = 0.91 
+
+ViT 
+
+Swin 
+
+ConvNeXt 
+
+0 ½ 1
+
+ResNet 
+
+0 ½ 1 0 ½ 1 0 ½ 1
+
+0.0 0.5 1.0 
+
+relative movement 
+
+0.0 
+
+0.5 
+
+1.0 
+
+> relative rewrite
+
+median within-model ρ = 0.45 
+
+potholed 
+
+cobwebbed 
+
+banded 
+
+bubbly 
+
+pitted 
+
+smeared 
+
+studded 
+
+shared early → late class order (labels show seven anchor textures) 
+
+DeiT3 
+
+ViT 
+
+Swin 
+
+ConvNeXt 
+
+ResNet 
+
+early 
+
+½
+
+late 
+
+Texture concepts follow structured intermediate paths 
+
+DTD split 1 · 47 texture attributes · 3,760 fit + 1,880 test images · five supervised-IN1K checkpoints 
+
+A Structured work profiles beyond object labels 
+
+own-profile scale · vertical lines mark stages · r: DTD vs C10/IN-200 depth-profile similarity 
+
+C Step size and relational 
+
+rewrite can diverge 
+
+B Texture classes form at different depths—with checkpoint-specific ordering 
+
+47 classes × 40 test images · class fraction=0.32 · checkpoint×class=0.54       
+
+> formation-rank agreement: raw ρ= 0.38 · final-state-difficulty adjusted partial ρ= 0.40 · paired split-half ρ= 0.45
+
+Half-rise is an operational probe summary—not proof of completion. Architecture is confounded with recipe; no vector subtraction crosses widths. Figure N3: Native-block dynamics replicate on DTD, while semantic timing changes with the label space. The figure covers all 47 texture attributes and the five representative checkpoints. Mechanical profiles remain strongly correlated with object-dataset profiles; class-evidence timing is substantially more task-dependent. 
+
+## O Classification under Synthetic Corruption 
+
+The matched screen behind Figure 6 uses exactly the six checkpoints from clean and natural-shift classification. Ta-ble O1 gives the complete main-paper summary: final state Table O1: Matched synthetic-shift summary behind Fig-ure 6b. Means cover six corruptions, five severities, and three seeds. ∆ctl = ∆ route − ∆ctrl ; positive R/C counts are route/control-adjusted conditions out of 30.                                         
+
+> Checkpoint End →Route ∆route ∆ctrl ∆ctl Positive R/C
+> CLIP-B 60.79 →61.90 +1 .11 +0 .12 +0.99 24/24 DeiT3-B 69.75 →71.06 +1 .32 +0 .20 +1.12 27/26 ViT-B 58.52 →60.83 +2 .30 +0 .07 +2.24 29/29 SwinV2-B 65.37 →66.91 +1 .54 +0 .14 +1.40 30/30 ConvNeXt-B 62.92 →64.66 +1 .73 +0 .37 +1.36 29/29 ResNet-50 54.00 →57.66 +3 .67 +0 .56 +3.11 30/30
+> Architecture mean 61.89 →63.84 +1.94 +0.24 +1.70 169/168
+
+and route accuracy, raw and control-adjusted gains, and positive-cell counts over all 180 checkpoint–corruption– severity conditions. Every checkpoint retains a positive control-adjusted mean; ResNet-50 is strongest, while ViT-B shows that the effect is not CNN-specific. The few failures are concentrated in CLIP/DeiT3 additive noise and the strongest contrast setting. 
+
+## P Complete OOD Results 
+
+P.1 Alignment with the recent Mahalanobis++ evaluation 
+
+Mahalanobis++ appeared at ICML 2025, so we treat it as a recent reference rather than a long-established reporting con-vention (Müller and Hein 2025). For a direct and auditable comparison, we follow its OpenOOD evaluation and presen-tation choices wherever the studies overlap: public frozen checkpoints, pre-logit features, ℓ2 normalization for Maha-lanobis++, the prescribed individual OOD datasets, and joint reporting of AUROC and FPR95. We also follow the model-row/method-column structure used by its full appendix Ta-bles 13–16 in our Tables P1– P5: checkpoints are rows, post-hoc detectors are columns, and the complete grid is shown rather than only an architecture average. The MSP and kNN columns are explicit, so every path result can be read against the standard references displayed by Mahalanobis++. This is protocol alignment, not a claim that the two pa-pers evaluate identical systems. Mahalanobis++ studies final-representation post-hoc detectors; our tables hold the check-point, ID support, split, and seed fixed and then add the same path-surprise score. MSP uses a checkpoint’s native 1,000-class classifier when the ImageNet label space and head are compatible. When the target labels differ (MNIST/CIFAR) or an encoder exposes no compatible target classifier, we fit the same ID-only linear probe used throughout this paper and average three probe seeds. No OOD image is used to fit the probe, select a detector, or choose a combination weight. Our additional Relative Mahalanobis, X-Mahalanobis, kNN, and trajectory-density columns test whether the path contribution persists beyond the particular Mahalanobis++ partner. 
+
+P.2 Layer-wise class and OOD neighbourhoods 
+
+Figure P1 separates the raw states from the coordinates used by the method. In raw space, class organisation becomes clearer through depth while OOD overlap increases at the fi-nal state. Subtracting the assigned class path collapses the ID class centres, but near-OOD remains entangled with the ID residual cloud and far-OOD retains off-route islands and tails. UMAP is descriptive rather than a detector: the quantitative method uses the complete sequence of residual transitions, not a two-dimensional projection. 
+
+Cross-table synthesis. Across the 160 non-MNIST checkpoint–benchmark rows in Tables P2–P5, the path low-ers FPR95 in 150/160 Relative Mahalanobis pairs, 139/160 Mahalanobis++ pairs, and 135/160 kNN pairs. It remains positive in 114/160 X-Mahalanobis and 115/160 trajectory-Mahalanobis pairs, but with smaller mean reductions; those partners already mix layers and therefore leave less novel route evidence. This ordering is the checkpoint-level form of the complementarity controls in Appendix H. The breadth is not supplied by one family. Pooling the five partners, positive FPR95 changes occur in 26/30 self-supervised, 65/70 vision–language, 228/280 plain-ViT, 47/80 hierarchical-Transformer, and 287/340 CNN cells. These counts demonstrate coverage, not a causal family ranking: checkpoint recipes and the hard ImageNet near shifts re-main confounded with architecture. Within-family variation is consequently part of the result, rather than noise to be hidden by one architecture average. 
+
+The partner changes which architecture benefits. Rela-tive Mahalanobis is the most stable density partner: path evidence lowers FPR95 in 66/68 CNN rows, 54/56 plain-ViT rows, and every SSL and VLM row. The trajectory-density partner behaves differ-ently. It improves all 68 CNN rows, but only 27/56 plain-ViT and 2/6 SSL rows. This is an informative redundancy test rather than a contradiction: trajectory density already consumes a multi-layer summary, so it leaves little unused path signal when a Transformer’s states are strongly aligned; CNN residual coordinates still supply distinct local transitions. kNN shows the complementary pattern— all 56 plain-ViT rows improve, compared with 49/68 CNN and 10/16 hierarchical-Transformer rows. No single final-state witness is therefore uniformly optimal for exposing path value. 
+
+Coverage and effect size are separate. CIFAR-100 has the broadest checkpoint-level support (182/190 positive score– checkpoint cells), followed by CIFAR-10 (167/190), ImageNet-200 (154/210), and ImageNet-1K (150/210). Yet this ordering is not simply dataset scale: the two ImageNet protocols have similar cov-erage despite their different label counts, and their failures concen-trate on the same semantically near splits. At model level, DeiT3-S and ResNet-50 improve in all 20 available non-MNIST benchmark– partner cells, but their routes are not mechanically similar elsewhere in the paper. Conversely, ViT-B-MAE improves in 19/20 cells with a much smaller mean reduction. Thus unanimity measures robust-ness, not how much recoverable information a path contains; both statistics are needed to interpret the full tables. (a) block 3 
+
+0 1
+
+23
+
+45
+
+6
+
+7
+
+8 9
+
+(b) block 6 
+
+01
+
+23
+
+4 5
+
+6 7
+
+89
+
+(c) block 9 
+
+0
+
+1
+
+2
+
+3 4
+
+56 7
+
+89
+
+(d) block 12 
+
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+ID (colour = class) near-OOD far-OOD 
+
+0 airplane 1 automobile 2 bird 3 cat 4 deer 5 dog 6 frog 7 horse 8 ship 9 truck (e) block 3 
+
+0123456789
+
+(f) block 6 
+
+0123456789
+
+(g) block 9 
+
+012
+
+3
+
+456789
+
+(h) block 12 
+
+0
+
+1
+
+2345 67
+
+8 9Figure P1: Raw and class-residual OOD neighbourhoods across depth. DINOv3-B on CIFAR-10 ID, with CIFAR-100/Tiny ImageNet as near-OOD and MNIST/SVHN/DTD/Places365 as far-OOD. (a–d) Raw states. (e–h) Residuals after assigning the nearest final state class and subtracting its 1,000-example ID prototype path. Each group contains 600 balanced samples; colour and numbered medians identify true ID classes. A separate UMAP is fitted at each block, so topology is compared within panels, not by aligning axes across depth. −5 0 5 10 15 20 25 30 
+
+FPR95 reduction (Mahalanobis++ baseline − +trajectory dynamics, points) 
+
+CIFAR-10 (n=38) 
+
+CIFAR-100 (n=38) 
+
+ImageNet-200 (n=38) 
+
+ImageNet-1K (n=38) 
+
+MNIST (n=38) 
+
+38/38 
+
+38/38 
+
+28/38 
+
+27/38 
+
+10/38  
+
+> positive
+> cases harm improvement
+> saturated boundary: 28 exact ties · 10 tiny gains · none harmed
+
+Trajectory dynamics reduce OOD false positives in 131/152 non-MNIST cases 
+
+Balanced grid: 190 paired cases (38 models × 5 benchmarks) · dots are cases · thick bars are IQR · diamonds are medians           
+
+> AUROC is omitted as duplicate encoding: paired gain tracks FPR95 reduction (Spearman ρ=0.87, 152 non-MNIST cases). 020 40 60 80 100
+> Mahalanobis++ baseline FPR95 →more headroom
+> −5
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> 30
+> 35
+> FPR95 reduction from dynamics  (positive = better)
+> saturated
+> zone
+> n= 198 backbone × benchmark results
+> Spearman ρ= 0.54
+> 149 improve · 29 tie
+
+The trajectory pays when the final-state detector has headroom 
+
+> MNIST (38)
+> CIFAR-10 (38)
+> CIFAR-100 (38)
+> ImageNet-200 (42)
+> ImageNet-1K (42)
+> binned median
+
+Figure P2: Exhaustive OOD distribution and detector headroom. Left: the balanced 190-case grid, including saturated MNIST. Right: all 198 stored final-state/path comparisons after adding the eight non-common ImageNet rows, plotted against final-state FPR95. The binned median exposes a moderate rather than deterministic headroom trend; positive reduction means improvement. Table P1: Complete OpenOOD results: MNIST. All 38 balanced checkpoints; final-representation FPR95 is saturated near zero. 
+
+Model Fam MSP kNN +path Maha++ +path RelMaha +path X-Maha +path Traj-Maha +path Self-supervised foundation encoders 
+
+DINOv2 ViT-B/14 SSL 96.2/21.3 99.8/0.7 100.0/0.0 99.9/0.1 100.0/0.0 99.9/0.1 100.0/0.0 100.0/0.1 100.0/0.0 100.0/0.0 100.0/0.0 
+
+Vision–language encoders 
+
+CLIP ViT-L/14 VLM 96.1/21.5 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 CLIP-timm ViT-B/16 VLM 91.8/43.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 
+
+Supervised plain ViTs 
+
+BeiT-B/16 ViT 96.9/16.9 99.9/0.2 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 BeiT-L ViT 96.1/19.5 100.0/0.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 BeiTv2-B ViT 90.7/44.3 99.9/0.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 DeiT3-B/16 ViT 91.3/41.2 99.9/0.3 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 DeiT3-B/16-In21k ViT 94.2/29.0 99.6/2.2 100.0/0.1 99.9/0.3 100.0/0.0 99.9/0.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 DeiT3-L/16 ViT 92.8/35.7 100.0/0.2 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 DeiT3-S ViT 91.0/44.6 99.8/1.3 100.0/0.0 99.9/0.4 100.0/0.0 99.8/0.6 100.0/0.0 99.9/0.3 100.0/0.0 100.0/0.0 100.0/0.0 EVA02-B ViT 80.5/66.8 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ViT-B-MAE ViT 20.9/99.9 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ViT-B/16-augreg ViT 90.7/43.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ViT-B/16-in1k ViT 86.9/56.5 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ViT-B/32 ViT 90.8/42.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ViT-L/16 ViT 93.0/35.5 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ViT-S/16 ViT 83.6/66.4 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 
+
+Hierarchical Transformers 
+
+Swin-B Swin 95.8/20.3 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 SwinV2-B Swin 91.1/40.5 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 SwinV2-B-In21k Swin 93.8/32.3 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 SwinV2-T Swin 93.6/28.2 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 
+
+Convolutional encoders 
+
+ConvNeXt-B CNN 95.1/26.8 100.0/0.2 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ConvNeXt-B-In21k CNN 96.0/20.9 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ConvNeXt-L CNN 93.8/29.8 99.9/0.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ConvNeXt-T CNN 94.8/26.4 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ConvNeXtV2-B CNN 92.8/37.4 99.8/1.2 99.9/0.5 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 99.9/0.1 100.0/0.1 100.0/0.0 100.0/0.0 ConvNeXtV2-B-In21k CNN 96.9/16.8 99.9/0.2 100.0/0.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ConvNeXtV2-T CNN 94.3/31.2 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 DenseNet-121 CNN 87.0/56.6 100.0/0.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 EffNetV2-L CNN 97.0/17.2 99.9/0.2 100.0/0.0 100.0/0.1 100.0/0.0 100.0/0.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 EffNetV2-M CNN 93.0/37.7 100.0/0.1 100.0/0.0 100.0/0.1 100.0/0.0 100.0/0.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 EffNetV2-S CNN 94.9/27.5 100.0/0.1 100.0/0.0 100.0/0.1 100.0/0.0 100.0/0.1 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 RegNetY-040 CNN 87.8/57.5 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ResNet-101 CNN 96.2/16.0 100.0/0.0 100.0/0.0 100.0/0.1 100.0/0.0 99.9/0.5 100.0/0.0 100.0/0.1 100.0/0.0 100.0/0.0 100.0/0.0 ResNet-152 CNN 90.5/50.2 100.0/0.0 100.0/0.0 100.0/0.1 100.0/0.0 99.9/0.2 100.0/0.0 100.0/0.1 100.0/0.0 100.0/0.0 100.0/0.0 ResNet-50 CNN 94.5/29.6 100.0/0.0 100.0/0.0 100.0/0.1 100.0/0.0 100.0/0.2 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 ResNetV2-50 CNN 95.0/23.3 100.0/0.0 100.0/0.0 100.0/0.1 100.0/0.0 99.9/0.2 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 WideResNet50-2 CNN 95.9/23.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 100.0/0.0 Table P2: Complete OpenOOD results: CIFAR-10. 38 checkpoints and six OOD datasets; fit support is 1,000 images per class (2,000 for the four IN21k rows). 
+
+Model Fam MSP kNN +path Maha++ +path RelMaha +path X-Maha +path Traj-Maha +path Self-supervised foundation encoders 
+
+DINOv2 ViT-B/14 SSL 99.0/3.5 98.2/10.3 99.6/1.9 99.0/4.3 99.5/2.3 98.5/4.7 99.5/1.8 99.2/3.5 99.5/2.2 99.0/4.2 99.0/4.4 
+
+Vision–language encoders 
+
+CLIP ViT-L/14 VLM 96.8/12.4 96.8/12.6 97.5/9.5 97.1/10.6 97.5/8.6 98.4/8.6 99.3/3.7 97.5/8.9 97.5/9.3 97.2/9.7 97.2/10.1 CLIP-timm ViT-B/16 VLM 94.5/24.3 93.5/25.4 96.4/9.7 95.3/14.3 96.5/9.3 97.1/15.8 98.6/6.8 96.3/10.0 96.6/9.2 96.5/9.6 96.6/9.7 
+
+Supervised plain ViTs 
+
+BeiT-B/16 ViT 98.5/5.1 98.5/6.2 99.2/4.4 98.2/8.8 98.8/6.1 98.5/5.0 99.4/3.0 98.8/5.6 98.8/5.5 98.5/6.2 98.5/6.3 BeiT-L ViT 98.9/3.7 96.9/19.3 99.1/5.5 98.2/9.2 98.9/5.8 99.0/2.8 99.6/1.2 99.2/4.4 99.2/4.4 99.0/5.2 99.0/5.0 BeiTv2-B ViT 98.3/6.3 98.5/6.9 99.2/4.6 98.8/6.6 99.1/4.8 98.5/4.8 99.5/2.1 99.2/4.2 99.2/4.1 98.8/5.5 98.8/5.6 DeiT3-B/16 ViT 96.7/15.2 92.8/41.1 97.5/11.7 94.8/25.2 97.2/15.4 97.0/12.8 98.6/6.7 96.2/19.7 97.7/11.7 97.4/13.3 98.0/9.6 
+
+DeiT3-B/16-In21k ViT 98.1/7.3 98.3/6.2 99.4/3.3 98.3/7.4 99.2/3.7 98.2/7.3 99.4/2.5 98.8/5.6 99.2/3.6 99.0/4.3 99.0/4.2 DeiT3-L/16 ViT 97.8/8.9 90.0/53.0 97.2/13.0 95.3/23.1 97.5/11.5 97.4/10.5 98.8/5.8 97.0/14.2 98.0/8.7 97.9/8.7 98.3/7.2 
+
+DeiT3-S ViT 95.7/21.9 93.4/30.6 97.2/12.5 93.6/25.6 96.7/18.0 94.6/28.3 97.9/11.6 93.9/24.7 96.8/17.1 97.5/10.4 97.7/8.8 
+
+EVA02-B ViT 97.8/8.4 93.0/24.0 97.0/13.9 98.1/8.3 98.6/5.4 98.4/7.5 99.2/4.0 98.6/5.2 98.7/4.7 98.7/4.5 98.7/4.5 ViT-B-MAE ViT 56.5/94.1 90.0/36.0 91.9/30.6 93.7/17.1 94.0/16.2 95.3/15.5 95.4/15.0 93.9/16.6 94.2/16.1 94.5/14.8 94.4/15.2 ViT-B/16-augreg ViT 98.1/7.6 98.2/8.6 98.8/5.9 98.5/6.6 98.7/5.4 98.3/6.9 99.4/2.4 98.6/5.9 98.5/6.4 98.2/7.5 98.0/8.2 ViT-B/16-in1k ViT 93.6/33.9 93.7/38.4 97.3/10.0 93.9/33.0 96.5/14.0 95.3/24.2 98.2/8.3 96.1/15.7 96.7/11.8 96.8/10.3 97.0/9.9 
+
+ViT-B/32 ViT 97.7/9.3 97.4/10.9 98.2/7.0 97.1/12.4 98.0/8.0 97.3/11.6 99.2/3.6 97.4/9.6 97.5/8.9 97.7/8.2 97.6/8.6 ViT-L/16 ViT 98.7/4.5 98.8/5.9 99.1/4.8 98.8/5.4 99.0/4.9 99.3/3.3 99.7/0.7 98.2/7.4 98.1/7.7 98.6/6.7 98.4/7.2 ViT-S/16 ViT 96.9/13.6 96.7/15.9 98.4/7.1 97.3/12.8 98.3/6.5 96.9/13.9 99.1/4.8 97.9/8.6 98.1/7.1 97.7/8.3 97.6/8.8 
+
+Hierarchical Transformers 
+
+Swin-B Swin 97.8/8.6 98.3/7.8 98.6/7.7 98.3/9.2 98.7/6.8 98.0/7.5 99.0/4.9 97.3/11.1 97.4/10.9 97.4/10.9 97.8/9.3 
+
+SwinV2-B Swin 96.3/16.2 95.0/29.6 97.8/9.9 94.1/27.2 97.0/15.4 97.0/15.9 98.6/7.2 98.1/7.2 98.1/7.4 97.7/9.4 98.3/7.2 
+
+SwinV2-B-In21k Swin 97.7/8.5 98.3/7.7 98.8/6.4 98.2/8.8 98.7/6.7 98.4/6.7 99.4/2.8 98.8/5.7 98.7/6.3 99.0/4.8 98.9/5.2 SwinV2-T Swin 94.6/26.8 94.5/29.0 97.4/11.6 93.4/29.9 96.5/16.9 94.7/29.2 98.0/9.7 96.8/9.7 96.9/9.7 96.7/10.8 97.2/9.0 Convolutional encoders 
+
+ConvNeXt-B CNN 95.9/18.8 94.3/28.0 96.0/21.6 92.4/28.1 94.8/23.3 97.1/15.2 97.7/11.3 90.8/39.1 93.6/31.4 91.1/37.1 94.3/32.4 
+
+ConvNeXt-B-In21k CNN 98.0/8.6 98.7/6.0 98.5/7.0 98.6/7.3 98.7/6.4 98.4/6.3 98.8/5.2 98.3/8.9 98.4/8.3 92.0/32.5 95.9/23.0 
+
+ConvNeXt-L CNN 96.0/19.8 95.2/27.2 96.7/15.1 94.0/25.6 95.9/21.7 97.0/17.6 97.6/13.6 92.2/34.9 94.5/29.1 89.8/37.1 94.3/31.0 
+
+ConvNeXt-T CNN 95.0/24.2 92.5/33.2 95.3/23.2 91.5/30.1 94.3/23.0 94.9/28.6 97.2/15.1 89.5/39.3 93.2/29.3 93.2/25.1 96.0/12.9 
+
+ConvNeXtV2-B CNN 96.9/14.3 95.6/22.9 96.7/18.3 94.2/23.2 95.8/20.2 97.3/13.2 97.9/10.1 92.0/35.0 94.1/29.7 87.3/39.5 92.3/35.8 
+
+ConvNeXtV2-B-In21k CNN 98.4/6.4 98.5/7.4 98.8/6.0 98.5/8.7 98.8/6.3 98.5/5.8 99.0/4.5 98.3/9.2 98.7/7.2 76.7/48.0 92.7/40.2 
+
+ConvNeXtV2-T CNN 95.2/22.8 93.1/31.9 94.9/23.7 91.2/30.6 93.5/24.0 95.4/23.8 96.8/17.1 91.1/34.1 93.2/27.4 82.4/40.1 91.3/36.1 
+
+DenseNet-121 CNN 89.9/43.6 93.7/22.6 95.3/18.5 92.8/23.6 94.5/19.2 95.6/21.5 96.9/14.3 93.2/21.8 94.5/19.1 93.8/15.1 94.2/14.9 
+
+EffNetV2-L CNN 97.3/11.2 98.6/5.9 98.7/6.0 98.2/8.0 98.4/6.6 98.1/8.6 99.1/3.8 98.7/5.5 98.5/6.0 93.7/18.1 94.8/17.0 
+
+EffNetV2-M CNN 97.3/13.0 98.5/5.4 98.9/4.7 98.0/8.8 98.6/5.8 97.7/10.9 99.0/4.3 98.7/5.3 98.7/5.5 93.9/16.7 95.0/15.4 
+
+EffNetV2-S CNN 96.9/15.4 98.4/7.0 98.9/4.9 97.9/9.4 98.5/6.7 98.0/9.8 99.0/4.6 98.0/8.9 98.3/7.1 93.7/18.7 94.9/16.6 
+
+RegNetY-040 CNN 91.0/42.2 96.2/14.7 97.2/10.2 95.0/18.7 96.3/13.2 93.0/35.4 97.1/13.8 95.1/18.3 96.2/13.6 94.7/13.3 95.2/12.9 
+
+ResNet-101 CNN 95.4/23.1 97.0/12.0 97.7/9.3 94.9/22.0 96.5/16.2 96.4/19.5 97.8/11.5 95.0/21.4 96.5/15.6 93.5/17.3 94.9/15.9 
+
+ResNet-152 CNN 96.3/17.8 96.9/14.9 98.0/9.0 94.4/22.0 96.6/16.6 96.6/17.7 98.1/9.6 94.4/22.3 96.7/16.7 93.7/16.8 95.4/14.9 
+
+ResNet-50 CNN 90.8/44.0 94.3/25.2 96.0/15.9 88.4/34.3 93.1/24.2 93.1/34.2 96.2/19.7 89.7/31.1 93.5/23.0 93.8/16.9 94.5/16.4 
+
+ResNetV2-50 CNN 93.4/31.2 96.0/17.8 97.3/10.2 92.7/26.2 95.5/20.2 94.8/28.4 97.1/15.2 96.2/13.6 96.5/10.9 93.8/15.7 94.8/14.7 
+
+WideResNet50-2 CNN 94.2/27.9 95.9/19.0 97.0/11.7 93.3/26.9 95.7/18.5 94.4/30.5 97.0/15.4 94.2/24.2 96.0/16.5 93.8/15.7 94.7/15.4 Table P3: Complete OpenOOD results: CIFAR-100. 38 checkpoints, 200 fit images per class, and six OOD datasets. 
+
+Model Fam MSP kNN +path Maha++ +path RelMaha +path X-Maha +path Traj-Maha +path Self-supervised foundation encoders 
+
+DINOv2 ViT-B/14 SSL 91.3/33.1 89.0/41.3 98.2/9.4 92.1/34.9 97.9/12.5 90.3/38.8 97.7/14.4 95.4/25.5 98.4/8.3 97.2/12.2 97.1/11.5 
+
+Vision–language encoders 
+
+CLIP ViT-L/14 VLM 81.9/73.0 92.7/28.3 94.8/17.1 94.8/19.2 95.5/15.6 94.5/28.3 98.2/9.5 95.3/14.6 95.0/14.7 94.2/15.1 94.0/15.2 CLIP-timm ViT-B/16 VLM 73.6/91.2 87.1/43.8 93.5/23.9 92.3/26.7 94.4/16.9 92.4/36.6 96.6/13.8 94.2/18.4 94.6/15.0 93.8/15.4 93.8/15.2 
+
+Supervised plain ViTs 
+
+BeiT-B/16 ViT 92.9/32.8 93.3/29.9 96.5/13.2 94.4/26.3 96.4/15.1 93.7/31.1 97.3/13.8 95.9/15.8 95.9/14.7 95.3/14.9 95.3/14.9 BeiT-L ViT 93.8/26.5 90.5/44.0 96.8/14.9 94.1/29.2 96.9/15.0 95.0/24.6 98.4/9.7 97.5/12.8 97.4/12.6 96.6/14.1 96.7/14.0 
+
+BeiTv2-B ViT 92.9/30.1 94.1/23.7 96.3/14.4 95.5/20.7 96.9/12.5 94.0/28.8 97.7/11.7 96.8/12.2 96.7/11.8 95.6/14.3 95.5/14.5 DeiT3-B/16 ViT 87.3/49.9 81.9/73.1 92.2/33.1 85.2/50.5 91.8/36.2 88.9/49.3 95.4/22.1 86.2/47.8 92.2/36.3 92.2/37.2 94.4/26.7 
+
+DeiT3-B/16-In21k ViT 90.1/38.7 91.3/44.0 96.9/14.2 91.2/40.7 96.4/20.9 91.1/41.0 97.2/15.2 92.8/36.6 96.5/20.4 95.6/21.7 96.7/14.4 
+
+DeiT3-L/16 ViT 89.5/43.5 78.1/81.1 91.5/34.6 85.3/53.5 92.2/41.6 89.8/45.1 95.4/22.9 87.8/47.7 92.9/36.2 92.6/39.9 94.8/26.0 
+
+DeiT3-S ViT 84.4/52.0 83.5/59.2 92.2/32.2 83.7/49.9 91.4/37.8 85.1/57.2 93.8/26.1 83.5/49.9 91.3/39.2 94.6/21.9 95.1/18.5 
+
+EVA02-B ViT 86.3/60.5 83.9/46.5 91.0/37.6 89.1/40.5 93.0/34.2 88.3/48.2 94.3/33.2 91.8/36.0 93.8/32.4 93.2/32.7 94.4/27.6 
+
+ViT-B-MAE ViT 44.8/96.6 83.3/43.0 86.8/40.1 88.9/27.1 89.1/24.7 90.8/29.3 91.4/25.3 88.9/25.7 89.0/24.7 88.9/24.8 88.9/24.5 ViT-B/16-augreg ViT 89.9/45.5 94.0/28.3 96.8/12.1 96.2/17.1 96.9/12.2 93.4/35.2 98.1/9.5 96.6/13.5 96.2/13.1 95.2/15.0 94.7/15.2 ViT-B/16-in1k ViT 81.4/65.7 84.3/58.1 92.5/32.4 82.8/48.6 90.2/43.6 86.0/56.2 94.5/22.2 89.6/39.9 91.9/30.0 92.1/27.1 92.7/23.4 
+
+ViT-B/32 ViT 89.4/47.1 90.7/45.1 95.1/15.7 91.3/33.8 94.3/22.3 92.4/36.5 97.2/13.7 92.8/24.7 93.3/19.5 94.1/17.1 93.8/16.3 ViT-L/16 ViT 92.6/35.2 95.5/21.0 97.2/11.2 96.3/17.7 97.0/12.4 95.4/27.2 98.7/7.1 94.9/17.1 94.8/15.2 95.8/14.2 95.4/14.7 ViT-S/16 ViT 87.0/53.9 89.0/49.6 95.7/13.6 91.0/40.2 95.7/16.4 89.4/43.5 97.1/14.7 94.7/21.7 95.5/14.6 94.4/15.5 94.1/15.6 
+
+Hierarchical Transformers 
+
+Swin-B Swin 89.5/40.4 93.4/26.1 95.0/16.7 93.5/30.1 95.6/16.9 91.2/39.6 95.9/22.7 91.8/29.8 92.5/19.4 91.3/25.9 92.7/19.1 
+
+SwinV2-B Swin 85.8/51.0 86.4/51.8 94.0/25.3 82.6/47.2 91.3/38.5 89.0/47.4 95.8/20.4 95.2/16.0 95.2/15.2 90.2/38.1 94.3/26.9 
+
+SwinV2-B-In21k Swin 89.4/42.0 93.8/25.2 95.7/16.0 93.5/33.2 95.6/21.6 91.7/41.6 96.5/20.8 96.0/13.3 95.7/14.0 96.5/13.2 96.4/12.6 SwinV2-T Swin 85.0/52.6 85.0/53.7 92.1/30.8 80.6/48.7 89.0/42.7 85.9/53.2 94.0/23.3 91.5/17.6 91.8/17.0 87.4/36.7 90.1/29.1 Convolutional encoders 
+
+ConvNeXt-B CNN 84.5/52.7 85.3/51.5 88.8/42.1 80.5/47.0 85.5/46.0 88.7/48.4 91.6/37.5 78.7/60.3 84.1/55.4 79.4/57.2 84.8/53.0 
+
+ConvNeXt-B-In21k CNN 88.7/41.4 94.5/24.6 95.4/18.3 93.6/31.9 95.3/24.0 91.6/40.6 94.5/28.0 93.8/29.2 94.9/23.3 80.8/49.0 88.9/42.7 
+
+ConvNeXt-L CNN 85.8/52.0 86.6/51.3 91.3/35.5 84.6/43.2 89.4/36.2 90.6/41.0 93.3/30.5 82.5/56.5 87.7/45.2 79.1/53.2 86.5/48.6 
+
+ConvNeXt-T CNN 81.7/54.8 80.9/53.3 87.7/40.8 76.9/48.8 84.3/42.7 84.6/54.9 91.1/33.8 77.0/58.6 84.4/46.5 83.9/38.6 89.0/32.0 
+
+ConvNeXtV2-B CNN 86.4/47.1 86.1/50.1 89.0/46.0 82.5/46.1 86.3/44.2 88.4/49.8 91.6/39.0 79.3/57.8 84.0/53.9 76.2/56.0 82.2/51.0 
+
+ConvNeXtV2-B-In21k CNN 90.1/40.0 93.1/31.7 95.1/22.6 93.1/34.1 95.1/26.1 90.3/48.1 94.2/30.9 93.2/35.2 95.1/25.7 68.7/60.7 81.8/53.0 
+
+ConvNeXtV2-T CNN 84.0/54.4 82.9/53.9 86.9/46.9 78.0/48.3 83.2/46.2 86.2/55.0 90.5/40.5 79.9/53.6 84.3/49.0 71.8/55.9 79.2/51.9 
+
+DenseNet-121 CNN 71.7/82.2 83.3/48.4 88.8/31.9 79.5/50.0 85.8/40.0 87.4/44.5 92.7/25.9 81.5/47.2 86.4/36.7 90.7/20.8 90.7/20.5 EffNetV2-L CNN 86.3/49.7 94.6/22.1 96.2/14.0 93.0/26.3 95.4/20.3 91.7/37.8 97.2/15.2 94.7/24.5 95.5/16.5 89.7/24.3 90.9/21.4 
+
+EffNetV2-M CNN 82.7/52.1 90.7/33.5 96.1/14.4 90.7/35.0 95.5/20.3 87.1/47.9 95.8/21.8 94.2/29.7 95.9/16.3 90.2/22.0 91.4/19.7 
+
+EffNetV2-S CNN 84.1/53.4 89.7/39.7 95.5/18.9 88.0/44.9 93.4/26.9 89.2/43.9 95.9/20.0 90.5/40.7 94.5/26.1 89.3/25.9 90.9/22.4 
+
+RegNetY-040 CNN 72.9/78.7 88.6/41.1 92.0/22.9 85.0/52.9 89.7/32.9 84.4/52.2 92.8/25.1 85.7/49.5 89.6/32.0 89.8/19.5 90.2/19.2 
+
+ResNet-101 CNN 85.2/52.6 90.0/38.9 92.4/23.8 83.5/50.7 88.5/43.0 89.5/42.2 93.4/26.0 84.1/50.1 88.8/42.4 89.2/25.0 89.9/23.6 
+
+ResNet-152 CNN 86.8/52.1 89.5/48.9 93.3/26.5 80.3/49.9 87.6/43.7 89.4/45.3 94.1/24.2 80.7/49.6 87.8/43.4 89.3/25.4 90.4/22.7 
+
+ResNet-50 CNN 76.9/73.1 84.9/52.0 89.3/38.0 74.3/51.8 83.0/48.6 87.1/49.3 92.0/31.1 76.8/50.8 83.9/47.7 89.0/26.5 89.4/25.1 
+
+ResNetV2-50 CNN 81.5/63.5 87.2/50.1 91.5/31.4 76.9/52.5 85.1/48.0 87.3/47.6 92.0/28.4 87.9/40.7 90.0/36.1 89.2/23.7 89.7/21.6 
+
+WideResNet50-2 CNN 81.6/58.1 85.1/52.8 89.8/37.6 77.2/52.5 84.9/48.5 87.5/47.1 92.1/28.0 80.1/51.1 86.4/47.0 89.2/26.3 89.6/24.2 Table P4: Complete OpenOOD results: ImageNet-200. 42 checkpoints, 50 fit images per class, and five OOD datasets. 
+
+Model Fam MSP kNN +path Maha++ +path RelMaha +path X-Maha +path Traj-Maha +path Self-supervised foundation encoders 
+
+DINOv2 ViT-B/14 SSL 95.6/15.4 95.7/16.0 96.0/12.9 96.0/14.0 96.3/13.0 94.8/20.6 95.5/17.8 96.3/13.2 96.3/12.4 95.4/22.2 95.2/22.8 DINOv3 ViT-B/16 SSL 94.5/20.5 82.9/55.7 88.0/41.8 92.7/28.6 94.2/24.2 93.8/24.4 95.0/20.9 93.5/26.1 94.6/22.9 93.2/40.2 93.0/40.6 
+
+Vision–language encoders 
+
+CLIP ViT-B/16 VLM 88.0/47.0 61.9/96.3 71.6/89.4 81.0/89.2 85.5/77.2 90.7/44.5 93.0/34.0 82.6/85.4 86.2/73.8 85.5/66.8 87.0/60.5 
+
+CLIP ViT-L/14 VLM 92.8/29.0 83.2/76.5 88.0/58.6 86.1/72.7 89.3/60.5 93.2/31.5 95.0/23.0 90.4/51.8 91.1/48.2 87.9/57.6 88.9/54.8 
+
+CLIP-timm ViT-B/16 VLM 88.9/44.5 78.0/87.7 83.7/70.2 78.9/88.2 83.3/78.5 89.8/50.1 91.7/39.5 82.7/77.0 85.1/68.4 82.3/69.7 84.2/65.6 
+
+PE-Core ViT-B/16 VLM 92.1/31.3 70.0/88.9 76.2/73.8 88.2/65.1 90.9/51.7 93.0/27.4 94.6/23.6 88.9/56.9 90.5/50.5 85.0/63.0 87.6/58.3 
+
+SigLIP2 ViT-B/16 VLM 94.8/18.1 74.0/88.3 80.4/73.4 88.7/68.7 91.7/51.8 95.5/15.9 96.4/14.1 89.1/56.0 91.5/46.2 89.8/56.4 91.8/47.2 Supervised plain ViTs 
+
+BeiT-B/16 ViT 90.3/35.7 95.2/18.4 96.2/14.3 96.0/17.0 96.5/14.2 96.5/12.3 96.9/11.6 96.1/16.3 96.2/15.4 96.0/17.0 96.0/16.6 BeiT-L ViT 91.5/32.0 95.3/24.2 96.3/16.0 96.4/16.1 96.9/13.7 97.2/9.8 97.4/9.4 96.9/13.1 96.9/12.9 96.7/14.7 96.7/14.1 BeiTv2-B ViT 90.4/36.3 94.4/30.3 96.1/18.2 96.8/12.4 97.2/11.4 96.8/11.7 97.2/10.6 97.2/10.9 97.1/11.3 96.4/14.6 96.4/14.5 DeiT3-B/16 ViT 85.1/55.3 90.9/50.0 92.2/43.3 93.6/31.5 93.9/31.6 94.7/20.3 94.9/20.3 92.7/40.6 93.1/38.6 93.6/32.6 93.7/32.6 DeiT3-B/16-In21k ViT 83.3/55.3 95.8/14.7 96.4/13.3 96.3/12.6 96.7/12.1 96.2/12.7 96.7/12.0 96.5/12.6 96.8/12.3 96.5/13.1 96.7/12.6 
+
+DeiT3-L/16 ViT 84.5/55.6 91.8/42.6 92.8/37.3 94.3/23.9 94.5/24.4 95.3/16.2 95.5/16.5 93.8/29.3 94.0/29.3 94.5/23.1 94.5/23.7 DeiT3-S ViT 86.4/52.5 91.1/54.6 92.7/40.1 93.3/35.6 93.9/32.3 94.0/27.1 94.6/25.4 92.7/43.4 93.4/36.8 93.6/34.7 93.8/33.6 
+
+EVA02-B ViT 93.9/25.7 87.3/60.2 90.4/45.5 92.9/35.2 93.3/33.4 94.7/20.5 95.0/19.9 91.9/40.1 92.1/39.9 91.0/43.8 91.5/42.4 
+
+ViT-B-MAE ViT 41.8/95.5 64.8/79.8 67.6/77.7 66.0/77.7 68.9/75.5 82.5/69.5 83.7/65.2 68.3/75.9 70.7/74.0 63.7/77.1 67.4/75.7 
+
+ViT-B/16-augreg ViT 89.5/39.9 94.0/29.9 95.6/21.2 96.7/11.6 97.1/10.8 96.2/13.5 96.9/11.4 97.5/10.0 97.3/11.5 96.6/15.6 96.1/18.9 ViT-B/16-in1k ViT 84.9/58.8 92.0/38.6 93.1/33.5 93.6/28.6 94.0/27.1 93.9/29.5 94.6/25.3 93.1/34.5 93.3/33.8 93.6/32.0 93.7/31.3 
+
+ViT-B/32 ViT 87.2/49.8 91.8/40.9 93.5/31.9 95.8/17.7 96.1/17.2 94.5/23.6 95.5/18.8 95.7/20.2 95.1/24.5 94.2/29.1 93.8/31.8 ViT-L/16 ViT 91.1/34.6 95.0/22.4 96.1/17.7 97.2/9.8 97.5/9.1 97.0/10.8 97.6/9.1 97.0/13.9 96.7/16.8 96.8/14.3 96.5/16.4 ViT-S/16 ViT 86.9/50.4 93.6/31.9 95.1/23.1 96.1/16.1 96.5/15.1 95.1/20.6 96.0/17.1 96.6/14.7 96.4/15.7 94.4/28.9 94.1/31.2 
+
+Hierarchical Transformers 
+
+Swin-B Swin 89.1/39.3 95.4/18.1 94.1/25.3 96.6/12.1 95.8/14.8 95.6/14.3 95.4/14.9 91.3/44.2 91.4/42.8 91.4/30.4 91.7/30.4 SwinV2-B Swin 84.5/57.7 95.1/18.5 95.1/18.5 95.3/16.3 95.5/16.1 95.2/16.9 95.4/15.7 95.2/20.6 95.4/18.8 95.5/17.2 95.5/17.4 SwinV2-B-In21k Swin 89.3/39.0 95.7/15.1 94.8/19.2 96.7/10.9 96.1/12.4 95.9/12.5 95.7/12.8 94.7/22.6 94.7/22.1 96.2/15.3 95.8/16.8 SwinV2-T Swin 85.5/53.6 93.4/30.2 92.5/37.5 94.8/21.2 94.2/25.4 94.0/27.1 93.9/28.0 79.6/69.0 83.5/66.7 86.9/62.3 87.5/62.6 
+
+Convolutional encoders 
+
+ConvNeXt-B CNN 83.6/59.3 94.8/20.5 94.5/22.6 94.7/22.0 94.8/21.1 94.3/22.6 94.7/19.0 94.1/27.6 94.3/25.7 92.6/36.5 93.7/32.1 
+
+ConvNeXt-B-In21k CNN 90.3/37.3 96.4/12.6 96.5/12.1 97.1/9.7 97.2/9.7 96.1/11.6 96.6/10.8 96.3/13.9 96.5/13.2 90.9/36.0 93.7/29.5 
+
+ConvNeXt-L CNN 83.1/60.9 94.9/18.9 94.8/19.8 94.8/19.7 95.1/18.3 94.6/19.1 95.0/17.5 94.3/24.2 94.5/22.9 92.6/38.5 93.9/32.2 
+
+ConvNeXt-T CNN 83.8/57.1 93.2/30.8 93.2/31.4 94.5/23.2 94.4/25.5 93.8/27.2 94.2/24.7 92.8/39.2 93.1/35.9 79.3/62.2 86.9/53.4 
+
+ConvNeXtV2-B CNN 85.4/53.7 95.3/17.0 95.0/18.6 95.1/16.7 95.2/16.6 94.8/18.3 95.1/16.6 94.3/26.1 94.5/25.6 87.8/52.3 92.1/41.5 
+
+ConvNeXtV2-B-In21k CNN 90.8/33.9 97.3/10.5 97.1/10.6 97.7/8.5 97.7/8.6 96.9/10.0 97.2/9.6 97.2/10.7 97.3/10.6 83.2/61.8 92.4/38.8 
+
+ConvNeXtV2-T CNN 85.6/54.4 93.6/29.2 93.7/30.0 94.4/23.0 94.5/22.8 94.1/26.9 94.5/22.2 93.2/35.2 93.4/33.6 82.1/60.4 88.5/50.3 
+
+DenseNet-121 CNN 83.7/64.7 88.0/51.0 88.3/51.0 87.2/55.4 88.0/52.4 89.2/53.9 90.8/45.8 87.3/55.0 87.9/53.0 65.2/79.4 74.0/75.3 
+
+EffNetV2-L CNN 87.6/41.0 96.5/13.0 96.4/13.8 95.7/17.9 96.0/16.7 95.3/15.1 96.0/13.3 96.2/14.4 96.1/14.9 76.0/76.1 83.8/70.4 
+
+EffNetV2-M CNN 87.4/41.4 95.8/17.5 95.9/17.6 94.9/24.2 95.3/22.3 95.0/16.8 95.7/15.3 95.9/15.9 95.8/16.9 74.8/77.4 83.4/72.3 
+
+EffNetV2-S CNN 85.2/49.4 95.1/22.1 95.2/21.1 94.5/27.2 94.9/24.4 94.2/23.8 95.0/20.3 95.0/20.8 94.9/21.7 74.5/75.9 82.8/70.2 
+
+RegNetY-040 CNN 85.5/56.0 91.7/34.0 91.6/36.2 91.9/35.4 91.9/36.2 93.1/35.4 93.8/30.7 91.7/36.5 91.6/37.1 74.8/74.3 80.8/69.4 
+
+ResNet-101 CNN 82.7/57.5 94.9/21.5 95.1/21.7 95.4/20.4 95.6/19.2 94.6/24.4 95.3/21.0 95.5/20.4 95.7/19.1 68.4/79.0 84.2/68.7 
+
+ResNet-152 CNN 83.6/54.9 95.5/18.3 95.8/17.5 95.9/17.3 96.2/16.2 95.0/21.6 95.7/18.0 95.8/17.6 96.1/16.5 72.2/76.9 87.2/63.0 
+
+ResNet-50 CNN 85.5/59.4 92.4/35.4 93.1/32.5 90.8/50.7 92.5/44.0 91.4/58.4 93.3/38.1 91.1/49.7 92.6/43.0 70.1/77.6 82.0/70.3 
+
+ResNetV2-50 CNN 83.5/57.7 93.3/29.6 93.0/33.0 94.2/28.2 94.1/29.4 93.6/30.8 94.5/25.1 90.7/45.0 90.5/45.1 68.2/78.1 78.5/72.2 
+
+WideResNet50-2 CNN 84.0/57.5 94.6/24.2 94.7/24.7 94.8/24.7 95.0/23.9 94.3/25.2 95.2/21.2 95.0/23.7 95.1/24.2 73.6/76.8 83.8/69.6 Table P5: Complete OpenOOD results: ImageNet-1K. 42 checkpoints, 50 fit images per class, and five OOD datasets. 
+
+Model Fam MSP kNN +path Maha++ +path RelMaha +path X-Maha +path Traj-Maha +path Self-supervised foundation encoders 
+
+DINOv2 ViT-B/14 SSL 88.2/41.8 89.5/37.1 91.6/28.7 91.3/32.0 92.6/27.4 89.3/35.4 91.3/28.6 92.2/27.7 92.8/26.4 91.8/34.2 91.6/35.0 DINOv3 ViT-B/16 SSL 83.5/54.7 82.9/55.7 88.0/41.8 85.6/47.4 88.9/40.9 86.8/44.5 90.1/34.8 87.5/43.7 89.8/39.0 89.5/52.0 89.8/51.1 Vision–language encoders 
+
+CLIP ViT-B/16 VLM 67.9/81.1 61.9/96.3 71.6/89.4 69.4/95.7 76.6/91.6 80.5/72.6 85.1/63.2 71.6/94.4 77.4/89.4 79.4/79.4 81.2/75.0 
+
+CLIP ViT-L/14 VLM 73.2/78.4 69.5/91.9 77.0/80.1 74.6/88.5 80.0/81.5 84.5/62.1 88.3/50.4 82.8/70.8 84.4/67.0 82.0/70.8 83.3/68.5 
+
+CLIP-timm ViT-B/16 VLM 68.1/82.6 62.4/95.7 70.6/88.2 66.2/95.2 72.6/91.0 79.3/73.8 82.8/64.6 72.2/88.9 75.6/83.4 74.9/79.8 76.9/77.3 
+
+PE-Core ViT-B/16 VLM 71.0/81.6 70.0/88.9 76.2/73.8 78.7/86.6 82.1/77.6 83.4/59.3 86.8/49.6 80.9/72.7 82.1/69.9 77.8/75.2 79.4/72.9 
+
+SigLIP2 ViT-B/16 VLM 76.8/71.8 74.0/88.3 80.4/73.4 79.5/87.3 83.1/77.3 87.7/46.7 89.8/39.3 81.2/73.7 83.5/66.7 82.7/71.0 84.2/66.6 Supervised plain ViTs 
+
+BeiT-B/16 ViT 88.4/42.3 88.6/46.3 90.8/36.3 91.0/37.1 92.1/32.5 91.3/35.3 92.4/31.0 91.8/29.4 91.8/29.7 91.2/34.1 91.0/34.7 BeiT-L ViT 90.1/36.1 90.3/46.1 92.0/37.4 92.3/35.6 93.1/32.0 92.9/29.9 93.5/27.3 93.4/25.6 93.2/26.3 92.9/30.7 92.8/30.1 BeiTv2-B ViT 88.8/41.4 88.6/49.0 91.1/37.4 92.5/31.2 93.4/27.3 92.0/31.9 93.0/27.5 93.6/23.4 93.3/24.5 92.1/29.9 91.9/30.9 DeiT3-B/16 ViT 83.0/61.0 82.5/72.5 84.3/64.9 87.7/50.4 88.1/49.1 88.6/47.8 88.9/46.1 86.2/58.0 86.6/56.4 87.4/50.0 87.4/51.2 DeiT3-B/16-In21k ViT 81.5/58.9 88.9/43.9 90.9/35.4 91.2/35.0 92.2/31.5 90.9/35.5 92.0/31.8 91.9/31.3 92.5/29.0 92.4/29.3 92.5/28.6 
+
+DeiT3-L/16 ViT 82.7/60.7 84.0/62.2 85.5/56.9 88.8/44.8 88.9/44.2 89.4/42.6 89.5/42.3 87.8/46.4 87.9/46.9 89.1/41.6 88.9/43.0 DeiT3-S ViT 83.6/61.3 81.4/79.8 84.2/66.6 86.5/56.2 87.6/51.4 87.0/53.9 88.0/49.2 86.1/58.6 87.3/52.5 87.0/52.2 87.0/51.5 EVA02-B ViT 81.5/63.1 75.2/75.9 80.1/63.5 86.5/50.3 86.8/48.8 88.5/39.8 89.2/38.5 85.5/51.2 85.3/52.5 84.2/56.3 84.2/56.4 ViT-B-MAE ViT 40.6/96.3 64.0/81.4 66.1/79.3 61.8/83.3 64.8/81.1 76.7/74.0 78.8/70.5 64.2/81.7 66.7/79.8 62.1/82.1 65.2/80.1 
+
+ViT-B/16-augreg ViT 87.5/46.5 87.8/50.1 91.2/35.7 92.7/27.8 93.8/23.8 92.0/30.9 93.6/24.6 94.3/22.1 94.1/23.7 92.6/31.3 92.1/34.3 ViT-B/16-in1k ViT 82.7/64.2 82.8/65.1 85.2/55.9 87.6/47.7 88.6/43.8 88.1/46.3 89.2/41.8 87.3/47.6 87.4/48.3 88.2/45.2 87.9/46.7 ViT-B/32 ViT 85.0/55.3 84.7/58.8 88.2/45.5 91.5/31.2 92.4/28.0 89.5/39.3 91.6/30.0 92.3/30.6 91.7/34.2 89.5/44.8 89.2/47.1 ViT-L/16 ViT 89.6/40.2 89.7/45.4 92.1/34.8 94.1/23.8 94.9/20.8 93.8/25.7 94.9/20.7 94.4/24.9 93.8/28.6 93.1/29.8 92.8/32.7 ViT-S/16 ViT 84.4/57.0 86.9/53.2 89.8/40.2 91.6/31.6 92.6/28.2 89.5/39.8 91.5/31.4 92.9/27.2 92.7/28.9 89.6/46.0 89.2/47.6 
+
+Hierarchical Transformers 
+
+Swin-B Swin 87.2/46.0 88.4/42.9 87.5/48.5 92.2/28.2 91.3/33.5 90.8/33.4 90.4/36.3 84.7/61.0 84.6/59.8 84.9/41.5 85.1/42.9 SwinV2-B Swin 82.4/62.4 87.1/52.8 88.0/48.8 90.1/40.1 90.2/40.0 90.1/39.7 90.3/39.5 89.6/41.6 89.6/42.2 90.2/40.4 90.0/42.0 SwinV2-B-In21k Swin 87.6/44.2 88.9/41.3 88.5/45.0 92.4/26.9 91.7/30.9 91.4/30.8 91.0/33.4 89.0/39.9 89.1/40.1 91.8/29.6 91.2/33.1 SwinV2-T Swin 82.9/62.2 82.9/67.4 83.4/67.1 88.8/41.1 88.4/43.8 88.8/42.1 88.5/44.2 73.5/77.0 76.9/75.1 81.9/66.6 82.1/67.1 
+
+Convolutional encoders 
+
+ConvNeXt-B CNN 81.5/64.5 85.7/55.8 86.2/54.8 89.0/42.2 89.0/43.5 88.8/43.9 88.8/44.1 87.4/51.0 87.5/51.2 85.5/53.0 86.5/52.5 
+
+ConvNeXt-B-In21k CNN 88.6/42.7 90.3/35.8 91.3/32.1 93.4/23.9 93.6/23.3 92.1/28.9 92.8/26.3 91.8/31.6 92.3/29.7 84.4/48.1 87.6/43.5 
+
+ConvNeXt-L CNN 80.8/65.7 86.2/53.7 86.9/52.0 89.0/43.2 89.1/43.3 88.8/44.0 89.1/43.4 87.7/50.4 88.0/49.9 86.9/52.6 87.9/50.3 
+
+ConvNeXt-T CNN 81.3/65.4 83.0/65.1 84.1/61.2 88.9/40.9 88.8/42.6 88.4/44.5 88.5/44.6 86.0/55.8 86.2/54.9 73.0/69.5 78.4/65.1 
+
+ConvNeXtV2-B CNN 83.2/60.0 87.7/50.6 88.0/51.2 90.0/40.0 90.0/40.8 89.9/41.4 90.0/41.0 88.4/49.5 88.6/49.5 81.3/64.7 85.5/56.9 
+
+ConvNeXtV2-B-In21k CNN 89.3/38.9 90.4/46.5 91.5/40.4 93.6/28.0 93.9/27.1 93.2/28.2 93.6/27.1 93.5/28.3 93.8/27.4 74.1/75.4 84.6/63.2 
+
+ConvNeXtV2-T CNN 83.2/62.3 83.9/68.2 85.4/59.7 88.5/45.7 88.8/44.6 88.7/45.8 89.1/44.1 86.6/56.2 87.2/54.5 75.6/70.2 81.2/62.3 
+
+DenseNet-121 CNN 80.5/72.8 77.0/73.6 79.2/69.5 83.3/58.3 83.9/58.4 81.9/61.8 84.8/53.8 83.3/59.3 83.6/60.2 60.1/84.3 69.3/81.3 
+
+EffNetV2-L CNN 86.1/44.9 91.0/37.9 91.2/37.9 89.3/45.4 90.1/42.4 90.0/42.1 91.2/35.9 91.7/31.5 91.4/33.1 72.4/79.2 78.4/76.3 
+
+EffNetV2-M CNN 85.8/47.0 89.4/45.0 90.0/43.2 87.6/51.5 88.8/47.7 89.3/44.5 90.6/38.8 91.2/34.8 91.0/37.0 72.1/80.3 78.2/77.3 
+
+EffNetV2-S CNN 83.4/54.0 87.4/49.8 88.3/45.9 86.9/52.6 88.0/47.7 88.3/47.4 89.6/41.5 88.9/43.6 88.8/44.0 70.1/80.9 76.3/77.8 
+
+RegNetY-040 CNN 82.9/63.8 83.7/52.6 84.1/54.7 85.6/47.3 85.8/49.2 87.2/47.0 88.4/44.4 85.3/48.6 85.4/50.6 70.1/79.5 75.5/77.0 
+
+ResNet-101 CNN 80.4/64.6 87.2/44.4 88.1/42.4 90.9/32.7 91.1/32.6 89.5/41.2 90.5/36.0 91.0/32.7 91.1/32.9 63.7/82.9 76.8/77.5 
+
+ResNet-152 CNN 81.1/63.0 88.6/40.5 89.5/37.6 91.4/31.8 91.6/31.4 90.3/38.6 91.2/34.6 91.4/31.9 91.6/31.9 68.0/81.3 80.6/73.1 
+
+ResNet-50 CNN 82.9/66.4 84.4/55.1 86.2/51.7 86.7/56.8 88.2/51.7 84.1/72.1 87.7/57.0 87.0/56.2 88.2/51.7 66.5/81.7 77.1/76.8 
+
+ResNetV2-50 CNN 80.5/67.7 83.4/56.3 84.4/54.9 89.2/39.7 89.2/40.9 88.4/45.2 89.7/39.4 84.0/57.7 83.8/59.0 64.2/81.8 73.7/77.1 
+
+WideResNet50-2 CNN 81.4/66.6 86.6/46.0 87.2/48.1 90.3/35.4 90.5/36.5 88.8/44.4 90.0/39.0 90.6/35.2 90.3/37.9 68.5/81.4 76.7/77.8

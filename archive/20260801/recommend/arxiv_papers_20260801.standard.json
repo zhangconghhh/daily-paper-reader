@@ -1,0 +1,96 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-01T21:10:47.662969+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.23979v1",
+      "source": "arxiv",
+      "title": "Mutual Modality Trust with Lightweight Reconstruction Regularization for Fine-grained Tire Pattern Recognition",
+      "abstract": "Visual tire recognition serves as a core supporting technique for vehicle safety monitoring, autonomous driving perception and automated automotive maintenance. Existing fine-grained tire recognition techniques suffer from three prominent limitations. They tend to depend on only one visual source, lack the capacity to jointly model spatial and frequency cues for minute tread texture extraction, and suffer severe overfitting given limited annotated tire imagery. This paper proposes a lightweight fine-grained tire pattern recognition method incorporating dual-branch independent inference and enhanced feature fusion to boost recognition performance. The framework employs two task-specialized branches dedicated to tire surface and tread indentation, respectively, to extract modality-specific discriminative features. Each branch conducts independent prediction, while cross-branch feature fusion exploits Mutual Modality Trust (M$^2$T) to realize complementary feature enhancement across two modalities. Besides, a frequency-domain hierarchical guidance module is devised, which leverages bandpass filters to decompose feature maps into high- and low-frequency components and enables fine-grained cross-layer feature modulation. Furthermore, a Lightweight Reconstruction Regularization (LR$^2$) is introduced to retain abundant intrinsic information within feature embeddings, substantially improving feature stability and recognition robustness under limited labeled training data. In addition, we establish a surface-indentation multi-source dataset namely MTire299 for fine-grained tire tread recognition, which covers 299 categories with a total of 14795 paired image samples. Extensive experiments conducted on two public tire datasets validate the superiority and efficacy of the proposed algorithm.",
+      "authors": [
+        "Jianning Yang",
+        "Jie Fang",
+        "Xinda Ma",
+        "Zirui Song",
+        "Dianwei Wang",
+        "Nan Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-27T04:04:00+00:00",
+      "link": "https://arxiv.org/pdf/2607.23979v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Fine-grained visual classification, though not explicitly ViT/DINO; methodological bridge to fine-grained classification with vision transformers",
+      "llm_evidence_cn": "细粒度视觉分类，未显式用ViT/DINO；对基于视觉Transformer的细粒度分类有方法借鉴",
+      "llm_evidence": "细粒度视觉分类，未显式用ViT/DINO；对基于视觉Transformer的细粒度分类有方法借鉴",
+      "canonical_evidence": "细粒度视觉分类，未显式用ViT/DINO；对基于视觉Transformer的细粒度分类有方法借鉴",
+      "llm_tldr_en": "A lightweight dual-branch framework with mutual modality trust and reconstruction regularization tackles fine-grained tire pattern recognition by jointly modeling spatial and frequency cues, addressing overfitting with limited data.",
+      "llm_tldr_cn": "针对现有细粒度轮胎识别依赖单一视觉源、难以联合建模空间与频率信息且易过拟合的问题，本文提出轻量级双分支独立推理与增强特征融合框架。任务专用分支分别提取互补线索，并引入互模态信任与轻量重建正则化以缓解标注不足。实验表明该方法在有限标注下提升了轮胎花纹识别的性能，为细粒度视觉识别提供了可行方案。",
+      "llm_tldr": "针对现有细粒度轮胎识别依赖单一视觉源、难以联合建模空间与频率信息且易过拟合的问题，本文提出轻量级双分支独立推理与增强特征融合框架。任务专用分支分别提取互补线索，并引入互模态信任与轻量重建正则化以缓解标注不足。实验表明该方法在有限标注下提升了轮胎花纹识别的性能，为细粒度视觉识别提供了可行方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.26565v1",
+      "source": "arxiv",
+      "title": "Representation Trajectories Matters: Complementary Evidence for OOD Detection and Image Classification",
+      "abstract": "Vision models do not form a representation at once; each block revises it. We ask whether the resulting computation path contains evidence that the final representation discards, and whether that evidence improves OOD detection and image classification on clean and shifted data. Unlike approaches that treat intermediate layers as separate snapshots, we retain sample identity across depth and study the transformations connecting successive states. We separate class-coherent transport from input-specific innovation, and coordinate movement from relational reorganization. Across supervised, self-supervised, vision--language, hierarchical, and convolutional encoders, these paths show strong sample-specific continuity and architecture-specific depth profiles that recur across datasets. They are also practically useful. An ID-only transition-surprise score complements strong final-state detectors, reducing FPR95 in 131/152 non-saturated comparisons on a balanced OpenOOD grid; gains are largest for visually disruptive and semantically far shifts, and remain positive on near-OOD for most detectors. Frozen update probes improve 71/72 clean model--dataset cases, while shifted-data gains vary with architecture and corruption type. Computation paths therefore provide a broadly useful reliability signal whose value is determined jointly by model organization and the shift encountered.",
+      "authors": [
+        "Ignacio M. De la Jara",
+        "Cristian Rodriguez-Opazo",
+        "Hamed Damirchi",
+        "Stephen Gould",
+        "Damith Ranasinghe"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-29T07:35:59+00:00",
+      "link": "https://arxiv.org/pdf/2607.26565v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Analyzes self-supervised ViT representation trajectories for image classification",
+      "llm_evidence_cn": "分析自监督ViT表示轨迹用于图像分类",
+      "llm_evidence": "分析自监督ViT表示轨迹用于图像分类",
+      "canonical_evidence": "分析自监督ViT表示轨迹用于图像分类",
+      "llm_tldr_en": "Investigates whether intermediate representation trajectories contain complementary evidence for OOD detection and image classification across supervised, self-supervised, ViT, and CNN encoders; shows strong sample-specific continuity and utility.",
+      "llm_tldr_cn": "视觉模型并非一次形成最终表示，而是逐层修正；中间计算路径可能包含最终表示丢弃的补充证据。本文不同于将中间层视为独立快照的做法，而是保持样本身份跨深度追踪表示变换，并分离类一致运输与输入特有创新、坐标移动与关系重组。在监督、自监督、视觉-语言、层次化与卷积编码器等广泛模型上，这些表示轨迹表现出强烈的样本特异性连续性。结果表明，轨迹信息可以改善OOD检测和干净/偏移数据上的图像分类，为利用自监督视觉Transformer的表示过程提供了新视角。",
+      "llm_tldr": "视觉模型并非一次形成最终表示，而是逐层修正；中间计算路径可能包含最终表示丢弃的补充证据。本文不同于将中间层视为独立快照的做法，而是保持样本身份跨深度追踪表示变换，并分离类一致运输与输入特有创新、坐标移动与关系重组。在监督、自监督、视觉-语言、层次化与卷积编码器等广泛模型上，这些表示轨迹表现出强烈的样本特异性连续性。结果表明，轨迹信息可以改善OOD检测和干净/偏移数据上的图像分类，为利用自监督视觉Transformer的表示过程提供了新视角。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

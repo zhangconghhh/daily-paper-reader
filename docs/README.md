@@ -6,29 +6,29 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-07-31
-- 运行时间：2026-07-31 21:47:52 UTC
+- 最新运行日期：2026-08-01
+- 运行时间：2026-08-01 21:12:47 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：1
+- 本次总论文数：2
+- 精读区：0
 - 速读区：2
 
 ### 今日简报（AI）
-今日精选3篇论文，聚焦缺陷检测、人脸防伪与模型量化，其中1篇精读获8.0高分。最值得关注BladeYOLO：在少量标注下结合弱显著性感知，高效识别风机叶片缺陷；另可速览统一线性探测基准的面部防伪研究。若时间有限，建议优先精读BladeYOLO，并关注其弱监督思路对工业检测的泛化价值。
-- 详情：[/202607/31/README](/202607/31/README)
+今日共速读2篇论文，暂无精读，覆盖轮胎纹识别与OOD检测方向。  
+最值得关注的是《Mutual Modality Trust...》与《Representation Trajectories Matters...》，均获6.0分，前者聚焦多模态信任与轻量重建，后者从表征轨迹切入分类与OOD检测。  
+建议后续优先精读这两篇，并延伸检索相关基准实验与代码复现。
+- 详情：[/202608/01/README](/202608/01/README)
 
 ### 精读区论文标签
-1. [BladeYOLO: Wind Turbine Blade Defect Detection with Limited Annotations and Weak-Saliency Awareness](/202607/31/2607.28065v1-bladeyolo-wind-turbine-blade-defect-detection-with-limited-annotations-and-weak-saliency-awareness)  
-   标签：评分：8.0/10、query:dino-fg
-   evidence：使用DINOv3自监督ViT骨干进行细粒度叶片缺陷检测
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Foundation Models for Face Presentation Attack Detection: A Unified Linear-Probing Benchmark](/202607/31/2607.26993v2-foundation-models-for-face-presentation-attack-detection-a-unified-linear-probing-benchmark)  
-   标签：评分：7.0/10、query:dino-fg
-   evidence：通过统一线性探测协议评估24种视觉基础模型用于图像分类的能力
-2. [MixFrag: Fragility-Guided Mixed-Precision Post-Training Quantization for Vision Transformers](/202607/31/2607.28589v1-mixfrag-fragility-guided-mixed-precision-post-training-quantization-for-vision-transformers)  
+1. [Mutual Modality Trust with Lightweight Reconstruction Regularization for Fine-grained Tire Pattern Recognition](/202608/01/2607.23979v1-mutual-modality-trust-with-lightweight-reconstruction-regularization-for-fine-grained-tire-pattern-recognition)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：视觉Transformer架构与量化，面向分类部署
+   evidence：细粒度视觉分类，未显式用ViT/DINO；对基于视觉Transformer的细粒度分类有方法借鉴
+2. [Representation Trajectories Matters: Complementary Evidence for OOD Detection and Image Classification](/202608/01/2607.26565v1-representation-trajectories-matters-complementary-evidence-for-ood-detection-and-image-classification)  
+   标签：评分：6.0/10、query:dino-fg
+   evidence：分析自监督ViT表示轨迹用于图像分类
 
 
 <div class="dpr-home-promo-card">

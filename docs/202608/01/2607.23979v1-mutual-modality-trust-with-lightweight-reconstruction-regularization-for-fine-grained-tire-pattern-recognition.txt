@@ -1,0 +1,517 @@
+Title: Mutual Modality Trust with Lightweight Reconstruction Regularization for Fine-grained Tire Pattern Recognition
+
+URL Source: https://arxiv.org/pdf/2607.23979v1
+
+Published Time: Tue, 28 Jul 2026 01:29:52 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+> 1
+
+# Mutual Modality Trust with Lightweight Reconstruction Regularization for Fine-grained Tire Pattern Recognition 
+
+Jianning Yang, Jie Fang †, Xinda Ma, Zirui Song, Dianwei Wang, and Nan Wang 
+
+Abstract —Visual tire recognition serves as a core supporting technique for vehicle safety monitoring, autonomous driving perception and automated automotive maintenance. Existing fine-grained tire recognition techniques suffer from three prominent limitations. They tend to depend on only one visual source, lack the capacity to jointly model spatial and frequency cues for minute tread texture extraction, and suffer severe overfitting given limited annotated tire imagery. This paper proposes a lightweight fine-grained tire pattern recognition method incorpo-rating dual-branch independent inference and enhanced feature fusion to boost recognition performance. The framework employs two task-specialized branches dedicated to tire surface and tread indentation, respectively, to extract modality-specific discrimi-native features. Each branch conducts independent prediction, while cross-branch feature fusion exploits Mutual Modality Trust (M 2T) to realize complementary feature enhancement across two modalities. Besides, a frequency-domain hierarchical guidance module is devised, which leverages bandpass filters to decom-pose feature maps into high- and low-frequency components and enables fine-grained cross-layer feature modulation. Fur-thermore, a Lightweight Reconstruction Regularization (LR 2)is introduced to retain abundant intrinsic information within feature embeddings, substantially improving feature stability and recognition robustness under limited labeled training data. In addition, we establish a surface-indentation multi-source dataset namely MTire299 for fine-grained tire tread recognition, which covers 299 categories with a total of 14795 paired image samples. Extensive experiments conducted on two public tire datasets validate the superiority and efficacy of the proposed algorithm. 
+
+Index Terms —Tire pattern recognition, modal mutual trust (M 2T), lightweight reconstruction regularization (LR 2), MobileConvNeXt-Tiny, spatial-frequency collaborative. 
+
+I. I NTRODUCTION 
+
+Tires constitute the only vehicle component that maintains direct contact with pavement. Their tread layouts, structural properties and wear states fundamentally determine driving stability, braking reliability and steering controllability, laying an essential foundation for overall road traffic safety. Driven by the booming development of intelligent transportation, autonomous driving and automotive aftermarket services, au-tomated high-precision tire identification has emerged as an indispensable technical pillar for industrial intelligent trans-formation. Reliable recognition of tire specifications, tread 
+
+J. Yang, J. Fang, X. Ma, Z. Song and D. Wang are with the School of Communications and Information Engineering, Xi’an University of Posts and Telecommunications, Xi’an 710121, China. N. Wang is with the School of Artificial Intelligence, Hainan Normal University, Haikou 571158, China. J. Fang is also with the School of Artificial Intelligence, Optics and Electronics (iOPEN), Northwestern Polytechnical University, Xi’an 710072, China. 
+
+> †
+
+Correspondence (Email: fangjie@xupt.edu.cn) Absent 
+
+Absent 
+
+Generalized Multi -source Recognition Framework 
+
+Fig. 1: Inference under various modal combinations of our proposed method. textures and surface defects delivers credible data support for onboard vehicle monitoring and adaptive driving control, while also enabling proactive prediction of potential traffic hazards. Meanwhile, fine-grained tire identification streamlines tire matching and wear quantification across waste tire recycling, vehicle maintenance and insurance damage appraisal work-flows, greatly lifting operational efficiency and intelligent management standards within related industries. Real-world tire inspection tasks still face prominent practical obstacles. Mass tire categories share nearly identical visual appearances, which raises the difficulty of fine-grained discrimination. Con-ventional manual inspection suffers from low throughput and strong subjective bias, frequently triggering misjudgments that fail to meet the demands of large-scale, standardized industrial detection. In these cases, a series of vision-based fine-grained tire pattern recognition have been proposed successively because of its convenience and objectivity. For instance, Liu et al. [1] proposed a rotation invariant HOG descriptor to extract features that robust to illumination, scale changes, and rotation arXiv:2607.23979v1 [cs.CV] 27 Jul 2026 2
+
+invariant to improve the recognition performance. Yan et al. [2] proposed a few-shot learning recognition framework based on classical CNN features, which calibrates the distribution of few sample classes through transferring statistics from the classes with sufficient features. Feng et al. [3] incorporated knowledge distillation and attention mechanism into the deep neural network to enhance its representation capability, and further improve the recognition performance. However, tire images captured under complicated real-world conditions are disturbed by surface stains, occlusion, illumination fluctuations, viewpoint shifts, tread wear and deformation. Subtle intra-class variations within identical tire categories are hard to discriminate. The challenges are further exacerbated by small-scale existing tire datasets, scarce an-notated samples and severe confusion of fine-grained features. Conventional recognition approaches suffer from weak feature extraction and insufficient robustness, which cannot support high-precision tire identification in complex environments. Current deep learning-based methods have gained certain performance gains, yet their overall performance still cannot match practical application standards. The major bottlenecks are outlined below. 1) Few methods jointly exploit tire surface textures and indentations, instead relying on a single cue for recog-nition and yielding degraded performance. 2) Traditional CNNs rely on massive training data for model optimization, yet fine-grained tire pattern recog-nition datasets are usually limited in scale. 3) SOTA neural networks perform spatial-domain encoding on tire images, whose extracted representations cannot adequately reflect statistical texture features. To address the abovementioned issues, we propose a gener-alized multi-source fine-grained tire pattern recognition algo-rithm, which can address recognition problem under different modal combinations as shown in Fig. 1. Specifically, it em-ploys two identical-architecture ConvNeXt-Tiny branches ded-icated to tire surface and tread indentation to extract modality-specific discriminative features, and each branch conducts independent prediction, while cross-branch feature fusion ex-ploits M 2T to realize complementary feature enhancement across two modalities. Besides, a frequency-domain hierarchi-cal guidance module leverages bandpass filters to decompose feature maps into high- and low-frequency components and enables fine-grained cross-layer feature modulation. Further-more, a LR 2 is introduced to retain abundant intrinsic informa-tion within feature embeddings, substantially improving fea-ture stability and recognition robustness under limited labeled training data. In addition, we establish a surface-indentation multi-source dataset namely MTire299, which covers 299 categories with a total of 18,233 paired image samples, to address the insufficient scale of existing datasets. Overall, the main contributions of the proposed method can be summarized as follows.  
+
+> •
+
+We design a dual-branch fine-grained tire pattern recog-nition framework toward M 2T capable of inference from separate branches or the fused branch as required.  
+
+> •
+
+We adopt MobileConvNeXt-Tiny as the backbone of each branch and introduce a LR 2 to constrain the optimization process to mitigate overfitting risks.  
+
+> •
+
+We propose a hierarchical bandpass filtering-guided cross-domain weighting strategy for each modal encoder to boost collaborative spatial-frequency representations.  
+
+> •
+
+We establish a large-scale of surface-indentation multi-source dataset, to promote the development of fine-grained tire pattern recognition. The rest of this paper is structured as follows. Sec. II re-views the existing fine-grained tire pattern recognition methods briefly. Sec. III introduces the proposed algorithm in detail. Sec. IV reports the experiments comprehensively, and Sec. V concludes the paper. II. R ELATED WORKS 
+
+Existing tire pattern recognition approaches fall into three mainstream categories: handcrafted feature-based algorithms, vanilla convolutional neural networks (CNNs), and sophisti-cated neural networks. Handcrafted feature methods enjoy the merits of low computational overhead and high interpretability, yet they fail to capture discriminative fine-grained tire patterns. Although vanilla CNNs enable end-to-end automatic feature extraction, they are deficient in multi-modal feature interaction and exhibit weak generalization against complex real-world scenarios. In contrast, sophisticated neural networks integrate well-designed multi-branch architectures, attention modules and knowledge distillation schemes, thus delivering prominent improvements on fine-grained tire recognition tasks. 
+
+A. Handcrafted feature methods 
+
+Research on handcrafted features for tire pattern recognition can be categorized into shape, texture, and multiple feature extraction paradigms, as reviewed below. In the branch of shape feature representation, Hu et al. [4] pioneered the invariant moment theory, which generates translation-, rotation-, and scale-invariant moment descriptors and has long served as a fundamental tool for early object matching and tire contour characterization. To further capture local geometric cues, Dalal and Triggs [5] developed the HOG framework to encode spatial edge and gradient statistics; this descriptor is commonly fused with other handcrafted features to facilitate tire tread contour detection tasks. For texture characterization, Ojala et al. [6] proposed the classical LBP operator, an efficient lightweight descriptor that models local gray-level variations and dominates mainstream tire surface texture analysis pipelines. Complementing spatial-domain handcrafted features, frequency-domain transforma-tion techniques provide an alternative way to decouple tire image components. Specifically, Mallat [7] established the complete theoretical framework for multi-resolution wavelet decomposition, enabling separate extraction of low-frequency contour components and high-frequency fine details from tire images. Building upon multi-scale frequency filtering, Zhang et al. [8] exploited Gabor filter banks to extract multi-scale frequency features, realizing automated grading of tire tread wear with promising performance under real traffic surveil-lance scenarios. 3
+
+Beyond single-type feature extraction, recent studies have explored the fusion of multiple handcrafted features to strengthen discriminability. Nevertheless, Li et al. [9] demon-strated that naive feature concatenation fails to fully exploit the complementary latent information embedded in tire im-ages, revealing inherent limitations of straightforward fusion strategies. Aiming at practical tire inspection tasks, several improved handcrafted pipelines have been devised. Li et al. [10] optimized conventional image operators and multi-feature combinations to accelerate tire surface damage identification. Liu et al. [11] integrated HOG with a refined LBP variant for tire appearance defect detection, moderately boosting the noise robustness of handcrafted feature representations. Extending the applicable scenarios of handcrafted schemes, Poquet et al. [12] integrated image alignment with handcrafted attribute descriptors to accomplish precise matching of tire prints with diverse specifications, broadening the utilization of handcrafted features in vehicle traceability applications. 
+
+B. Vanilla CNNs methods 
+
+As fundamental deep learning backbones, vanilla CNNs hierarchically extract visual representations directly from raw input images, naturally overcoming the inherent drawbacks of handcrafted feature pipelines. Constructed by cascaded convolution, pooling and fully connected layers, vanilla CNNs support end-to-end feature learning and classification with-out labor-intensive manual feature engineering. Nevertheless, such basic architectures exhibit prominent drawbacks when deployed for tire analysis. They are prone to overfitting and deliver degraded robustness given limited training samples or noisy tire imagery. The technical paradigm of vanilla CNNs was originally established by LeCun et al. [13]. The authors developed LeNet-5 as the first functional CNN, which combines convolu-tion and pooling operators for handwritten digit classification. CNN research remained stagnant for decades afterward until the landmark AlexNet proposed by Krizhevsky et al. [14]. Equipped with ReLU activation, dropout regularization and GPU parallel acceleration, AlexNet attained leading accuracy on the ImageNet benchmark and reignited widespread research interest in convolutional networks. Building on this break-through, Simonyan and Zisserman [15] presented VGGNet. This network stacks successive 3×3 convolutional kernels to increase network depth, and the strengthened feature discrim-inability renders VGGNet a standard baseline for vanilla CNN-based vision tasks. Despite the solid theoretical framework of vanilla CNNs, their performance on tire inspection tasks is constrained by in-sufficient data and noise interference. A series of regularization and normalization techniques have been proposed to mitigate these issues. Srivastava et al. [16] devised the dropout strategy to suppress overfitting. This lightweight module has become a standard component for vanilla CNNs trained on small-scale tire datasets. Further, Ioffe and Szegedy [17] put forward batch normalization to stabilize the training distribution of deep vanilla CNNs, speeding up model convergence for tire defect identification. On the practical application side, Tada et al. [18] deployed a shallow vanilla CNN to categorize internal tire surface flaws, verifying the feasibility of basic CNN architectures for industrial rubber defect inspection. 
+
+C. Sophisticated NNs methods 
+
+To remedy the inherent limitations of vanilla convolutional neural networks (CNNs) in tire pattern analysis and defect detection tasks, advanced neural network architectures have been developed with elaborate structural designs, including residual connections, dense feature propagation, adaptive at-tention modules, and transformer paradigms. These advanced networks substantially strengthen the capability of learning fine-grained textures, multi-scale contextual information, and long-range feature dependencies, thus achieving robust tire feature extraction against complex industrial disturbances such as uneven illumination, environmental noise, and target occlu-sion. However, the boosted representation performance comes at the expense of higher computational overhead, and these sophisticated models are prone to overfitting on limited tire datasets, necessitating reasonable regularization strategies in practical deployment. To further enhance the feature discrimination of CNNs for tiny and ambiguous tire defects, attention mechanisms and vision transformers have been introduced to adaptively recalibrate feature weights and model global spatial depen-dencies. Early attention research focuses on channel feature optimization: SENet [19] performs channel-wise feature re-calibration to suppress redundant features and highlight subtle defect information on tire surfaces. To complement spatial modeling capability, CBAM [20] integrates channel and spatial attention modules to hierarchically refine tire tread feature rep-resentations, further improving the model’s anti-interference ability. Beyond the local receptive field constraint of CNN-based methods, Vision Transformer (ViT) [21] exploits self-attention mechanisms to capture global long-range depen-dencies, providing a new perspective for comprehensive tire pattern modeling. Combining the complementary strengths of CNNs, attention modules, and transformers, hybrid detection models have been widely applied to high-precision tire defect tasks. Peng et al. [22] embedded attention mechanisms into the YOLO framework and proposed TD-YOLOA, realizing pre-cise detection of tiny defects in tire radiographic images. Yang et al. [23] fused ViT and residual networks to simultaneously extract local texture and global structural features, effectively improving the accuracy of tire wear classification. For complex tire recycling scenarios with cluttered backgrounds, Phadnis et al. [24] constructed a ResNet50-YOLOv7 hybrid model, which achieves an excellent balance between detection accuracy and real-time inference speed. In recent years, state-space-based ConvNeXt-Tiny models have emerged as a novel efficient visual backbone, over-coming the computational bottlenecks of CNNs and trans-formers and offering a superior alternative for high-efficiency visual inspection. Unlike transformers with quadratic compu-tational complexity, ConvNeXt-Tiny series models implement global feature modeling with linear complexity via state-space theories. To adapt the original one-dimensional ConvNeXt-Tiny for visual tasks, Liu et al. [25] designed the SS2D 4pull cls Surface Encoder 
+
+> Indentation Encoder
+> Surface Decoder
+> Indentation Decoder rec
+
+## rec cls pull 2
+
+M T  
+
+> Paired Paired cls
+
+
+
+Fig. 2: The overview framework of the proposed method. module to capture multi-directional spatial context, enabling effective two-dimensional visual feature extraction. To further strengthen ConvNeXt-Tiny’s spatial modeling capacity, Xin et al. [26] embedded the proposed MPSM blocks into an improved U-Net architecture, endowing ConvNeXt-Tiny with powerful fine-grained feature learning ability. Furthermore, considering the limitation of existing ConvNeXt-Tiny in long-context modeling, Lu et al. [27] proposed a spectrum scaling strategy for transition matrices based on the model’s inherent context sensitivity, which significantly enhances the general-ization capability for long-range spatial dependencies, making ConvNeXt-Tiny highly suitable for high-resolution tire defect recognition tasks. III. A LGORITHM 
+
+A. Overview 
+
+The overall paradigm of the proposed method is illus-trated in Fig. 2, which consists of two parallel representation branches with identical architectures for tire surfaces and tire indentations respectively, and each branch is actually an asymmetric encoder–decoder network. Besides, a bidirec-tional cross-modal guidance module built upon M 2T is intro-duced into two encoders to exploit complementary informa-tion between the two modalities. Furthermore, a hierarchical bandpass filtering-guided cross-domain weighting strategy is adopted for each encoder to enhance collaborative spatial-frequency representations. In addition, a LR 2 optimization mechanism is introduced to retain abundant intrinsic infor-mation within feature embeddings, substantially improving feature stability and recognition robustness under limited la-beled training data. Finally, the fused features derived from the outputs of the two encoders are utilized for final recognition.It is noteworthy that the two separate branches and the fused branch can independently complete inference and recognition tasks, enabling the model to adapt to diverse scenarios such as missing modalities. 
+
+B. M 2T based encoder 
+
+The inner architecture of the M 2T based encoder is shown in Fig. 3, which mainly contains a spatial domain flow, a frequency domain flow, and an M 2T module for surface-indentation cross-branch interaction. 3-CNBlock 
+
+> +LayerNorm2D
+> +2 ×2 Conv (2)
+> 9-CNBlock
+> +LayerNorm2D
+> +2 ×2 Conv (2)
+> 3-CNBlock
+> +Adaptive
+> AvgPool (1)
+
+⊙
+
+⊙
+
+⊙
+
+> Classifier
+
+ˆy                
+
+> HPF BPF LPF
+> 4×4 Conv (4)
+> +LayerNorm2D
+> Tire Surface/
+> Tire Indentation 192 88
+> HW
+> 
+> 384 16 16
+> HW
+> 
+> 768 32 32
+> HW
+> 
+> 
+> 2D -DFT
+> Prediction
+> Magnitude  Spectrum
+> 3-CNBlock
+> +LayerNorm2D
+> +2 ×2 Conv (2) 96 44
+> HW
+> 
+> 3HW
+> 
+> ConvNeXt -Tiny
+
+Fig. 3: The inner architecture of the surface/indentation en-coder based on frequency-guided MobileConvNeXt-Tiny. Firstly, we utilize 2D-DFT operator to obtain frequency images corresponds to spatial ones, and its formulation is defined as Equation (1). 
+
+Fu,v =
+
+> W
+
+X
+
+> w=1
+> H
+
+X
+
+> h=1
+
+fw,h · e−2jπ ( uw W + vh H ) (1) where W and H denote the width and height of the image respectively. fw,h denotes the (w, h )th element of the spatial-domain image, while Fu,v stands for the (u, v )th element of the frequency-domain image. Besides, we design a set of band-pass filters (BPFs) to separate different frequency components, and the nth BPF is defined as Equation (2). 
+
+BPF n = Z, s.t. Zu,v =
+
+(
+
+1, r n−1 ≤
+
+q u − W
+
+> 2
+
+2 +  v − H
+
+> 2
+
+2 < r n
+
+0, otherwise 
+
+(2) 5
+
+where rn denotes the nth cut-off frequency, in which r0 =0, r 1 = 85 , r 2 = 170 , r 3 = 255 . Furthermore, we update the spatial feature map using Equation (3). 
+
+ˆFspatial ,n = Fspatial ,n ⊙ AF2S 4−n (3) where AF2S  
+
+> n
+
+denotes the nth frequency-to-spatial guidance map, which is defined as Equation (4). 
+
+AF2S  
+
+> n
+
+= 1 + σ (FCN n (BPF n ⊙ F )) (4) where σ (·) denotes the sigmoid function. FCN ( ·) denotes the fully convolutional network operator. In addition, we utilize M2T based cross-modal interaction operator to enhance the representations of both two branches, and the update process is defined in Equation (5). 
+
+ ˆFsurf ,n 
+
+ˆFiden ,n 
+
+
+
+=
+
+ τsurf ,n 1 − τsurf ,n 
+
+τiden ,n 1 − τiden ,n 
+
+  Fsurf ,n 
+
+Fiden ,n 
+
+
+
+(5) where ˆFsurf ,n and ˆFiden ,n denote the features of nth layer correspond to surface and indentation branches respectively. 
+
+τsurf ,n and τiden ,n denote the M 2T coefficients, and they can be obtained by Equation (6). 
+
+ τsurf ,n 
+
+τiden ,n 
+
+
+
+=
+
+ 10
+
+
+
+,
+
+ 01
+
+
+
+,s.t. ∃
+
+
+
+I(n)surf 
+
+
+
+, /∃
+
+
+
+I(n)iden 
+
+
+
+s.t. /∃
+
+
+
+I(n)surf 
+
+
+
+, ∃
+
+
+
+I(n)iden 
+
+
+
+σ
+
+
+
+CNN n
+
+ Fsurf ,n 
+
+Fiden ,n 
+
+ 
+
+, others 
+
+(6) where CNN ( ·) denotes the convolutional neural network operator. [·] denotes the concatenate function. 
+
+C. LR 2 based Decoder 
+
+The inner architecture of the LR 2 based decoder is shown in Fig. 4, it contains three {2-Layer Conv+Upsample } blocks, three {Conv+Upsample } layers, and one {Conv+ReLU } lay-ers. In contrast to the encoder, the decoder is designed with a lightweight architecture, which retains abundant intrinsic information embedded in feature representations by imposing reconstruction regularization. 2-Layer -Conv                 
+
+> +UpSample (2)
+> 2-Layer -Conv
+> +UpSample (2)
+> 2-Layer -Conv
+> +UpSample (2) 768 32 32
+> HW
+> 
+> 192 16 16
+> HW
+> 
+> 96 88
+> HW
+> 
+> 
+> 3-(Conv+ReLU
+> +UpSample (2)) 3
+> Conv
+> +ReLU 3HW
+> 12 HW
+> 48 88
+> HW
+> 
+> 
+
+Fig. 4: The inner architecture of the lightweight sur-face/indentation decoder. 
+
+D. Optimization 
+
+The overall loss function of the proposed algorithm is defined in Equation (7). 
+
+Ltotal = Lcls + α · L pull + β · L dis (7) where α = 0 .5 and β = 0 .3 are two hyperparameters to control the relative importance among different terms, while the definitions of Lcls , Lpull , and Lrec are shown in Equation (8), Equation (9), and Equation (10) respectively. 
+
+Lcls =
+
+> N
+
+X
+
+> n=1
+
+ℏcls 
+
+
+
+ˆy(n)surf , y (n)
+
++ ℏcls 
+
+
+
+ˆy(n)inde , y (n)
+
++ ℏcls 
+
+
+
+ˆy(n)fuse , y (n) (8) where ℏcls denotes the cross entropy function. y(n) denotes the category label of the nth sample. ˆy(n)surf , ˆy(n)inde , and ˆy(n)fuse 
+
+denote the predictions of surface branch, indentation branch and fusion branch respectively. Lcls enables all branches to possess independent discriminative capacity for classification. 
+
+Lpull =
+
+> N
+
+X
+
+> n=1
+
+¯λdis 
+
+
+
+Ben surf 
+
+
+
+I(n)surf 
+
+
+
+, Bfuse 
+
+
+
+I(n)surf , I(n)inde 
+
+ 
+
++ ¯ λdis 
+
+
+
+Ben inde 
+
+
+
+I(n)inde 
+
+
+
+, Bfuse 
+
+
+
+I(n)surf , I(n)inde 
+
+ (9) where ¯λdis denotes the KL distance function. B denotes the network of different components. I denotes the input image of different branches. Lpull enables the surface branch and indentation branch to acquire representation capabilities comparable to those of the fusion branch, thereby achieving accurate recognition even under missing-modality conditions. 
+
+Lrec =
+
+> N
+
+X
+
+> n=1
+
+ℓdis 
+
+
+
+Bde surf 
+
+
+
+I(n)surf 
+
+
+
+, I(n)surf 
+
+
+
++ ℓdis 
+
+
+
+Bde inde 
+
+
+
+I(n)inde 
+
+
+
+, I(n)inde 
+
+ (10) where ℓdis represents the Frobenius norm loss function that guides the decoder to reconstruct input images using output vectors produced by the encoder. IV. E XPERIMENTS 
+
+A. Datasets 
+
+We conduct a series of experiments on two datasets, includ-ing CIIP-TPID-V1.1 [28] and MTire299. Specifically, CIIP-TPID-V1.1 [28] contains 983 images with a resolution of approximately 3000 ×4000 pixels, covering 75 distinct tread designs across 30 brands. The self-built MTire299 contains 14795 paired surface-identation image samples within 299 fine-grained categories and each category contains between 10 and 150 paired surface-indentation samples, forming a balanced yet challenging fine-grained classification setting.and some selected samples are shown in Fig. (5), and the t-SNE visualization of fused features extracted by the proposed model on dataset is shown in Fig. 6. In addition, to promote reproducibility and advance the research community of in-telligent tire inspection, the complete MTire299 multi-modal dataset, covering paired surface-indentation samples, category annotations, and fixed train/val/test split lists, will be made publicly available via a dedicated open repository once this manuscript is accepted. 601  02  03  04 05  06  07 08  09  10 
+
+11 12 13 14 15 16 17 18 19 20
+
+21 22 23 24 25 26 27 28 29 30
+
+Fig. 5: Selected samples of MTire299 dataset. 
+
+Fig. 6: t-SNE visualization of fused features extracted by the proposed model on the MTire299 dataset. 
+
+B. Metrics 
+
+We adopt four quantitative metrics to comprehensively evaluate model performance: classification accuracy (Acc, %), parameter count (Para, in millions), GFLOPs, and frames per second (FPS). 
+
+C. Comparative algorithms 
+
+We compare our method with RiHOG [1], DWT-LBP [29], FD [2], TLCNN [30], ETL [31], PEFT [32], YOLO [33], LN [34], KDAM [3], LWLD [35], and UMJL [36] to verify its superiority and effectiveness. 
+
+D. Experimental settings 
+
+All experiments are implemented using the PyTorch frame-work and executed on a single NVIDIA RTX 3080 GPU. We train the model in an end-to-end fashion with a batch size of 16. The network is optimized via the AdamW optimizer with an initial learning rate of 10 −3 and a weight decay of 10 −4.A linear learning rate scheduler is adopted throughout the training process. All training configurations are fixed for fair comparison, and random seeds are set to ensure reproducible results. For both datasets, we partitioned the data into training, validation, and test subsets following a fixed split ratio of 4 to 1 to 5. 
+
+E. Experimental analysis 1) Contrasting experimental results: The contrasting exper-imental results are shown in Table I. To fully validate the 7
+
+TABLE I: Experimental results on CIIP-TPID-V1.1 and MTire299 datasets.                                                                                                              
+
+> Category ↓Datasets →CIIP-TPID-V1.1 MTire299 Methods ↓Acc.(%) Para.(M) GFLOPS FPS (Hz) Acc.(%) Para.(M) GFLOPS FPS(Hz) Handcrafted RiHOG [1] 36.05 ––556.34 43.21 ––110.72 DWT-LBP [29] 54.58 ––11.19 62.69 ––9.72 Vanilla CNNs FD [2] 78.41 11.21 3.63 1088.31 95.27 11.33 3.63 890.22 TLCNN [30] 84.32 57.31 1.44 1870.09 94.26 58.23 1.44 1846.16 ETL [31] 85.34 57.18 1.44 14.35 40.97 58.09 1.44 4.60 PEFT [32] 38.09 16.03 10.49 490.78 47.61 16.32 10.49 411.38 YOLO [33] 74.75 36.30 24.68 347.75 61.99 36.58 24.68 332.55 LN [34] 63.95 0.21 0.05 683.16 80.78 0.27 0.05 680.85 Sophisticated NNs KDAM [3] 66.80 2.32 0.60 541.78 82.23 2.61 0.60 533.19 LWLD [35] 59.06 134.57 30.94 362.15 86.98 135.49 30.94 363.87 UMJL [36] 58.45 8.19 0.56 219.71 93.04 9.33 0.56 220.70 Ours LR 2M2T-M S89.54 2.0046 1.3951 386.07 95.34 2.0916 1.4120 803.59 LR 2M2T-M I85.40 95.93 LR 2M2T-M SI 94.25 97.65
+
+overall advantages of our lightweight multi-modal framework embedded with M 2T cross-modal interaction and LR 2 recon-struction regularization, we conduct comprehensive compara-tive experiments covering three mainstream technical routes: handcrafted feature methods, vanilla convolutional neural net-works, and sophisticated advanced deep networks. All com-peting approaches are trained and tested under identical data partitioning, hyperparameter configurations and hardware en-vironments to guarantee fair and credible performance compar-ison. Evaluations are performed on two distinct tire datasets, including the public single-modal CIIP-TPID-V1.1 and our self-built large-scale multi-modal MTire299, to comprehen-sively benchmark the recognition capability and industrial deployment suitability of all methods for traffic inspection tasks. Representative handcrafted feature approaches, namely Ri-HOG and DWT-LBP, produce far inferior recognition re-sults across both datasets. On CIIP-TPID-V1.1, their highest classification accuracy only reaches 54.58 %, while the peak value on MTire299 merely stands at 62.69 %. These manu-ally designed descriptors only capture shallow gradient and texture cues, lacking the capacity to excavate minute micro-texture discrepancies between highly analogous tire treads. Despite their minimal computation load, their weak feature discriminability cannot fulfill the high-precision identification demands of automated vehicle inspection, roadside traffic safety screening and classified waste tire recycling. Frequent misclassification severely impairs the operating efficiency of large-scale intelligent traffic detection terminals. Transfer learning-based vanilla CNNs including FD, TL-CNN and ETL attain moderate accuracy improvements against handcrafted pipelines, yet two critical defects restrict their practical usage for tire detection. FD achieves 78.41 % accu-racy on CIIP-TPID-V1.1 and 95.27 % on MTire299, but all such networks merely accept single-modal input without cross-modal complementary fusion mechanisms. Their recognition performance degrades drastically once tire surface or indenta-tion images are partially missing during on-site data capture. Second, basic convolutional architectures lack targeted regular-ization constraints, which induces severe overfitting on small annotated tire datasets and yields unstable generalization on the larger MTire299 dataset. Furthermore, TLCNN and ETL carry parameter volumes exceeding 57M alongside redundant calculations, making them incompatible with low-power, low-cost end-side inspection devices deployed widely at traffic service stations. Advanced sophisticated neural networks integrated with attention modules, hybrid detection structures and lightweight learning strategies deliver marginal accuracy gains, but they still fail to strike a balanced performance for fine-grained tire recognition. Models such as KDAM and UMJL only execute spatial-domain feature encoding and overlook collaborative spatial-frequency modeling; their peak accuracy on MTire299 stays below 94 %, as they fail to extract subtle tread variations that serve as the core discriminative basis for similar tire categories. Other complex networks like LWLD stack deep layers to boost feature distinguishability, which brings param-eter volume up to 134.57 M and heavy computational costs, drastically lowering inference speed and limiting deployment on resource-constrained industrial terminals. By contrast, our full LR 2M2T-M SI framework achieves state-of-the-art recognition accuracy of 94.25 % on CIIP-TPID-V1.1 and 97.65 % on MTire299, outperforming all baseline methods by considerable margins. Our model maintains an ex-tremely compact architecture with only 2.0046 M parameters and sustains fast inference speeds up to 386.07 Hz. The built-in M2T module dynamically adjusts cross-branch feature weights to support stable prediction under incomplete modal inputs, perfectly adapting to the unconstrained image collection con-ditions of real traffic inspection sites. The introduced LR 2
+
+regularization imposes reconstruction constraints on feature embeddings, effectively alleviating overfitting triggered by expensive manual annotation and limited labeled tire samples in industrial scenarios. Additionally, the hierarchical bandpass filtering unit extracts joint spatial-frequency fine-grained rep-resentations, precisely differentiating visually similar tire tread contours that single spatial encoding schemes cannot separate. Collectively, the comparative outcomes fully verify that our method achieves an optimal trade-off between recognition pre-cision, lightweight design and real-time inference capacity. It surpasses existing mainstream algorithms in both identification accuracy and adaptability to on-site industrial deployment, demonstrating superior practical value for intelligent traffic tire monitoring, automated vehicle inspection and multi-modal tire 8S1  S2  S3  S4 
+
+B
+
+BL
+
+BL M
+
+BLM F
+
+Surf  Iden 
+
+S1  S2  S3  S4 
+
+Fig. 7: Feature map visualizations for four stages of the proposed method under various ablation setups. B stands for baseline without any proposed modules. BL stands for baseline + LR 2. BLM stands for baseline + LR 2 + M 2T. BLMF stands for full framework equipped with LR 2, M 2T and FreG. Surf and Indent correspond to feature maps of tire surface and tread indentation branches, and S1–S4 denote four successive encoder stages. sorting systems. 
+
+2) Ablation studies: Independent ablation of individual loss terms will remove indispensable regularization and cross-modal alignment constraints, which easily causes feature divergence between the two branches and further leads to model collapse during training. Thus, we only conduct ablation studies on the proposed structural modules including the M 2Tmodule, frequency-domain hierarchical guidance (FreG) unit, and LR 2, rather than separate loss components, on the CIIP-TPID-V1.1 dataset. All ablation variants adopt the unified ConvNeXt-Tiny dual-branch backbone and identical training configurations to ensure fair comparison. Table II records quantitative metrics covering classification accuracy, parameter count, GFLOPs and inference FPS, while Fig. 7 intuitively presents feature map visualizations of four encoder stages under different ablation setups for both tire surface and tread indentation branches. TABLE II: Ablation study results for the CIIP-TPID-V1.1 dataset on the NVIDIA RTX 4090 platform. All ablation branches share the same backbone for equitable evaluation.                         
+
+> LR 2M2TFreG Acc. (%) Para. (M) GFlops FPS (Hz) 92.81 1.7837 1.1677 620.41
+> ✓91.94 1.9712 1.3573 409.25
+> ✓✓93.68 2.0041 1.3615 449.07
+> ✓✓✓94.25 2.0046 1.3951 386.07
+
+The baseline model without any proposed modules achieves 92.81 % accuracy with 1.7837M parameters, 1.1677 GFlops and 620.41Hz FPS. As shown by the feature maps labeled B in Fig. 7, the plain dual-branch structure only captures rough tire contour information, and subtle discriminative tread textures are severely suppressed in deep layers, lacking cross-modal complementary interaction and frequency-aware feature modulation, which leads to weak feature discrimination and severe overfitting under limited labeled tire samples. After introducing only LR 2 into the baseline, the accuracy slightly drops to 91.94 %, accompanied by moderately increased pa-rameters (1.9712 M), GFLOPs (1.3573) and reduced inference speed (409.25 Hz). The BL group feature maps in Fig.7 demonstrate that the reconstruction loss of LR 2 effectively retains inherent texture details inside feature embeddings and strengthens the response of tiny tread patterns, fundamentally alleviating overfitting risks on small-scale tire datasets despite minor accuracy loss caused by the additional reconstruction optimization objective. Further integrating the M 2T cross-modal interaction module on the basis of LR 2 raises the classification accuracy to 93.68 %, with marginal computa-tional overhead growth (2.0041 M parameters, 1.3615 GFlops, 449.07 FPS). From the BLM visualization group in Fig.7, the bidirectional weight adjustment of M 2T realizes mutual feature compensation between the two branches: when one modality suffers occlusion or missing input in real inspection scenarios, the other branch can supply complementary fine-grained tex-ture cues, significantly improving feature robustness against incomplete modal data. Finally, incorporating the FreG fre-quency guidance unit to form the complete M 2T-LR 2 frame-work delivers the highest accuracy of 94.25 %, with only tiny increments in parameters (2.0046M) and GFLOPs (1.3951), maintaining a competitive real-time speed of 386.07 Hz. The 9
+
+BLMF feature maps in Fig. 7 clearly reflect the advantage of joint spatial-frequency modeling: the bandpass filter-based FreG module separately extracts low-frequency global out-lines and high-frequency micro-tread differences, generating highly concentrated, discriminative feature responses on subtle inter-class tread regions that single spatial encoding cannot capture. Overall, both the quantitative data in Table II and qualitative feature visualization in Fig. 7 consistently prove that LR 2, M 2T and FreG bring progressive performance gains with negligible lightweight overhead, where LR 2 suppresses overfitting for scarce training data, M 2T enables reliable pre-diction under missing-modality conditions, and FreG excavates minute tread distinctions for fine-grained tire classification. The full combination of the three modules achieves an optimal trade-off among recognition precision, model size and edge deployment efficiency for vehicle inspection terminals with limited computing resources. 
+
+3) Experiments on edge devices: To verify the deployment convenience of the proposed method on edge terminals, we de-ploy the well-trained models on the RK3588 computing board, and the corresponding experimental results are presented in Table III. TABLE III: Ablation study results for the CIIP-TPID-V1.1 dataset on the RK3588 platform, all ablation branches share the same backbone for equitable evaluation. (INT8, 4 threads)                         
+
+> LR 2M2TFreG Acc.(%) FPS(Hz) NPU(%) Memory(MB) 91.93 92.28 59.25 57.29
+> ✓91.28 91.63 71.19 57.87
+> ✓✓92.37 89.91 69.64 57.40
+> ✓✓✓88.67 83.55 64.62 59.69
+
+All ablation models are deployed on the RK3588 edge board with INT8 quantization and 4 CPU threads. The LR 2-only variant achieves 91.93% accuracy with slight quantization degradation; integrating M 2T raises accuracy to 92.37% via cross-modal texture compensation, while the full pipeline with FreG drops to 88.67% because wide-range frequency-domain operators lose critical high-frequency tread details under INT8 truncation and receive insufficient NPU hardware acceleration. Inference throughput gradually declines from 92.28Hz to 83.55Hz due to extra CPU-NPU data transmission overhead, yet all configurations satisfy real-time inspection requirements. NPU utilization moderately increases from 5.25% to 64.62%: M2T improves parallel encoding hardware occupancy, while FreG brings fragmented frequency calculations and unstable load, leaving spare NPU computing capacity. Memory foot-print mildly grows from 57.29 MB to 59.69 MB, with extra spectrum buffers in FreG as the main contributor, and all models occupy less than 180 MB RAM to support multi-camera parallel inference. Overall, the LR 2+M 2T combination delivers balanced edge performance, and our compact 2.0046 M-parameter architecture shows great practicality for low-power on-site tire inspection terminals. V. C ONCLUSION 
+
+This paper designs a lightweight dual-branch tire recogni-tion framework integrated with Mutual Modality Trust (M 2T) and Lightweight Reconstruction Regularization (LR 2). The framework resolves three persistent limitations seen in con-ventional recognition schemes. These limitations include over-reliance on single visual modalities, inadequate joint spatial-frequency modeling for delicate tread textures, and overfitting triggered by insufficient labeled tire samples. Two parallel ConvNeXt-Tiny encoders are adopted to extract dedicated feature representations from tire surface and tread indentation images. The embedded module dynamically adjusts cross-branch feature weights to maintain stable prediction after partial modal signals disappear. Such signal loss frequently emerges during data collection on end-side intelligent de-vices. A hierarchical bandpass filtering unit collaboratively excavates spatial and frequency features to capture subtle tread distinctions across different tire categories. The intro-duced LR 2preserves inherent feature semantics and relieves overfitting risks brought by limited training annotations. We also construct MTire299, a large-scale paired multi-modal tire dataset to advance follow-up research on tire visual inspection. This compact architecture offers a universal solution for multi-modal fine-grained classification under data shortage and sat-isfies the low-computation constraints of end-side intelligent devices. Future research will boost the robustness of the model against harsh real-world disturbances and introduce incremen-tal few-shot learning to promote the practical deployment of industrial tire inspection systems. REFERENCES [1] Y. Liu, Y. Ge, F. Wang, Q. Liu, Y. Lei, D. Zhang, and G. Lu, “A rotation invariant hog descriptor for tire pattern image classification,” in ICASSP 2019-2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) . IEEE, 2019, pp. 2412–2416. [2] J. Yan, Y. Zhu, Z. Liang, Y. Zhu, K. Wu, and Z. Lin, “Tire pattern classification based on few-shot learning,” in 2021 IEEE international conference on multimedia and expo workshops (ICMEW) . IEEE, 2021, pp. 1–7. [3] H. Feng, Y. Liu, and W. Zhang, “A fine-grained image classification algorithm using knowledge distillation and attention mechanism,” in                   
+
+> Proceedings of the 2023 6th International Conference on Artificial Intelligence and Pattern Recognition , 2023, pp. 188–193. [4] M.-K. Hu, “Visual pattern recognition by moment invariants,” IRE transactions on information theory , vol. 8, no. 2, pp. 179–187, 1962. [5] N. Dalal and B. Triggs, “Histograms of oriented gradients for human detection,” in 2005 IEEE computer society conference on computer vision and pattern recognition (CVPR’05) , vol. 1. Ieee, 2005, pp. 886–893. [6] T. Ojala, M. Pietikainen, and T. Maenpaa, “Multiresolution gray-scale and rotation invariant texture classification with local binary patterns,”
+> IEEE Transactions on pattern analysis and machine intelligence , vol. 24, no. 7, pp. 971–987, 2002. [7] S. G. Mallat, “A theory for multiresolution signal decomposition: the wavelet representation,” IEEE transactions on pattern analysis and machine intelligence , vol. 11, no. 7, pp. 674–693, 1989. [8] D. C. A. Muthohhar, R. R. Isnanto, and A. Triwiyatno, “Classification of tire wear pattern using gabor feature extraction and probabilistic neural networks,” in 2024 Ninth International Conference on Informatics and Computing (ICIC) .IEEE, 2024, pp. 1–6. [9] L. Hongling, D. Yude, D. Heng, W. Tao, and W. Jinbiao, “A feature-based method for tire pattern similarity detection,” Proceedings of the Institution of Mechanical Engineers, Part D: Journal of Automobile Engineering , vol. 237, no. 10-11, pp. 2539–2552, 2023. [10] T. Li and S. Luo, “Tire surface defect recognition based on image processing,” in 2024 IEEE 4th International Conference on Information Technology, Big Data and Artificial Intelligence (ICIBA) , vol. 4. IEEE, 2024, pp. 527–531. [11] H. Liu, X. Jia, C. Su, H. Yang, and C. Li, “Tire appearance defect detection method via combining hog and lbp features,” Frontiers in Physics , vol. 10, p. 1099261, 2023. 10
+
+[12] P. Poquet Dom` enech, “Tyre print identification through registration techniques and attribute graphs,” 2013. [13] Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner, “Gradient-based learning applied to document recognition,” Proceedings of the IEEE , vol. 86, no. 11, pp. 2278–2324, 1998. [14] A. Krizhevsky, I. Sutskever, and G. E. Hinton, “Imagenet classification with deep convolutional neural networks,” Advances in neural informa-tion processing systems , vol. 25, 2012. [15] K. Simonyan and A. Zisserman, “Very deep convolutional networks for large-scale image recognition,” arXiv preprint arXiv:1409.1556 , 2014. [16] N. Srivastava, G. Hinton, A. Krizhevsky, I. Sutskever, and R. Salakhut-dinov, “Dropout: a simple way to prevent neural networks from over-fitting,” The journal of machine learning research , vol. 15, no. 1, pp. 1929–1958, 2014. [17] S. Ioffe and C. Szegedy, “Batch normalization: Accelerating deep network training by reducing internal covariate shift,” in International conference on machine learning . pmlr, 2015, pp. 448–456. [18] H. Tada and A. Sugiura, “Defect classification on automobile tire inner surfaces using convolutional neural networks,” in 2017 International Conference on Computing, Communication, Control and Automation (ICCUBEA) . IEEE, 2017, pp. 1–6. [19] J. Hu, L. Shen, and G. Sun, “Squeeze-and-excitation networks,” in 
+
+Proceedings of the IEEE conference on computer vision and pattern recognition , 2018, pp. 7132–7141. [20] S. Woo, J. Park, J.-Y. Lee, and I. S. Kweon, “Cbam: Convolutional block attention module,” in Proceedings of the European conference on computer vision (ECCV) , 2018, pp. 3–19. [21] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly et al. ,“An image is worth 16x16 words: Transformers for image recognition at scale,” arXiv preprint arXiv:2010.11929 , 2020. [22] C. Peng, X. Li, and Y. Wang, “Td-yoloa: An efficient yolo network with attention mechanism for tire defect detection,” IEEE Transactions on Instrumentation and Measurement , vol. 72, pp. 1–11, 2023. [23] J. Yang, J. Xue, X. Feng, C. Song, and Y. Hao, “Tire pattern image classification using variational auto-encoder with contrastive learning,” in 2022 IEEE International Conference on Visual Communications and Image Processing (VCIP) . IEEE, 2022, pp. 1–5. [24] A. Phadnis, D. A. Satish, V. Dharane, M. Hudnurkar, and S. Ambekar, “A sustainable approach to waste management of tyres: Using artificial intelligence for enhanced accuracy,” Australasian Accounting, Business and Finance Journal , vol. 19, no. 1, 2025. [25] Z. Liu, H. Mao, C.-Y. Wu, C. Feichtenhofer, T. Darrell, and S. Xie, “A convnet for the 2020s,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2022, pp. 11 976–11 986. [26] X. Xin, Y. Deng, W. Huang, Y. Wu, J. Fang, and J. Wang, “Multi-pattern scanning mamba for cloud removal,” Remote Sensing , vol. 17, no. 21, p. 3593, 2025. [27] P. Lu, J. Huang, Q. Zeng, X. Wang, B. Chen, P. Langlais, and Y. Cui, “Mamba modulation: On the length generalization of mamba models,” Advances in Neural Information Processing Systems , vol. 38, pp. 19 414–19 459, 2026. [28] X. Hu, T. Wang, Y. Liu, Z. Xu, Y. Pan, N. Xiang, W. Zhang, and Y. Hao, “Cross-modal tire impression comparison via knowledge graphs and adaptive weight learning,” in 2026 8th International Conference on Natural Language Processing (ICNLP) . IEEE, 2026, pp. 606–612. [29] Y. Liu, S. Zhang, F. Wang, K. Lim, Q. Liu, Y. Lei, Y. Gong, and J. Lu, “Wavelet-energy-weighted local binary pattern analysis for tire tread pattern classification,” in 2019 3rd International conference on imaging, signal processing and communication (ICISPC) . IEEE, 2019, pp. 90–95. [30] Y. Liu, S. Zhang, F. Wang, and N. Ling, “Tread pattern image classifi-cation using convolutional neural network based on transfer learning,” in 2018 IEEE International Workshop on Signal Processing Systems (SiPS) . IEEE, 2018, pp. 300–305. [31] Y. Liu, S. Zhang, D. Li, J. Fan, and W. Liu, “An effective tread pattern image classification algorithm based on transfer learning,” in 
+
+Proceedings of the 3rd international conference on multimedia systems and signal processing , 2018, pp. 51–55. [32] P. Chaisiriprasert and K. Chuiad, “Improving tire pattern recognition using parameter-efficient fine-tuning techniques,” IEEE Access , vol. 13, pp. 194 489–194 508, 2025. [33] K. Chuiad and P. Chaisiriprasert, “Improve tire pattern imprint image recognition with yolo,” in 2024 8th International Conference on Infor-mation Technology (InCIT) . IEEE, 2024, pp. 85–90. [34] F. Zhang, D. Li, S. Li, W. Guan, and M. Liu, “A lightweight tire tread image classification network,” in 2022 IEEE International Conference on Visual Communications and Image Processing (VCIP) . IEEE, 2022, pp. 1–5. [35] Y. Liu, X. Che, H. Dong, D. Li, S. W. Teng, and G. Lu, “Integrating line weber local descriptor and deep feature for tire indentation mark image classification,” in Proceedings of the 2021 4th International Conference on Artificial Intelligence and Pattern Recognition , 2021, pp. 56–61. [36] Y. Zhong, J. Wang, and J. Fang, “Unpaired multisource imagery joint learning via lightweight network for tread tire recognition,” in 2024 6th International Conference on Natural Language Processing (ICNLP) .IEEE, 2024, pp. 585–591. 
+
+Jianning Yang is currently pursuing his Ph. D with the School of Com-munications and Information Engineering, Xi’an University of Posts and Telecommunications, Xi’an, China. His research interests include Multi-view Learning, Few-shot Learning, and their applications in Computer Vision. 
+
+Jie Fang is currently an associate professor with the School of Communica-tion and Information Engineering, Xi’an University of Posts and Telecommu-nications, Xi’an, China, and is also a research fellow & graduate industry mentor with the School of Artificial Intelligence, Optics and Electronics (iOPEN), Northwestern Polytechnical University, Xi’an, China. His research interests include Computer Vision, Machine Intelligence, Distributed Computation, and AI Flow. 
+
+Xinda Ma is currently pursuing his master’s degree with the School of Communication and Information Engineering, Xi’an University of Posts and Telecommunications, Xi’an, China. Her research interests include Computer Vision, Machine Learning, π-Noise, and LLMs. 
+
+Zirui Song is currently pursuing his master’s degree with the School of Communication and Information Engineering, Xi’an University of Posts and Telecommunications, Xi’an, China. His research interests include Computer Vision, Machine Learning, MoR, MoE, and NAS. 
+
+Dianwei Wang is currently an associate professor with the School of Communication and Information Engineering, Xi’an University of Posts and Telecommunications, Xi’an, China. His research interests include Computer Vision, Machine Intelligence, Object Detection, and Neural Network Architecture Searching. 
+
+Nan Wang is currently a lecture with the School of Artificial Intelligence, Hainan Normal University, Haikou, China. His research interests include Machine Learning, Computer Vision, and Remote Sensing.

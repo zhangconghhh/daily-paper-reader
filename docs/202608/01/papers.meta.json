@@ -1,0 +1,39 @@
+{
+  "label": "2026-08-01",
+  "date": "2026-08-01",
+  "generated_at": "2026-08-01T21:12:52",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202608/01/2607.23979v1-mutual-modality-trust-with-lightweight-reconstruction-regularization-for-fine-grained-tire-pattern-recognition",
+      "section": "quick",
+      "title_en": "Mutual Modality Trust with Lightweight Reconstruction Regularization for Fine-grained Tire Pattern Recognition",
+      "authors": "Jianning Yang, Jie Fang, Xinda Ma, Zirui Song, Dianwei Wang, Nan Wang",
+      "date": "2026-07-27",
+      "pdf": "https://arxiv.org/pdf/2607.23979v1",
+      "score": "6.0",
+      "evidence": "细粒度视觉分类，未显式用ViT/DINO；对基于视觉Transformer的细粒度分类有方法借鉴",
+      "tldr": "现有细粒度轮胎识别依赖单一视觉源，难以联合建模空间与频率线索，且在小样本标注下易过拟合。本文提出双分支独立推理框架，分别提取胎面表面与压痕特征，通过互信融合增强跨模态互补性，并采用频域分层引导和轻量重建正则化提升特征稳定性。在包含299类、14795对样本的MTire299及两个公开数据集上，该方法取得了优越的识别性能，为轮胎智能监测提供了高效可靠的解决方案。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Visual tire recognition serves as a core supporting technique for vehicle safety monitoring, autonomous driving perception and automated automotive maintenance. Existing fine-grained tire recognition techniques suffer from three prominent limitations. They tend to depend on only one visual source, lack the capacity to jointly model spatial and frequency cues for minute tread texture extraction, and suffer severe overfitting given limited annotated tire imagery. This paper proposes a lightweight fine-grained tire pattern recognition method incorporating dual-branch independent inference and enhanced feature fusion to boost recognition performance. The framework employs two task-specialized branches dedicated to tire surface and tread indentation, respectively, to extract modality-specific discriminative features. Each branch conducts independent prediction, while cross-branch feature fusion exploits Mutual Modality Trust (M$^2$T) to realize complementary feature enhancement across two modalities. Besides, a frequency-domain hierarchical guidance module is devised, which leverages bandpass filters to decompose feature maps into high- and low-frequency components and enables fine-grained cross-layer feature modulation. Furthermore, a Lightweight Reconstruction Regularization (LR$^2$) is introduced to retain abundant intrinsic information within feature embeddings, substantially improving feature stability and recognition robustness under limited labeled training data. In addition, we establish a surface-indentation multi-source dataset namely MTire299 for fine-grained tire tread recognition, which covers 299 categories with a total of 14795 paired image samples. Extensive experiments conducted on two public tire datasets validate the superiority and efficacy of the proposed algorithm.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/01/2607.26565v1-representation-trajectories-matters-complementary-evidence-for-ood-detection-and-image-classification",
+      "section": "quick",
+      "title_en": "Representation Trajectories Matters: Complementary Evidence for OOD Detection and Image Classification",
+      "authors": "Ignacio M. De la Jara, Cristian Rodriguez-Opazo, Hamed Damirchi, Stephen Gould, Damith Ranasinghe",
+      "date": "2026-07-29",
+      "pdf": "https://arxiv.org/pdf/2607.26565v1",
+      "score": "6.0",
+      "evidence": "分析自监督ViT表示轨迹用于图像分类",
+      "tldr": "视觉模型逐层修订表征，中间计算路径可能包含最终表征丢弃的证据。研究连续状态变换形成的表征轨迹，区分类相干传输与输入特定创新，发现轨迹具样本连续性和架构特定深度轮廓。过渡惊喜分数补充最终态检测器，在平衡OpenOOD上131/152比较降低FPR95；冻结更新探针改善71/72干净分类。计算路径是广泛有用的可靠性信号，价值由模型组织与偏移共同决定。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Vision models do not form a representation at once; each block revises it. We ask whether the resulting computation path contains evidence that the final representation discards, and whether that evidence improves OOD detection and image classification on clean and shifted data. Unlike approaches that treat intermediate layers as separate snapshots, we retain sample identity across depth and study the transformations connecting successive states. We separate class-coherent transport from input-specific innovation, and coordinate movement from relational reorganization. Across supervised, self-supervised, vision--language, hierarchical, and convolutional encoders, these paths show strong sample-specific continuity and architecture-specific depth profiles that recur across datasets. They are also practically useful. An ID-only transition-surprise score complements strong final-state detectors, reducing FPR95 in 131/152 non-saturated comparisons on a balanced OpenOOD grid; gains are largest for visually disruptive and semantically far shifts, and remain positive on near-OOD for most detectors. Frozen update probes improve 71/72 clean model--dataset cases, while shifted-data gains vary with architecture and corruption type. Computation paths therefore provide a broadly useful reliability signal whose value is determined jointly by model organization and the shift encountered.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
