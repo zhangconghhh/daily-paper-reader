@@ -1,0 +1,209 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-02T21:07:06.618741+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2607.26238v1",
+      "source": "arxiv",
+      "title": "Lightweight Image Classification of Raptor Species for Edge Devices: Rare-Species Dataset Expansion via Video Frame Extraction, Knowledge Distillation, and TensorRT Deployment",
+      "abstract": "We investigate lightweight raptor-species classification for real-time edge deployment in wind-turbine collision mitigation. Using DINOv2-L (304M parameters) as a teacher, we distilled three lightweight students (MobileNetV4, ViT-Small, and EfficientNet-B0). To reduce confusion between closely related species, we expanded the dataset to 12,519 images, including an increase in Steller's Sea Eagle images from 463 to 2,050 via video-frame extraction. Under a group split that separates samples at the video- and source-image level to mitigate source leakage at that granularity, the three-student ensemble achieved a macro recall of 0.935 +/- 0.004 over five distillation seeds (0.955 on a conventional image-level split, retaining 97.5% of the teacher's macro recall) with roughly one-eighth as many parameters. On a subset of 1,258 images disjoint from the former training images, White-tailed Eagle recall improved by up to 38.6 percentage points, while the rate at which it was misclassified as the Steller's Sea Eagle decreased from 61% to 15% of errors. TensorRT FP16 deployment of EfficientNet-B0 on an NVIDIA Jetson Orin Nano achieved 3.19 ms/image including host-device transfer (313 images/s), with 99.95% argmax agreement with FP32. In five-seed controlled comparisons, neither distillation (versus CE-only) nor the change from a DINOv2-L to a DINOv3-L teacher yielded a clear ensemble-level improvement; the primary gains stem from the dataset expansion and teacher re-fine-tuning.",
+      "authors": [
+        "Takeshi Nishikawa"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG",
+        "eess.IV"
+      ],
+      "published": "2026-07-28T20:19:25+00:00",
+      "link": "https://arxiv.org/pdf/2607.26238v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Directly uses DINOv2-L as teacher for fine-grained raptor species classification.",
+      "llm_evidence_cn": "直接使用DINOv2-L作为教师进行猛禽物种细粒度分类。",
+      "llm_evidence": "直接使用DINOv2-L作为教师进行猛禽物种细粒度分类。",
+      "canonical_evidence": "直接使用DINOv2-L作为教师进行猛禽物种细粒度分类。",
+      "llm_tldr_en": "Uses DINOv2-L teacher to distill lightweight models for fine-grained raptor classification, achieving 0.935 macro recall on edge devices.",
+      "llm_tldr_cn": "面向风电机组碰撞缓解中的实时边缘部署，研究轻量级猛禽物种细粒度分类。以DINOv2-L为教师，蒸馏MobileNetV4、ViT-Small与EfficientNet-B0三个学生模型，并通过视频帧提取扩充稀有物种数据。在分组划分下，三学生集成取得0.935的宏召回率。该工作展示DINOv2特征在细粒度分类中的强迁移能力，为资源受限设备上的高精度识别提供有效方案。",
+      "llm_tldr": "面向风电机组碰撞缓解中的实时边缘部署，研究轻量级猛禽物种细粒度分类。以DINOv2-L为教师，蒸馏MobileNetV4、ViT-Small与EfficientNet-B0三个学生模型，并通过视频帧提取扩充稀有物种数据。在分组划分下，三学生集成取得0.935的宏召回率。该工作展示DINOv2特征在细粒度分类中的强迁移能力，为资源受限设备上的高精度识别提供有效方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "DINO model for fine-grained classification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2607.26993v1",
+      "source": "arxiv",
+      "title": "Foundation Models for Face Presentation Attack Detection: A Unified Linear-Probing Benchmark",
+      "abstract": "Face presentation attack detection (PAD) remains challenging under cross-dataset evaluation, where domain shift degrades models trained on a single dataset. The scarcity of large-scale labeled data motivates adapting pretrained vision models rather than training task-specific architectures from scratch, raising a fundamental question: do general-purpose vision foundation models encode PAD-relevant information accessible with minimal task-specific training? To investigate, we systematically evaluate 24 frozen encoders, including self-supervised vision transformers, vision-language encoders, and supervised CNNs, using a unified linear-probing protocol on the MCIO benchmark (MSU-MFSD, CASIA-FASD, Replay-Attack, OULU-NPU). The backbone remains fixed, and only a lightweight linear head is trained to isolate the PAD information already present in the pretrained representation. %We report intra- and cross-dataset performance, along with accuracy-compute trade-offs, relative to two specialist PAD baselines. Results show that frozen foundation-model representations can support strong intra-dataset PAD performance with only a linear classifier, but this performance does not reliably transfer across datasets. Model scale is beneficial within several families, although the effect is not monotonic and is strongly mediated by architecture and pretraining. InternViT-6B achieves the lowest mean intra-dataset error, whereas CLIP ViT-B/32 offers the most favorable cross-dataset transfer-compute trade-off among the evaluated probes. These findings suggest that while pretrained representations contain PAD-relevant information, explicit adaptation remains necessary to address domain shift.",
+      "authors": [
+        "Peter Lorenz",
+        "Anjith George",
+        "Sébastien Marcel"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-07-29T14:52:25+00:00",
+      "link": "https://arxiv.org/pdf/2607.26993v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "systematically evaluates vision foundation models on a classification task via linear probing",
+      "llm_evidence_cn": "系统评估视觉基础模型在分类任务上的线性探测表现",
+      "llm_evidence": "系统评估视觉基础模型在分类任务上的线性探测表现",
+      "canonical_evidence": "系统评估视觉基础模型在分类任务上的线性探测表现",
+      "llm_tldr_en": "This paper benchmarks 24 frozen vision encoders, including self-supervised ViTs and vision-language encoders, for face presentation attack detection using a unified linear probing protocol. Results show general-purpose foundation models encode PAD-relevant features with minimal task-specific training, providing a strong baseline for adapting foundation models to downstream classification.",
+      "llm_tldr_cn": "该工作针对人脸演示攻击检测中标注数据稀缺和跨数据集域偏移问题，系统评估了24种冻结的视觉基础模型，包括自监督视觉Transformer、视觉-语言编码器和监督CNN，采用统一线性探测方案在MCIO基准上验证其特征质量。结果表明通用视觉基础模型能以极少附加训练编码PAD相关信息，为缺乏标注的视觉分类任务提供了高效的迁移学习基线。该研究建立了面向基础模型分类能力的评测范式，对细粒度分类等下游任务具有直接参考价值。",
+      "llm_tldr": "该工作针对人脸演示攻击检测中标注数据稀缺和跨数据集域偏移问题，系统评估了24种冻结的视觉基础模型，包括自监督视觉Transformer、视觉-语言编码器和监督CNN，采用统一线性探测方案在MCIO基准上验证其特征质量。结果表明通用视觉基础模型能以极少附加训练编码PAD相关信息，为缺乏标注的视觉分类任务提供了高效的迁移学习基线。该研究建立了面向基础模型分类能力的评测范式，对细粒度分类等下游任务具有直接参考价值。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.23913v1",
+      "source": "arxiv",
+      "title": "GOTS: Greedy Orthogonal Token Selection for High-Resolution Vision-Language Models",
+      "abstract": "Modern vision-language models (VLMs) increasingly rely on dynamic or high-resolution visual encoding, producing thousands of visual tokens that substantially increase downstream language-model inference cost. Existing token-reduction methods assess token utility through token-wise importance, query relevance, coverage, pairwise diversity, or subset-level objectives. Our key insight is to view visual token reduction through selected-span complementarity: instead of scoring a token in isolation or through pairwise relations, we assess how much of its feature is orthogonal to the span of the already retained subset. Based on this perspective, we propose Greedy Orthogonal Token Selection (GOTS), a training-free and query-agnostic method. At each step, GOTS selects the token with the largest residual energy orthogonal to the current retained span. This rule exactly maximizes the one-step augmented Gram determinant among candidate additions, giving each greedy step a precise local geometric guarantee for subset expansion. Across five high-resolution VLM backbones from the Qwen-VL and InternVL families and eleven diverse benchmarks, GOTS achieves higher average performance retention than the strongest evaluated baselines, and a controlled OCRBench study shows that it reduces model-side time-to-first-token after accounting for selection overhead. Code is available at https://github.com/newLLing/GOTS.",
+      "authors": [
+        "Jun Ling",
+        "Tao Huang",
+        "Junzhuo Liu",
+        "Bowen Tang",
+        "Peng Wang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-07-27T01:06:20+00:00",
+      "link": "https://arxiv.org/pdf/2607.23913v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "training-free greedy orthogonal token selection for reducing visual tokens in high-res ViT/VLMs",
+      "llm_evidence_cn": "面向高分辨率ViT/VLM的免训练贪心正交令牌选择，用于减少视觉令牌数量",
+      "llm_evidence": "面向高分辨率ViT/VLM的免训练贪心正交令牌选择，用于减少视觉令牌数量",
+      "canonical_evidence": "面向高分辨率ViT/VLM的免训练贪心正交令牌选择，用于减少视觉令牌数量",
+      "llm_tldr_en": "GOTS proposes a training-free and query-agnostic greedy orthogonal token selection method that reduces visual tokens in high-resolution VLMs by measuring span complementarity, cutting inference cost while preserving accuracy.",
+      "llm_tldr_cn": "针对高分辨率视觉-语言模型中视觉令牌过多导致推理成本高的问题，提出GOTS令牌选择方法。其核心洞察是通过已选令牌张成的子空间来评估新令牌的正交补充程度，不再孤立打分或以两两关系衡量。该方法免训练且与查询无关，逐次贪心选取互补令牌，在降低推理开销的同时保持下游性能。实验表明GOTS能有效压缩视觉令牌数量，为高分辨率多模态模型的高效部署提供简洁方案。",
+      "llm_tldr": "针对高分辨率视觉-语言模型中视觉令牌过多导致推理成本高的问题，提出GOTS令牌选择方法。其核心洞察是通过已选令牌张成的子空间来评估新令牌的正交补充程度，不再孤立打分或以两两关系衡量。该方法免训练且与查询无关，逐次贪心选取互补令牌，在降低推理开销的同时保持下游性能。实验表明GOTS能有效压缩视觉令牌数量，为高分辨率多模态模型的高效部署提供简洁方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.23070v1",
+      "source": "arxiv",
+      "title": "DishSeg24k: A Large-Scale Benchmark for Food Segmentation with Stochastic Expert Decoding",
+      "abstract": "Food segmentation is essential for applications such as intelligent catering, dietary assessment, and recommendation. However, existing benchmarks fail to capture the complexity of real-world dining scenes. The challenges of dense inter-dish overlap, fine-grained class similarity, and extreme long-tail class distributions exceed the fidelity of current datasets. To fill this gap, we introduce \\textbf{DishSeg24k}, a large-scale dish-level segmentation benchmark with 24,096 images, 112,281 instances, and 278 fine-grained categories in real-world dining environments. Based on DishSeg24k, we further propose \\textbf{Food Expert-Adaptive Segmentation Transformers (FEAST)} to address these challenges. FEAST models query-based decoding as a Markov Decision Process (MDP), where each decoder layer update is treated as a sequential decision step that explores uncertainty along dish boundaries. We further redesign the decoder with a reinforcement learning (RL)-guided Mixture-of-Experts (MoE) module, in which a dual-critic decoupled optimization scheme separates task-oriented query refinement from structure-aware expert routing. This design promotes expert specialization and prevents expert collapse under long-tail category distributions. Finally, extensive experiments on DishSeg24k demonstrate the state-of-the-art performance of FEAST, which outperforms previous methods by {+3.21\\%} mIoU, {+3.68\\%} mDice, and {+4.00\\%} mAcc, respectively. We further validate the effectiveness of FEAST on FoodSeg103. The dataset and code will be publicly released.",
+      "authors": [
+        "Yilin Wang",
+        "Haochen Shi",
+        "Guanyu Chen",
+        "Weiqing Min",
+        "Jinkai Zheng",
+        "Chenggang Yan",
+        "Shuqiang Jiang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-25T06:40:25+00:00",
+      "link": "https://arxiv.org/pdf/2607.23070v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "large-scale benchmark with fine-grained categories and transformer-based decoder for fine-grained visual recognition",
+      "llm_evidence_cn": "包含细粒度类别的大规模基准及基于Transformer的解码器，面向细粒度视觉识别",
+      "llm_evidence": "包含细粒度类别的大规模基准及基于Transformer的解码器，面向细粒度视觉识别",
+      "canonical_evidence": "包含细粒度类别的大规模基准及基于Transformer的解码器，面向细粒度视觉识别",
+      "llm_tldr_en": "This paper introduces DishSeg24k, a large-scale dish-level segmentation benchmark with 24,096 images, 112,281 instances, and 278 fine-grained categories, and proposes FEAST with stochastic expert decoding to handle dense overlap and fine-grained similarity. The benchmark and method advance fine-grained visual recognition, though the task is segmentation rather than classification.",
+      "llm_tldr_cn": "该工作针对食物分割基准无法反映真实就餐场景复杂度的问题，构建了包含24,096张图像、112,281个实例和278个细粒度类别的大规模数据集DishSeg24k，并提出了食物专家自适应分割Transformer（FEAST），将查询式解码建模为随机专家混合过程，以应对盘间密集重叠、细粒度类别相似和极端长尾分布。实验表明FEAST在细粒度分割任务上取得显著效果，为细粒度视觉识别提供了高质量基准和模型，尽管任务为分割而非分类，其方法对细粒度分类具有借鉴意义。",
+      "llm_tldr": "该工作针对食物分割基准无法反映真实就餐场景复杂度的问题，构建了包含24,096张图像、112,281个实例和278个细粒度类别的大规模数据集DishSeg24k，并提出了食物专家自适应分割Transformer（FEAST），将查询式解码建模为随机专家混合过程，以应对盘间密集重叠、细粒度类别相似和极端长尾分布。实验表明FEAST在细粒度分割任务上取得显著效果，为细粒度视觉识别提供了高质量基准和模型，尽管任务为分割而非分类，其方法对细粒度分类具有借鉴意义。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.26565v2",
+      "source": "arxiv",
+      "title": "Representation Trajectories Matters: Complementary Evidence for OOD Detection and Image Classification",
+      "abstract": "Vision models do not form a representation at once; each block revises it. We ask whether the resulting computation path contains evidence that the final representation discards, and whether that evidence improves OOD detection and image classification on clean and shifted data. Unlike approaches that treat intermediate layers as separate snapshots, we retain sample identity across depth and study the transformations connecting successive states. We separate class-coherent transport from input-specific innovation, and coordinate movement from relational reorganization. Across supervised, self-supervised, vision--language, hierarchical, and convolutional encoders, these paths show strong sample-specific continuity and architecture-specific depth profiles that recur across datasets. They are also practically useful. An ID-only transition-surprise score complements strong final-state detectors, reducing FPR95 in 131/152 non-saturated comparisons on a balanced OpenOOD grid; gains are largest for visually disruptive and semantically far shifts, and remain positive on near-OOD for most detectors. Frozen update probes improve 71/72 clean model--dataset cases, while shifted-data gains vary with architecture and corruption type. Computation paths therefore provide a broadly useful reliability signal whose value is determined jointly by model organization and the shift encountered.",
+      "authors": [
+        "Ignacio M. De la Jara",
+        "Cristian Rodriguez-Opazo",
+        "Hamed Damirchi",
+        "Stephen Gould",
+        "Damith Ranasinghe"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-29T07:35:59+00:00",
+      "link": "https://arxiv.org/pdf/2607.26565v2",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses representation trajectories from vision models including self-supervised and vision-language encoders to improve image classification, relevant to vision transformer architecture for classification",
+      "llm_evidence_cn": "利用包括自监督和视觉语言编码器在内的视觉模型的表示轨迹来提升图像分类，与用于分类的视觉Transformer架构相关",
+      "llm_evidence": "利用包括自监督和视觉语言编码器在内的视觉模型的表示轨迹来提升图像分类，与用于分类的视觉Transformer架构相关",
+      "canonical_evidence": "利用包括自监督和视觉语言编码器在内的视觉模型的表示轨迹来提升图像分类，与用于分类的视觉Transformer架构相关",
+      "llm_tldr_en": "Proposes using representation trajectories across layers as complementary evidence for OOD detection and image classification; separates class-coherent transport from input-specific innovation and validates across supervised, self-supervised, and vision-language encoders.",
+      "llm_tldr_cn": "针对视觉模型仅用最终层表示而丢失中间层信息的问题，提出利用表示轨迹作为互补证据的方法。该方法保留样本在深度上的身份，研究层间变换，分离类一致传输与输入特异创新。在多种监督、自监督、视觉语言编码器上的实验表明，表示轨迹能提升OOD检测与图像分类性能，为理解视觉Transformer表征提供了新视角。",
+      "llm_tldr": "针对视觉模型仅用最终层表示而丢失中间层信息的问题，提出利用表示轨迹作为互补证据的方法。该方法保留样本在深度上的身份，研究层间变换，分离类一致传输与输入特异创新。在多种监督、自监督、视觉语言编码器上的实验表明，表示轨迹能提升OOD检测与图像分类性能，为理解视觉Transformer表征提供了新视角。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
