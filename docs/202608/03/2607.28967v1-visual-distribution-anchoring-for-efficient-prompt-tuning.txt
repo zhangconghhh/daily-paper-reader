@@ -1,0 +1,416 @@
+Title: Visual Distribution Anchoring for Efficient Prompt Tuning
+
+URL Source: https://arxiv.org/pdf/2607.28967v1
+
+Published Time: Mon, 03 Aug 2026 00:21:22 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Visual Distribution Anchoring for Efficient Prompt Tuning 
+
+# Pouya Parsa 
+
+University of Minnesota USA 
+
+# Raoof Zare Moayedi Seongjin Choi 
+
+University of Minnesota USA 
+
+## Abstract 
+
+Prompt tuning adapts vision–language models with few trainable parameters, but existing designs face a trade-off: static textual prompts can overfit source classes, image-conditioned prompts incur per-instance computation, and multimodal tuning modifies the visual branch. We propose VDA (Visual Distribution Anchor-ing), a training-free target adaptation framework that augments a frozen semantic classifier with class-level visual prototypes esti-mated offline from an unlabeled target pool. We first investigate whether such prototypes can be synthesized from class names alone. Although a text-to-centroid mapper accurately reconstructs held-out source prototypes, it does not transfer under dataset shift: class names specify semantic identity but not how classes are visu-ally instantiated in a target domain. An oracle analysis neverthe-less confirms that true target prototypes are highly discriminative. Motivated by this gap, VDA uses frozen semantic and domain-template classifiers to hard-partition unlabeled target images into class-correlated groups. Confidence-ranked image features form normalized visual prototypes, which are fused with the seman-tic classifier using one global weight. Adaptation requires no tar-get labels, target-side optimization, uniform class-prior assump-tion, iterative refinement, or access to test queries, and produces a fixed, cacheable classifier. Controlled experiments show that class-specific hard partitioning, rather than generic target-domain statis-tics, drives the improvement, and that visually local pseudo-label errors can remain useful despite being class-incorrect. Across ten ImageNet-to-target transfers, the same frozen design improves zero-shot CLIP, TCP, and MaPLe by 3.22 , 3.39 , and 3.35 points, re-spectively, improving nine of ten targets in every setting. Its visual correction further improves leakage-free PromptKD by 2.79 points, demonstrating complementarity across zero-shot, source-prompted, multimodal-prompted, and target-distilled classifiers. 
+
+## CCS Concepts 
+
+• Computing methodologies → Machine learning .
+
+## Keywords 
+
+vision-language models, prompt tuning, few-shot adaptation, trans-fer learning 
+
+ACM Reference Format: 
+
+Pouya Parsa, Raoof Zare Moayedi, and Seongjin Choi. 2027. Visual Distribu-tion Anchoring for Efficient Prompt Tuning. In Proceedings of ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD ’27). ACM, New York, NY, USA, 9 pages. https://doi.org/10.1145/nnnnnnn.nnnnnnn 
+
+## 1 Introduction 
+
+Vision–language models such as CLIP [ 12 ] perform zero-shot recog-nition by comparing image representations with text classifiers constructed from class names. Prompt learning improves these classifiers using limited labeled source data [ 5, 19 – 21 ], but intro-duces a trade-off between efficiency and adaptation. Static textual prompts are inexpensive but can overfit the source distribution; image-conditioned prompts adapt to individual queries at a per-instance cost; and multimodal methods modify both language and visual prompt paths. Despite these advances, a source-trained clas-sifier may preserve a target class’s semantic identity without cap-turing how that class is visually expressed in a new domain. For example, the name forest identifies a concept but does not specify its appearance in an overhead satellite image. A natural solution is to predict a visual class prototype directly from each class name. We investigate this possibility by mapping frozen class-name embeddings to image-space centroids. A regular-ized linear mapper accurately reconstructs centroids for held-out source classes, indicating that text embeddings contain substantial information about general class appearance. However, the resulting prototypes do not improve cross-dataset recognition. Their raw sim-ilarity to target centroids is dominated by shared feature structure, while their mean-centered alignment with the target class geometry remains weak. Thus, accurately reconstructing source-domain pro-totypes does not imply recovering how the same semantic classes appear in a different domain. This failure does not mean that visual prototypes are uninforma-tive. An oracle analysis shows the opposite: across five development datasets, direct classification with true 16-shot target centroids in-creases mean accuracy from 49 .91% to 66 .16% . Conservative fusion of the visual and semantic classifiers also produces a large gain, whereas routing the same true centroids through a class-aware prompt generator captures only a small fraction of their signal. These findings reveal two distinct limitations: class names alone do not determine domain-specific target prototypes, and indirect prompt conditioning may not effectively exploit visual prototypes even when they are available. We propose VDA (Visual Distribution Anchoring), a training-free target adaptation framework that augments a frozen semantic classifier with class-level visual prototypes estimated of-fline from an unlabeled target pool. The target-training pool is dis-joint from the evaluation set, and its labels are not used. A frozen semantic classifier and a fixed domain-template classifier first score every unlabeled image. Their logits are averaged, and hard argmax assignment partitions the pool into class-correlated visual groups. Within each group, VDA ranks images by assignment confidence and retains at most 𝐾 supports. Their normalized mean forms a target visual prototype, which is fused with the corresponding se-mantic classifier using a single global weight. Classes receiving no assignments retain their original semantic classifier. The VDA procedure operates on classifier and prototype log-its rather than the internal architecture of a particular prompt learner. It requires no target labels, target-side gradient optimiza-tion, validation-based stopping, uniform class-prior assumption, arXiv:2607.28967v1 [cs.CV] 31 Jul 2026 KDD ’27, August 1–5, 2027, San Jose, CA, USA Parsa, Moayedi, and Choi 
+
+iterative pseudo-label refinement, or access to test queries. When the semantic and visual logits share a feature space, their fusion reduces to one fixed class vector that can be cached before evalua-tion. VDA therefore adds target visual information without altering source prompt training or generating new prompts for each query. Hard partitioning is central to the method. Balanced soft assign-ment forces the target pool toward a prescribed class distribution and can distribute nearly identical evidence across multiple proto-types. In our experiments, it produces high-entropy assignments and progressively worse prototypes under iterative refinement. VDA instead assigns each image to one predicted class and allows unequal class masses. The support budget 𝐾 is only a cap: classes with many assignments retain a confidence-ranked subset, classes with fewer assignments retain all available evidence, and unsup-ported classes use the semantic classifier alone. Importantly, useful target evidence does not require perfectly accurate pseudo-labels. Our controls show that hard class corre-spondence accounts for most of the improvement, while confidence ordering provides a smaller and domain-dependent benefit. Incor-rect assignments can remain useful when the predicted and true classes occupy nearby visual neighborhoods. On FGVC-Aircraft, for example, selected errors are substantially more similar to the true class than random wrong-class pairs and are strongly enriched for the correct aircraft family and manufacturer. Such images provide relevant fine-grained and target-domain appearance even when they do not preserve the exact class identity. Semantic–visual fu-sion exploits this imperfect evidence conservatively: the prototype supplies target appearance, while the semantic classifier retains class specificity. Across ten ImageNet-to-target transfers, VDA improves a strong source-trained prompt classifier from 65 .82% to 69 .21% , improv-ing nine of ten targets. Under a matched protocol using the same unlabeled target pool and disjoint test split, it exceeds sparse in-ductive ZLaP [ 15 ] by 1.53 points and prior-free InMaP [ 11 ] by 2.98 
+
+points. It obtains a similar mean to uniform-prior InMaP without target-proxy optimization or a specified target class distribution. We further test whether the effect is tied to one source prompt architecture. Using the same 𝐾 , fusion weight, domain templates, and one-pass adaptation design, a fully standalone zero-shot CLIP variant improves from 65 .34% to 68 .56% . The same fixed visual correction improves multimodal MaPLe [ 5] from 66 .25% to 69 .60% 
+
+and leakage-free PromptKD [ 8] from 70 .80% to 73 .59% . Each setting improves nine of ten targets. These results show that class-level target visual information remains complementary across zero-shot, source-prompted, multimodal-prompted, and target-distilled se-mantic classifiers. Our contributions are threefold: 
+
+• We distinguish source prototype reconstruction from target visual transfer. Name-to-centroid mapping accurately recov-ers held-out source geometry but does not predict domain-specific target prototypes, while oracle experiments establish that true target prototypes contain substantial discriminative information. 
+
+• We introduce VDA, a training-free target adaptation frame-work that estimates class-correlated visual prototypes from a disjoint unlabeled target pool and fuses them with a frozen semantic classifier. VDA requires no target labels, target optimization, uniform class-prior assumption, iterative re-finement, or test-time adaptation. 
+
+• Across ten datasets and multiple semantic classifiers, we show that class-specific hard partitioning—rather than generic target-domain statistics—drives the improvement, and that visually local pseudo-label errors can remain useful when combined with a semantically stable classifier. 
+
+## 2 Related Work 
+
+Prompt adaptation for vision–language models. CLIP performs zero-shot recognition using text classifiers constructed from class names and hand-crafted templates [ 12 ]. CoOp replaces manually se-lected context words with continuous prompt tokens [21 ], while CoCoOp generates image-conditioned prompts to improve transfer at the cost of per-instance computation [ 20 ]. KgCoOp and PromptSRC preserve knowledge from the pretrained model to re-duce source overfitting [ 6, 18 ]; MaPLe and MMRL instead adapt both language and visual prompt paths [ 4, 5 ]. TCP, our primary source classifier, generates class-aware prompts from textual class knowledge [ 19 ]. Prompt design is also important in specialized applications. Medical and remote-sensing methods use pathology-specific or image-conditioned prompts [ 7, 14 , 16 ], while recent vehicle-surveillance work evaluates task-specific and self-reflective prompts for make and model recognition [ 10 ]. Such prompting can encode valuable domain knowledge but must often be designed and validated for each task. VDA is complementary: it estimates class-level visual evidence from an unlabeled deployment pool and fuses it with an existing semantic classifier, without changing its prompt architecture or generating prompts per query. 
+
+Semantic-to-visual transfer. Predicting visual representations from semantic descriptions has been studied in zero-shot learning. Visual-exemplar methods map seen-class semantics to visual prototypes for unseen categories [ 3], while feature-synthesis approaches generate visual examples from class semantics [ 9]. SuS-X similarly constructs synthetic or retrieved support sets from target category names to adapt frozen vision–language models [ 17 ]. We investigate whether CLIP class names can directly predict image-space centroids, but find that accurate source-centroid reconstruction does not recover domain-specific target geometry. VDA therefore estimates proto-types from real unlabeled target images. The prototypes provide target appearance, while the frozen semantic classifier retains class identity when pseudo-support assignments are imperfect. 
+
+Unlabeled-target adaptation. Test-Time Prompt Tuning adapts prompts by minimizing entropy over augmented query views [ 13 ], and PromptAlign additionally aligns source and target feature statis-tics [ 1]. These approaches perform optimization during inference. PromptKD instead distills a larger teacher into a target-specific student using unlabeled target images [ 8 ]. More closely related to VDA, InMaP initializes and optimizes visual proxies from unlabeled target features and can impose a uniform target prior through bal-anced assignment [ 11 ]. ZLaP propagates labels over a text–image graph and retains graph-based scoring for new queries [ 15 ]. VDA differs by performing a single training-free adaptation pass: frozen classifiers hard-partition the unlabeled pool, capped class-specific Visual Distribution Anchoring for Efficient Prompt Tuning KDD ’27, August 1–5, 2027, San Jose, CA, USA 1 Inputs & Frozen Priors  
+
+> ImageNet
+> support
+> Labeled source data
+> Source classifier
+> (frozen)
+> Source classifier vectors
+> T
+> ∈ℝᶜˣᵈ
+> Target class
+> names
+> (e.g., car, dog, ... )
+> Domain templates
+> (class + domain desc.)
+
+# T Domain text   
+
+> encoder (frozen)
+> Domain text vectors
+> D
+> ∈ℝᶜˣᵈ
+> Final fusion
+> (fixed λ)
+> Combine source classifier vectors with target prototypes
+
+2 Offline Unlabeled-Target Adaptation 
+
+> Unlabeled target
+> pool (train)
+
+⋯  
+
+> Labels discarded
+> Image encoder
+> (frozen)
+> CLIP ViT-L/14 Normalized image features
+> Assignment ensemble (equal weight)
+> Source
+> classifier
+> vectors
+
+# + Domain text 
+
+> vectors
+> Compute logits and ensemble
+> Hard argmax
+> (one class per image)
+
+⋯  
+
+> Unique predicted-
+> class bins
+> Confidence-ranked
+> cap K per class
+> Top K (e.g., 32) or all if < K
+> Normalized
+> prototypes
+> P
+> ∈ℝᶜˣᵈ
+> Cached
+> classifier
+> (fixed after adaptation)
+> Disjoint from test set No uniform soft assignment No iterative refinement
+> Adaptation
+> Test
+
+3 Inference on Disjoint Test Data  
+
+> Disjoint test image Image encoder
+> (frozen)
+> CLIP ViT-L/14
+> Cached classifier
+> (from adaptation)
+> Class scores
+
+⋯
+
+> Predicted class
+> (top-1)
+
+Figure 1: Overview of VDA. Frozen semantic and domain-template classifiers hard-partition a disjoint unlabeled target pool. Confidence-ranked supports form normalized class-specific visual prototypes, which are fused with the semantic classifiers before evaluation. VDA uses no target labels, target-side optimization, uniform class-prior assumption, iterative refinement, or test queries. 
+
+prototypes are estimated without assuming a uniform prior, and semantic–visual fusion produces a fixed classifier before evaluation. It requires no target gradient updates, query-time graph propaga-tion, iterative pseudo-label refinement, or access to test queries. 
+
+## 3 Visual Distribution Anchoring 3.1 Problem Setting 
+
+Let C = {1, . . . , 𝐶 } denote a target class vocabulary and U = {𝑥 𝑖 }𝑁 𝑖 =1
+
+an unlabeled target-training pool. The pool is disjoint from the evaluation set. We seek to adapt a frozen semantic classifier using 
+
+U, without target labels, target-side gradient updates, validation-based stopping, or access to test queries during adaptation. VDA uses a frozen CLIP image encoder 𝑓 𝑉 to represent the target visual distribution. Each target image is encoded and unit-normalized as 
+
+𝑣 𝑖 = norm (𝑓 𝑉 (𝑥 𝑖 )) = 𝑓 𝑉 (𝑥 𝑖 )∥𝑓 𝑉 (𝑥 𝑖 )∥ 2
+
+∈ R𝑑 . (1) Let 𝑠 sem (𝑥, 𝑐 ) denote the score assigned to image 𝑥 and class 𝑐 
+
+by a frozen semantic classifier. This classifier may be a zero-shot text classifier or a source-trained prompt model. In our primary experiments, it is instantiated with TCP [ 19 ], but VDA does not use TCP’s internal prompt generator. A class name constrains semantic identity but does not uniquely determine how the class appears in a target domain. VDA therefore estimates target visual prototypes from U and uses them to provide a class-specific appearance correction to 𝑠 sem .
+
+## 3.2 Domain-Aware Hard Assignment 
+
+A bare class name may not fully describe the target image domain. We construct a second frozen classifier from a fixed domain tem-plate. Let 𝜋 𝐷 (𝑐 ) combine class 𝑐 with a known domain description, such as “a close-up photograph of a 𝑐 texture” or “a true-color overhead satellite image of 𝑐 .” Its normalized text vector is 
+
+𝑑 𝑐 = norm (𝑓 𝑇 (𝜋 𝐷 (𝑐 ))) , (2) where 𝑓 𝑇 is the frozen CLIP text encoder. The corresponding domain score is 
+
+𝑠 𝐷 (𝑥 𝑖 , 𝑐 ) = 𝛾 𝑣 ⊤
+
+𝑖 𝑑 𝑐 , (3) with frozen CLIP logit scale 𝛾 . The domain description is fixed before target evaluation and does not depend on target labels. Exact templates are provided in the supplementary material. For every unlabeled image, VDA averages the semantic and domain-template scores: 
+
+𝑎 𝑖𝑐 = 12
+
+𝑠 sem (𝑥 𝑖 , 𝑐 ) + 𝑠 𝐷 (𝑥 𝑖 , 𝑐 ) . (4) The image receives one hard assignment, 
+
+ˆ𝑐 𝑖 = arg max 
+
+𝑐 ∈ C 𝑎 𝑖𝑐 . (5) KDD ’27, August 1–5, 2027, San Jose, CA, USA Parsa, Moayedi, and Choi 
+
+This produces disjoint predicted-class partitions 
+
+I𝑐 = {𝑖 : ˆ 𝑐 𝑖 = 𝑐 }. (6) Hard assignment has two useful properties. First, every target image can contribute to at most one visual prototype. Second, the partition sizes are allowed to be unequal. VDA therefore does not force a uniform target-class prior or distribute every image frac-tionally across multiple classes. 
+
+## 3.3 Capped Pseudo-Support Selection 
+
+Within each predicted class, images are ranked by assignment con-fidence. We define 
+
+𝑞 𝑖 = softmax (𝑎 𝑖 )ˆ𝑐 𝑖 = exp (𝑎 𝑖 ˆ𝑐 𝑖 )
+
+Í𝑗 ∈ C exp (𝑎 𝑖 𝑗 ) . (7) For class 𝑐 , VDA retains 
+
+S𝑐 = TopK 𝑖 ∈ I 𝑐 (𝑞 𝑖 ), |S 𝑐 | = min (𝐾, |I 𝑐 |) . (8) The support budget 𝐾 is a cap rather than a balancing constraint. If fewer than 𝐾 images are assigned to a class, all assigned images are retained. If I𝑐 = ∅, the class receives no visual prototype and later falls back to its semantic classifier. We use 𝐾 = 32 , selected on the development datasets and frozen for all subsequent evaluations. The selected images are pseudo-supports rather than assumed ground-truth examples. Exact pseudo-label correctness is not re-quired: an incorrectly assigned image can remain useful if its visual representation lies near the target class or a closely related fine-grained category. 
+
+## 3.4 Target Visual Prototypes 
+
+For every supported class, we estimate a normalized target visual prototype: 
+
+ˆ𝜇 𝑐 = norm 1
+
+|S 𝑐 |∑︁ 𝑖 ∈ S 𝑐 
+
+𝑣 𝑖 
+
+!
+
+. (9) The prototype represents the first moment of the class-correlated target features selected by the frozen semantic and domain priors. Individual image features are normalized before averaging, and the resulting mean is normalized again. VDA performs this estimation once. The resulting prototypes are not used to iteratively relabel the target pool. Avoiding assignment– prototype iteration prevents weak initial assignments from being repeatedly reinforced. 
+
+## 3.5 Semantic–Visual Fusion 
+
+Pseudo-support prototypes capture target appearance but may not preserve exact semantic identity. VDA therefore treats them as corrections to the semantic classifier rather than standalone re-placements. Define a class-dependent fusion coefficient 
+
+𝜆 𝑐 =
+
+(
+
+𝜆, |S 𝑐 | > 0,
+
+0, |S 𝑐 | = 0, (10) where 𝜆 = 0.2 is selected once on the development datasets and fixed across all targets. For a query image 𝑥 , the visual-prototype score is 
+
+𝑠 vis (𝑥, 𝑐 ) = 𝛾 norm (𝑓 𝑉 (𝑥 )) ⊤ ˆ𝜇 𝑐 . (11) The final VDA score is 
+
+𝑠 VDA (𝑥, 𝑐 ) = (1 − 𝜆 𝑐 )𝑠 sem (𝑥, 𝑐 ) + 𝜆 𝑐 𝑠 vis (𝑥, 𝑐 ). (12) Prediction is performed by 
+
+ˆ𝑦 (𝑥 ) = arg max   
+
+> 𝑐 ∈ C
+
+𝑠 VDA (𝑥, 𝑐 ). (13) We deliberately use one global fusion weight. Class-dependent reliability weights can place different classes on incompatible score scales and make the multiclass argmax poorly calibrated. A fixed global weight instead provides a conservative correction across classes and datasets. 
+
+## 3.6 Shared-Space and Cross-Classifier Forms 
+
+Shared CLIP feature space. When the semantic classifier uses the same normalized CLIP image feature as the visual prototypes, its score can be written as 
+
+𝑠 sem (𝑥, 𝑐 ) = 𝛾 𝑣 (𝑥 )⊤𝑤 sem  
+
+> 𝑐
+
+, (14) where 𝑤 sem  
+
+> 𝑐
+
+is its class vector. This includes our primary TCP and standalone zero-shot CLIP settings. Equation (12) then reduces to 
+
+𝑠 VDA (𝑥, 𝑐 ) = 𝛾 𝑣 (𝑥 )⊤ ¯𝑤 𝑐 , (15) with 
+
+¯𝑤 𝑐 =
+
+
+
+(1 − 𝜆 )𝑤 sem  
+
+> 𝑐
+
++ 𝜆 ˆ𝜇 𝑐 , |S 𝑐 | > 0,𝑤 sem  
+
+> 𝑐
+
+, |S 𝑐 | = 0.
+
+(16) The fused vector is not renormalized because Eq. (16) implements logit interpolation. The { ¯𝑤 𝑐 } vectors are cached before evaluation, and inference requires one standard image encoding and one clas-sifier matrix multiplication. 
+
+Cross-classifier attachment. VDA can also provide a fixed visual correction to a semantic classifier whose query logits are produced in another adapted feature space. Let ˜𝑠 sem (𝑥, 𝑐 ) denote logits from such a classifier, such as MaPLe or PromptKD. We retain the target prototypes estimated in the frozen CLIP space and apply 
+
+˜𝑠 VDA (𝑥, 𝑐 ) = (1 − 𝜆 𝑐 ) ˜𝑠 sem (𝑥, 𝑐 ) + 𝜆 𝑐 𝑠 vis (𝑥, 𝑐 ). (17) This form tests whether the target visual correction is complemen-tary to a different semantic learner. It remains training-free with respect to VDA, but may require both the attached model’s logits and the frozen CLIP visual logits at inference. We therefore distin-guish these attachment experiments from the single-feature-space form in Eq. (15). 
+
+## 3.7 Adaptation Procedure and Complexity 
+
+VDA consists of one offline pass over the unlabeled target pool: (1) encode and normalize all target-training images; (2) compute semantic and domain-template assignment scores; (3) hard-partition the pool by argmax; (4) retain at most 𝐾 confidence-ranked features per class; (5) average and normalize the selected features; (6) fuse the resulting visual scores with the semantic classifier. After image features are extracted, assignment requires 𝑂 (𝑁𝐶𝑑 )
+
+similarity computation. Top-𝐾 selection can be implemented with per-class size-𝐾 heaps, requiring 𝑂 (𝑁 log 𝐾 ) additional work. A streaming implementation retains at most 𝑂 (𝐶𝐾𝑑 ) selected feature values, and the final prototype matrix requires 𝑂 (𝐶𝑑 ) memory. Visual Distribution Anchoring for Efficient Prompt Tuning KDD ’27, August 1–5, 2027, San Jose, CA, USA 
+
+VDA introduces no trainable target parameters, optimizer, vali-dation stopping criterion, target-prior constraint, or assignment-refinement loop. In the shared-space setting, the final classifier has the same asymptotic inference cost and storage as an ordinary frozen CLIP classifier. 
+
+## 4 Experiments 4.1 Experimental Setup 
+
+Datasets. We train source prompt models on ImageNet and eval-uate cross-dataset transfer on Caltech101, Oxford Pets, Stanford Cars, Flowers102, Food101, FGVC-Aircraft, SUN397, DTD, EuroSAT, and UCF101. For each dataset, the complete target-training split forms an unlabeled adaptation pool, and accuracy is measured on the disjoint target-test split. Target-training labels are not accessed during adaptation. They are used only in explicitly marked post-hoc analyses of pseudo-label precision and prototype geometry. DTD, EuroSAT, UCF101, Aircraft, and Cars were used for design selection, including the support budget 𝐾 and fusion weight 𝜆 .Preliminary results from an earlier 𝐾 = 16 configuration had also been viewed on the remaining datasets. We therefore report all ten datasets uniformly as cross-dataset evaluations and do not characterize any subset as a pristine untouched test set. 
+
+Backbone and semantic classifiers. All methods use OpenAI CLIP ViT-B/16 unless otherwise noted. Our primary semantic classifier is TCP [ 19 ], trained independently on the corresponding 16-shot Ima-geNet splits for seeds 1–3. The resulting ImageNet top-1 accuracies are 71 .66% , 71 .50% , and 71 .50% . To test whether VDA depends on one prompt architecture, we additionally apply it to seven-template zero-shot CLIP, three official ImageNet-trained MaPLe [ 5] check-points, and three leakage-free PromptKD [8] checkpoints. 
+
+VDA configuration. VDA averages logits from a frozen seman-tic classifier and a fixed domain-template classifier, assigns every unlabeled image by hard argmax, and ranks images by maximum-softmax confidence within each predicted class. It retains at most 
+
+𝐾 = 32 images per class, averages their unit-normalized CLIP features, and renormalizes the resulting visual prototype. Proto-type logits are fused with semantic logits using one global weight 
+
+𝜆 = 0.2. Classes receiving no assignments retain their semantic classifier. We use the complete unlabeled pool and perform no iter-ative assignment or prototype refinement. The domain templates, 
+
+𝐾 , 𝜆 , normalization, aggregation, and selection rule are fixed across datasets. 
+
+Baseline selection and protocol matching. Table 1 is organized by information access rather than as an unrestricted leaderboard. Zero-shot CLIP and TCP are the unadapted semantic references. ZLaP [ 15 ] and InMaP [ 11 ] are included because they can use the same unlabeled target pool and represent two complementary adap-tation strategies: graph-based label propagation and visual-proxy optimization. Methods using different resources are evaluated separately. MaPLe is a source-trained multimodal prompt method, while PromptKD uses a larger ViT-L/14 teacher and target-specific student distil-lation. They are evaluated in the classifier-generality analysis in Sec. 4.3. Published MMRL and MMRL+ReBaPL results [ 2 , 4 ] are reported in the supplementary material as source-only context. This protocol-stratified presentation avoids treating methods with different target-data, optimization, and model budgets as directly equivalent. 
+
+InMaP protocol. The primary downstream experiments in InMaP estimate visual proxies using access to the target test image col-lection and apply dataset-specific pseudo-label refinement. Our protocol instead estimates target prototypes from the unlabeled target-training split and reserves the test split for evaluation. We therefore do not transcribe InMaP’s published 70 .46% ten-dataset mean into Table 1 as though it were a matched result. We report a matched prior-free reproduction in which InMaP optimizes its visual proxies on the same unlabeled target-training pool used by VDA. A separate uniform-marginal Sinkhorn sensitiv-ity is reported in the supplementary material, but it is not labeled as the official InMaP configuration: the published method estimates and smooths a reference class distribution and uses dataset-specific refinement parameters. The published per-dataset results are also retained in the supplementary material with an explicit protocol-different marker. A matched reproduction using the complete offi-cial refinement procedure will replace the prior-free row if it can be validated under the disjoint-pool protocol. 
+
+PromptKD protocol. The released PromptKD cross-dataset imple-mentation assigns the target test split to its validation field while selecting the best validation checkpoint. To prevent target-test checkpoint selection, we preserve the authors’ optimizer, learning rate, augmentations, teacher, and fixed 20-epoch schedule, but eval-uate only the final checkpoint. We run all ten datasets using three independently trained last-step checkpoints. The published 71 .33% 
+
+cross-dataset mean is retained only as protocol-different context; our classifier-generality analysis uses the leakage-free last-step results. 
+
+## 4.2 Main Cross-Dataset Comparison 
+
+Table 1 presents the main matched comparison. VDA improves its primary semantic classifier from 65 .82% to 69 .21% , a gain of 3.39 
+
+points, and improves nine of ten datasets. Food101 is essentially unchanged, decreasing by 0.12 points. VDA exceeds ZLaP by 1.53 points on average and obtains higher accuracy on eight datasets. It exceeds the matched prior-free InMaP reproduction by 2.98 points and obtains higher accuracy on nine datasets. These comparisons show that hard prototype adaptation can outperform graph propagation and optimized visual proxies without requiring an assumed target class distribution. The published InMaP result is numerically stronger than our prior-free reproduction, reporting a 70 .46% mean over the same ten dataset names. However, because it estimates proxies under a differ-ent target-image protocol and uses dataset-specific refinement, it is not ranked against VDA in Table 1. We report it separately rather than conflating accuracy differences with differences in target-data access and adaptation procedure. 
+
+Visual prototypes require semantic fusion. The direct hard-𝐾 pro-totype classifier obtains a ten-dataset mean of 65 .92% , only 0.10 
+
+points above the primary semantic classifier. Semantic–visual fusion reaches 69 .21% . Target prototypes therefore KDD ’27, August 1–5, 2027, San Jose, CA, USA Parsa, Moayedi, and Choi 
+
+Table 1: Cross-dataset top-1 accuracy (%) with OpenAI CLIP ViT-B/16. Zero-shot CLIP and TCP are unadapted semantic references. ZLaP, the matched InMaP reproduction, and VDA receive the same unlabeled target-training pool and are evaluated on the disjoint test split without target-training labels. Published InMaP results use a different target-image and refinement protocol and are reported separately. Best matched result in each column is bold.                                                                   
+
+> Method Caltech Pets Cars Flowers Food Aircraft SUN DTD Euro. UCF Mean Zero-shot CLIP 93.91 88.31 66.15 66.95 85.70 23.04 66.25 45.15 50.36 67.54 65.34 TCP [19] 94.20 89.79 64.79 71.32 86.36 24.29 67.10 44.46 48.18 67.72 65.82 ZLaP [15] 92.05 86.26 66.06 72.59 87.33 25.89 67.22 48.82 58.22 72.30 67.68 InMaP, matched, no refinement [11] 94.28 87.08 66.80 70.85 86.77 22.83 67.31 45.51 53.21 67.70 66.23 VDA 95.05 90.78 67.91 75.25 86.24 25.26 70.18 48.98 59.84 72.59 69.21
+
+Table 2: VDA generality across semantic classifiers. The zero-shot row uses the fully standalone VDA procedure. MaPLe and PromptKD use the same fixed seed-1 TCP/domain as-signments and raw-CLIP visual correction across their three model seeds; these rows test correction compatibility rather than matched training or inference cost.                      
+
+> Semantic classifier Base +VDA Gain Improved Zero-shot CLIP 65.34 68.56 +3.22 9/10 TCP 65.82 69.21 +3.39 9/10 MaPLe, 3 seeds 66 .25 ±.42 69 .60 ±.22 +3.35 ±.37 9/10 PromptKD, 3 seeds 70 .80 ±.40 73 .59 ±.28 +2.79 ±.38 9/10
+
+contain useful appearance information but do not reliably preserve exact class identity when used alone. VDA treats each visual proto-type as a correction: the semantic classifier retains class identity, while the prototype contributes target-specific appearance. 
+
+## 4.3 Generality Across Semantic Classifiers 
+
+VDA operates on semantic and visual-prototype logits rather than the internal prompt architecture. We evaluate this property across zero-shot, source-prompted, multimodal-prompted, and target-distilled classi-fiers. Table 2 summarizes the results. 
+
+Standalone zero-shot CLIP.. 
+
+For the strict classifier-independence test, zero-shot CLIP replaces TCP in assignment, confidence ranking, zero-assignment fallback, and final fusion. The domain templates, equal-logit assignment rule, 𝐾 = 32 ,
+
+𝜆 = 0.2, and all other VDA choices remain unchanged. Accuracy increases from 65 .34% to 68 .56% , a 3.22 -point gain, and nine of ten datasets improve. Food101 changes by only −0.05 points. This establishes that VDA does not depend on TCP’s internal prompt generator. As an attachment sensitivity, we also retain the primary TCP/domain assignments and fuse their visual correction with zero-shot CLIP. This condition reaches 68 .61% , nearly identical to the standalone result. Because TCP remains in its assignment path, its per-dataset values are reported in the supplementary material rather than used as the primary generality result. 
+
+Multimodal prompt transfer. We attach the same fixed seed-1 visual correction to three official ImageNet-trained MaPLe check-points. MaPLe modifies both language and visual prompt paths, providing a stronger architectural transfer test than a static zero-shot classifier. Its mean increases from 66 .25 ±0.42% to 69 .60 ±0.22% ,a paired gain of 3.35 ± 0.37 points. Nine datasets improve, while Food101 is unchanged ( −0.01 ± 0.16 ). 
+
+Target-distilled classifier. We similarly combine the fixed raw-CLIP prototype logits with three leakage-free PromptKD check-points. PromptKD increases from 70 .80 ± 0.40% to 73 .59 ± 0.28% , a paired gain of 2.79 ± 0.38 points. Every seed improves nine datasets, while Food101 decreases by 0.51 ± 0.12 points. The MaPLe and PromptKD experiments are logit-level attach-ments: semantic logits from the attached model are combined with visual-prototype logits estimated in the raw CLIP space. They demonstrate that the VDA visual correction remains complemen-tary across prompt architectures and adaptation regimes, but they do not imply matched optimization or inference budgets. Promp-tKD, in particular, uses a larger teacher and target-specific student training. Together, these results show that class-level target visual infor-mation is useful across the tested semantic classifiers: zero-shot CLIP, source textual prompt tuning, multimodal prompt tuning, and target-specific prompt distillation all benefit from VDA. 
+
+## 4.4 Diagnosing Visual Prototype Transfer 
+
+Name-only prototype prediction. We first test whether target pro-totypes can be synthesized without target images. An affine ridge mapper is trained from ImageNet class-name embeddings to nor-malized 16-shot source image centroids. Across three class-disjoint 
+
+700 /150 /150 splits, it obtains held-out centroid cosine between 
+
+0.922 and 0.933 , substantially exceeding an MLP mapper. Five-fold out-of-fold predictions achieve 0.930 source-centroid cosine, yet their downstream mean is 49 .49% , below the 49 .91% semantic base-line. The discrepancy is explained by target-domain geometry. Pre-dicted prototypes have raw cosine 0.814 to true target centroids but only 0.387 mean-centered cosine, 17 .8% retrieval top-1 accuracy, and pairwise Spearman correlation 0.488 . Raw similarity there-fore overstates recovery of class-specific target structure. Accurate source-domain reconstruction is not sufficient for cross-domain prototype transfer. Visual Distribution Anchoring for Efficient Prompt Tuning KDD ’27, August 1–5, 2027, San Jose, CA, USA 
+
+Table 3: Class-specificity controls on the five datasets used for design selection. Random conditions use five repetitions; deviations are over repetition-level aggregate means.             
+
+> Prototype construction Direct Fusion Common target centroid 3.19 49.89 Shuffled prototypes 2.15 ±.97 37 .78 ±1.03
+> Random target assignment 2.94 ±.85 48 .57 ±.54
+> Random within predicted class 51 .35 ±.24 53 .23 ±.24
+> Confidence-ranked within class 52.15 54.92
+
+Oracle target prototypes. True target prototypes are nevertheless strongly discriminative. With disjoint 16-shot target support, direct centroid classification reaches 66 .16% , compared with 49 .91% for the semantic classifier. Fixed 𝜆 = 0.2 fusion reaches 60 .52% . In con-trast, providing the same true centroids to the original class-aware prompt-generator interface reaches only 50 .48% . Five-fold target cross-fitting produces the same qualitative result while excluding every query from its centroid. These experiments motivate estimat-ing target prototypes from unlabeled target images and combining them directly with semantic logits. 
+
+Failure of balanced soft assignment. We also evaluate class-balanced Sinkhorn assignment over the complete unlabeled pool. At round 0, direct prototypes obtain 36 .52% , while fusion reaches 50 .09% .After three rounds of reassignment, they decrease to 27 .91% and 
+
+49 .90% , respectively. Normalized assignment entropy remains be-tween 0.949 and 0.994 , indicating that each prototype receives nearly the same mixture of target images. Hard partitioning avoids this collapse by assigning each image to one predicted class, retain-ing only a capped subset, and making no uniform-prior assumption. 
+
+## 4.5 Ablation and Mechanism Analysis 
+
+Source-seed repeatability. 
+
+Across three independently trained primary semantic classifiers, VDA obtains 54 .92 ± 0.28% on the five datasets used for design selection, compared with 49 .89 ± 0.23% before adaptation. Every source-seed–dataset pair improves. The seed-level mean gains are approximately +4.70 , +4.93 , and +5.46 points. Aircraft is the least certain dataset, but its mean change remains positive. 
+
+Support budget. For 𝐾 ∈ { 1, 2, 4, 8, 16 , 32 }, fusion obtains 49 .86 ,
+
+51 .35 , 53 .07 , 54 .21 , 54 .80 , and 54 .92% , respectively. Direct proto-type accuracy continues to improve with 𝐾 , but semantic–visual fusion saturates between 𝐾 = 16 and 𝐾 = 32 : the selected 𝐾 = 32 
+
+configuration exceeds 𝐾 = 16 by only 0.12 points. 
+
+Class-specificity controls. Table 3 isolates the source of the vi-sual correction. A common target centroid preserves the semantic classifier’s argmax because it adds the same score to every class. Random target images and shuffled prototypes fail, showing that generic target-domain information does not explain the gain. Ran-dom sampling within each hard-predicted class reaches 53 .23% ,while confidence ordering reaches 54 .92% . Hard class correspon-dence therefore supplies most of the improvement, with confidence ranking adding a smaller 1.69 -point aggregate benefit. The confidence-ranking effect is heterogeneous: it contributes 
+
++5.80 points on EuroSAT and +1.70 on UCF101 but is statistically indistinguishable from zero on Aircraft. We therefore attribute the consistent mechanism to hard class partitioning rather than confidence ranking alone. 
+
+Domain-template attribution. The fixed domain-template classi-fier obtains 50 .30% , compared with 49 .89% for the primary seman-tic classifier. Using semantic-only, domain-only, and equal seman-tic/domain rankings for visual adaptation yields 54 .23% , 54 .82% , and 
+
+54 .92% , respectively. Domain-aware text improves target assign-ment, but the larger increase from the domain-template classifier to domain-ranked visual fusion shows that selected target image features provide the dominant correction. 
+
+Visually useful pseudo-label errors. Exact pseudo-label precision is lowest on Aircraft ( 32 .9% ), yet VDA still improves its classifier. Incorrect selected supports have raw true-centroid cosine 0.960 ,compared with 0.861 ± 0.081 for random wrong-class pairs. After mean centering, the comparison is 0.653 versus 0.003 . Selected errors lie at the 88 .7th percentile of wrong-pair visual similarity on average. They share the true aircraft family 17 .1% of the time, compared with 1.25% by chance, and share the manufacturer 38 .4% 
+
+of the time, compared with 7.98% by chance. Thus, exact pseudo-label accuracy understates prototype utility: visually local errors can provide relevant target appearance while the semantic classifier preserves exact class identity. 
+
+Unlabeled-pool size and class coverage. Using nested label-blind subsets of 10% , 25% , 50% , and 100% of the target pool yields means of 51 .03% , 53 .16% , 54 .15% , and 54 .92% , compared with 49 .89% be-fore adaptation. Fifty percent is the smallest audited fraction that improves all five design-selection datasets, while the complete pool performs best on every dataset. The nominal 𝐾 = 32 is an upper bound rather than an attained count. All EuroSAT classes reach 32 supports, but only approxi-mately 45% of Aircraft and 53% of Cars classes do so. Four to five Aircraft classes and one to two Cars classes receive no assignments. Such classes retain their semantic classifier, although their pre-dictions can still change when competing classes receive visual corrections. VDA therefore primarily refines classes already recog-nized by the semantic initializer and cannot reliably recover classes receiving no target support. 
+
+## 5 Discussion 
+
+Semantic and visual information are complementary. Accurate source-domain text-to-centroid reconstruction does not yield trans-ferable target prototypes because class names specify semantic identity, not how classes appear under a particular domain shift. Nevertheless, oracle target centroids are highly discriminative. VDA bridges this gap by estimating visual prototypes from unlabeled target images and treating them as corrections rather than replace-ments for the semantic classifier. The semantic component pre-serves class identity, while the visual prototype adjusts the classifier toward target-domain appearance. 
+
+Class correspondence matters more than exact pseudo-labels. Acommon target centroid, random target assignment, and shuffled KDD ’27, August 1–5, 2027, San Jose, CA, USA Parsa, Moayedi, and Choi 
+
+prototypes do not reproduce VDA’s gain, showing that generic target-domain statistics are insufficient. Most of the improvement comes from hard class partitioning; confidence ranking provides a smaller and domain-dependent benefit. Exact pseudo-label accuracy is also an incomplete measure of prototype quality. On Aircraft, for example, many incorrect supports remain visually close to the true class and are enriched for the correct family or manufacturer. Such examples can contribute useful fine-grained appearance even when they do not identify the exact variant. 
+
+Generality across semantic classifiers. VDA improves zero-shot CLIP, TCP, MaPLe, and leakage-free PromptKD by 3.22 , 3.39 , 3.35 ,and 2.79 points, respectively. These gains indicate that class-level target visual evidence remains complementary across zero-shot, source-prompted, multimodal-prompted, and target-distilled classi-fiers. Under the matched disjoint-pool protocol, VDA also outper-forms ZLaP and our prior-free InMaP reproduction without target optimization, query-time graph propagation, or an assumed target class prior. Published InMaP results use a different target-image and refinement protocol and are therefore not treated as a matched comparison. 
+
+Efficiency and deployment. VDA performs one frozen adaptation pass and requires no parameter updates or iterative refinement. When semantic and visual logits share the CLIP feature space, their fusion reduces to one cached class vector with ordinary linear inference. Cross-feature-space attachments such as MaPLe and PromptKD still benefit from the fixed visual correction, although they may require an additional raw-CLIP score stream. VDA is therefore most attractive when an unlabeled deployment pool is available but target labels, repeated optimization, and per-query adaptation are impractical. 
+
+## 6 Limitations 
+
+Dependence on unlabeled target images. VDA is not a strict source-only or name-only method. It assumes access to an unlabeled target-training pool representative of the evaluation domain. Per-formance may degrade when this pool is small, biased, temporally mismatched, or missing some target classes. Although VDA im-proves the average with partial pools, full-pool access performs best in our experiments. 
+
+Dependence on a domain description. Assignment combines the semantic classifier with a manually specified domain-template clas-sifier. The description is coarse and requires no target labels, but remains an additional form of prior knowledge. When the deploy-ment domain is unknown, heterogeneous, or difficult to describe, selecting an appropriate template may require manual effort. 
+
+Raw CLIP visual space. All target prototypes are estimated using OpenAI CLIP ViT-B/16. While we evaluate zero-shot CLIP, TCP, MaPLe, and PromptKD semantic classifiers, these experiments do not establish transfer to arbitrary backbones. MaPLe and Promp-tKD are also logit-level attachments whose semantic outputs are combined with visual logits computed in the raw CLIP space; they may therefore require an additional CLIP score stream at inference. 
+
+Coverage of difficult classes. The support budget 𝐾 = 32 is an upper bound rather than an attained count for every class. Fine-grained datasets contain classes with few or no predicted assign-ments, and VDA cannot reliably recover classes receiving no rele-vant pseudo-support. Retaining the semantic classifier for a zero-support class also does not guarantee unchanged accuracy because corrections applied to competing classes can alter the multiclass decision boundary. 
+
+Fixed global fusion. A single fusion weight is stable and avoids cross-class score inconsistency, but cannot fully exploit unusually accurate prototypes. Our class-dependent reliability experiments degraded performance, so we retain a global weight and leave reliable label-free fusion estimation as future work. 
+
+Evaluation and baseline protocols. Design choices were selected using five target datasets, and preliminary results from an earlier support budget had been viewed on the remaining datasets. The results should therefore be interpreted as broad cross-dataset evi-dence rather than a fully untouched benchmark. Published methods also do not always share the same target-data protocol. In particular, published InMaP results use a different target-image and refinement setting, while PromptKD uses a larger teacher and target-specific optimization. We separate such results from matched comparisons, but these differences prevent a fully resource-equivalent ranking. 
+
+## 7 Conclusion 
+
+We presented VDA (Visual Distribution Anchoring), a training-free target adaptation framework that augments a frozen semantic classifier with class-level visual prototypes estimated from an un-labeled target pool. We first showed that accurate source-domain text-to-centroid reconstruction does not produce transferable target prototypes, even though oracle target centroids are strongly dis-criminative. VDA addresses this gap by hard-partitioning unlabeled target images, estimating capped class-specific prototypes, and combining their visual logits with a semantically stable classifier. Across ten ImageNet-to-target datasets, VDA improves its pri-mary semantic classifier from 65 .82% to 69 .21% and outperforms matched ZLaP and prior-free InMaP reproductions. The same frozen adaptation design improves standalone zero-shot CLIP by 3.22 
+
+points, while its visual correction improves MaPLe and leakage-free PromptKD by 3.35 and 2.79 points, respectively. Controlled analyses show that class-specific hard assignment, rather than generic target-domain statistics, drives the improvement, and that visually local pseudo-label errors can remain useful despite being class-incorrect. VDA requires no target labels, target-side optimization, uniform class-prior assumption, iterative refinement, or access to evaluation queries during adaptation. When the semantic and visual classifiers share a feature space, the result is a fixed, cacheable classifier with ordinary linear inference. We hope these findings encourage further study of class-level visual evidence as a simple and complementary mechanism for adapting prompt-based vision–language models to new domains. 
+
+## References  
+
+> [1] Jameel Abdul Samadh, Mohammad Hanan Gani, Noor Hussein, Muhammad Uzair Khattak, Muhammad Muzammal Naseer, Fahad Shahbaz Khan, and Salman H.
+
+Visual Distribution Anchoring for Efficient Prompt Tuning KDD ’27, August 1–5, 2027, San Jose, CA, USA 
+
+Khan. 2023. Align Your Prompts: Test-Time Prompting with Distribution Align-ment for Zero-Shot Generalization. In Advances in Neural Information Processing Systems , Vol. 36. https://proceedings.neurips.cc/paper_files/paper/2023/hash/ fe8debfd5a36ada52e038c8b2078b2ce-Abstract-Conference.html [2] Yassir Bendou, Omar Ezzahir, Eduardo Montesuma, Gabriel Mahuas, Victoria Schevchenko, and Mike Gartrell. 2026. ReBaPL: Repulsive Bayesian Prompt Learning. In Proceedings of the IEEE/CVF Confer-ence on Computer Vision and Pattern Recognition (CVPR) . https: //openaccess.thecvf.com/content/CVPR2026/html/Bendou_ReBaPL_Repulsive_ Bayesian_Prompt_Learning_CVPR_2026_paper.html [3] Soravit Changpinyo, Wei-Lun Chao, and Fei Sha. 2017. Predicting Vi-sual Exemplars of Unseen Classes for Zero-Shot Learning. In Proceed-ings of the IEEE International Conference on Computer Vision (ICCV) . 3476– 3485. https://openaccess.thecvf.com/content_iccv_2017/html/Changpinyo_ Predicting_Visual_Exemplars_ICCV_2017_paper.html [4] Yuncheng Guo and Xiaodong Gu. 2025. MMRL: Multi-Modal Representa-tion Learning for Vision-Language Models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 25015–25025. https://openaccess.thecvf.com/content/CVPR2025/html/Guo_MMRL_Multi-Modal_Representation_Learning_for_Vision-Language_Models_CVPR_2025_ paper.html [5] Muhammad Uzair Khattak, Hanoona Rasheed, Muhammad Maaz, Salman Khan, and Fahad Shahbaz Khan. 2023. MaPLe: Multi-modal Prompt Learning. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 19113–19122. doi:10.1109/CVPR52729.2023.01832 [6] Muhammad Uzair Khattak, Syed Talal Wasim, Muzammal Naseer, Salman Khan, Ming-Hsuan Yang, and Fahad Shahbaz Khan. 2023. Self-regulating Prompts: Foundational Model Adaptation without Forgetting. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) . 15190–15200. doi:10.1109/ICCV51070.2023.01394 [7] Taha Koleilat, Hojat Asgariandehkordi, Hassan Rivaz, and Yiming Xiao. 2025. BiomedCoOp: Learning to Prompt for Biomedical Vision-Language Models. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion (CVPR) . 14766–14776. https://openaccess.thecvf.com/content/CVPR2025/ html/Koleilat_BiomedCoOp_Learning_to_Prompt_for_Biomedical_Vision-Language_Models_CVPR_2025_paper.html [8] Zheng Li, Xiang Li, Xinyi Fu, Xin Zhang, Weiqiang Wang, Shuo Chen, and Jian Yang. 2024. PromptKD: Unsupervised Prompt Distillation for Vision-Language Models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 26617–26626. https://openaccess.thecvf.com/content/ CVPR2024/html/Li_PromptKD_Unsupervised_Prompt_Distillation_for_Vision-Language_Models_CVPR_2024_paper.html [9] Yang Long, Li Liu, Ling Shao, Fumin Shen, Guiguang Ding, and Jungong Han. 2017. From Zero-Shot Learning to Conventional Supervised Classification: Unseen Vi-sual Data Synthesis. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) . 1627–1636. https://openaccess.thecvf.com/content_ cvpr_2017/html/Long_From_Zero-Shot_Learning_CVPR_2017_paper.html [10] Pouya Parsa, Keya Li, Kara M. Kockelman, and Seongjin Choi. 2026. Video-Based Vehicle Surveillance in the Wild: License Plate, Make, and Model Recognition with Self-Reflective Vision-Language Models. In Proceedings of the 105th An-nual Meeting of the Transportation Research Board . Washington, DC. Paper TRBAM-26-03946. https://www.caee.utexas.edu/prof/kockelman/public_html/ TRB26VideoSurveillance.pdf [11] Qi Qian, Yuanhong Xu, and Juhua Hu. 2023. Intra-Modal Proxy Learning for Zero-Shot Visual Categorization with CLIP. In Advances in Neural Information Pro-cessing Systems , Vol. 36. 25461–25474. https://proceedings.neurips.cc/paper_files/ paper/2023/hash/50a057e9fe79ffa3f4120fb6fb88071a-Abstract-Conference.html [12] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. 2021. Learning Transferable Visual Models From Natural Language Supervision. In Proceedings of the 38th International Con-ference on Machine Learning (Proceedings of Machine Learning Research, Vol. 139) .PMLR, 8748–8763. https://proceedings.mlr.press/v139/radford21a.html [13] Manli Shu, Weili Nie, De-An Huang, Zhiding Yu, Tom Goldstein, Anima Anand-kumar, and Chaowei Xiao. 2022. Test-Time Prompt Tuning for Zero-Shot General-ization in Vision-Language Models. In Advances in Neural Information Processing Systems , Vol. 35. 14274–14289. doi:10.52202/068431-1038 [14] Mainak Singha, Ankit Jha, Bhupendra Solanki, Shirsha Bose, and Biplab Banerjee. 2023. APPLeNet: Visual Attention Parameterized Prompt Learning for Few-Shot Remote Sensing Image Generalization Using CLIP. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops . 2024– 2034. https://openaccess.thecvf.com/content/CVPR2023W/EarthVision/html/ Jha_APPLeNet_Visual_Attention_Parameterized_Prompt_Learning_for_Few-Shot_Remote_Sensing_CVPRW_2023_paper.html [15] Vladan Stojnić, Yannis Kalantidis, and Giorgos Tolias. 2024. Label Prop-agation for Zero-Shot Classification with Vision-Language Models. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition . 23209–23218. https://openaccess.thecvf.com/content/CVPR2024/ html/Stojni_Label_Propagation_for_Zero-shot_Classification_with_Vision-Language_Models_CVPR_2024_paper.html [16] Ekin Tiu, Ellie Talius, Pujan Patel, Curtis P. Langlotz, Andrew Y. Ng, and Pranav Rajpurkar. 2022. Expert-Level Detection of Pathologies from Unannotated Chest X-Ray Images via Self-Supervised Learning. Nature Biomedical Engineering 6(2022), 1399–1406. doi:10.1038/s41551-022-00936-9 [17] Vishaal Udandarao, Ankush Gupta, and Samuel Albanie. 2023. SuS-X: Training-Free Name-Only Transfer of Vision-Language Models. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) . 2725– 2736. https://openaccess.thecvf.com/content/ICCV2023/html/Udandarao_SuS-X_Training-Free_Name-Only_Transfer_of_Vision-Language_Models_ICCV_ 2023_paper.html [18] Hantao Yao, Rui Zhang, and Changsheng Xu. 2023. Visual-Language Prompt Tuning with Knowledge-guided Context Optimization. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .6757–6767. https://openaccess.thecvf.com/content/CVPR2023/html/Yao_Visual-Language_Prompt_Tuning_With_Knowledge-Guided_Context_Optimization_ CVPR_2023_paper.html [19] Hantao Yao, Rui Zhang, and Changsheng Xu. 2024. TCP: Textual-based Class-aware Prompt Tuning for Vision-Language Model. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 23438–23448. doi:10.1109/CVPR52733.2024.02212 [20] Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. 2022. Conditional Prompt Learning for Vision-Language Models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . 16816–16825. doi:10.1109/CVPR52688.2022.01631 [21] Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu. 2022. Learning to Prompt for Vision-Language Models. International Journal of Computer Vision 
+
+130, 9 (2022), 2337–2348. doi:10.1007/s11263-022-01653-1

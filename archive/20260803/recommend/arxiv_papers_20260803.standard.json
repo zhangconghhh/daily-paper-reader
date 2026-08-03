@@ -1,0 +1,134 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-03T21:31:56.891783+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2607.28967v1",
+      "source": "arxiv",
+      "title": "Visual Distribution Anchoring for Efficient Prompt Tuning",
+      "abstract": "Prompt tuning adapts vision--language models with few trainable parameters, but existing approaches trade off efficiency and adaptation: static textual prompts can overfit source classes, image-conditioned prompts add per-instance computation, and multimodal tuning modifies the visual branch. We propose VDA (Visual Distribution Anchoring), a training-free target adaptation framework that augments a frozen semantic classifier with class-level visual prototypes estimated offline from an unlabeled target pool. We first ask whether prototypes can be synthesized from class names. A text-to-centroid mapper reconstructs held-out source prototypes but fails under dataset shift because class names specify semantic identity, not target-domain appearance. An oracle analysis confirms that true target prototypes are highly discriminative. VDA therefore uses frozen semantic and domain-template classifiers to partition unlabeled target images into class-correlated groups. Confidence-ranked image features form normalized prototypes, fused with the semantic classifier using one global weight. Adaptation requires no target labels, target-side optimization, uniform class-prior assumption, iterative refinement, or test-query access, and yields a fixed, cacheable classifier. Controlled experiments show that class-specific partitioning drives gains and that visually local pseudo-label errors can remain useful despite being class-incorrect. Across ten ImageNet-to-target transfers, the same frozen design improves zero-shot CLIP, TCP, and MaPLe by 3.22, 3.39, and 3.35 points, respectively, improving nine of ten targets in every setting. Its visual correction further improves leakage-free PromptKD by 2.79 points, complementing zero-shot, source-prompted, multimodal-prompted, and target-distilled classifiers.",
+      "authors": [
+        "Pouya Parsa",
+        "Raoof Zare Moayedi",
+        "Seongjin Choi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-07-31T02:43:07+00:00",
+      "link": "https://arxiv.org/pdf/2607.28967v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Proposes a training-free prompt tuning method for classification with frozen vision-language foundation models.",
+      "llm_evidence_cn": "提出针对冻结视觉语言基础模型的无训练提示调优方法，适用于图像分类。",
+      "llm_evidence": "提出针对冻结视觉语言基础模型的无训练提示调优方法，适用于图像分类。",
+      "canonical_evidence": "提出针对冻结视觉语言基础模型的无训练提示调优方法，适用于图像分类。",
+      "llm_tldr_en": "VDA introduces training-free target adaptation that augments a frozen classifier with class-level visual prototypes, enabling efficient and robust classification under dataset shift without per-instance computation.",
+      "llm_tldr_cn": "现有提示调优方法在效率与适应性间存在权衡。VDA提出一种无需训练的视觉分布锚定框架，利用离线估计的类级视觉原型增强冻结的分类器，实现目标数据分布的自适应。实验表明，它能有效应对数据分布偏移，弥补文本提示的不足，同时不增加每实例计算开销。该方法为基础模型在图像分类中的高效适配提供了新思路，可用于细粒度分类等场景。",
+      "llm_tldr": "现有提示调优方法在效率与适应性间存在权衡。VDA提出一种无需训练的视觉分布锚定框架，利用离线估计的类级视觉原型增强冻结的分类器，实现目标数据分布的自适应。实验表明，它能有效应对数据分布偏移，弥补文本提示的不足，同时不增加每实例计算开销。该方法为基础模型在图像分类中的高效适配提供了新思路，可用于细粒度分类等场景。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.29192v1",
+      "source": "arxiv",
+      "title": "Locally Consistent Transductive Information Maximization for Few-Shot Remote Sensing Scene Classification",
+      "abstract": "Remote sensing scene classification is increasingly relying on foundation models pre-trained on large-scale Earth-observation data. Moreover, transductive inference, which exploits the collective statistical structure of the entire unlabeled query set, appears to naturally match remote sensing pipelines where large images are routinely split into patches and inferred as a batch. In this work, we introduce LC-TIM (Locally Consistent Transductive Information Maximization), which extends the state-of-the-art Transductive Information Maximization for Few-Shot CLIP (TIM++) objective with a local consistency regularizer that enforces prediction agreement between each query sample and its $κ$ nearest feature-space neighbors. The regularizer enters as a single multiplicative factor in the closed-form $q$-update, adding negligible computational overhead. We further propose a multi-source extension that fuses the affinity graph from multiple remote sensing foundation model, further boosting classification accuracy. To assess these methods, we establish the first comprehensive, open-source benchmark for transductive few-shot RS scene classification, evaluating LP++, TransCLIP, TIM++, and LC-TIM across ten diverse datasets, two remote sensing vision-language models, and across various few-shot settings. Our experiments show that transductive methods consistently outperform zero-shot baselines, and that LC-TIM achieves state-of-the-art accuracy, with the largest gains in the low-shot regime where neighborhood cues are most informative. Code is publicly available at: https://github.com/elkhouryk/LC-TIM",
+      "authors": [
+        "Karim El Khoury",
+        "Benoît Gérin",
+        "Benoît Macq",
+        "Christophe De Vleeschouwer"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-07-31T09:13:25+00:00",
+      "link": "https://arxiv.org/pdf/2607.29192v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Few-shot image classification built on CLIP foundation model with transductive inference",
+      "llm_evidence_cn": "基于CLIP基础模型的少样本图像分类，并利用转导推断",
+      "llm_evidence": "基于CLIP基础模型的少样本图像分类，并利用转导推断",
+      "canonical_evidence": "基于CLIP基础模型的少样本图像分类，并利用转导推断",
+      "llm_tldr_en": "LC-TIM augments transductive information maximization for few-shot CLIP with a local consistency regularizer that enforces prediction agreement between each query sample and its kappa nearest neighbors in feature space, improving few-shot remote sensing scene classification.",
+      "llm_tldr_cn": "遥感场景分类日益依赖在大规模对地观测数据上预训练的基础模型，小样本识别中常用的转导推断也适合批量处理遥感影像块。本文提出LC-TIM，在TIM++目标中加入局部一致性正则项，强制每个查询样本与其特征空间K近邻的预测一致。在遥感小样本分类基准上，LC-TIM优于现有TIM++方法，验证了利用基础模型与转导信息用于场景分类的有效性。",
+      "llm_tldr": "遥感场景分类日益依赖在大规模对地观测数据上预训练的基础模型，小样本识别中常用的转导推断也适合批量处理遥感影像块。本文提出LC-TIM，在TIM++目标中加入局部一致性正则项，强制每个查询样本与其特征空间K近邻的预测一致。在遥感小样本分类基准上，LC-TIM优于现有TIM++方法，验证了利用基础模型与转导信息用于场景分类的有效性。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2607.29462v1",
+      "source": "arxiv",
+      "title": "MoPET: Parameter-Efficient Mixture-of-Experts for Unified Medical Image Classification",
+      "abstract": "Adapting deep learning models to profound clinical heterogeneity typically relies on parameter-efficient fine-tuning (PEFT) to avoid the severe overfitting associated with full end-to-end network updates. Although PEFT successfully navigates limited data scenarios, it inherently forces the training of a separate, isolated adapter for every specific diagnostic task. Consolidating these isolated adapters into a single generalist network risks negative transfer, as optimization gradients from conflicting visual domains interfere. To address this, we propose MoPET, a mixture-of-experts (MoE) method that uses a learned sparse router to direct each input through a small subset of low-rank PEFT experts injected into a frozen foundation model, sharing capacity across datasets while limiting cross-domain gradient conflict. Through selected evaluations on the MedMNIST benchmark, we first establish that PEFT outperforms full network updates, improving average accuracy from 86.50% to 88.97%. We then show that a single MoPET model consolidates four heterogeneous datasets into one network, improving average accuracy over the best isolated PEFT adapters (93.46% versus 92.83%). Finally, we show that co-training with auxiliary datasets improves accuracy on data-constrained clinical targets, raising average target accuracy over the strongest isolated adapter from 81.58% to 83.58%. Our source code is publicly available at https://github.com/sdoerrich97/mopet .",
+      "authors": [
+        "Sebastian Doerrich",
+        "Daniel Würtinger",
+        "Francesco Di Salvo",
+        "Shyam Nandan Rai",
+        "Christian Ledig"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-07-31T14:28:23+00:00",
+      "link": "https://arxiv.org/pdf/2607.29462v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Parameter-efficient MoE adapters on frozen foundation model for medical image classification",
+      "llm_evidence_cn": "基于冻结基础模型的参数高效混合专家医学图像分类",
+      "llm_evidence": "基于冻结基础模型的参数高效混合专家医学图像分类",
+      "canonical_evidence": "基于冻结基础模型的参数高效混合专家医学图像分类",
+      "llm_tldr_en": "MoPET injects sparse-routed low-rank PEFT experts into a frozen foundation model via a mixture-of-experts design, unifying medical image classification tasks while mitigating negative transfer and improving performance.",
+      "llm_tldr_cn": "针对医学图像分类中多个诊断任务需要独立适配器且合并时存在负迁移的问题，MoPET提出在冻结基础模型内注入稀疏路由的低秩PEFT专家，通过混合专家架构统一处理多种影像任务。实验显示该方法能有效缓解梯度冲突与负迁移，在统一医学图像分类上获得更好性能。该工作为基础模型在医学图像分类任务中的参数高效复用提供了一种新范式。",
+      "llm_tldr": "针对医学图像分类中多个诊断任务需要独立适配器且合并时存在负迁移的问题，MoPET提出在冻结基础模型内注入稀疏路由的低秩PEFT专家，通过混合专家架构统一处理多种影像任务。实验显示该方法能有效缓解梯度冲突与负迁移，在统一医学图像分类上获得更好性能。该工作为基础模型在医学图像分类任务中的参数高效复用提供了一种新范式。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

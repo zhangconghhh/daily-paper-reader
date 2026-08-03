@@ -1,0 +1,319 @@
+Title: MoPET: Parameter-Efficient Mixture-of-Experts for Unified Medical Image Classification
+
+URL Source: https://arxiv.org/pdf/2607.29462v1
+
+Published Time: Mon, 03 Aug 2026 00:59:25 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# MoPET : Parameter-Efficient Mixture-of-Experts for Unified Medical Image Classification 
+
+Sebastian Doerrich ⋆, Daniel Würtinger ⋆, Francesco Di Salvo, Shyam Nandan Rai, and Christian Ledig 
+
+xAILab Bamberg, University of Bamberg, Bamberg, Germany 
+
+sebastian.doerrich@uni-bamberg.de 
+
+Abstract. Adapting deep learning models to profound clinical hetero-geneity typically relies on parameter-efficient fine-tuning (PEFT) to avoid the severe overfitting associated with full end-to-end network updates. Although PEFT successfully navigates limited data scenarios, it inher-ently forces the training of a separate, isolated adapter for every specific diagnostic task. Consolidating these isolated adapters into a single gen-eralist network risks negative transfer, as optimization gradients from conflicting visual domains interfere. To address this, we propose MoPET ,a mixture-of-experts (MoE) method that uses a learned sparse router to direct each input through a small subset of low-rank PEFT experts in-jected into a frozen foundation model, sharing capacity across datasets while limiting cross-domain gradient conflict. Through selected evalua-tions on the MedMNIST benchmark, we first establish that PEFT out-performs full network updates, improving average accuracy from 86.50% to 88.97%. We then show that a single MoPET model consolidates four heterogeneous datasets into one network, improving average accuracy over the best isolated PEFT adapters (93.46% versus 92.83%). Finally, we show that co-training with auxiliary datasets improves accuracy on data-constrained clinical targets, raising average target accuracy over the strongest isolated adapter from 81.58% to 83.58%. Our source code is publicly available at https://github.com/sdoerrich97/mopet. 
+
+Keywords: Foundation Models · Parameter-Efficient Fine-Tuning · Mix-ture of Experts. 
+
+# 1 Introduction 
+
+The transition from curated datasets to real-world clinical deployment requires models capable of reasoning across profound anatomical heterogeneity. Gen-eralist foundation models trained on natural images, such as CLIP [26] and DINOv3 [28], provide highly robust visual representations. However, adapting these massive architectures to the nuanced visual domains of specific medical tasks presents a structural dilemma [29]. Conversely, medical-specific founda-tion models [5,32,38] capture domain-relevant features but typically specialize  
+
+> ⋆
+
+These authors contributed equally to this work. arXiv:2607.29462v1 [eess.IV] 31 Jul 2026 2 S. Doerrich et al.    
+
+> Fig. 1. Left: Standard Parameter-Efficient Fine-Tuning (PEFT) requires independent, disconnected models for distinct medical modalities. Right: MoPET dynamically routes diverse anatomical inputs through specialized low-rank experts within a single unified architecture, preventing gradient collision and boosting overall accuracy.
+
+in narrow anatomical regions, demanding necessary adaptation for broader clini-cal application. Regardless of the base model, full end-to-end finetuning remains computationally prohibitive and consistently overfits in limited data scenarios. Parameter-efficient techniques like Low-Rank Adaptation (LoRA) [13] resolve this computational burden and data scarcity problem by freezing pretrained weights and updating only injected low-rank matrices, requiring substantially fewer training examples. Although LoRA successfully retains generalization, it requires training a separate adapter for every new task or modality. This frag-mented strategy spawns a massive proliferation of disparate adapters, which complicates deployment in resource-constrained clinical settings. To unify these separate adapters into a single network, architectures must overcome the common problem of negative transfer [27]. When optimization gra-dients from diverse visual domains conflict (such as the high-frequency cellular textures of histopathology versus the low-frequency geometric patterns of ultra-sound) model training becomes challenging. Mixture of Experts (MoE) architec-tures [9,14], including the recent M4oE [16], MedMoE [7], and Med-MoE [15], resolve this interference through sparse routing mechanisms that dynamically assign features to modality-specific experts. Closest to our setting, mixtures of low-rank experts couple sparse routing with parameter-efficient adapters, though primarily in language models and with a homogeneous expert pool [37,19]. Build-ing on these principles, we introduce MoPET , a Mixture of Parameter-Efficient Fine-Tuned Experts that condenses distinct medical image classification tasks into a single model. Unlike prior medical MoE frameworks that tie experts to predefined imaging modalities, MoPET learns its expert assignments from data, without modality labels at the routing stage. A learned router directs each input through a small subset of a heterogeneous pool of LoRA and BOFT experts, so that domain-specific adaptation and shared semantic reasoning need not com-Parameter-Efficient MoE for Unified Medical Image Classification 3
+
+pete for the same parameters, while a dynamic minimum-size sampler and per-dataset classification heads address the scale imbalance and disjoint label spaces across datasets. This reduces gradient conflict across domains while retaining the memory efficiency of low-rank adaptation in a single unified model (Fig. 1). Our contributions are as follows: 
+
+– We first establish across 12 distinct medical datasets that parameter-efficient finetuning outperforms full end-to-end network updates. This motivates our design choice of building the unified architecture from low-rank adapters rather than full updates. 
+
+– We introduce MoPET , a novel Mixture of Experts framework built entirely from parameter-efficient modules that condenses distinct medical image clas-sification tasks into a single model. We demonstrate that this outperforms isolated parameter-efficient adapters trained on individual domains for a se-lected set of four heterogeneous datasets of varying sizes and modalities. 
+
+– Finally, we reveal a novel cross-domain training dynamic where the inclu-sion of auxiliary medical datasets acts as a performance booster. We demon-strate this by elevating the predictive accuracy across three distinct clinical domains through joint training with auxiliary data pools. 
+
+# 2 Methodology 
+
+We propose MoPET , an architecture that adapts the mixture-of-experts paradigm to parameter-efficient finetuning, for establishing a unified classification model that simultaneously reasons across multiple distinct medical datasets. When trained jointly, diverse medical modalities typically suffer from negative transfer, thereby degrading overall predictive performance. To resolve this, our method in-tegrates 4 sequential components: a dynamic sampling strategy to balance data ingestion, a routing mechanism to isolate conflicting features into specialized low-rank pathways, a load-balancing loss to ensure optimal expert utilization, and task-specific classification heads (Fig. 2). 
+
+2.1 Feature Aware Routing Architecture 
+
+Standard end-to-end finetuning of large scale networks on medical data fre-quently leads to overfitting and catastrophic forgetting. To circumvent this, 
+
+MoPET integrates the Mixture of Experts (MoE) paradigm with Parameter Efficient Fine Tuning (PEFT). We maintain a frozen pretrained backbone and inject a small set of trainable low rank matrices (experts) into the query, key, and value projection layers of the self-attention blocks to form a unified adaptation layer. This approach isolates the learning of new domain specific features while preserving the robust generalist representations of the original network. However, simultaneously updating a single set of shared adapters across divergent clini-cal tasks can cause negative transfer. To physically separate competing gradient updates among the K introduced experts, we deploy a learnable gating network 4 S. Doerrich et al.              
+
+> Fig. 2. Overview of MoPET . First, a dynamic sampling protocol extracts balanced batches of size dmin from each dataset (A). Second, during the forward pass, an internal router activates the top-kparameter-efficient (PEFT) experts to process the input representation xalongside the frozen pretrained weights, producing the updated token representation z(B). Finally, a dataset router utilizes the domain identifier did to direct the terminal representation zto the corresponding task-specific classifier (C).
+
+R. For a given input token vector x, the gating network R(x) computes raw, unnormalized routing scores to evaluate the relevance of each available expert. We define the final hidden representation z by augmenting the frozen weight matrix W with the dynamically weighted expert outputs ei(x):
+
+z = Wx +
+
+> K
+
+X
+
+> i=1
+
+softmax (TopK (R(x), k )) iei(x) (1) The TopK operation retains the k highest routing scores and sets the rest to −∞ ,so the softmax assigns zero weight to unselected experts and the sum reduces to the k active ones. Each expert ei is a parameter-efficient module, either a LoRA or a BOFT adapter, while the frozen projection Wx acts as an always-on shared path. Routing each token through a subset of experts lets the model adapt to divergent domains while limiting interference between their gradient updates. To encourage the router to use the full expert pool and avoid expert col-lapse, where the router repeatedly selects a narrow subset of experts, we add the differentiable load-balancing loss of DeepSeekMoE [9]: 
+
+Lload = K
+
+> K
+
+X
+
+> i=1
+
+fi pi, (2) Here, fi is the fraction of tokens routed to expert i, and pi is its mean routing probability over the batch. Minimizing this loss promotes a uniform distribution of tokens across all K experts. Parameter-Efficient MoE for Unified Medical Image Classification 5
+
+We formulate our composite training set as D = {(Xd, Yd)}Dd=1 , where Xd
+
+denotes the input images, Yd the corresponding labels, and D indicates the total number of distinct clinical domains. Because this composite dataset D contains completely divergent label spaces, we attach D independent linear classification heads to the frozen backbone. While the expert layers dynamically route and mix features internally, a dataset router explicitly uses the domain identifier did 
+
+to map the shared terminal representations z strictly into their corresponding semantic spaces, enabling dedicated predictions for every dataset d ∈ { 1, . . . , D }.We train the experts, router, and heads jointly by minimizing L = LCE +λ Lload ,where LCE is the cross-entropy on each sample’s dataset-specific head. 
+
+2.2 Dynamic Multi Domain Sampling 
+
+Medical imaging benchmarks frequently exhibit highly skewed class distributions and severe volumetric disparities. If we sample naively, large datasets overwhelm the network and starve smaller domains. To enforce stable optimization across the composite training set D, we deploy a dynamic sliding window sampling protocol. We structure each training epoch to contain exactly D × dmin sam-ples, where dmin is the number of training samples in the smallest domain. This protocol guarantees the model processes the entirety of the smallest datasets in every single epoch while progressively iterating through the unseen samples of the larger datasets over successive epochs, strictly preventing domain starvation. 
+
+2.3 Implementation Details 
+
+We instantiate MoPET using the DINOv3 [28] Base architecture from the timm library [33] as our frozen backbone, which processes inputs at a spatial resolu-tion of 256 × 256 pixels. While model performance typically scales with expert count [25], we constrain MoPET ’s complexity to K = 32 experts per Trans-former block following established scaling conventions [24], while utilizing the pre-trained weight matrix as a shared expert [9]. For the specialized pathways, we use 20 Low-Rank Adaptation (LoRA) experts with a rank r = 8 and a scaling factor α = 8 , alongside 12 BOFT (Butterfly Orthogonal Fine-Tuning) experts utilizing a block size of 8 and a butterfly factor of 1. During isolated parameter-efficient finetuning, LoRA achieves the highest overall accuracy, while BOFT surpasses it on a subset of datasets (notably Breast and Retina). This comple-mentarity motivates our hybrid expert pool, with more experts allocated to the stronger LoRA family. A sparse gating mechanism activates the top-k = 12 ex-perts per forward pass. In total, MoPET trains 7.4M parameters ( ≈8.7% of the 86M backbone). While a single isolated adapter is lighter (LoRA 0.30M, BOFT 0.10M), it serves only one task; MoPET instead unifies all tasks in one model, replacing a per-task collection of adapters and the model zoo it entails. Finally, we attach task-specific classification heads for each distinct dataset. We conduct training for 75 epochs with a batch size of 128 using AdamW [23] (initial learn-ing rate of 1 × 10 −3), cosine annealing scheduling [22], early stopping based on validation performance (patience of 10 epochs) and a loss weight λ = 0 .05 .6 S. Doerrich et al. 
+
+# 3 Experiments and Results 
+
+We evaluate on twelve 2D datasets from the MedMNIST+ collection [35,36] (2– 11 classes; CC BY 4.0 / CC BY-NC 4.0), provided at 224 ×224 pixels and resized to 256 × 256 with bicubic interpolation to match the backbone. We follow the official data splits throughout. They cover eight imaging modalities across a wide range of scales: blood cell microscopy (Blood [1]), breast ultrasound (Breast [2]), chest X-ray (Chest [31], Pneumonia [18]), dermatoscopy (Derma [30,8]), retinal OCT (OCT [18]), abdominal CT in axial, coronal, and sagittal views of the same volumes (OrganA, OrganC, OrganS [3,34], treated as distinct tasks), colon pathology (Path [17]), kidney cortex microscopy (Tissue [35]), and fundus pho-tography (Retina [20]). Training sets span from 546 images (Breast) to roughly 165,000 (Tissue), a scale heterogeneity that motivates our dynamic multi-domain sampler. 
+
+3.1 Isolating Adaptation Strategy from Backbone Influence 
+
+First, we establish that parameter-efficient fine-tuning outperforms full end-to-end network updates. To isolate the influence of the backbone from the fine-tuning method, we compare CLIP [26], DINO [4], and DINOv3 [28] under full end-to-end fine-tuning and the PEFT techniques LoRA [13], BOFT [21], Fouri-erFT [12], and AdaptFormer [6]. Table 1 reports the mean accuracy, evaluated at an operating point of 0.5, across the test splits of all twelve datasets and three seed runs. The end-to-end results for DINO and CLIP, as well as the DINOv3 training procedure, are adapted from [11]. For PEFT, we adjusted the learning rate from 0.0001 to 0.001. When evaluating the backbones under parameter effi-cient settings, the architectures exhibit high performance stability. A Friedman test reveals no statistically significant differences among the foundation models (χ2 = 3 .63 , p = 0 .163 , α = 0 .05 ). While a non-significant test does not estab-lish equivalence, backbone selection alone does not provide reliable performance separation in clinical tasks. Conversely, the method of parameter update dictates diagnostic success. On aggregate across the evaluated datasets, PEFT methods, specifically LoRA and BOFT, outperform traditional full network updates. Pairwise Wilcoxon signed-rank tests with Bonferroni correction confirm this: both LoRA and BOFT sig-nificantly outperform end-to-end fine-tuning ( p ≤ 1.2 × 10 −3) and AdaptFormer (p < 10 −8). LoRA additionally outperforms FourierFT ( p = 4 .7 × 10 −7), and BOFT likewise outperforms FourierFT ( p = 3 .7 × 10 −5), whereas LoRA and BOFT are statistically indistinguishable ( p = 0 .08 ) and end-to-end fine-tuning and FourierFT do not differ significantly ( p = 1 .00 ). 
+
+3.2 Cross-Dataset Adaptation 
+
+Next, we evaluate the cross-dataset adaptation capabilities of MoPET . For this, we train a single, unified model simultaneously on a selected pool of four hetero-geneous datasets of varying sizes and modalities (BloodMNIST, BreastMNIST, Parameter-Efficient MoE for Unified Medical Image Classification 7
+
+Table 1. Average test accuracy in %, evaluated at an operating point of 0.5, of different PEFT methods and backbones across all twelve MedMNIST datasets and three seed runs in comparison to end-to-end fine-tuning. Best backbone per fine-tuning method is shown in bold (columns), while best fine-tuning method per backbone is underlined (rows). Model LoRA BOFT FourierFT AdaptFormer endToEnd CLIP 88 .04 ±0.87 87 .37 ±0.92 84 .57 ±0.61 82 .84 ±1.74 82 .75 ±1.01 
+
+DINO 88 .14 ±0.81 87 .28 ±1.19 85 .43 ±0.60 82 .08 ±0.96 84 .84 ±1.07 
+
+DINOv3 88 .97 ±0.73 88 .62 ±0.68 86 .72 ±0.21 79 .82 ±1.13 86 .50 ±1.15 
+
+DermaMNIST, and PathMNIST) and compare it against the individually trained baseline adapters using DINOv3 as backbone. In this multi-domain configura-tion, our dynamic sampling protocol restricts the number of samples per dataset per epoch to dmin = 546 , matching the training size of the smallest domain (BreastMNIST). This mechanism prevents the larger datasets from dominating the gradient updates, thereby ensuring balanced anatomical representation. Ta-ble 2 reports test accuracy across the four test splits for the individually trained baselines and our single MoPET model, as the mean over three seeds. Compared to the strongest isolated PEFT adapter, MoPET improves on BreastMNIST, DermaMNIST, and PathMNIST and stays within 0.11% on BloodMNIST, rais-ing the average from 92.83% (BOFT) to 93.46%. End-to-end fine-tuning remains strongest on PathMNIST but trails on the smaller, more heterogeneous targets. That a single model matches or exceeds the best per-dataset adapter on three of four datasets indicates that the routed experts share features across domains rather than overfitting to dataset-specific cues. 
+
+Table 2. Test accuracy in %, evaluated at an operating point of 0.5, comparing tradi-tional fine-tuning and isolated parameter-efficient adapters against the unified MoPET 
+
+framework using the DINOv3 backbone, on a selected pool of four heterogeneous datasets of varying sizes and modalities (BloodMNIST, BreastMNIST, DermaMNIST, and PathMNIST). All values are the mean over three random seeds. The best method per dataset is underlined; MoPET is shown in bold where it ranks among the top three methods. Method BloodMNIST BreastMNIST DermaMNIST PathMNIST Average End-to-End 98.49 85.26 81.23 96.13 90.28 Linear Probing 97.86 86.54 82.28 93.90 90.15 AdaptFormer 96.50 73.29 69.89 89.06 82.19 BOFT 98.81 90.38 86.93 95.21 92.83 FourierFT 98.40 88.46 83.18 94.52 91.14 LoRA 98.75 88.25 87.43 95.07 92.38 
+
+MoPET 98.70 90.81 88.46 95.87 93.46 8 S. Doerrich et al.                             
+
+> Table 3. Test accuracy in % between traditional fine-tuning, isolated parameter-efficient adapters, and the MoPET boosting setup using the DINOv3 backbone.
+> MoPET boosts each primary target (BreastMNIST, RetinaMNIST, DermaMNIST) with a different, hand-selected pool of auxiliary datasets during training. All values are the mean over three random seeds; the best method per target is underlined. BreastMNIST RetinaMNIST DermaMNIST Average End-to-End 85.26 55.25 81.23 73.91 Linear Probing 86.54 65.17 82.28 78.00 LoRA 88.25 66.83 87.43 80.84 BOFT 90.38 67.42 86.93 81.58
+> MoPET 92.95 68.83 88.96 83.58
+
+3.3 Cross-Dataset Feature Sharing via Auxiliary Booster Datasets 
+
+Finally, we investigate whether auxiliary datasets can further boost the predic-tive accuracy of individual target domains during MoPET ’s joint training. To evaluate this paradigm, we select three distinct booster configurations. Rather than adapting the DINOv3 backbone exclusively to a single dataset, we jointly train it alongside additional support datasets. Specifically, we co-train BreastM-NIST with Blood-, Derma-, and PathMNIST; RetinaMNIST with Blood-, Breast-, Path-, and OrganAMNIST; and DermaMNIST with Blood-, OCT-, and Or-ganSMNIST. Table 3 reports test accuracy on the three target datasets as the mean over three seeds. For reference, we include traditional fine-tuning and the isolated adapters. With its auxiliary pools, MoPET reaches 92.95% on Breast-, 68.83% on Retina-, and 88.96% on DermaMNIST, for an average of 83.58%, ahead of every isolated baseline. The gains are largest on the smallest targets, Breast- and RetinaMNIST (546 and 1,080 training images), indicating that co-training with additional data benefits data-constrained domains the most. 
+
+# 4 Discussion and Conclusion 
+
+We introduce MoPET , a mixture-of-experts method that couples a learned sparse router with low-rank experts so that a single frozen foundation model can serve many medical classification tasks at once. Across twelve datasets we first es-tablish that parameter-efficient fine-tuning outperforms full end-to-end network updates, which motivates building the unified model from low-rank adapters. We then show that one MoPET model consolidates four heterogeneous datasets and, on average, exceeds the best per-dataset adapter. Finally, co-training with aux-iliary datasets improves accuracy on data-constrained targets, with the largest gains on the smallest datasets. The same joint formulation thus serves two ends, a single unified model or a boosted individual target. Parameter-Efficient MoE for Unified Medical Image Classification 9
+
+Limitations. Several questions remain open. Key design choices, notably the expert count K, the top-k activation, and the LoRA-to-BOFT ratio, are likely dataset dependent and warrant a more rigorous ablation than our scope allows. We also do not directly analyze the learned routing patterns; whether experts specialize by modality or anatomy, as intended, remains to be verified through an explicit study of expert utilization. Our cross-dataset and booster experiments further rely on hand-selected dataset subsets chosen to span modalities and scales; a systematic sweep over combinations, together with control conditions using randomly selected or unrelated auxiliary data, would be needed to separate semantically driven transfer from the effect of added training data. Finally, we do not benchmark against dedicated multi-task medical pretraining approaches, which would form an interesting comparison for the cross-dataset feature-sharing setting. 
+
+Acknowledgments. This study was funded through the Hightech Agenda Bayern (HTA) of the Free State of Bavaria, Germany. 
+
+Disclosure of Interests. The authors have no competing interests to declare that are relevant to the content of this article. 
+
+# References 
+
+1. Acevedo, A., Merino, A., Alférez, S., Ángel Molina, Boldú, L., Rodellar, J.: A dataset of microscopic peripheral blood cell images for development of automatic recognition systems. Data in Brief 30 , 105474 (2020) 2. Al-Dhabyani, W., Gomaa, M., Khaled, H., Fahmy, A.: Dataset of breast ultrasound images. Data in Brief 28 , 104863 (2020) 3. Bilic, P., Christ, P., Li, H.B., Vorontsov, E., Ben-Cohen, A., et al.: The liver tumor segmentation benchmark (lits). Medical Image Analysis 84 , 102680 (2023) 4. Caron, M., Touvron, H., Misra, I., J’egou, H., Mairal, J., Bojanowski, P., Joulin, A.: Emerging properties in self-supervised vision transformers. 2021 IEEE/CVF International Conference on Computer Vision (ICCV) pp. 9630–9640 (2021) 5. Chen, R.J., Ding, T., Lu, M.Y., et al.: Towards a General-Purpose Foundation Model for Computational Pathology. Nature medicine 30 (3), 850–862 (Mar 2024) 6. Chen, S., Ge, C., Tong, Z., Wang, J., Song, Y., Wang, J., Luo, P.: Adaptformer: Adapting vision transformers for scalable visual recognition. Advances in Neural Information Processing Systems (NeurIPS) 35 (2022) 7. Chopra, S., Sanchez-Rodriguez, G., Mao, L., Feola, A.J., Li, J., Kira, Z.: MedMoE: Modality-Specialized Mixture of Experts for Medical Vision-Language Understand-ing (Jun 2025) 8. Codella, N.C.F., Gutman, D., Celebi, M.E., et al.: Skin lesion analysis toward melanoma detection: A challenge at the 2017 international symposium on biomed-ical imaging (isbi), hosted by the international skin imaging collaboration (isic). In: 2018 IEEE 15th International Symposium on Biomedical Imaging (ISBI 2018). pp. 168–172 (2018) 9. Dai, D., Deng, C., Zhao, C., et al.: DeepSeekMoE: Towards Ultimate Expert Spe-cialization in Mixture-of-Experts Language Models (Jan 2024) 10 S. Doerrich et al. 10. Di Salvo, F., Doerrich, S., Ledig, C.: MedMNIST-C: Comprehensive benchmark and improved classifier robustness by simulating realistic image corruptions. arXiv preprint arXiv:2406.17536 (2024) 11. Doerrich, S., Di Salvo, F., Brockmann, J., Ledig, C.: Rethinking model prototyping through the MedMNIST+ dataset collection. Scientific Reports 15 (1), 7669 (Mar 2025) 12. Gao, Z., Wang, Q., Chen, A., Liu, Z., Wu, B., Chen, L., Li, J.: Parameter-efficient fine-tuning with discrete fourier transform. In: Proceedings of the 41st International Conference on Machine Learning. ICML’24, JMLR.org (2024) 13. Hu, E.J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W.: LoRA: Low-Rank Adaptation of Large Language Models (Oct 2021) 14. Jacobs, R.A., Jordan, M.I., Nowlan, S.J., Hinton, G.E.: Adaptive Mixtures of Local Experts. Neural Computation 3(1), 79–87 (Feb 1991) 15. Jiang, S., Zheng, T., Zhang, Y., Jin, Y., Yuan, L., Liu, Z.: Med-MoE: Mixture of Domain-Specific Experts for Lightweight Medical Vision-Language Models (Sep 2024) 16. Jiang, Y., Shen, Y.: M4oE: A Foundation Model for Medical Multimodal Image Segmentation with Mixture of Experts . In: proceedings of Medical Image Com-puting and Computer Assisted Intervention – MICCAI 2024. vol. LNCS 15012. Springer Nature Switzerland (2024) 17. Kather, J.N., Krisam, J., Charoentong, P., Luedde, T., Herpel, E., et al.: Predicting survival from colorectal cancer histology slides using deep learning: A retrospective multicenter study. PLOS Medicine 16 , e1002730 (2019) 18. Kermany, D.S., Goldbaum, M., Cai, W., Valentim, C.C., Liang, H., et al.: Identi-fying medical diagnoses and treatable diseases by image-based deep learning. Cell 
+
+172 , 1122–1131.e9 (2018) 19. Komatsuzaki, A., Puigcerver, J., Lee-Thorp, J., Ruiz, C.R., Mustafa, B., Ainslie, J., Tay, Y., Dehghani, M., Houlsby, N.: Sparse upcycling: Training mixture-of-experts from dense checkpoints. In: International Conference on Learning Representations (ICLR) (2023) 20. Liu, R., Wang, X., Wu, Q., Dai, L., Fang, X., et al.: Deepdrid: Diabetic retinopa-thy—grading and image quality estimation challenge. Patterns 3, 100512 (2022) 21. Liu, W., Qiu, Z., Feng, Y., Xiu, Y., Xue, Y., et al.: Parameter-efficient orthogonal finetuning via butterfly factorization. In: ICLR (2024) 22. Loshchilov, I., Hutter, F.: Sgdr: Stochastic gradient descent with warm restarts (2017) 23. Loshchilov, I., Hutter, F.: Decoupled weight decay regularization (2019) 24. OpenAI, Agarwal, S., Ahmad, L., et al.: Gpt-oss-120b & gpt-oss-20b Model Card (Aug 2025) 25. Pan, D., Li, B., Zheng, Y., Ma, J., Fei, V.: The Rise of Sparse Mixture-of-Experts: A Survey from Algorithmic Foundations to Decentralized Architectures and Vertical Domain Applications (Feb 2026) 26. Radford, A., Kim, J.W., Hallacy, C., et al.: Learning transferable visual models from natural language supervision. In: Meila, M., Zhang, T. (eds.) Proceedings of the 38th International Conference on Machine Learning. Proceedings of Machine Learning Research, vol. 139, pp. 8748–8763. PMLR (2021) 27. Ruder, S.: An Overview of Multi-Task Learning in Deep Neural Networks (Jun 2017) 28. Siméoni, O., Vo, H.V., Seitzer, M., Baldassarre, F., Oquab, M., et al.: DINOv3 (Aug 2025) Parameter-Efficient MoE for Unified Medical Image Classification 11 29. Tiu, E., Talius, E., Patel, P., Langlotz, C.P., Ng, A.Y., Rajpurkar, P.: Expert-level detection of pathologies from unannotated chest X-ray images via self-supervised learning. Nature Biomedical Engineering 6(12), 1399–1406 (Sep 2022) 30. Tschandl, P., Rosendahl, C., Kittler, H.: The ham10000 dataset, a large collection of multi-source dermatoscopic images of common pigmented skin lesions. Scientific Data 2018 5:1 5, 1–9 (2018) 31. Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., Summers, R.M.: Chestx-ray8: Hospital-scale chest x-ray database and benchmarks on weakly-supervised clas-sification and localization of common thorax diseases. 2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR) pp. 3462–3471 (2017) 32. Wang, Z., Wu, Z., Agarwal, D., Sun, J.: MedCLIP: Contrastive Learning from Unpaired Medical Images and Text (Oct 2022) 33. Wightman, R.: Pytorch image models. https://github.com/rwightman/ pytorch-image-models (2019) 34. Xu, X., Zhou, F., Liu, B., Fu, D., Bai, X.: Efficient multiple organ localization in ct image using 3d region proposal network. IEEE Transactions on Medical Imaging 
+
+38 (8), 1885–1898 (2019) 35. Yang, J., Shi, R., Wei, D., Liu, Z., Zhao, L., Ke, B., Pfister, H., Ni, B.: MedM-NIST v2 – A large-scale lightweight benchmark for 2D and 3D biomedical image classification. Scientific Data 10 (1), 41 (Jan 2023) 36. Yang, J., Shi, R., Wei, D., Liu, Z., et al.: MedMNIST+: 18 × standardized datasets for 2d and 3d biomedical image classification with multiple size options: 28 (mnist-like), 64, 128, and 224 (2024) 37. Zadouri, T., Üstün, A., Ahmadian, A., Ermiş, B., Locatelli, A., Hooker, S.: Pushing mixture of experts to the limit: Extremely parameter efficient MoE for instruction tuning. In: International Conference on Learning Representations (ICLR) (2024) 38. Zhang, S., Xu, Y., Usuyama, N., et al.: BiomedCLIP: A multimodal biomedical foundation model pretrained from fifteen million scientific image-text pairs (Jan 2025) Parameter-Efficient MoE for Unified Medical Image Classification S1 
+
+# Overview of Supplementary Material 
+
+This supplementary material complements the main paper with additional exper-imental detail and analyses. Section A gives the full experimental setup (com-pute, randomness, training configuration, preprocessing, and per-method hyper-parameters) needed to reproduce the reported statistics. Section B extends the backbone/PEFT comparison with per-backbone AUC and a per-dataset breakdown, and shows that the main-paper ranking holds throughout: LoRA and BOFT are the strongest adapters on every backbone, and their per-dataset complementarity motivates MoPET ’s hybrid expert pool. Section C reports the complete Wilcoxon and Friedman tests behind the significance claims, confirm-ing that LoRA and BOFT are statistically indistinguishable from each other yet separate from every other method. Section D quantifies the parameter budget, placing MoPET at 8.7% of the backbone while replacing a per-task collection of adapters. Section E evaluates MedMNIST-C corruptions and finds the clean-data method ranking preserved, with AdaptFormer degrading most. 
+
+# A Experimental Details 
+
+A.1 Computation 
+
+All experiments were conducted on NVIDIA RTX A5000 and L40S GPUs. Back-bones are loaded from the timm library [33] and kept frozen except for end-to-end fine-tuning. Only the parameters introduced by each fine-tuning method (and the task-specific classification heads) are updated. 
+
+A.2 Randomness 
+
+Each reported number is the mean over three independent training runs, each with different random initialization, data ordering, and (for MoPET ) sampling. We report the mean to characterize typical performance rather than a single seeded outcome. The source code and run configurations are released to support reproduction of our full protocol and achieved results. 
+
+A.3 Training Configuration 
+
+Table A1 summarizes the optimization setup. The two experiment families share optimizer, schedule, epoch budget, and early-stopping criterion. They differ in batch size, where the unified MoPET model uses a larger effective batch realized through gradient accumulation. Learning rate and weight decay correspond to the PyTorch AdamW defaults. For the DINOv3 linear-probing and end-to-end baselines, the learning rate is reduced to 1×10 −4, following the procedure of [11]. S2 S. Doerrich et al.                                           
+
+> Table A1. Training configuration. “Isolated PEFT” refers to the per-dataset back-bone/PEFT comparison (main paper Sec. 3.1). “Unified MoPET ” refers to the cross-dataset and booster experiments (main paper Secs. 3.2–3.3). Setting Isolated PEFT Unified MoPET
+> Optimizer AdamW [23] AdamW Learning rate 1×10 −3†1×10 −3
+> Weight decay 1×10 −21×10 −2
+> LR schedule CosineAnnealingLR, one cycle CosineAnnealingLR, one cycle Max epochs 75 75 Early stopping patience 10 (val.) patience 10 (val.) Batch size 64 128 (gradient accumulation) Load-balancing λ—0.05 Loss CE (BCE-with-logits, Chest) CE +λLload
+> †Reduced to 1×10 −4for DINOv3 linear probing and end-to-end fine-tuning.
+
+A.4 Preprocessing and Augmentation 
+
+All datasets are taken from the MedMNIST+ collection at 224 × 224 pixels and follow the official train/validation/test splits. Because the images are already at 
+
+224 × 224 , no padding is applied. For the DINOv3 backbone they are resized to 
+
+256 × 256 with bicubic interpolation to match the backbone input resolution. Inputs are normalized with the backbone’s default (ImageNet) channel statistics provided by timm . We apply no train-time data augmentation beyond padding, resizing, and normalization; the only stochasticity in the input pipeline is the per-run random seed governing initialization and sampling. Pretrained weights are loaded from timm and the classification heads are randomly initialized. ChestM-NIST is a multi-label binary task and uses a binary cross-entropy-with-logits objective; all other datasets use standard cross-entropy. 
+
+A.5 Method Hyperparameters 
+
+The isolated PEFT baselines use: LoRA [13] with rank r = 8 and scaling α = 8 ;BOFT [21] with block size 8 and butterfly factor 1; FourierFT [12] with n = 1000 
+
+frequencies and α = 150 ; and AdaptFormer [6] with bottleneck dimension 64 and scaling 1. All adapters are injected into the query, key, and value projections of every Transformer block. MoPET uses K = 32 experts per block (20 LoRA experts with r = 8 , α = 8 and 12 BOFT experts with block size 8, butterfly factor 1), a shared frozen path, and a sparse router activating the top-k = 12 
+
+experts per forward pass, totalling 7.4M trainable parameters ( ≈ 8.7% of the 
+
+86 M backbone). 
+
+# B Extended PEFT Comparison 
+
+To confirm that the backbone and PEFT ranking of main-paper Table 1 does not depend on the accuracy metric or on dataset-level averaging, we extend it along Parameter-Efficient MoE for Unified Medical Image Classification S3 
+
+two axes: we report the area under the ROC curve (AUC) alongside accuracy for every backbone, and we decompose the DINOv3 accuracy into the individual datasets. Both are averaged over three seeds. 
+
+Results Table B1 shows the ranking is stable under AUC: LoRA and BOFT are the strongest adapters on all three backbones, AdaptFormer is the weakest, and DINOv3 is the strongest backbone for the high-performing methods, with the AUC ordering mirroring the accuracy ordering.                                       
+
+> Table B1. Mean test accuracy (ACC, %) and AUC (%) per fine-tuning method and backbone, averaged over all twelve datasets and three random seeds. Best ACC and AUC per backbone in bold. LoRA attains the best accuracy on every backbone, and the AUC ordering mirrors the accuracy ordering. ACC (%) AUC (%) Method CLIP DINO DINOv3 CLIP DINO DINOv3 AdaptFormer 82 .84 82 .08 79 .82 93.02 92.84 90.02 BOFT 87 .37 87 .28 88 .62 95.84 95.90 96.19 FourierFT 84 .57 85 .43 86 .72 94.79 95.04 95.18 LoRA 88 .04 88 .14 88 .97 95 .99 96 .14 96 .24
+> endToEnd 82 .75 84 .84 86 .50 91.83 93.90 94.10
+
+Table B2 decomposes the DINOv3 average into the individual datasets. No single adapter dominates: LoRA leads on most datasets while among the adapters BOFT leads on Blood-, Breast-, Path-, Retina-, and TissueMNIST. This per-dataset complementarity motivates MoPET ’s hybrid LoRA/BOFT ex-pert pool rather than a single-family pool. 
+
+# C Statistical Testing 
+
+We report the complete pairwise Wilcoxon signed-rank tests with Bonferroni correction and the corresponding Friedman omnibus statistics that underlie the significance statements in the main paper. All tests use α = 0 .05 . The method and backbone comparisons are computed over three seeds for each fine-tuning method, backbone, and dataset. Reported entries are Bonferroni-corrected p-values. 
+
+C.1 Fine-Tuning Methods 
+
+In the main paper, LoRA and BOFT significantly outperform full fine-tuning and the weaker PEFT adapters (Section 3.1). We establish this with an omnibus Friedman test across methods, followed by pairwise Wilcoxon signed-rank tests with Bonferroni correction over the twelve datasets. S4 S. Doerrich et al. 
+
+Table B2. Per-dataset test accuracy (%) for the DINOv3 backbone at resolution 256, as mean ± standard deviation over three seeds. Best method per dataset in bold. No single adapter dominates: LoRA and BOFT alternate as the strongest adapter across datasets, which motivates MoPET ’s hybrid pool. Dataset LoRA BOFT FourierFT AdaptFormer end-to-end Blood 98 .75 ±0.27 98 .81 ±0.10 98 .40 ±0.06 96 .50 ±0.17 98 .49 ±0.44 
+
+Breast 88 .25 ±0.74 90 .38 ±0.64 88 .46 ±0.64 73 .29 ±2.06 85 .26 ±3.57 
+
+Chest 94 .83 ±0.02 94 .81 ±0.05 94 .77 ±0.00 94 .75 ±0.01 94 .79 ±0.01 
+
+Derma 87 .43 ±1.35 86 .93 ±1.14 83 .18 ±0.33 69 .89 ±0.26 81 .23 ±1.25 
+
+OCT 91 .87 ±1.84 90 .10 ±2.45 88 .13 ±0.38 71 .47 ±5.42 90 .30 ±1.99 
+
+OrganA 97 .72 ±0.09 97 .09 ±0.16 95 .48 ±0.08 92 .75 ±1.47 97 .49 ±0.15 
+
+OrganC 95 .16 ±0.67 93 .80 ±0.29 92 .69 ±0.11 88 .10 ±1.00 95 .24 ±0.17 
+
+OrganS 83 .29 ±0.07 81 .47 ±0.83 79 .97 ±0.21 73 .97 ±0.36 84 .33 ±0.31 
+
+Path 95 .07 ±0.50 95 .21 ±0.78 94 .52 ±0.16 89 .06 ±1.45 96 .13 ±0.30 
+
+Pneumonia 93 .38 ±0.46 91 .99 ±1.25 90 .76 ±0.19 83 .74 ±0.28 87 .23 ±0.91 
+
+Retina 66 .83 ±2.43 67 .42 ±0.29 65 .50 ±0.25 54 .53 ±0.76 55 .25 ±2.88 
+
+Tissue 75 .08 ±0.34 75 .38 ±0.13 68 .77 ±0.08 69 .74 ±0.34 72 .23 ±1.84 
+
+Avg. 88 .97 ±0.73 88 .62 ±0.68 86 .72 ±0.21 79 .82 ±1.13 86 .50 ±1.15 
+
+Results A Friedman test across methods yields χ2 = 104 .85 , p = 5 .0 × 10 −21 .LoRA and BOFT each significantly outperform end-to-end fine-tuning, Fouri-erFT, linear probing, and AdaptFormer, but are statistically indistinguishable from one another ( p = 0 .077 ). End-to-end fine-tuning is indistinguishable from FourierFT and linear probing ( p = 1 .00 ) (Table C1). 
+
+Table C1. Pairwise Wilcoxon signed-rank tests (Bonferroni-corrected p-values) for fine-tuning methods across all twelve datasets. Friedman χ2 = 104 .85 , p = 5 .0 × 10 −21 .LoRA and BOFT are mutually indistinguishable yet each separates from every other method. LoRA BOFT endToEnd FourierFT linProbe AdaptFormer LoRA — 7.75 ×10 −2 4.67 ×10 −7 4.67 ×10 −7 9.57 ×10 −6 4.37 ×10 −10 
+
+BOFT 7.75 ×10 −2 — 1.21 ×10 −3 3.66 ×10 −5 1.87 ×10 −5 3.06 ×10 −9
+
+endToEnd 4.67 ×10 −7 1.21 ×10 −3 — 1.00 1.00 3.44 ×10 −3
+
+FourierFT 4.67 ×10 −7 3.66 ×10 −5 1.00 — 9.98 ×10 −4 9.93 ×10 −4
+
+linProbe 9.57 ×10 −6 1.87 ×10 −5 1.00 9.98 ×10 −4 — 2.63 ×10 −1
+
+AdaptFormer 4.37 ×10 −10 3.06 ×10 −9 3.44 ×10 −3 9.93 ×10 −4 2.63 ×10 −1 —
+
+C.2 Foundation Models 
+
+In the main paper, the fine-tuning method matters far more than the backbone (Section 3.1). We quantify the backbone effect here, first across the parameter-Parameter-Efficient MoE for Unified Medical Image Classification S5 
+
+efficient methods alone and then including end-to-end fine-tuning and linear probing, using the same Friedman and pairwise Wilcoxon tests. 
+
+Results Under parameter-efficient settings the three backbones are statistically indistinguishable (Friedman χ2 = 3 .63 , p = 0 .163 ). When the comparison ad-ditionally includes end-to-end fine-tuning and linear probing, the backbones do differ (Friedman χ2 = 16 .23 , p = 3 .0 × 10 −4): the pairwise tests in Table C2 separate CLIP from the two DINO variants, while DINO and DINOv3 remain indistinguishable.                   
+
+> Table C2. Pairwise Wilcoxon signed-rank tests (Bonferroni-corrected p-values) for foundation models on clean data, across all fine-tuning methods and datasets. Friedman
+> χ2= 16 .23 ,p= 3 .0×10 −4. CLIP separates from both DINO variants, which are themselves indistinguishable. DINOv3 DINO CLIP DINOv3 —0.188 1.05 ×10 −4
+> DINO 0.188 —7.00 ×10 −3
+> CLIP 1.05 ×10 −47.00 ×10 −3—
+
+C.3 Effect of Input Resolution 
+
+To justify the single 224 × 224 resolution used throughout the main paper, we ablate the input resolution. We compare 128 × 128 against 224 × 224 under otherwise identical configurations, reporting paired accuracy gains and Wilcoxon signed-rank tests per fine-tuning method and per backbone. 
+
+Results Increasing the resolution from 128 × 128 to 224 × 224 yields small but, for most methods and backbones, statistically significant accuracy gains (Tables C3 and C4). The gain is positive for every method and significant for all but AdaptFormer, and every backbone improves, DINOv3 the most (mean 
+
++1 .46 points). The gains are modest, supporting the single 224 resolution in the main experiments rather than a multi-resolution protocol. 
+
+# D Efficiency Trade-off 
+
+To quantify MoPET ’s cost against the isolated adapters, we report the trainable-parameter budget of each method for a single MedMNIST task and compare it against MoPET , which unifies all tasks in one model (Section 3.2). S6 S. Doerrich et al. 
+
+Table C3. Wilcoxon signed-rank test for the effect of increased input resolution ( 224 ×
+
+224 vs. 128 × 128 ), per fine-tuning method. Gains are paired 224 -minus-128 differences. The gain is positive for every method and significant for all but AdaptFormer. Method n pairs Median gain (%) Mean gain (%) Wilcoxon stat. p-value AdaptFormer 36 0.218 0.419 269.0 0.323                          
+
+> BOFT 36 0.308 0.856 140.0 1.85 ×10 −3
+> FourierFT 36 0.706 1.231 71.0 9.00 ×10 −6
+> LoRA 36 0.349 0.970 176.0 1.27 ×10 −2
+> endToEnd 36 0.203 0.683 206.0 4.60 ×10 −2
+> linearProbing 36 0.590 1.120 101.0 1.26 ×10 −4
+
+Table C4. Wilcoxon signed-rank test for the effect of increased input resolution, per foundation model. Every backbone improves with resolution, DINOv3 the most (mean 
+
++1 .46 points). Architecture n pairs Median gain (%) Mean gain (%) Wilcoxon stat. p-value CLIP 72 0.200 0.623 738.0 1.23 ×10 −3          
+
+> DINO 72 0.258 0.557 842.5 8.15 ×10 −3
+> DINOv3 72 0.983 1.460 374.0 1.33 ×10 −7
+
+Results Table D1 reports the budget, which is essentially identical across the three backbones as they share the same Base architecture. A single isolated adapter is far lighter than MoPET (e.g. LoRA 0.30 M vs. 7.4M) but serves only one task. At 7.4M parameters ( 8.7% of the backbone), MoPET replaces a per-task collection of adapters with one model. 
+
+Table D1. Trainable parameters per method (millions and percentage of the 86 Mbackbone). MoPET counts the experts, router, and the per-dataset heads. Method Trainable params (M) % of backbone Full (end-to-end) 86 100% AdaptFormer 1.209 1.4% LoRA 0.296 0.34% BOFT 0.103 0.12% FourierFT 0.0014 0.016% 
+
+MoPET 7.4 8.7% 
+
+# E Robustness on Corrupted Data 
+
+Clinical images are frequently corrupted at acquisition, so a deployable method must retain its ranking under corruption. To test this, we train on clean data and Parameter-Efficient MoE for Unified Medical Image Classification S7 
+
+evaluate on the MedMNIST-C [10] corrupted test sets. Each test image receives one randomly drawn corruption (including the identity) at a random severity within the dataset-specific range. To keep the comparison fair, the random choice of corruption and severity is fixed per seed across methods, and the corruption API operates at 224 × 224 resolution. 
+
+Results Table E1 reports the per-method, per-backbone accuracy drop from clean to corrupted data. The relative ordering of methods is preserved under cor-ruption: LoRA and BOFT remain the most robust, end-to-end fine-tuning and FourierFT are intermediate, and AdaptFormer degrades most (median accuracy drop of 19 .3 percentage points). At the level of method/backbone pairings, the AdaptFormer–DINOv3 combination suffers the largest degradation ( 29 .91 per-centage points), whereas end-to-end fine-tuning with DINOv3 is the most robust pairing ( 4.52 points), consistent with DINOv3 being the strongest clean-data backbone. Across backbones, median accuracy decreases by roughly 8 percent-age points while the relative ranking (DINOv3 > DINO > CLIP) is preserved.                      
+
+> Table E1. Accuracy drop (percentage points) from clean to MedMNIST-C corrupted test data, per fine-tuning method and backbone (lower is more robust). Lowest drop per backbone in bold. LoRA and BOFT are the most robust across backbones, Adapt-Former degrades most, and the AdaptFormer–DINOv3 pairing is the least robust over-all. Architecture AdaptFormer BOFT FourierFT LoRA end-to-end CLIP 14.83 7.08 9.65 6.19 7.72 DINO 19.94 6.77 8.20 6.14 7.12 DINOv3 29.91 6.51 6.59 5.02 4.52
+
+Tables E2 and E3 give the pairwise tests on corrupted data. Across methods the differences are highly significant (Friedman χ2 = 77 .17 , p = 6 .92 × 10 −16 ): LoRA differs significantly from all other methods and BOFT from all except LoRA, while end-to-end and FourierFT are indistinguishable. Across backbones the omnibus test is only marginally significant ( χ2 = 6 .18 , p = 0 .046 ) and no pairwise comparison survives correction, indicating that the choice of backbone has limited impact on corrupted-data performance. S8 S. Doerrich et al. 
+
+Table E2. Pairwise Wilcoxon signed-rank tests (Bonferroni-corrected p-values) for fine-tuning methods on corrupted data. Friedman χ2 = 77 .17 , p = 6 .92 ×10 −16 . LoRA is the most robust method and separates from all others, while end-to-end and FourierFT remain indistinguishable. AdaptFormer BOFT FourierFT LoRA end-to-end AdaptFormer — 2.98 ×10 −7 4.17 ×10 −6 2.98 ×10 −7 2.35 ×10 −4
+
+BOFT 2.98 ×10 −7 — 3.28 ×10 −5 8.35 ×10 −3 2.47 ×10 −2
+
+FourierFT 4.17 ×10 −6 3.28 ×10 −5 — 9.83 ×10 −6 1.00 
+
+LoRA 2.98 ×10 −7 8.35 ×10 −3 9.83 ×10 −6 — 4.17 ×10 −6
+
+end-to-end 2.35 ×10 −4 2.47 ×10 −2 1.00 4.17 ×10 −6 —
+
+Table E3. Pairwise Wilcoxon signed-rank tests (Bonferroni-corrected p-values) for foundation models on corrupted data. Friedman χ2 = 6 .18 , p = 0 .046 . No pair of backbones separates after correction, so backbone choice barely affects corrupted-data accuracy. DINOv3 DINO CLIP DINOv3 — 0.631 0.368 
+
+DINO 0.631 — 1.000 
+
+CLIP 0.368 1.000 —
