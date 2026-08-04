@@ -1,0 +1,1919 @@
+Title: DuoAD: Leveraging [CLS] Dual Characteristics for Training-Free Few-Shot Anomaly Detection
+
+URL Source: https://arxiv.org/pdf/2607.23924v1
+
+Published Time: Tue, 28 Jul 2026 01:47:52 GMT
+
+Number of Pages: 29
+
+Markdown Content:
+# DuoAD: Leveraging [CLS] Dual Characteristics for Training-Free Few-Shot Anomaly Detection 
+
+Jyun-Ze Tang 1 Po-Han Huang 1 Ming-Ching Chang 2 Chih-Fan Hsu 1 Jeng-Lin Li 11Inventec Corporation, Taipei, Taiwan 
+
+2University at Albany, State University of New York, NY, USA 
+
+> 1
+
+{tang.nickct, huang.po-han, hsu.chih-fan, li.johncl }@inventec.com, 2mchang2@albany.edu 
+
+Abstract 
+
+Vision foundation models have enabled strong training-free anomaly detection (AD). However, most existing ap-proaches rely primarily on independent local patch fea-tures, leaving the global contextual information encoded by Vision Transformers (ViTs) underexploited. In this work, we identify the dual characteristics of the ViT [CLS] to-ken: its embedding provides anomaly-invariant global se-mantic representation, while its attention maps implicitly highlight spatially abnormal regions. Building on this ob-servation, we propose a fully automated AD framework leveraging global context to remove manual tunings. Our framework introduces (1) an automatic augmentation selec-tion strategy driven by [CLS] -level semantic consistency, and (2) an attention-guided feature reweighting mechanism that dynamically adjusts patch contributions according to 
+
+[CLS] attention saliency. By integrating these compo-nents over multi-level features, our method achieves sta-ble anomaly scoring and precise localization without train-ing or parameter tuning. Under the one-shot setting, it achieves Image-AUC scores of 97.7%, 93.2%, and 84.5% on MVTec-AD, VisA, and Real-IAD. Using a single fixed configuration across categories, backbones, and datasets, the method establishes a new state-of-the-art for plug-and-play, training-free anomaly detection while maintaining strong robustness and practical scalability. Code is avail-able at github.com/inventec-ai-center/DuoAD. 
+
+1. Introduction 
+
+Anomaly Detection (AD) aims to identify and localize re-gions that deviate from nominal visual patterns, a capa-bility critical for quality-sensitive applications such as in-dustrial inspection. Most state-of-the-art (SOTA) methods adopt an unsupervised paradigm, learning a representation of normality from large collections of normal images. How-SAM / Manual Masking  
+
+> Limitation: Manual Tuning
+
+✗     
+
+> Semantic Stability Structural Sensitivity
+> Manual Configuration
+> ViT
+> 0
+> CLS  1... 789
+> ...
+> CLS
+> Cosine Similarity Attention Logits
+> Key Insight: Dual Characteristics of ViT
+> Inherent Anomaly Sensitivity Tuning-Free Augmentation
+> Configs
+
+✗ 
+
+> Augmentation
+> Auto
+> Use defect-invariant [CLS] similarity to select augmentations. Standard attention inherently prioritizes local anomalies
+> Rotation
+> Flip
+> Mask threshold Screw.xml
+> Gum.xml
+
+Figure 1. Prior works require per-class manual tunings; DuoAD eliminates them via the dual characteristics of the ViT 
+
+[CLS] token. Its semantic stability (cosine similarity) drives automatic augmentation selection, while its structural sensitiv-ity (pre-softmax attention logits) provides continuous saliency weights that supersede hand-tuned masks and external segmenters. 
+
+ever, acquiring sufficient normal data is often impractical, especially during cold-start manufacturing, where low yield rates leave few reliable normal samples. Recent advances in Vision Foundation Models (VFM) have alleviated this limitation by enabling few-shot Anomaly Detection (AD), leveraging pretrained representations to detect anomalies using only a handful of reference images. Despite these advances, existing AD methods still face two practical limitations that hinder real-world deployment. The first limitation is heuristic dependency on man-ual tuning . Many pipelines rely heavily on hand-crafted heuristics and human intervention. Memory-bank ap-proaches [6] often require extensive augmentation tuning, while adapter-based methods [10, 30] need task-specific training to achieve the highest attainable accuracy. Even training-free frameworks [12] commonly depend on per-class or per-dataset manual settings. This reliance on “human-in-the-loop” tuning reduces the plug-and-play util-ity of VFMs and makes them brittle in real-world scenarios that demand rapid, automated deployment. The second limitation is uniform spatial treatment of patch features . Current patch-based methods [6, 22] treat 1arXiv:2607.23924v1 [cs.CV] 27 Jul 2026 all spatial locations equally, ignoring the saliency priors naturally encoded by self-attention in VFMs. Through self-attention, Vision Transformers (ViTs) inherently assign higher weights to semantically meaningful regions while suppressing background clutter [11]. Although recent meth-ods [15] attempt to exploit this built-in guidance, they rely on hard-coded thresholds to convert attention maps into bi-nary masks. Such hand-tuned decisions discard the con-tinuous saliency information and generalize poorly across categories and architectures. In this work, we address both limitations through a key observation: the [CLS] token in ViTs exhibits dual characteristics that are uniquely suited for anomaly detec-tion (Fig. 1). We leverage these characteristics to enable automated augmentation selection and patch-level feature reweighting without manual tuning. Specifically, these dual characteristics manifest in two complementary ways: 
+
+Semantic Stability (Cosine Similarity): The [CLS] 
+
+token captures holistic object semantics and remains largely 
+
+insensitive to local anomalous regions , as its representation reflects the overall foreground topology rather than individ-ual defective patches. This property enables a cross-image consistency check, where candidate transformations are se-lected based on their semantic alignment with reference im-ages, without any manual tuning. 
+
+Structural Sensitivity (Attention Logits): The pre-softmax attention logits of the [CLS] token provide a con-tinuous importance score over all patches, with elevated re-sponses at spatially abnormal regions. We exploit this dual role as a natural saliency signal for soft patch-contribution weighting, preserving the full saliency spectrum and avoid-ing the failure modes of hard-threshold approaches. Building on these dual characteristics, we propose 
+
+DuoAD , a training-free anomaly detection pipeline compat-ible with ViT backbones (Fig. 2). By combining semantic consistency with attention-guided patch weighting across multi-level features, DuoAD achieves SOTA performance under a single, fixed configuration, without manual heuris-tics or task-specific tuning. Our main contributions are summarized as follows: • Self-Calibrated Augmentation: A deployment-time self-calibration strategy driven by the semantic stability 
+
+of the [CLS] token, enabling fully automatic, label-free selection of geometric transformations from unlabeled target-domain data before inference. • Attention-Guided Feature Reweighting: A parameter-free reweighting mechanism based on the structural sen-sitivity of pre-softmax attention logits, reweight patch contributions without thresholding or masking. • Unified Framework and Backbone Analysis: In-tegrating Self-Calibrated Augmentation and Attention-Guided Feature Reweighting over multi-level ViT fea-tures, DuoAD achieves state-of-the-art on MVTec-AD under a single, fixed configuration across all categories, backbones, and datasets. Through systematic ablation, we find that multi-level feature aggregation is essential for DINOv3. Without it, DINOv3 underperforms DINOv2, overturning a prevailing conclusion in prior work. 
+
+2. Related Work 
+
+2.1. Unsupervised Anomaly Detection 
+
+Unsupervised Anomaly Detection (UAD) aims to model the manifold of normal data and identify defects as devi-ations from this learned distribution. Distance-based meth-ods [4, 19, 24] quantify anomalies by measuring diver-gence in a learned embedding space or density model. Reconstruction-based approaches [13, 14, 28, 29] typi-cally use autoencoders to compress inputs into a latent space, interpreting high reconstruction errors as anomalous. Memory-bank paradigms [8, 22, 25] explicitly store nom-inal features and estimate anomalies by retrieving nearest neighbors during inference. While effective in controlled settings, these methods require large collections of nor-mal samples for dataset-specific optimization, limiting their adaptability in real-world scenarios with data scarcity or rapidly shifting distributions. 
+
+2.2. Few-shot Anomaly Detection 
+
+To reduce dependency on large-scale training data, recent research has focused on few-shot scenarios, where only a small number of reference images are available. 
+
+VLM Prompting and Adaptation: Recent works adapt CLIP-style VLMs for AD by learning prompts, tokens, or lightweight adapters to encode normal and abnormal se-mantics [2, 20, 33]. These methods improve anomaly sen-sitivity by matching textual concepts with visual regions. However, CLIP features are mainly optimized for high-level semantic alignment, limiting their fine-grained discrimina-tion for industrial inspection. Although AdaptCLIP [10] in-troduces trainable adapters to refine representations, it still relies on CLIP visual features, which remain less sensitive to subtle local defects in few-shot AD. 
+
+Vision-Centric Feature Adaptation: Vision-centric VFMs [3, 21, 23, 32] provide robust, descriptive representa-tions that enable anomaly detection without relying on lin-guistic priors. Methods like AnomalyDINO [6] perform patch-level feature matching against a reference memory bank. However, these methods often treat local patches as isolated descriptors, neglecting global context and the holis-tic semantics inherent in the VFMs, which leads to labor-intensive, category-specific tuning. For example, Patc-hEAD [15] applies heuristic pre-processing to align objects to canonical orientations in pixel space, reducing robustness to pose variations. FoundAD [30] moves beyond simple 2Candidate Augmentations      
+
+> [CLS] [CLS] [CLS] [CLS] [CLS] [CLS]
+> High Similarity Low Similarity Low Similarity
+> Reference Feature Bank
+> Few-Shot Prompts
+> Attention Logits Nearest Neighbor Search
+> Layer patch features
+
+Warmup Stage Inference Stage           
+
+> Test Image
+> Low Similarity
+> Consistency Check (Eq.2)
+> Policy
+> Ori
+> ✓Rotation On
+> Policy
+> ✗Rotation Off
+> Ori
+> Test Images Multi-layer Features
+> Augmentation Policy
+> [CLS] [CLS] [CLS] [CLS] [CLS] [CLS]
+> Inconsistent ✗Consistent ✓
+
+Figure 2. DuoAD framework operates in two stages, each exploiting one characteristic of the ViT [CLS] token. (Warmup) Candidate augmentations are automatically accepted or rejected by measuring whether they preserve [CLS] embedding consistency across unlabeled test images (Eq. (2)), yielding a category-adaptive augmentation policy without manual tuning. (Inference) Few-shot references, enriched by the selected policy, populate a multi-layer feature bank M. Patch anomaly scores s are computed via nearest-neighbor search and reweighted by [CLS] attention logits w into the final anomaly map ˜s, multiplicatively amplifying defect regions that simultaneously attract high attention and high matching cost, while suppressing background responses.     
+
+> (a) Input (b) GT (c) Cosine (d) Weights (e) Logits
+
+Figure 3. Dual Characteristics Visualization on Hazelnut: We visualize the responses between the [CLS] token and patch to-kens around the anomaly (b) using three metrics: (c) cosine simi-larity, (d) attention weights, and (e) attention logits. 
+
+matching with a manifold projection mechanism, but accu-rately modeling the normal manifold demands high projec-tor capacity and synthetic anomaly training. 
+
+Multi-Model Fusion: UniVAD [12] and LogSAD [31] combine outputs from multiple foundation models to im-prove generalization and localization. While effective, these approaches introduce significant computational overhead, architectural complexity, and numerous hyperparameters, limiting practical deployment. In contrast, our DuoAD uses a single vision-centric backbone within a unified frame-work, combining global and local features from a ViT to create a training-free, fully automatic pipeline that achieves state-of-the-art performance without manual configuration. 
+
+3. Methodology 
+
+DuoAD exploits the dual characteristics of the [CLS] to-ken . Its embedding captures anomaly-invariant global se-mantics, while its pre-softmax attention logits encode con-tinuous spatial saliency that highlights anomalous regions. Building on these two properties, our framework consists of three complementary, parameter-free components. Sec. 3.1 introduces a self-calibrated augmentation strategy that ex-ploits semantic stability in [CLS] embeddings to automat-ically select valid geometric transformations without man-ual tuning. Sec. 3.2 presents an attention-guided feature reweighting mechanism, which uses [CLS] -to-patch atten-tion logits to adaptively modulate spatial contributions dur-ing anomaly scoring. Sec. 3.3 describes a multi-level fea-ture fusion scheme that aggregates multi-layer features to enhance spatial sensitivity and detection robustness. 
+
+3.1. Self-Calibrated Augmentation 
+
+Augmentation is widely used to enrich memory banks in few-shot anomaly detection, but its deployment still often depends on human judgment. This becomes fragile when the target distribution is unknown. Blindly applying all transformations can increase memory footprint and insert semantically invalid references. Especially for categories where pose, orientation, or structural layout is meaningful. A practical training- and tuning-free system should there-fore decide its augmentation policy directly from unlabeled target data, without anomaly labels, validation performance, or human intervention. We introduce Self-Calibrated Augmentation (SCA), a transductive deployment module that decides the augmen-3tation policy from unlabeled target data. Given an un-labeled calibration set X collected through commission-ing warmup, batched inference, or online calibration, SCA evaluates each candidate transformation ϕ by comparing the semantic coherence before and after augmentation. Specifi-cally, it extracts the [CLS] embedding of each image, mea-sures the pairwise semantic similarity within the original set 
+
+X , and checks whether the transformed set ϕ(X ) preserves the same coherence. A transformation is accepted when the augmented distribution remains semantically consistent with the observed target distribution, and rejected when it disrupts pose, orientation, structure, or other distribution-defining factors. Let f (x) ∈ Rd denote the [CLS] token embedding of image x. We define the set coherence score S(X ) as the mean pairwise similarity between images in a set X .
+
+S(X ) = 1
+
+|P| 
+
+X 
+
+> (xi,x j)∈P
+
+sim (f (xi), f (xj )) , (1) where cosine similarity is used and P = {(xi, x j ) |
+
+xi, x j ∈ X , src (xi)̸ = src (xj )} contains only pairs orig-inating from different source images. A candidate augmen-tation ϕ is accepted when it preserves coherence within an operator-specific tolerance τϕ.
+
+S(ϕ(X )) ≥ S(X )1 + τϕ
+
+. (2) This criterion makes SCA independent of human inspec-tion and validation performance. It uses no anomaly labels, validation scores, clean-sample assumptions, category-specific priors, or outcome-driven feedback. It also leaves the backbone, anomaly score, and threshold unchanged. SCA only makes binary accept/reject decisions over aug-mentation operators before the selected policy is fixed for subsequent inference. 
+
+Robustness to Anomaly Contamination: To operate un-der realistic commissioning data, SCA is designed to re-main robust when X contains defects with two comple-mentary mechanisms. (1) At the embedding level, pre-trained [CLS] embeddings are biased toward dominant foreground semantics and tend to suppress local perturba-tion regions [11], as supported by Figs. 3c and 4. This an-chors S(X ) to the object-level manifold rather than local-ized defects. (2) At the criterion level, SCA uses the relative coherence change between X and ϕ(X ). Since defects are instance-specific, their influence appears in both sets and is largely canceled in S(ϕ(X )) /S (X ). Invalid transforma-tions instead disrupt the semantic manifold itself, yielding a larger coherence drop and a clear rejection signal. Thus, SCA can use this simple consistency test to se-lect a safe augmentation policy from contaminated unla-beled data, while avoiding transformations that would in-ject harmful references into the memory bank. Beyond the geometric transformations evaluated in this work, the same criterion can also be instantiated with photometric candi-dates such as color jitter, brightness, and contrast for lower-quality deployment data. 
+
+3.2. Attention-Guided Feature Reweighting 
+
+As a baseline, standard memory bank methods model nor-mality by storing reference patch features. Let M ∈ RK×D
+
+denote the memory bank constructed from normal training samples, where K is the number of stored features and D is the feature dimension. For a given test image, let fi ∈ RD
+
+represent the feature of the i-th patch, with all fi assumed to be L2-normalized. The anomaly score si is defined as the minimum cosine distance to the memory bank M:
+
+si = min 
+
+> m∈M
+
+ 1 − f ⊤ 
+
+> i
+
+m (3) A key limitation of this formulation is the implicit as-sumption of uniform spatial importance, where foreground and background regions contribute equally. Such uniform weighting often reduces sensitivity to subtle, object-centric anomalies. 
+
+Attention-Based Importance: To address the limitation of uniform spatial weighting, we introduce an attention-guided feature reweighting mechanism derived from the 
+
+pre-softmax [CLS] -to-patch attention logits of the final ViT layer. The raw interaction scores between the [CLS] 
+
+token and spatial patch tokens reflect the importance of each spatial region. Unlike post-softmax attention, which en-forces strong normalization and often produces sparse re-sponses (Fig. 3d), pre-softmax logits retain a continuous saliency spectrum(Fig. 3e), enabling smooth modulation of patch contributions without thresholding or binarization. Formally, let L ∈ RH×N denote the [CLS] -to-patch logits, where H and N are the numbers of attention heads and spatial patches, respectively. A unified saliency score of each patch is obtained by averaging min-max normalized logits across heads: 
+
+¯ai = 1
+
+H
+
+> H
+
+X
+
+> h=1
+
+Lh,i − min j (Lh,j )max j (Lh,j ) − min j (Lh,j ) + ϵ (4) These scores are then mean-centered to produce the final reweighting factor: 
+
+wi = ¯ ai − μ¯a + 1 , (5) where μ¯a = 1
+
+> N
+
+PNi=1 ¯ai is the spatial mean of the aggre-gated saliency scores. This anchors each patch to a neutral baseline of 1.0 and keeps the weights bounded in [0 , 2) . The refined per-patch anomaly score is then 
+
+˜si = wi · si, (6) 4Table 1. Quantitative comparison on MVTec-AD [1] and VisA [35] under 1-shot and 4-shot settings. We report Image-level AUROC (I-AUC) and Pixel-level AUPRO (P-PRO). “-” denotes results not reported in the original papers. Results are averaged over five random seeds and reported as mean ± standard deviation, where available. Blue marks the best results, and underline marks the second best. 
+
+Shot Metric PatchCore 
+
+> CVPR22 [22]
+
+WinCLIP 
+
+> CVPR23 [16]
+
+PromptAD 
+
+> CVPR24 [18]
+
+Kag-prompt 
+
+> AAAI25 [26]
+
+AdaptCLIP 
+
+> AAAI26 [10]
+
+UniVAD 
+
+> CVPR25 [12]
+
+A.DINO 
+
+> WACV25 [6]
+
+FoundAD 
+
+> ICLR26 [30]
+
+DuoAD 
+
+> Ours (DINOv2)
+
+DuoAD 
+
+> Ours (DINOv3)
+
+DuoAD SCA 
+
+> Ours (DINOv2)
+
+DuoAD SCA 
+
+> Ours (DINOv3)
+
+Training / Tuning ✗ / ✗ ✗ / ✗ ✓ / ✗ ✓ / ✗ ✓ / ✗ ✗ / ✓ ✗ / ✓ ✓ / ✗ ✗ / ✗ ✗ / ✗ ✗ / ✗ ✗ / ✗
+
+MVTec-AD Dataset 
+
+1-Shot I-AUC 83 .4±3.0 93 .1±2.0 94 .6±1.7 95.8 94 .5±0.5 97 .5±0.3 96 .5±0.4 96.1 97 .2±0.3 97 .5±0.4 97 .3±0.3 97 .7±0.4
+
+P-PRO 79 .7±2.0 87 .1±1.2 87 .9±1.0 90.8 - 92 .8±0.2 91 .7±0.1 92.8 94 .1±0.1 94 .1±0.2 94 .3±0.1 94 .7±0.2
+
+4-Shot I-AUC 88 .8±2.6 95 .2±1.3 96 .6±0.9 97.1 96 .6±0.3 - 97 .6±0.1 97.1 98 .0±0.3 98 .5±0.2 98 .2±0.3 98 .6±0.2
+
+P-PRO 84 .3±1.6 89 .0±0.8 90 .5±0.7 91.4 - - 92 .4±0.1 93.5 94 .6±0.1 95 .0±0.1 94 .8±0.1 95 .7±0.1
+
+VisA Dataset 
+
+1-Shot I-AUC 79 .9±2.9 83 .8±4.0 86 .9±2.3 91.6 90 .5±1.2 92 .9±0.6 85 .6±1.5 92.6 92 .5±0.6 93 .3±0.6 92 .7±0.5 93 .2±0.6
+
+P-PRO 80 .5±2.5 85 .1±2.1 85 .1±2.5 85.2 - 92 .4±0.4 90 .7±0.5 98.0 93 .3±0.1 93 .2±0.3 93 .2±0.1 93 .2±0.3
+
+4-Shot I-AUC 85 .3±2.1 87 .3±1.8 89 .1±1.7 93.3 93 .1±0.2 - 91 .3±0.8 94.4 94 .8±0.6 95 .5±0.4 94 .9±0.5 95 .5±0.4
+
+P-PRO 84 .9±1.4 87 .6±0.9 86 .2±1.7 87.6 - - 92 .5±0.2 98.4 94 .5±0.2 94 .9±0.2 94 .5±0.2 94 .8±0.2
+
+Table 2. Large-scale evaluation on Real-IAD [27] under 1-shot and 4-shot settings. We report Image-level AUROC (I-AUC) and Pixel-level AUPRO (P-PRO). “-” denotes results not reported in the original papers. Results are averaged over five random seeds and reported as mean ± standard deviation, where available.                                                      
+
+> Shot Metric WinCLIP
+> CVPR23
+> Adapt.
+> AAAI26
+> A.DINO
+> WACV25
+> DuoAD
+> DINOv2
+> DuoAD
+> DINOv3
+> SCA
+> DINOv2
+> SCA
+> DINOv3
+> Training / Tuning ✗/✗✓/✗✗/✓✗/✗✗/✗✗/✗✗/✗
+> 1-Shot I-AUC 74 .7±0.281 .8±0.380 .6±0.285 .1±0.384 .3±0.484 .5±0.383 .3±0.3
+> P-PRO --90 .1±0.295 .5±0.194 .6±0.195 .4±0.194 .5±0.1
+> 4-Shot I-AUC 73 .6±0.182 .6±0.085 .3±0.288 .7±0.288 .1±0.388 .3±0.287 .5±0.3
+> P-PRO --91 .8±0.196 .3±0.195 .7±0.196 .3±0.195 .7±0.1
+
+which wi jointly suppresses background noise ( wi < 1), preserves normal foreground ( wi ≈ 1), and amplifies anomalous regions ( wi > 1), without any hard threshold-ing or binarization. 
+
+3.3. Multi-level Feature Fusion 
+
+Prior works [17, 34] demonstrate that ViT representations capture complementary information across layers. Lever-aging this insight, we build a multi-layer memory bank us-ing features from the later stages of the encoder. Specif-ically, layers L = {8, 10 , 12 } for a 12-layer backbone. Anomaly scores are computed independently for each layer and then averaged to produce the final anomaly map, ex-tending Eq. (3) as: 
+
+si = 1
+
+|L|
+
+X
+
+l∈L
+
+min 
+
+m∈M l
+
+
+
+1 − f (l)
+
+i
+
+⊤
+
+m(l)
+
+
+
+. (7) 
+
+4. Experiments 
+
+We organize our evaluation into four parts: experimental setup (Sec. 4.1), comparison with state-of-the-art few-shot methods (Sec. 4.2), analysis of dual [CLS] token char-acteristics (Sec. 4.3), and ablation studies (Sec. 4.4). All DuoAD results are averaged over the same five random seeds and reported as mean ± standard deviation. 
+
+4.1. Experimental Setup 
+
+Datasets: We evaluate DuoAD on three industrial bench-marks. MVTec-AD [1] and VisA [35] serve as standard datasets for industrial anomaly detection. Real-IAD [27] is a large-scale benchmark with 151,050 images across 30 categories, offering diverse content and preventing dataset-specific parameter tuning. 
+
+Evaluation Metrics: Following protocols, we report image-level AUROC and pixel-level AUPRO for primary comparisons. Additional metrics, including AUPR and pixel-level AUROC, are provided in the Supplementary. 
+
+Baselines: We compare against state-of-the-art few-shot methods, including PatchCore [22], WinCLIP [16], Promp-tAD [18], KagPrompt [26], AdaptCLIP [10], UniVAD [12], AnomalyDINO [6], and FoundAD [30]. Some training-free baselines still require nontrivial configuration choices. AnomalyDINO uses manually designed augmentation poli-cies. UniVAD uses a five-backbone ensemble pipeline and requires per-class threshold calibration and prompt engi-neering. These requirements limit their plug-and-play de-ployability. To maintain a strict few-shot protocol, we use AugAll for the main comparison. DuoAD SCA is reported separately under a transductive deployment setting with SCA warmup. 
+
+Backbones: We use DINOv2 ViT-B/14 w/register [7, 21] and DINOv3 ViT-B/16 lvd1689m [23] as primary back-bones. Supplementary experiments with MetaCLIP 2 ViT-B/16 384px [5] assess cross-architecture generalizability. 50.0 0.2 0.4 0.6 0.8 1.0                            
+
+> Attention Weight (Normalized)
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> Density
+> Anomaly
+> Foreground
+> Background (a) [CLS] attention logits distribution 0.0 0.2 0.4 0.6 0.8 1.0
+> Cosine Similarity (Normalized)
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> Density
+> Anomaly
+> Foreground
+> Background (b) [CLS] cosine similarity distribution 0.0 0.2 0.4 0.6 0.8 1.0
+> Attention Weight (Normalized)
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> 4.0
+> Density
+> Anomaly
+> Foreground
+> Background
+> (c) [CLS] attention logits distribution with defect ≤1% 0.0 0.2 0.4 0.6 0.8 1.0
+> Cosine Similarity (Normalized)
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> Density
+> Anomaly
+> Foreground
+> Background (d) [CLS] cosine similarity distribution with defect ≤1%
+
+Figure 4. Dual Characteristics of the ViT [CLS] Token on MVTec-AD (DINOv2 w/ Registers). Distributions of [CLS] attention logits and cosine similarity with patch embeddings, over object-category images. ((a)) Anomalous patches (red) exhibit higher attention logits than normal foreground (green). ((b)) The same patches yield lower cosine similarity, indicating semantic deviation from global context. ((c),(d)) For subtle defects ( ≤1% of image area), both effects intensify, concentrating anomalies into a distinct high-attention, low-similarity cluster. 
+
+4.2. Comparison with SOTA Few-Shot Methods 
+
+Results on MVTec-AD and VisA: Table 1 summarizes re-sults against SOTA methods, with qualitative comparisons provided in Fig. 5. All results are reported as mean ± stan-dard deviation over five runs. In the 1-shot and 4-shot setting, DuoAD achieves the best overall performance under a single unified configura-tion across all categories, backbones, and datasets. Sur-passing both trained and manually tuned methods. The only exception is P-PRO on VisA, where FoundAD’s self-supervised training yields category-specific representations. These resolve fine-grained structural ambiguities beyond the reach of pretrained features, at the cost of dataset-specific training. 
+
+Results on Real-IAD: The large scale of Real-IAD makes category-specific tuning impractical, limiting fair compar-ison to scalable methods. As shown in Table 2, DuoAD outperforms all baselines, demonstrating strong efficiency and robustness on large-scale industrial data. 
+
+Results with SCA: We additionally evaluate SCA under a transductive deployment protocol. SCA uses unlabeled target-domain warmup data to select semantically consis-tent augmentations. The selected policy is fixed during in-ference and does not rely on anomaly labels, validation per-formance, or anomaly-score feedback. This setting reflects practical deployment scenarios where the system can ob-serve unlabeled production data while still avoiding man-ual tuning and performance-based verification. The re-sults show that SCA can provide modest performance gains while preserving a fully automatic deployment process. 6Table 3. Layer ablation (1-shot): I-AUC and P-PRO for DINOv2 (448) and DINOv3 (512). The left reports MVTec-AD results, and the right reports VisA results.                                                                            
+
+> Layer MVTec AD VisA DINOv2 DINOv3 DINOv2 DINOv3 I-AUC P-PRO I-AUC P-PRO I-AUC P-PRO I-AUC P-PRO 794.8 92.8 96.4 93.6 88.6 91.3 91.3 92.3 896.4 93.5 97.1 94.0 90.4 92.3 92.6 92.9 996.7 93.7 97.6 94.1 91.5 92.6 93.4 93.3 10 97.1 93.8 97.7 93.9 92.9 93.0 93.6 93.2 11 96.8 93.7 97.0 93.7 92.5 92.8 92.5 91.7 12 96.0 92.9 95.1 92.5 88.2 88.8 85.4 85.2 8-12 97.2 94.2 97.7 94.6 92.8 93.3 93.4 93.1 8,10,12 97.3 94.3 97.7 94.7 92.7 93.2 93.2 93.2
+
+4.3. Analysis of Dual ViT Characteristics 
+
+We characterize the dual characteristics of ViT in AD by analyzing cosine similarity and attention logit distributions between the [CLS] token and patch tokens. We use the DINOv2 (w/Reg) backbone on MVTec-AD, and segment foreground and background regions using TransFusion [9]. Figure 4 shows that the two signals exhibit comple-mentary separation patterns: anomalous patches have high attention logits but low cosine similarity relative to nor-mal foreground patches, while background patches are sup-pressed in both metrics. This divergence is most pro-nounced for highly localized defects (area ≤ 1% of the image), the most common scenario in industrial inspection (Figs. 4c and 4d). Across all defect sizes (Figs. 4a and 4b), the separation remains visible but less distinct, as larger anomalous regions increasingly contaminate the global con-text aggregated by the [CLS] token. These findings moti-vate our use of the [CLS] token as a semantic anchor in the self-calibrated augmentation criterion, whose strong bias toward normal foreground structure ensures reliable coher-ence estimation even under anomaly contamination. 
+
+4.4. Ablations 
+
+To assess the contributions of individual components in DuoAD, we perform ablation studies across multiple back-bones. Tab. 4 shows the ablation results for DINOv2, DI-NOv3, and MetaCLIP 2. 
+
+Layer Selection Sensitivity: We evaluated the effect of different layer combinations on AD performance for DI-NOv2 and DINOv3 backbones. As shown in Tab. 3, perfor-mance stabilizes from layer 8 onward and remains largely insensitive to the specific combination chosen within this range, indicating that semantically discriminative features for AD are consistently encoded in the later stages of mod-ern ViTs. This stability confirms that our multi-layer ex-traction strategy (Sec. 3.3) transfers across architectures without backbone-specific tuning. Notably, while DINOv3 underperforms DINOv2 in isolation (Tab. 4), its stronger global semantics yield superior overall performance when 
+
+Table 4. Ablation study on MVTec-AD and VisA datasets. Re-sults are averaged over 5 random seeds. Each module is evaluated individually and jointly to measure both independent and com-plementary effects. Aug : Self-Calibrated Augmentation, Attn :Attention-Guided Feature Reweighting, ML : Multi-layer features. 
+
+I-AUC : Image-level AUROC, P-PRO : Pixel-level AUPRO (%).                                                                                                                                                                                                             
+
+> Backbone Modules MVTec AD VisA Aug Attn ML 1-shot 4-shot 1-shot 4-shot I-AUC P-PRO I-AUC P-PRO I-AUC P-PRO I-AUC P-PRO DINOv2 –––94.3 90.1 96.6 91.7 83.0 80.5 87.3 85.0 DINOv2 ✓––95.4 91.3 97.4 92.3 83.5 81.4 87.8 85.1 DINOv2 –✓–95.1 92.1 96.8 93.2 87.7 87.8 91.0 90.7 DINOv2 ––✓95.6 93.3 97.3 94.4 90.0 90.5 92.4 92.5 DINOv2 ✓✓–96.0 92.8 97.5 93.6 88.2 88.8 91.5 91.1 DINOv2 ✓✓✓97.3 94.3 98.2 94.8 92.7 93.2 94.9 94.5 DINOv3 –––92.1 85.5 95.4 89.4 81.9 72.9 87.8 80.1 DINOv3 ✓––94.5 89.8 96.8 92.0 83.3 75.3 88.3 81.5 DINOv3 –✓–92.8 89.7 95.7 92.1 83.4 82.0 89.3 88.0 DINOv3 ––✓95.0 93.8 97.0 95.5 90.5 90.4 93.4 93.2 DINOv3 ✓✓–95.1 92.5 97.3 93.9 85.4 85.2 90.1 89.6 DINOv3 ✓✓✓97.7 94.7 98.6 95.7 93.2 93.2 95.5 94.8 MetaCLIP2 –––87.3 80.4 91.4 82.3 78.2 71.4 82.7 72.8 MetaCLIP2 ✓––89.1 81.6 91.8 82.4 78.5 71.6 82.0 72.1 MetaCLIP2 –✓–89.6 85.6 92.9 87.1 80.7 80.4 84.6 82.2 MetaCLIP2 ––✓91.7 84.8 94.2 86.1 81.4 70.6 85.5 72.0 MetaCLIP2 ✓✓–91.4 86.6 93.3 87.3 81.2 81.0 84.2 82.4 MetaCLIP2 ✓✓✓93.0 89.0 95.1 89.6 84.5 80.9 87.2 82.3
+
+all three components are jointly applied. This challenges the prior observation [15] that DINOv3 is suboptimal for anomaly detection. 
+
+Self-Calibrated Augmentation: Table 5 compares Self-Calibrated Augmentation (SCA) with two static baselines, 
+
+NoAug and AugAll , on MVTec-AD and VisA under the 1-shot setting. For DINOv3, SCA selects rotation and flipping from unlabeled target data based on [CLS] token seman-tic consistency. On MVTec-AD, SCA improves the average AUROC over AugAll . On VisA, SCA remains compara-ble to AugAll . The selected policy avoids harmful trans-formations for orientation-sensitive categories such as Cap-sule and Pill , while preserving useful augmentations for cat-egories such as Screw . Some categories, especially in VisA, can still benefit from increased feature diversity even when the augmented features deviate from the original distribu-tion. This explains the remaining gaps in classes such as 
+
+Macaroni1 and Zipper , where AugAll gains from broader transformed references. The same trend is also observed with DINOv2, where SCA improves over AugAll on both datasets. These results show that SCA provides a tuning-free augmentation policy that remains competitive across backbones and datasets without labels, validation feedback, or per-class manual tuning. Table 4 evaluates Self-Calibrated Augmentation across backbones and datasets. The module consistently improves performance on vision-centric backbones (DINOv2, DI-NOv3). For MetaCLIP2, a slight performance drop occurs in the 4-shot VisA setting, likely due to contrastive vision-language pretraining. Since natural language does encode 7Table 5. Ablation of augmentation strategies on MVTec-AD and VisA (1-shot). For DINOv3, Rot and Flip indicate aug-mentations selected by Self-Calibrated Augmentation 
+
+(SCA), where k/ 5 denotes that the augmentation is selected in k
+
+out of five random seeds. NoAug : no augmentation; AugAll :all augmentations applied. Image-level AUROC (%) is reported. blue marks the best result within each backbone.                                                                                                                                                                                                                                                  
+
+> Class DINOv3 DINOv2 Rot Flip NoAug AugAll SCA NoAug AugAll SCA
+> MVTec-AD
+> Bottle 5/5 5/5 99.8 99.7 99.7 99.8 99.9 99.9 Cable 5/5 5/5 91.8 93.6 93.6 92.3 92.8 92.8 Capsule 0/5 0/5 92.8 91.9 92.8 90.9 89.4 90.1 Carpet 5/5 5/5 100.0 100.0 100.0 100.0 99.9 99.9 Grid 5/5 5/5 99.9 100.0 100.0 100.0 100.0 100.0 Hazelnut 5/5 5/5 98.8 99.5 99.5 100.0 100.0 100.0 Leather 3/5 1/5 100.0 100.0 100.0 100.0 100.0 100.0 Metal nut 5/5 5/5 99.4 100.0 100.0 99.9 100.0 100.0 Pill 0/5 0/5 98.1 97.8 98.1 97.2 97.3 97.0 Screw 5/5 5/5 56.8 90.0 90.0 62.1 86.8 86.8 Tile 5/5 5/5 99.9 99.9 99.9 100.0 100.0 100.0 Toothbrush 0/5 5/5 100.0 99.6 99.7 99.9 99.5 100.0 Transistor 0/5 5/5 93.4 92.4 93.8 92.1 92.9 93.7 Wood 0/5 2/5 99.2 99.0 99.2 99.8 99.9 99.8 Zipper 0/5 5/5 98.8 99.7 99.5 99.6 99.9 99.8
+> Average --95.2 97.5 97.7 95.6 97.2 97.3
+> VisA
+> Candle 5/5 5/5 95.8 95.5 95.5 94.1 94.0 94.0 Capsules 5/5 5/5 95.5 98.0 98.0 96.4 97.4 97.4 Cashew 0/5 5/5 96.0 96.5 96.0 94.0 93.0 93.6 Chewinggum 5/5 5/5 98.9 98.9 98.9 98.5 98.7 98.5 Fryum 5/5 5/5 97.2 98.3 98.3 95.8 96.3 96.3 Macaroni1 0/5 5/5 92.4 94.3 93.3 92.2 93.2 92.7 Macaroni2 5/5 5/5 61.0 69.4 69.4 71.9 77.0 77.0 PCB1 5/5 5/5 77.3 92.3 92.3 83.7 88.4 88.9 PCB2 5/5 5/5 90.3 90.7 90.7 85.8 86.4 86.4 PCB3 0/5 5/5 89.2 89.4 89.7 91.1 89.3 90.6 PCB4 5/5 5/5 98.0 98.2 98.2 98.0 98.3 98.3 Pipe fryum 5/5 5/5 98.5 98.4 98.4 98.4 98.2 98.5
+> Average --90.9 93.3 93.2 91.7 92.5 92.7
+
+geometric orientation, CLIP-style objectives do not encour-age the [CLS] token to develop rotational sensitivity. De-spite this, our Self-Calibrated Augmentation yields consis-tent gains across all other configurations, demonstrating its general effectiveness within the proposed framework. 
+
+Attention-Guided Feature Reweighting: Table 4 also reports results evaluating the contribution of Attention-Guided Feature Reweighting across different backbones and datasets. The module consistently improves both image- and pixel-level performance. Gains in P-PRO are particularly noticeable, consistent with its design goal of spatially concentrating anomaly scores on salient re-gions. Combining Attention-Guided Feature Reweighting with multi-layer features yields further improvements, in-dicating that attention-guided reweighting is most effective when applied to spatially rich, multi-level representations. 
+
+5. Conclusion 
+
+This paper introduces DuoAD, a training-free anomaly de-tection framework that exploits the dual characteristics 
+
+of the ViT [CLS] token to enable a fully automated AD   
+
+> MVTec-AD VisA Real-IAD Input
+> Ground Truth
+> DuoAD
+> Attention Logits
+
+Figure 5. Qualitative anomaly detection results on MVTec, VisA, and Real-IAD datasets. Top to bottom rows correspond to the in-put image, Ground Truth anomaly mask, DuoAD anomaly map, and reweighting map. 
+
+pipeline. By leveraging the semantic stability and structural sensitivity inherent in ViTs, DuoAD automatically governs augmentation selection and patch-level feature reweight-ing. This eliminates the manual tuning typically required by few-shot memory-bank approaches. Experimental results demonstrate that DuoAD achieves state-of-the-art perfor-mance in few-shot, training-free anomaly detection, while also surpassing trained adapter-based approaches and main-taining strong practicality and scalability. 
+
+Limitations: DuoAD inherits an architectural dependency on ViT backbones, as its core modules require [CLS] -patch attention interactions absent in CNNs. The self-calibrated augmentation policy relies on a small set of unlabeled test images during warm-up, assuming that a modest pool of unannotated samples is accessible prior to inference. In addition, SCA is designed to identify distribution-preserving augmentations based on semantic consistency. As a result, it may reject transformations that shift the original feature distribution, even when such distribution-shifting augmentations could empirically im-prove performance by increasing feature diversity. This lim-itation is particularly evident in the C2–C5 views of Real-IAD, where the non-top-down viewpoints make rotation less distribution-preserving under SCA, although enabling rotation can still empirically improve performance by in-creasing feature diversity. 
+
+Future Work: While our empirical validation centers on industrial inspection, the dual-characteristic framework suggests a broader direction for training-free saliency and zero-shot dense localization. Future work may further investigate how structural sensitivity in frozen ViT rep-resentations can support pixel-level attribution in other localization-oriented tasks. Another direction is integrat-ing our plug-and-play modules into adapter-based pipelines, where they can provide training-free spatial guidance be-yond anomaly detection. 8References 
+
+[1] Paul Bergmann, Michael Fauser, David Sattlegger, and Carsten Steger. MVTec AD–a comprehensive real-world dataset for unsupervised anomaly detection. In CVPR , pages 9592–9600, 2019. 5 [2] Yunkang Cao, Jiangning Zhang, Luca Frittoli, Yuqi Cheng, Weiming Shen, and Giacomo Boracchi. Adaclip: Adapting clip with hybrid learnable prompts for zero-shot anomaly de-tection. In ECCV , pages 55–72. Springer, 2024. 2 [3] Mathilde Caron, Hugo Touvron, Ishan Misra, Herv´ e J´ egou, Julien Mairal, Piotr Bojanowski, and Armand Joulin. Emerg-ing properties in self-supervised vision transformers. In 
+
+ICCV , pages 9650–9660, 2021. 2 [4] Qiyu Chen, Huiyuan Luo, Chengkan Lv, and Zhengtao Zhang. A unified anomaly synthesis strategy with gradient ascent for industrial anomaly detection and localization. In 
+
+ECCV , pages 37–54. Springer, 2024. 2 [5] Yung-Sung Chuang, Yang Li, Dong Wang, Ching-Feng Yeh, Kehan Lyu, Ramya Raghavendra, James R Glass, LIFEI HUANG, Jason E Weston, Luke Zettlemoyer, et al. Meta clip 2: A worldwide scaling recipe. In NeurIPS , 2025. 5 [6] Simon Damm, Mike Laszkiewicz, Johannes Lederer, and Asja Fischer. AnomalyDINO: Boosting patch-based few-shot anomaly detection with dinov2. In WACV , pages 1319– 1329. IEEE, 2025. 1, 2, 5, 3, 7 [7] Timoth´ ee Darcet, Maxime Oquab, Julien Mairal, and Piotr Bojanowski. Vision transformers need registers. In ICLR ,2024. 5, 6 [8] Thomas Defard, Aleksandr Setkov, Angelique Loesch, and Romaric Audigier. Padim: a patch distribution modeling framework for anomaly detection and localization. In ICPR ,pages 475–489. Springer, 2021. 2 [9] Matic Fuˇ cka, Vitjan Zavrtanik, and Danijel Skoˇ caj. Transfusion–a transparency-based diffusion model for anomaly detection. In ECCV , pages 91–108. Springer, 2024. 7[10] Bin-Bin Gao, Yue Zhou, Jiangtao Yan, Yuezhi Cai, Weixi Zhang, Meng Wang, Jun Liu, Yong Liu, Lei Wang, and Chengjie Wang. AdaptCLIP: Adapting CLIP for Universal Visual Anomaly Detection. In AAAI , 2026. 1, 2, 5, 3, 7 [11] Jindong Gu, Volker Tresp, and Yao Qin. Are vision trans-formers robust to patch perturbations? In ECCV , pages 404– 421. Springer, 2022. 2, 4 [12] Zhaopeng Gu, Bingke Zhu, Guibo Zhu, Yingying Chen, Ming Tang, and Jinqiao Wang. Univad: A training-free uni-fied model for few-shot visual anomaly detection. In CVPR ,pages 15194–15203, 2025. 1, 3, 5, 7 [13] Jia Guo, Shuai Lu, Weihang Zhang, Fang Chen, Huiqi Li, and Hongen Liao. Dinomaly: The less is more philosophy in multi-class unsupervised anomaly detection. In CVPR , pages 20405–20415, 2025. 2, 3 [14] Haoyang He, Yuhu Bai, Jiangning Zhang, Qingdong He, Hongxu Chen, Zhenye Gan, Chengjie Wang, Xiangtai Li, Guanzhong Tian, and Lei Xie. Mambaad: Exploring state space models for multi-class unsupervised anomaly detec-tion. NeurIPS , 37:71162–71187, 2024. 2 [15] Po-Han Huang, Jeng-Lin Li, Po-Hsuan Huang, Ming-Ching Chang, and Wei-Chao Chen. PatchEAD: Unifying industrial visual prompting frameworks for patch-exclusive anomaly detection. In WACV , pages 5531–5540, 2026. 2, 7 [16] Jongheon Jeong, Yang Zou, Taewan Kim, Dongqing Zhang, Avinash Ravichandran, and Onkar Dabeer. Winclip: Zero-/few-shot anomaly classification and segmentation. In 
+
+CVPR , pages 19606–19616, 2023. 5, 7 [17] Xurui Li, Ziming Huang, Feng Xue, and Yu Zhou. Musc: Zero-shot industrial anomaly classification and segmentation with mutual scoring of the unlabeled images. In ICLR , 2024. 5[18] Xiaofan Li, Zhizhong Zhang, Xin Tan, Chengwei Chen, Yanyun Qu, Yuan Xie, and Lizhuang Ma. Promptad: Learn-ing prompts with only normal samples for few-shot anomaly detection. In CVPR , pages 16838–16848, 2024. 5, 7 [19] Zhikang Liu, Yiming Zhou, Yuansheng Xu, and Zilei Wang. Simplenet: A simple network for image anomaly detection and localization. In CVPR , pages 20402–20411, 2023. 2 [20] Wenxin Ma, Xu Zhang, Qingsong Yao, Fenghe Tang, Chenxu Wu, Yingtai Li, Rui Yan, Zihang Jiang, and S Kevin Zhou. Aa-clip: Enhancing zero-shot anomaly detection via anomaly-aware clip. In CVPR , pages 4744–4754, 2025. 2 [21] Maxime Oquab, Timoth´ ee Darcet, Th´ eo Moutakanni, Huy V Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel HAZIZA, Francisco Massa, Alaaeldin El-Nouby, et al. Dinov2: Learning robust visual features without su-pervision. TMLR , 2023. 2, 5 [22] Karsten Roth, Latha Pemula, Joaquin Zepeda, Bernhard Sch¨ olkopf, Thomas Brox, and Peter Gehler. Towards to-tal recall in industrial anomaly detection. In CVPR , pages 14318–14328, 2022. 1, 2, 5, 7 [23] Oriane Sim´ eoni, Huy V. Vo, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Micha¨ el Ramamonjisoa, Francisco Massa, Daniel Haziza, Luca Wehrstedt, Jianyuan Wang, Timoth´ ee Darcet, Th´ eo Moutakanni, Leonel Sentana, Claire Roberts, Andrea Vedaldi, Jamie Tolan, John Brandt, Camille Couprie, Julien Mairal, Herv´ e J´ egou, Patrick La-batut, and Piotr Bojanowski. DINOv3. arXiv preprint arXiv:2508.10104 , 2025. 2, 5 [24] Luc PJ Str¨ ater, Mohammadreza Salehi, Efstratios Gavves, Cees GM Snoek, and Yuki M Asano. Generalad: Anomaly detection across domains by attending to distorted features. In ECCV , pages 448–465. Springer, 2024. 2 [25] Daniel Stanley Tan, Yi-Chun Chen, Trista Pei-Chun Chen, and Wei-Chao Chen. Trustmae: A noise-resilient defect classification framework using memory-augmented auto-encoders with trust regions. In Proceedings of the IEEE/CVF winter conference on applications of computer vision , pages 276–285, 2021. 2 [26] Fenfang Tao, Guo-Sen Xie, Fang Zhao, and Xiangbo Shu. Kernel-aware graph prompt learning for few-shot anomaly detection. In AAAI , pages 7347–7355, 2025. 5, 7 [27] Chengjie Wang, Wenbing Zhu, Bin-Bin Gao, Zhenye Gan, Jiangning Zhang, Zhihao Gu, Shuguang Qian, Mingang Chen, and Lizhuang Ma. Real-iad: A real-world multi-view 
+
+9dataset for benchmarking versatile industrial anomaly detec-tion. In CVPR , pages 22883–22892, 2024. 5 [28] Hang Yao, Ming Liu, Zhicun Yin, Zifei Yan, Xiaopeng Hong, and Wangmeng Zuo. Glad: Towards better recon-struction with global and local adaptive diffusion models for unsupervised anomaly detection. In ECCV , pages 1–17. Springer, 2024. 2 [29] Zhiyuan You, Lei Cui, Yujun Shen, Kai Yang, Xin Lu, Yu Zheng, and Xinyi Le. A unified model for multi-class anomaly detection. NeurIPS , 35:4571–4584, 2022. 2 [30] Guangyao Zhai, Yue Zhou, Xinyan Deng, Lars Heckler-Kram, Nassir Navab, and Benjamin Busam. Foundation vi-sual encoders are secretly few-shot anomaly detectors. ICLR ,2026. 1, 2, 5, 7 [31] Jinjin Zhang, Guodong Wang, Yizhou Jin, and Di Huang. Towards training-free anomaly detection with vision and lan-guage foundation models. In CVPR , pages 15204–15213, 2025. 3 [32] Jinghao Zhou, Chen Wei, Huiyu Wang, Wei Shen, Cihang Xie, Alan Yuille, and Tao Kong. Image BERT pre-training with online tokenizer. In ICLR , 2022. 2 [33] Qihang Zhou, Guansong Pang, Yu Tian, Shibo He, and Jim-ing Chen. Anomalyclip: Object-agnostic prompt learning for zero-shot anomaly detection. In ICLR , 2024. 2 [34] Jiawen Zhu and Guansong Pang. Toward generalist anomaly detection via in-context residual learning with few-shot sam-ple prompts. In CVPR , pages 17826–17836, 2024. 5 [35] Yang Zou, Jongheon Jeong, Latha Pemula, Dongqing Zhang, and Onkar Dabeer. Spot-the-difference self-supervised pre-training for anomaly detection and segmentation. In ECCV ,pages 392–408. Springer, 2022. 5 
+
+10 DuoAD: Leveraging [CLS] Dual Characteristics for Training-Free Few-Shot Anomaly Detection 
+
+# Supplementary Material 
+
+This supplementary material provides extended abla-tions, implementation details, and additional experimental results to complement the main paper. Section A presents extended ablations of the proposed components. We first analyze Self-Calibrated Augmentation (SCA), including its robustness under anomaly contamination, the effect of warm-up sample count on policy stability and detection per-formance, and the sensitivity of the threshold parameter 
+
+τϕ. We then ablate the attention-guided reweighting signal and normalization strategy used in Attention-Guided Fea-ture Reweighting. Section B presents an extended analysis of the dual characteristics of the ViT [CLS] token, visual-izing the joint distribution of attention logits and cosine sim-ilarity across backbones for subtle defects. Section C details the experimental setup, including image- and pixel-level evaluation protocols (Secs. C.1 and C.2), and the multi-view aggregation strategy adopted for Real-IAD (Sec. C.3). Section D reports supplementary quantitative results, com-prising image-level AUPR and F1-max comparisons against state-of-the-art methods (Sec. D.1), as well as comprehen-sive per-category scores across all metrics, datasets, and backbone configurations (Sec. D.2). Section D.3 presents qualitative results of MVTec-AD and VisA, illustrating the attention logit maps alongside anomaly predictions across both object and texture categories. 
+
+A. Extended Ablations 
+
+This section provides extended ablations for the two core components of DuoAD. Section A.1 evaluates the ro-bustness of Self-Calibrated Augmentation (SCA) under anomaly contamination, varying warm-up sample counts, and threshold selection. Section A.2 ablates the reweighting signal and normalization strategy used in Attention-Guided Feature Reweighting. 
+
+A.1. Self-Calibrated Augmentation 
+
+A.1.1. Robustness Under Anomaly Contamination 
+
+To evaluate the robustness of Self-Calibrated Augmentation under anomaly contamination, we vary the contamination rate from 0% to 100% on MVTec-AD using DINOv3 across five random seeds. Fig. A1 reports texture categories, where policy transitions are exclusively observed. Object categories remain fully consistent across all con-ditions, confirming that the semantic bias of the [CLS] 
+
+embedding effectively anchors coherence estimation to the normal data manifold even under heavy defect exposure. Texture categories show mild policy transitions at ele-vated contamination rates. Transitions occur only between compatible policies: wood shifts from None and Flip toward exclusive Flip; carpet converges to Rotate-90°+Flip by 40% contamination and remains stable; tile retains Rotate-45°+Flip throughout, switching to Rotate-90°+Flip only at full contamination; leather shows the highest variance at 20%–70% contamination but converges to Rotate-90°+Flip by 80%. These transitions are inconsequential in prac-tice, as texture categories are directionless by nature, mak-ing augmentation policy choices largely irrelevant to detec-tion performance. The observed variance reflects sampling noise rather than a failure of the criterion. 
+
+A.1.2. Effect of Sample Count 
+
+We study how sample count affects the stability of Self-Calibrated Augmentation. We use 60 training samples as the reference policy and measure the inconsistency rate on test sets of different sizes over 20 random seeds. As shown in Figs. A2a and A2b, object categories consistently show lower inconsistency than texture categories. The inconsis-tency drops sharply beyond 10 samples. It becomes more stable from 20 to 30 samples. This motivates our default choice of 30 samples. Under MetaCLIP2 (Fig. A2b), we observe the same overall trend. However, stabilization typ-ically requires around 20 samples, with a further reduction at 30. Results on VisA (Figs. A2c and A2d) follow the same pattern across both backbones. In practice, fewer samples can still be used when the data budget is limited, at the cost of slightly higher variance. Unless otherwise specified, all main-table results in the paper use sample size 30. We further examine how sample count affects detec-tion performance. We evaluate DuoAD on MVTec-AD and VisA with DINOv2, DINOv3, and MetaCLIP2. As shown in Tab. A1, MVTec-AD is highly stable across sam-ple counts. The overall differences are marginal. On VisA, DINOv3 is more sensitive to sample count. Its image-level AUROC increases from 92.1 with 2 samples to 93.2 with 4 samples. It drops slightly at 10 samples and then remains stable from 20 onward. This behavior is mainly driven by PCB1. PCB1 samples are placed in two dominant orien-tations, and the data are roughly split between them. Un-der a small warm-up set, the sampled images may come mostly from only one orientation. In that case, SCA may conclude that rotation is unnecessary. Samples from the other orientation are then poorly covered and can be treated as anomalies. As the sample count increases, the warm-up set is more likely to include both orientations. This makes 100% 20% 40% 60% 80% 100% 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Probability Distribution
+
+wood 
+
+00% 20% 40% 60% 80% 100% 
+
+carpet 
+
+00% 20% 40% 60% 80% 100% 
+
+leather 
+
+00% 20% 40% 60% 80% 100% 
+
+tile 
+
+None Flip Rotate-90° Rotate-45°+Flip Rotate-90°+Flip Figure A1. Augmentation policy distribution under varying anomaly contamination rates (MVTec-AD, DINOv3). Bars show selec-tion probability over five random seeds. Rotate-k° denotes rotation at k° increments across all orientations. 5 10 15 20 25 30 35 40 
+
+> Sample Size
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> Inconsistency Rate
+> all
+> texture
+> object
+
+(a) DINOv3, MVTec-AD 5 10 15 20 25 30 35 40  
+
+> Sample Size
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> Inconsistency Rate
+> all
+> texture
+> object
+
+(b) MetaCLIP2, MVTec-AD 5 10 15 20 25 30 35 40 
+
+Sample Size 
+
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> Inconsistency Rate
+> Mean ± STD
+
+(c) DINOv3, VisA 5 10 15 20 25 30 35 40 
+
+Sample Size  
+
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> Inconsistency Rate
+> Mean ± STD
+
+(d) MetaCLIP2, VisA 
+
+Figure A2. Effect of sample count on Self-Calibrated Augmentation policy inconsistency. Policy inconsistency rate across varying sample sizes on MVTec-AD and VisA, shown for object and texture categories separately. 
+
+the estimated distribution more complete and allows Self-Calibrated Augmentation to activate rotation augmentation when needed. Rotation augmentation then reduces the mis-match between warm-up and test samples. In contrast, MetaCLIP2 remains largely stable across sample counts on both benchmarks. We conjecture that its language-aligned pretraining yields features that are more semantic and less dependent on geometric configuration. As a result, it is less sensitive to orientation variation in the warm-up set. 2Table A1. Sample count ablation of Self-Calibrated Augmentation under the 1-shot setting. Image-level AUROC (I-AUC) and P-PRO are reported for DINOv2 (448), DINOv3 (512), and MetaCLIP-2 (384) on MVTec-AD (left) and VisA (right).                                                                                          
+
+> Sample Count MVTec-AD VisA DINOv2 DINOv3 MetaCLIP2 DINOv2 DINOv3 MetaCLIP2 I-AUC P-PRO I-AUC P-PRO I-AUC P-PRO I-AUC P-PRO I-AUC P-PRO I-AUC P-PRO 297.3 94.2 97.7 94.7 93.1 89.0 91.9 93.0 92.1 92.9 84.2 80.6 497.3 94.2 97.7 94.7 93.0 89.0 92.7 93.2 93.2 93.1 84.5 80.8 10 97.3 94.3 97.7 94.7 93.0 89.0 92.7 93.2 92.2 92.9 84.4 80.9 20 97.3 94.3 97.7 94.7 93.0 89.0 92.7 93.2 93.2 93.2 84.4 80.9 30 97.3 94.3 97.7 94.7 93.0 89.0 92.7 93.2 93.2 93.2 84.5 80.9 40 97.3 94.3 97.7 94.7 93.0 89.0 92.7 93.2 93.2 93.2 84.5 80.9
+
+Table A2. Ablation on reweighting signals in 1-shot.                                 
+
+> Method MVTec-AD VisA Norm Signal I-AUC P-PRO I-AUC P-PRO Max-Normed Pre-Softmax 97.5 93.0 92.7 92.9 Max-Normed Post-Softmax 92.3 86.2 80.3 85.6 Max-Normed Cosine Distance 96.6 94.2 92.4 92.0 Mean-Centered Pre-Softmax 97.7 94.7 93.2 93.2 Mean-Centered Post-Softmax 97.4 95.1 92.7 92.6
+
+A.1.3. Threshold of τϕ
+
+We validate the tolerance τϕ used by our self-calibrated aug-mentation policy. Similarities are estimated using 30 unla-beled warm-up samples per class. Fig. A3 plots the per-class similarity ratios for 45 ◦ rotation, 90 ◦ rotation, and flip across DINOv3, DINOv2, and MetaCLIP2, with error bars over five seeds. Accepted (green) and rejected (red) classes separate cleanly at the τϕ boundary across all backbones, showing that a single fixed τϕ is sufficient and robust to backbone choice. We therefore fix τϕ = 0 .017 for rotation and 0.003 for flip across every backbone and dataset. 
+
+A.2. Attention-Guided Feature Reweighting 
+
+Table A2 ablates the Attention-Guided Feature Reweighting signal and normalization used for reweighting in the 1-shot setting. Mean-centered pre-softmax attention performs best overall, achieving the highest I-AUC on both MVTec-AD and VisA. Mean-centered post-softmax attention gives the best P-PRO on MVTec-AD, but is slightly worse on VisA. Overall, mean-centering is more stable than max normaliza-tion, and pre-softmax attention provides the best trade-off across datasets. 
+
+B. Extended Analysis of Dual ViT Character-istics 
+
+Extending Sec. 4.3, we provide a joint visualization of the two [CLS] -patch interaction signals: min-max normalized cosine similarity (x-axis) and min-max normalized attention logits (y-axis). We restrict analysis to defects occupying at most 1% of the image area, where the dual characteris-tics are most pronounced. Each point represents a single patch, colored by spatial category, anomalous foreground (red), normal foreground (green), and background (gray). For DINOv2 and DINOv3, anomalous patches form a distinct cluster in the high-attention, low-similarity quad-rant, confirming the dual characteristics described in the main paper. Background patches consistently exhibit low attention logits and cosine similarities. MetaCLIP-2 ex-hibits a weaker separation along the cosine similarity axis, consistent with its image-text alignment objective, which is not incentivized to encode fine-grained spatial structure. 
+
+C. Implementation Details 
+
+All experiments are conducted on an NVIDIA RTX A6000 (48 GB) GPU using PyTorch 2.9.1 and CUDA 13.0. 
+
+C.1. Image-Level Metrics 
+
+Following AnomalyDINO [6] and Dinomaly [13], the image-level anomaly score is computed as the mean of the top 1% values in the anomaly map. 
+
+C.2. Pixel-Level Metrics 
+
+Pixel-level evaluation is performed at the model’s input res-olution. Ground-truth masks are downsampled via nearest-neighbor interpolation, and anomaly maps are upsam-pled via bilinear interpolation. The target resolutions are 448×448 for DINOv2, 512×512 for DINOv3, and 384×384 for MetaCLIP-2. For Real-IAD, pixel-level evaluation is performed at a reduced resolution of 224×224 to avoid GPU memory overflow during AUPRO computation. 
+
+C.3. Multi-View for Real-IAD 
+
+Following AdaptCLIP [10], we handle Real-IAD’s multi-view structure by constructing a separate few-shot memory bank per view. Image- and pixel-level scores are then ob-tained by aggregating predictions across views. We addi-tionally report a single-view evaluation using only the top view (c1), which simulates a MVTec-AD-style setting. Re-sults are shown in Tab. A3. 3Keep Drop Boundary y = x tolerance τ0.80 0.85 0.90 0.95 
+
+Inter-image similarity 
+
+0.800 
+
+0.825 
+
+0.850 
+
+0.875 
+
+0.900 
+
+0.925 
+
+0.950 
+
+0.975 
+
+> Augmented self-similarity
+
+keep 
+
+drop 
+
+τ = 0.017 
+
+> bottle
+> cable
+> capsule
+> carpet
+> grid
+> hazelnut
+> leather
+> metal_nut
+> pill screw
+> tile
+> toothbrush
+> transistor
+> wood
+> zipper
+
+(a) DINOv3: Rotate-45° 0.80 0.85 0.90 0.95 
+
+Inter-image similarity 
+
+0.800 
+
+0.825 
+
+0.850 
+
+0.875 
+
+0.900 
+
+0.925 
+
+0.950 
+
+0.975 
+
+> Augmented self-similarity
+
+keep 
+
+drop 
+
+τ = 0.017     
+
+> bottle
+> cable capsule
+> carpet
+> grid hazelnut leather
+> metal_nut
+> pill screw
+> tile
+> toothbrush
+> transistor
+> wood
+> zipper
+
+(b) DINOv3: Rotate-90° 0.80 0.85 0.90 0.95 
+
+Inter-image similarity 
+
+0.800 
+
+0.825 
+
+0.850 
+
+0.875 
+
+0.900 
+
+0.925 
+
+0.950 
+
+0.975 
+
+> Augmented self-similarity
+
+keep 
+
+drop 
+
+τ = 0.003  
+
+> bottle
+> cable
+> capsule
+> carpet
+> grid
+> hazelnut
+> leather
+> metal_nut
+> pill
+> screw
+> tile
+> toothbrush
+> transistor
+> wood
+> zipper
+
+(c) DINOv3: Flip 0.80 0.85 0.90 0.95 
+
+Inter-image similarity 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+> Augmented self-similarity
+
+keep 
+
+drop 
+
+τ = 0.017 
+
+> bottle
+> cable
+> capsule
+> carpet
+> grid
+> hazelnut
+> leather
+> metal_nut
+> pill
+> screw
+> tile
+> toothbrush
+> transistor
+> wood
+> zipper
+
+(d) DINOv2: Rotate-45° 0.80 0.85 0.90 0.95 
+
+Inter-image similarity 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+> Augmented self-similarity
+
+keep 
+
+drop 
+
+τ = 0.017   
+
+> bottle
+> cable capsule
+> carpet
+> grid
+> hazelnut
+> leather
+> metal_nut
+> pill
+> screw
+> tile
+> toothbrush
+> transistor
+> wood
+> zipper
+
+(e) DINOv2: Rotate-90° 0.80 0.85 0.90 0.95 
+
+Inter-image similarity 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+> Augmented self-similarity
+
+keep 
+
+drop 
+
+τ = 0.003  
+
+> bottle
+> cable
+> capsule
+> carpet
+> grid
+> hazelnut
+> leather
+> metal_nut
+> pill
+> screw
+> tile
+> toothbrush
+> transistor
+> wood
+> zipper
+
+(f) DINOv2: Flip 0.88 0.90 0.92 0.94 0.96 0.98 
+
+Inter-image similarity 
+
+0.88 
+
+0.90 
+
+0.92 
+
+0.94 
+
+0.96 
+
+0.98 
+
+> Augmented self-similarity
+
+keep 
+
+drop 
+
+τ = 0.017 
+
+> bottle
+> cable
+> capsule
+> carpet
+> grid
+> hazelnut
+> leather
+> metal_nut
+> pill
+> screw
+> tile
+> toothbrush
+> transistor
+> wood
+> zipper
+
+(g) MetaCLIP2: Rotate-45° 0.88 0.90 0.92 0.94 0.96 0.98 
+
+Inter-image similarity 
+
+0.88 
+
+0.90 
+
+0.92 
+
+0.94 
+
+0.96 
+
+0.98 
+
+> Augmented self-similarity
+
+keep 
+
+drop 
+
+τ = 0.017    
+
+> bottle
+> cable capsule
+> carpet
+> grid
+> hazelnut
+> leather
+> metal_nut
+> pill
+> screw
+> tile toothbrush
+> transistor
+> wood
+> zipper
+
+(h) MetaCLIP2: Rotate-90° 0.88 0.90 0.92 0.94 0.96 0.98 
+
+Inter-image similarity 
+
+0.88 
+
+0.90 
+
+0.92 
+
+0.94 
+
+0.96 
+
+0.98 
+
+> Augmented self-similarity
+
+keep 
+
+drop 
+
+τ = 0.003   
+
+> bottle
+> cable capsule
+> carpet
+> grid
+> hazelnut leather
+> metal_nut
+> pill
+> screw
+> tile
+> toothbrush
+> transistor
+> wood
+> zipper
+
+(i) MetaCLIP2: Flip 
+
+Figure A3. Self-calibrated augmentation decision boundary on MVTec-AD , using DINOv3 (top), DINOv2 (middle), and MetaCLIP2 (bottom). Each point is a class: the x-axis is the inter-image similarity S(X ) and the y-axis is the augmented self-similarity S(ϕ(X )) ,with error bars showing ±1 standard deviation over five seeds. The dashed line marks the decision boundary S(ϕ(X )) = S(X )/(1 + τϕ);classes above it are accepted (green) and below are rejected (red). Results are shown for 45 ◦-step rotation ((a), (d), (g)), 90 ◦-step rotation ((b), (e), (h)), and horizontal flip ((c), (f), (i)). 
+
+D. Additional Experiment Results 
+
+This section provides supplementary quantitative results of DuoAD. Section D.1 reports image-level AUPR, image-level F1-max, pixel-level AUROC, and pixel-level F1-max comparisons against state-of-the-art methods. Section D.2 40.0 0.2 0.4 0.6 0.8 1.0 
+
+> Cosine Similarity (Normalized)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Attention Weight (Normalized)
+> Anomaly
+> Foreground
+> Background
+
+(a) DINOv3: Scatter 0.0 0.2 0.4 0.6 0.8 1.0  
+
+> Cosine Similarity (Normalized)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Attention Weight (Normalized)
+> Anomaly
+> Foreground
+> Background
+
+(b) DINOv2: Scatter 0.0 0.2 0.4 0.6 0.8 1.0  
+
+> Cosine Similarity (Normalized)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Attention Weight (Normalized)
+> Anomaly
+> Foreground
+> Background
+
+(c) MetaCLIP2: Scatter 0.0 0.2 0.4 0.6 0.8 1.0 
+
+> Cosine Similarity (Normalized)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Attention Weight (Normalized)
+
+(d) DINOv3: Joint PDF (KDE) 0.0 0.2 0.4 0.6 0.8 1.0  
+
+> Cosine Similarity (Normalized)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Attention Weight (Normalized)
+
+(e) DINOv2: Joint PDF (KDE) 0.0 0.2 0.4 0.6 0.8 1.0  
+
+> Cosine Similarity (Normalized)
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Attention Weight (Normalized)
+
+(f) MetaCLIP2: Joint PDF (KDE) 
+
+Figure A4. Joint distributions of [CLS] attention logits and cosine similarity on MVTec-AD (defect area ≤1%). Columns show DINOv3 (left), DINOv2 (center), and MetaCLIP-2 (right). The x-axis reports min-max normalized cosine similarity; the y-axis reports min-max normalized attention logits. Red denotes anomalous foreground patches; green denotes normal foreground patches; gray denotes background patches. Top row shows empirical scatter plots ((a), (b), (c)); bottom row shows joint PDF estimates via KDE ((d), (e), (f)). 
+
+lists per-category scores across all metrics, datasets, and backbones. Section D.3 presents qualitative anomaly maps and their corresponding attention logit maps on MVTec-AD and VisA. 
+
+D.1. Compare with State-of-the-Art Methods 
+
+Tab. A4 reports image-level AUPR, image-level F1-max, pixel-level AUROC, and pixel-level F1-max under 1-shot and 4-shot settings. DuoAD achieves consistently strong performance across MVTec-AD and VisA under a single fixed configuration. In particular, DuoAD with DINOv3 obtains the best or second-best results in most settings, in-cluding strong gains on pixel-level F1-max, where it out-performs existing methods on both datasets. DuoAD with DINOv2 also remains competitive and frequently ranks sec-ond, especially on MVTec-AD. Although FoundAD re-ports higher pixel-level AUROC on VisA, DuoAD achieves stronger overall image-level performance and substantially better pixel-level F1-max. These results further confirm the robustness and generality of the proposed framework with-out training or per-category tuning. 
+
+D.2. Per-Category Scores 
+
+We report per-category results of DuoAD for image-level AUROC, AUPR, and F1-max, as well as pixel-level AU-ROC, AUPRO, and F1-max. For each dataset and back-bone, we use three tables to separately report image-level AUROC/AUPR, pixel-level AUROC/AUPRO, and image-/pixel-level F1-max. For MVTec-AD with DINOv3, Tables A5 to A7 report the per-category results. For MVTec-AD with DINOv2 at 448 resolution, Tables A8 to A10 report the corresponding results. For VisA with DINOv3, Tables A11 to A13 report the per-category results. For VisA with DINOv2 at 448 resolu-tion, Tables A14 to A16 report the corresponding results. 5Table A3. Mean performance of DuoAD using DINOv2 and DI-NOv3 backbones on Real-IAD single view under 1-shot and 4-shot settings. We report Image-level AUROC (I-AUC), Image-level AUPR (I-AUPR), Pixel-level AUROC (P-AUC), and Pixel-level AUPRO (P-PRO). Results are averaged over five random seeds and reported as mean ± standard deviation.                            
+
+> Shot Metric DINOv2 DINOv3 1-Shot
+> I-AUC 89 .4±0.489 .3±0.4
+> I-AUPR 85 .2±0.784 .9±0.7
+> I-F1max 79 .3±0.679 .1±0.5
+> P-AUC 99 .0±0.098 .8±0.0
+> P-PRO 96 .4±0.195 .6±0.1
+> P-F1max 45 .7±0.650 .8±0.6
+> 4-Shot
+> I-AUC 91 .4±0.391 .2±0.4
+> I-AUPR 87 .3±0.286 .8±0.3
+> I-F1max 81 .6±0.281 .4±0.3
+> P-AUC 99 .2±0.099 .0±0.0
+> P-PRO 97 .5±0.196 .4±0.1
+> P-F1max 46 .8±0.352 .1±0.2
+
+For Real-IAD, Tables A17 to A20 report the per-category image-level and pixel-level results for DuoAD and DuoAD SCA under DINOv2 and DINOv3. 
+
+D.3. Results Visualization 
+
+We present qualitative results on MVTec-AD (Fig. A5) and VisA (Fig. A6) under the 4-shot setting. Each example in-cludes the attention logit map, showing how the reweight-ing mechanism concentrates anomaly scores on structurally irregular regions across both object and texture categories. We further include DINOv2 and MetaCLIP2 for qualitative comparison in Fig. A7. DINOv2 produces attention logit patterns comparable to DINOv3, while MetaCLIP2 exhibits a register artifact [7], where attention concentrates on a small number of background patches, leaving foreground and anomalous regions with only moderate response. 6Table A4. Quantitative comparison on MVTec-AD and VisA with I-AUPR, I-F1max, P-AUC, and P-F1max under 1-shot and 4-shot settings. Results are averaged over five random seeds and reported as mean ± std. Scalar entries indicate methods that reported only a single run. “-” denotes results not reported in the original paper. Blue denotes the best result and underline the second best. 
+
+Shot Metric PatchCore 
+
+> CVPR22 [22]
+
+WinCLIP 
+
+> CVPR23 [16]
+
+PromptAD 
+
+> CVPR24 [18]
+
+Kag-prompt 
+
+> AAAI25 [26]
+
+AdaptCLIP 
+
+> AAAI26 [10]
+
+UniVAD 
+
+> CVPR25 [12]
+
+A.DINO 
+
+> WACV25 [6]
+
+FoundAD 
+
+> ICLR26 [30]
+
+DuoAD 
+
+> Ours (DINOv2)
+
+DuoAD 
+
+> Ours (DINOv3)
+
+DuoAD SCA 
+
+> Ours (DINOv2)
+
+DuoAD SCA 
+
+> Ours (DINOv3)
+
+Training / Tuning ✗ / ✗ ✗ / ✗ ✓ / ✗ ✓ / ✗ ✓ / ✗ ✗ / ✓ ✗ / ✓ ✓ / ✗ ✗ / ✗ ✗ / ✗ ✗ / ✗ ✗ / ✗
+
+MVTec-AD Dataset 
+
+1-Shot I-AUPR 92 .2±1.5 96 .5±0.9 97 .1±1.0 98.1 97 .5±0.1 98 .7±0.2 98 .1±0.3 97.9 98 .4±0.2 98 .6±0.2 98 .5±0.2 98 .7±0.2
+
+I-F1max 90 .5±1.5 93 .7±1.1 - - 95 .0±0.0 - 96 .0±0.2 - 96 .7±0.2 96 .6±0.2 96 .9±0.2 96 .7±0.2
+
+P-AUC 92 .0±1.0 95 .2±0.5 95 .9±0.5 96.2 94 .3±0.1 - 96 .3±0.1 96.8 97 .1±0.2 97 .2±0.1 97 .2±0.2 97 .4±0.1
+
+P-F1max 50 .4±2.1 55 .9±2.7 - - 54 .0±0.7 - 57 .9±0.8 - 59 .0±0.5 62 .3±0.5 59 .7±0.4 62 .8±0.4
+
+4-Shot I-AUPR 94 .5±1.5 97 .3±0.6 98 .5±0.5 98.8 98 .4±0.2 - 98 .4±0.3 98.6 98 .9±0.2 99 .1±0.1 99 .0±0.2 99 .2±0.1
+
+I-F1max 92 .6±1.6 94 .7±0.8 - - 96 .0±0.0 - 97 .0±0.3 - 97 .6±0.3 97 .8±0.5 97 .8±0.2 97 .9±0.2
+
+P-AUC 94 .3±0.5 96 .2±0.3 96 .5±0.2 96.7 94 .8±0.1 - 96 .7±0.1 97.2 97 .5±0.0 97 .6±0.0 97 .6±0.0 97 .8±0.0
+
+P-F1max 55 .0±1.9 59 .5±1.8 - - 56 .8±0.7 - 59 .2±0.4 - 60 .6±0.4 64 .6±0.3 61 .3±0.3 65 .2±0.2
+
+VisA Dataset 
+
+1-Shot I-AUPR 82 .8±2.3 85 .1±4.0 88 .4±2.6 93.2 92 .3±0.9 93 .4±0.7 86 .6±1.3 92.0 92 .9±0.7 93 .6±0.5 93 .0±0.7 93 .6±0.5
+
+I-F1max 81 .7±1.6 83 .1±1.7 - - 86 .5±1.0 - 83 .1±1.1 - 88 .7±0.7 90 .0±0.5 88 .8±0.6 90 .0±0.5
+
+P-AUC 95 .4±0.6 96 .4±0.4 96 .7±0.4 97.0 96 .8±0.0 - 97 .5±0.1 99.7 98 .2±0.1 98 .3±0.0 98 .2±0.1 98 .3±0.0
+
+P-F1max 38 .0±1.9 41 .3±2.3 - - 44 .6±0.4 - 41 .9±0.5 - 43 .6±0.5 50 .1±0.8 43 .9±0.5 50 .5±0.7
+
+4-Shot I-AUPR 87 .5±2.1 88 .8±1.8 90 .8±1.3 94.6 94 .3±0.2 - 91 .8±0.7 94.0 95 .1±0.4 95 .6±0.3 95 .2±0.4 95 .6±0.3
+
+I-F1max 84 .3±1.3 84 .2±1.6 - - 88 .5±0.2 - 87 .5±1.0 - 90 .7±0.6 92 .0±0.3 90 .9±0.5 92 .0±0.5
+
+P-AUC 96 .8±0.3 97 .2±0.2 97 .4±0.4 97.7 97 .3±0.0 - 98 .0±0.0 99.7 98 .6±0.0 98 .7±0.1 98 .6±0.0 98 .7±0.0
+
+P-F1max 43 .9±3.1 47 .0±3.0 - - 47 .2±0.5 - 46 .1±0.3 - 46 .8±0.2 53 .4±0.1 47 .0±0.2 53 .6±0.1
+
+Table A5. Detailed per-class image-level AUROC and AUPR of DuoAD (DINOv3) on MVTec-AD, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Image-level AUROC (I-AUC) and Image-level AUPR (I-AUPR). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR
+
+Bottle 99 .7±0.2 99 .7±0.1 99 .7±0.2 99 .7±0.1 99 .9±0.1 99 .8±0.0 99 .9±0.1 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0
+
+Cable 93 .6±1.0 96 .7±0.5 93 .6±1.0 96 .7±0.5 94 .6±0.6 97 .2±0.3 94 .6±0.6 97 .2±0.3 95 .3±0.6 97 .5±0.3 95 .3±0.6 97 .5±0.3
+
+Capsule 91 .9±5.4 98 .0±1.6 92 .7±4.7 98 .2±1.4 94 .9±1.1 98 .9±0.2 95 .7±1.1 99 .0±0.2 96 .0±1.2 99 .1±0.3 96 .1±0.8 99 .1±0.2
+
+Carpet 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0
+
+Grid 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0
+
+Hazelnut 99 .5±0.6 99 .6±0.2 99 .5±0.6 99 .6±0.2 100 .0±0.0 99 .7±0.0 100 .0±0.0 99 .7±0.0 100 .0±0.0 99 .7±0.0 100 .0±0.0 99 .7±0.0
+
+Leather 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0
+
+Metal Nut 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0
+
+Pill 97 .8±0.2 99 .6±0.0 98 .1±0.4 99 .6±0.1 97 .6±0.3 99 .6±0.1 97 .8±0.5 99 .6±0.1 98 .0±0.3 99 .6±0.1 98 .3±0.3 99 .7±0.1
+
+Screw 90 .0±3.2 96 .4±1.0 90 .0±3.2 96 .4±1.0 92 .8±1.8 97 .3±0.6 92 .8±1.8 97 .3±0.6 93 .1±1.4 97 .3±0.5 93 .1±1.4 97 .3±0.5
+
+Tile 99 .9±0.1 99 .8±0.0 99 .9±0.1 99 .8±0.0 99 .9±0.0 99 .8±0.0 99 .9±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0
+
+Toothbrush 99 .6±0.4 99 .4±0.1 99 .7±0.5 99 .5±0.1 99 .8±0.5 99 .5±0.1 99 .7±0.6 99 .5±0.1 99 .9±0.1 99 .5±0.0 99 .9±0.1 99 .5±0.0
+
+Transistor 92 .4±1.3 90 .9±0.8 93 .8±0.8 92 .7±0.9 95 .0±1.7 94 .0±2.1 96 .0±1.2 95 .1±1.8 95 .8±0.8 95 .2±1.3 96 .8±0.7 96 .3±1.0
+
+Wood 99 .1±0.3 99 .6±0.1 99 .2±0.3 99 .6±0.0 99 .3±0.2 99 .6±0.0 99 .3±0.1 99 .6±0.0 99 .3±0.1 99 .6±0.0 99 .3±0.2 99 .6±0.1
+
+Zipper 99 .7±0.2 99 .8±0.1 99 .5±0.5 99 .8±0.1 99 .7±0.2 99 .8±0.1 99 .4±0.6 99 .8±0.1 99 .7±0.1 99 .9±0.0 99 .7±0.1 99 .8±0.0
+
+Mean 97 .5±0.4 98 .6±0.1 97 .7±0.4 98 .7±0.1 98 .2±0.1 99 .0±0.1 98 .3±0.1 99 .0±0.1 98 .5±0.2 99 .1±0.1 98 .6±0.2 99 .2±0.1
+
+7Table A6. Detailed per-class pixel-level AUROC and PRO of DuoAD (DINOv3) on MVTec-AD, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Pixel-level AUROC (P-AUC) and Pixel-level PRO (P-PRO). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO
+
+Bottle 97 .9±0.2 95 .7±0.3 97 .9±0.2 95 .7±0.3 98 .2±0.2 96 .1±0.2 98 .2±0.2 96 .1±0.2 98 .3±0.1 96 .3±0.2 98 .3±0.1 96 .3±0.2
+
+Cable 95 .8±0.2 89 .0±0.9 95 .8±0.2 89 .0±0.9 96 .1±0.2 89 .9±0.6 96 .1±0.2 89 .9±0.6 96 .2±0.2 90 .4±0.3 96 .2±0.2 90 .4±0.3
+
+Capsule 98 .7±0.1 96 .5±0.3 98 .6±0.1 96 .4±0.2 98 .8±0.0 97 .0±0.2 98 .8±0.0 97 .0±0.1 99 .0±0.0 97 .4±0.1 98 .9±0.0 97 .3±0.1
+
+Carpet 99 .6±0.0 99 .0±0.0 99 .6±0.0 99 .0±0.0 99 .6±0.0 99 .1±0.0 99 .6±0.0 99 .1±0.0 99 .6±0.0 99 .1±0.0 99 .6±0.0 99 .1±0.0
+
+Grid 99 .4±0.0 97 .3±0.0 99 .4±0.0 97 .3±0.0 99 .5±0.0 97 .3±0.1 99 .5±0.0 97 .3±0.1 99 .5±0.0 97 .4±0.2 99 .5±0.0 97 .4±0.2
+
+Hazelnut 99 .5±0.1 93 .9±1.6 99 .5±0.1 93 .9±1.6 99 .6±0.0 95 .2±0.9 99 .6±0.0 95 .2±0.9 99 .6±0.0 95 .6±0.5 99 .6±0.0 95 .6±0.5
+
+Leather 99 .5±0.0 99 .2±0.1 99 .5±0.0 99 .2±0.1 99 .5±0.0 99 .2±0.1 99 .5±0.0 99 .2±0.1 99 .5±0.0 99 .2±0.1 99 .5±0.0 99 .2±0.1
+
+Metal Nut 95 .4±0.6 93 .8±0.6 95 .4±0.6 93 .8±0.6 96 .1±0.4 94 .7±0.4 96 .1±0.4 94 .7±0.4 96 .8±0.2 95 .4±0.2 96 .8±0.2 95 .4±0.2
+
+Pill 93 .6±0.3 97 .0±0.1 92 .9±0.3 96 .7±0.2 93 .9±0.3 97 .1±0.1 93 .4±0.3 96 .9±0.1 94 .3±0.3 97 .2±0.1 93 .9±0.2 97 .1±0.1
+
+Screw 98 .7±0.1 94 .5±0.5 98 .7±0.1 94 .5±0.5 98 .7±0.0 94 .9±0.2 98 .7±0.0 94 .9±0.2 98 .8±0.0 95 .2±0.1 98 .8±0.0 95 .2±0.1
+
+Tile 97 .1±0.1 94 .0±0.1 97 .1±0.1 94 .0±0.1 97 .2±0.1 94 .2±0.1 97 .2±0.1 94 .2±0.1 97 .3±0.0 94 .2±0.1 97 .3±0.0 94 .2±0.1
+
+Toothbrush 99 .1±0.1 95 .9±0.3 99 .2±0.1 95 .9±0.3 99 .3±0.1 96 .4±0.3 99 .3±0.1 96 .4±0.3 99 .4±0.1 97 .0±0.4 99 .4±0.1 96 .9±0.4
+
+Transistor 89 .0±1.2 72 .0±2.5 93 .1±0.9 82 .0±2.3 90 .3±1.0 74 .9±2.6 94 .3±0.7 84 .8±2.5 90 .7±0.7 76 .9±1.4 94 .5±0.4 86 .5±1.1
+
+Wood 95 .4±0.4 96 .3±0.1 95 .3±0.4 96 .4±0.1 95 .8±0.4 96 .5±0.1 95 .7±0.3 96 .5±0.1 95 .9±0.3 96 .6±0.1 95 .8±0.2 96 .6±0.1
+
+Zipper 99 .0±0.1 97 .2±0.2 99 .0±0.1 97 .0±0.2 99 .1±0.1 97 .5±0.2 99 .1±0.1 97 .3±0.2 99 .2±0.1 97 .7±0.2 99 .2±0.1 97 .6±0.2
+
+Mean 97 .2±0.1 94 .1±0.2 97 .4±0.1 94 .7±0.2 97 .4±0.1 94 .7±0.1 97 .7±0.1 95 .3±0.1 97 .6±0.0 95 .0±0.1 97 .8±0.0 95 .7±0.1
+
+Table A7. Detailed per-class F1-max performance of DuoAD (DINOv3) on MVTec-AD, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Image-level F1-max (I-F1max) and Pixel-level F1-max (P-F1max). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max
+
+Bottle 98 .6±0.6 74 .5±0.6 98 .6±0.6 74 .5±0.6 99 .5±0.4 75 .4±0.5 99 .5±0.4 75 .4±0.5 100 .0±0.0 75 .8±0.3 100 .0±0.0 75 .8±0.3
+
+Cable 90 .7±1.6 60 .7±1.3 90 .7±1.6 60 .7±1.3 91 .8±0.8 63 .8±1.0 91 .8±0.8 63 .8±1.0 92 .8±1.0 65 .7±0.5 92 .8±1.0 65 .7±0.5
+
+Capsule 95 .5±0.5 52 .1±3.4 95 .5±0.6 51 .8±3.1 95 .9±0.8 55 .0±0.8 96 .3±1.1 54 .6±0.9 97 .1±0.9 56 .2±0.8 97 .1±0.9 55 .7±0.8
+
+Carpet 100 .0±0.0 73 .8±0.1 100 .0±0.0 73 .8±0.1 100 .0±0.0 74 .0±0.5 100 .0±0.0 74 .0±0.5 100 .0±0.0 74 .1±0.4 100 .0±0.0 74 .1±0.4
+
+Grid 99 .8±0.4 55 .8±0.3 99 .8±0.4 55 .8±0.3 100 .0±0.0 56 .1±0.4 100 .0±0.0 56 .1±0.4 100 .0±0.0 56 .5±0.6 100 .0±0.0 56 .5±0.6
+
+Hazelnut 98 .3±1.4 78 .5±1.6 98 .3±1.4 78 .5±1.6 99 .6±0.6 80 .1±0.6 99 .6±0.6 80 .1±0.6 99 .9±0.3 80 .5±0.5 99 .9±0.3 80 .5±0.5
+
+Leather 100 .0±0.0 54 .2±0.3 100 .0±0.0 54 .2±0.4 100 .0±0.0 54 .1±0.3 100 .0±0.0 54 .1±0.3 100 .0±0.0 54 .4±0.9 100 .0±0.0 54 .3±0.6
+
+Metal Nut 100 .0±0.0 68 .4±2.3 100 .0±0.0 68 .4±2.3 100 .0±0.0 71 .4±2.3 100 .0±0.0 71 .4±2.3 100 .0±0.0 74 .7±1.2 100 .0±0.0 74 .7±1.2
+
+Pill 97 .0±0.2 49 .7±1.7 97 .2±0.3 46 .6±1.3 96 .9±0.3 50 .4±0.8 97 .0±0.4 47 .6±0.7 97 .2±0.2 52 .2±0.8 97 .3±0.4 49 .7±0.5
+
+Screw 90 .6±2.5 48 .2±0.9 90 .6±2.5 48 .2±0.9 92 .6±1.2 49 .6±1.0 92 .6±1.2 49 .6±1.0 93 .0±1.1 50 .3±0.6 93 .0±1.1 50 .3±0.6
+
+Tile 98 .9±0.3 73 .6±0.2 98 .9±0.3 73 .6±0.2 99 .1±0.3 73 .7±0.3 99 .1±0.3 73 .7±0.3 99 .5±0.5 73 .7±0.2 99 .5±0.5 73 .7±0.2
+
+Toothbrush 99 .0±0.9 63 .5±2.8 99 .3±0.9 64 .4±2.2 99 .7±0.8 65 .9±3.6 99 .7±0.8 66 .4±2.9 99 .7±0.7 68 .5±1.2 99 .7±0.7 68 .6±1.0
+
+Transistor 83 .6±3.1 42 .3±2.6 85 .3±2.0 53 .2±2.2 88 .0±3.6 45 .9±2.6 89 .9±4.2 57 .4±2.0 91 .0±1.2 46 .4±2.1 92 .4±1.5 58 .5±1.3
+
+Wood 97 .7±0.4 68 .4±0.6 98 .0±0.5 68 .4±0.5 97 .7±0.4 68 .9±0.3 98 .0±0.4 68 .9±0.3 98 .0±0.4 69 .1±0.2 98 .0±0.4 69 .1±0.2
+
+Zipper 98 .9±0.4 70 .6±0.7 98 .6±0.9 69 .5±1.0 98 .8±0.5 70 .8±0.6 98 .3±0.7 69 .8±1.0 98 .9±0.2 71 .0±0.4 98 .8±0.5 70 .2±0.4
+
+Mean 96 .6±0.2 62 .3±0.5 96 .7±0.2 62 .8±0.4 97 .3±0.2 63 .7±0.4 97 .5±0.4 64 .2±0.3 97 .8±0.2 64 .6±0.3 97 .9±0.2 65 .2±0.2
+
+8Table A8. Detailed per-class image-level AUROC and AUPR of DuoAD (DINOv2) on MVTec-AD, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Image-level AUROC (I-AUC) and Image-level AUPR (I-AUPR). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR
+
+Bottle 99 .9±0.1 99 .8±0.0 99 .9±0.1 99 .8±0.0 100 .0±0.1 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0
+
+Cable 92 .7±1.2 96 .4±0.6 92 .7±1.2 96 .4±0.6 93 .9±0.7 96 .9±0.3 93 .5±0.8 96 .8±0.4 94 .0±0.6 97 .1±0.3 94 .0±0.6 97 .1±0.3
+
+Capsule 89 .4±2.5 97 .2±0.8 90 .1±2.4 97 .3±0.8 90 .5±2.4 97 .5±0.7 91 .5±1.6 97 .8±0.5 92 .4±2.1 98 .0±0.6 92 .9±1.9 98 .1±0.6
+
+Carpet 99 .9±0.1 99 .9±0.0 99 .9±0.1 99 .9±0.0 99 .9±0.1 99 .9±0.0 99 .9±0.1 99 .9±0.0 100 .0±0.1 99 .9±0.0 100 .0±0.1 99 .9±0.0
+
+Grid 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0
+
+Hazelnut 100 .0±0.0 99 .7±0.0 100 .0±0.0 99 .7±0.0 100 .0±0.0 99 .7±0.0 100 .0±0.0 99 .7±0.0 100 .0±0.0 99 .7±0.0 100 .0±0.0 99 .7±0.0
+
+Leather 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0
+
+Metal Nut 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 99 .4±0.8 99 .8±0.1 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0 100 .0±0.0 99 .9±0.0
+
+Pill 97 .3±0.8 99 .5±0.2 97 .0±0.6 99 .4±0.1 95 .7±1.0 99 .1±0.2 96 .8±0.6 99 .4±0.1 97 .9±0.6 99 .6±0.1 97 .8±0.5 99 .6±0.1
+
+Screw 86 .8±3.8 95 .3±1.4 86 .8±3.8 95 .3±1.4 89 .6±2.5 96 .6±0.8 89 .9±2.5 96 .3±0.9 90 .2±2.5 96 .2±1.0 90 .2±2.5 96 .2±1.0
+
+Tile 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0 100 .0±0.0 99 .8±0.0
+
+Toothbrush 99 .5±0.7 99 .4±0.2 100 .0±0.0 99 .5±0.0 97 .9±1.6 98 .9±0.6 99 .9±0.1 99 .5±0.0 99 .4±1.0 99 .4±0.3 100 .0±0.0 99 .5±0.0
+
+Transistor 92 .9±2.0 90 .0±2.4 93 .7±1.8 91 .2±2.0 91 .4±2.3 88 .4±2.7 96 .8±1.1 94 .9±1.4 96 .7±1.3 94 .7±1.8 97 .6±0.9 95 .8±1.3
+
+Wood 99 .9±0.1 99 .8±0.0 99 .8±0.2 99 .8±0.0 100 .0±0.1 99 .8±0.0 99 .9±0.0 99 .8±0.0 99 .9±0.0 99 .8±0.0 99 .9±0.0 99 .8±0.0
+
+Zipper 99 .9±0.1 99 .9±0.0 99 .8±0.2 99 .9±0.0 99 .8±0.2 99 .9±0.1 99 .8±0.2 99 .9±0.0 99 .9±0.0 99 .9±0.0 99 .9±0.1 99 .9±0.0
+
+Mean 97 .2±0.3 98 .4±0.2 97 .3±0.3 98 .5±0.2 97 .2±0.2 98 .4±0.2 97 .9±0.2 98 .9±0.1 98 .0±0.3 98 .9±0.2 98 .2±0.3 99 .0±0.2
+
+Table A9. Detailed per-class pixel-level AUROC and PRO of DuoAD (DINOv2) on MVTec-AD, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Pixel-level AUROC (P-AUC) and Pixel-level PRO (P-PRO). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO
+
+Bottle 98 .7±0.1 97 .0±0.3 98 .7±0.1 97 .0±0.3 98 .7±0.2 96 .9±0.4 98 .8±0.1 97 .2±0.2 98 .9±0.1 97 .1±0.2 98 .9±0.1 97 .1±0.2
+
+Cable 96 .0±0.2 90 .9±0.6 96 .0±0.2 90 .9±0.6 96 .1±0.2 90 .6±0.8 96 .3±0.2 91 .5±0.6 96 .5±0.2 91 .9±0.4 96 .5±0.2 91 .9±0.4
+
+Capsule 98 .1±0.1 96 .9±0.1 98 .0±0.2 96 .7±0.2 98 .2±0.1 96 .8±0.2 98 .2±0.1 97 .2±0.1 98 .5±0.1 97 .5±0.2 98 .5±0.1 97 .5±0.1
+
+Carpet 99 .3±0.0 98 .3±0.0 99 .3±0.0 98 .3±0.0 99 .3±0.1 98 .1±0.0 99 .3±0.1 98 .3±0.1 99 .3±0.1 98 .3±0.1 99 .3±0.1 98 .3±0.1
+
+Grid 99 .4±0.0 97 .4±0.1 99 .4±0.0 97 .3±0.2 99 .3±0.0 97 .2±0.2 99 .4±0.0 97 .4±0.1 99 .4±0.0 97 .3±0.1 99 .4±0.0 97 .3±0.1
+
+Hazelnut 99 .4±0.0 96 .9±0.8 99 .4±0.0 96 .9±0.8 99 .4±0.0 97 .4±0.3 99 .5±0.0 97 .4±0.3 99 .5±0.0 97 .5±0.3 99 .5±0.0 97 .5±0.3
+
+Leather 99 .2±0.0 98 .7±0.3 99 .2±0.1 98 .8±0.2 99 .1±0.1 98 .2±0.4 99 .2±0.0 98 .7±0.1 99 .1±0.0 98 .5±0.1 99 .2±0.0 98 .6±0.1
+
+Metal Nut 95 .3±0.4 94 .2±0.4 95 .3±0.4 94 .2±0.4 96 .0±0.4 93 .6±0.4 95 .8±0.6 94 .8±0.4 96 .4±0.2 95 .5±0.2 96 .4±0.2 95 .5±0.2
+
+Pill 95 .5±0.4 97 .6±0.1 94 .9±0.4 97 .4±0.2 95 .0±0.3 96 .6±0.3 95 .2±0.3 97 .4±0.2 96 .0±0.2 97 .8±0.1 95 .6±0.2 97 .6±0.1
+
+Screw 99 .0±0.1 95 .9±0.5 99 .0±0.1 95 .9±0.5 99 .0±0.1 96 .1±0.4 99 .1±0.1 96 .2±0.4 99 .2±0.1 96 .7±0.3 99 .2±0.1 96 .7±0.3
+
+Tile 96 .5±0.1 92 .2±0.1 96 .5±0.1 92 .1±0.2 96 .5±0.1 90 .5±0.2 96 .6±0.0 92 .1±0.1 96 .6±0.0 92 .1±0.1 96 .6±0.0 92 .1±0.1
+
+Toothbrush 98 .8±0.2 96 .1±0.4 99 .0±0.1 96 .2±0.3 98 .9±0.3 96 .2±0.5 99 .1±0.2 96 .6±0.4 99 .2±0.2 97 .1±0.8 99 .2±0.2 97 .0±0.6
+
+Transistor 87 .3±1.2 67 .6±1.0 90 .4±1.0 71 .3±1.1 86 .2±1.1 67 .4±1.3 91 .5±0.8 72 .7±1.4 89 .1±0.7 69 .5±0.8 92 .1±0.4 73 .7±0.8
+
+Wood 94 .9±0.7 95 .7±0.2 94 .8±0.7 95 .6±0.2 96 .2±0.8 95 .9±0.2 95 .4±0.7 95 .9±0.1 95 .7±0.5 95 .9±0.2 95 .7±0.5 95 .9±0.2
+
+Zipper 98 .4±0.1 95 .8±0.3 98 .3±0.1 95 .5±0.3 97 .6±0.2 94 .0±0.5 98 .3±0.1 95 .6±0.2 98 .5±0.1 96 .0±0.2 98 .4±0.1 95 .8±0.2
+
+Mean 97 .1±0.2 94 .1±0.1 97 .2±0.1 94 .3±0.1 97 .0±0.1 93 .7±0.1 97 .5±0.1 94 .6±0.1 97 .5±0.0 94 .6±0.1 97 .6±0.0 94 .8±0.1
+
+9Table A10. Detailed per-class F1-max performance of DuoAD (DINOv2) on MVTec-AD, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Image-level F1-max (I-F1max) and Pixel-level F1-max (P-F1max). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max
+
+Bottle 99 .5±0.4 77 .8±0.7 99 .5±0.4 77 .8±0.7 99 .8±0.4 78 .3±0.8 100 .0±0.0 78 .8±0.6 100 .0±0.0 78 .9±0.6 100 .0±0.0 78 .9±0.6
+
+Cable 90 .6±0.4 60 .3±1.3 90 .6±0.4 60 .3±1.3 90 .6±0.9 57 .1±1.4 92 .1±1.0 61 .7±1.1 92 .7±0.9 62 .6±0.4 92 .7±0.9 62 .6±0.4
+
+Capsule 95 .4±0.7 51 .2±0.7 95 .8±1.3 51 .1±0.8 95 .0±0.6 49 .8±1.5 96 .0±0.5 52 .6±1.4 96 .4±0.9 53 .8±1.1 96 .7±1.0 53 .7±0.9
+
+Carpet 99 .6±0.5 65 .7±0.2 99 .6±0.5 65 .6±0.2 99 .7±0.3 65 .9±1.9 99 .7±0.3 66 .1±1.8 99 .8±0.3 66 .0±1.7 99 .8±0.3 65 .9±1.7
+
+Grid 100 .0±0.0 51 .5±0.5 100 .0±0.0 51 .5±0.5 100 .0±0.0 48 .9±1.2 100 .0±0.0 52 .1±0.9 100 .0±0.0 52 .1±1.3 100 .0±0.0 52 .2±1.3
+
+Hazelnut 99 .9±0.3 74 .0±1.3 99 .9±0.3 74 .0±1.3 100 .0±0.0 73 .1±0.6 100 .0±0.0 74 .9±1.0 100 .0±0.0 75 .1±0.6 100 .0±0.0 75 .1±0.6
+
+Leather 100 .0±0.0 42 .9±0.8 100 .0±0.0 43 .8±1.3 100 .0±0.0 40 .7±1.1 100 .0±0.0 43 .0±0.9 100 .0±0.0 41 .8±0.7 100 .0±0.0 42 .9±0.9
+
+Metal Nut 100 .0±0.0 70 .1±1.9 100 .0±0.0 70 .1±1.9 98 .8±0.8 75 .8±2.1 100 .0±0.0 72 .5±3.3 100 .0±0.0 75 .7±1.3 100 .0±0.0 75 .7±1.3
+
+Pill 96 .6±0.7 55 .5±1.6 96 .2±0.4 53 .4±1.8 96 .0±0.4 55 .2±1.2 96 .5±0.3 53 .6±1.2 97 .2±0.4 57 .9±0.3 97 .1±0.6 56 .0±0.5
+
+Screw 89 .1±2.2 45 .1±0.9 89 .1±2.2 45 .1±0.9 89 .9±2.0 46 .9±0.7 90 .7±2.1 45 .9±1.0 91 .0±1.6 47 .6±0.5 91 .0±1.6 47 .6±0.5
+
+Tile 100 .0±0.0 68 .4±0.2 100 .0±0.0 68 .5±0.2 99 .9±0.3 66 .7±0.2 100 .0±0.0 68 .5±0.1 100 .0±0.0 68 .3±0.1 100 .0±0.0 68 .5±0.1
+
+Toothbrush 98 .7±1.8 56 .0±2.6 100 .0±0.0 59 .2±1.9 96 .1±1.7 56 .4±5.6 99 .7±0.7 60 .9±4.0 99 .0±1.5 62 .1±4.2 100 .0±0.0 63 .2±3.3
+
+Transistor 82 .4±2.8 43 .0±2.4 84 .4±3.1 52 .8±1.6 80 .8±3.5 41 .8±1.7 89 .8±2.1 54 .5±1.1 89 .5±1.9 44 .7±1.8 91 .4±2.4 54 .6±1.1
+
+Wood 99 .5±0.5 61 .9±1.1 99 .2±0.6 61 .7±0.9 99 .8±0.4 62 .6±0.9 99 .3±0.4 62 .2±0.6 99 .2±0.0 62 .0±0.5 99 .2±0.0 62 .0±0.6
+
+Zipper 99 .3±0.4 61 .4±1.2 99 .2±0.4 60 .7±1.1 99 .2±0.5 58 .3±1.8 99 .2±0.4 60 .2±1.4 99 .6±0.3 60 .7±1.0 99 .2±0.2 60 .1±0.9
+
+Mean 96 .7±0.2 59 .0±0.5 96 .9±0.2 59 .7±0.4 96 .4±0.3 58 .5±0.6 97 .5±0.2 60 .5±0.5 97 .6±0.3 60 .6±0.4 97 .8±0.2 61 .3±0.3
+
+Table A11. Detailed per-class image-level AUROC and AUPR of DuoAD (DINOv3) on VisA, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Image-level AUROC (I-AUC) and Image-level AUPR (I-AUPR). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR
+
+Candle 95 .5±1.0 95 .8±0.8 95 .5±1.0 95 .8±0.8 96 .2±0.5 96 .4±0.5 96 .2±0.5 96 .4±0.5 96 .4±0.4 96 .5±0.3 96 .4±0.4 96 .5±0.3
+
+Capsules 98 .0±1.4 98 .7±0.8 98 .0±1.4 98 .7±0.8 98 .6±0.6 99 .1±0.3 98 .6±0.6 99 .1±0.3 98 .6±0.4 99 .1±0.2 98 .6±0.4 99 .1±0.2
+
+Cashew 96 .5±0.4 98 .3±0.2 96 .0±0.6 98 .1±0.3 96 .7±1.3 98 .4±0.6 96 .1±1.7 98 .1±0.8 96 .9±1.0 98 .4±0.4 96 .7±1.1 98 .4±0.5
+
+Chewinggum 98 .9±0.3 99 .4±0.1 98 .9±0.3 99 .4±0.1 98 .9±0.4 99 .4±0.1 98 .9±0.4 99 .4±0.1 98 .8±0.4 99 .4±0.1 98 .8±0.4 99 .4±0.1
+
+Fryum 98 .3±0.5 99 .1±0.2 98 .3±0.5 99 .1±0.2 98 .8±0.3 99 .3±0.1 98 .8±0.3 99 .3±0.1 99 .0±0.4 99 .4±0.2 99 .0±0.4 99 .4±0.2
+
+Macaroni1 94 .3±1.1 94 .3±1.0 93 .3±0.4 93 .4±0.4 94 .4±0.7 94 .6±0.9 93 .9±1.0 93 .9±1.1 95 .5±1.2 95 .4±1.7 94 .7±1.6 94 .6±1.8
+
+Macaroni2 69 .4±4.8 68 .3±6.0 69 .4±4.8 68 .3±6.0 73 .8±5.7 71 .9±7.9 73 .8±5.7 71 .9±7.9 79 .6±3.5 79 .6±4.1 79 .6±3.5 79 .6±4.1
+
+PCB1 92 .3±1.8 92 .2±2.0 92 .3±1.8 92 .2±2.0 93 .6±1.2 93 .2±1.4 93 .6±1.2 93 .2±1.4 95 .6±0.9 94 .6±1.5 95 .6±0.9 94 .6±1.5
+
+PCB2 90 .7±1.7 89 .6±2.5 90 .7±1.7 89 .6±2.5 92 .9±0.3 91 .5±1.9 92 .9±0.3 91 .5±1.9 93 .7±0.9 92 .3±2.4 93 .7±0.9 92 .3±2.4
+
+PCB3 89 .4±2.6 91 .2±1.8 89 .7±2.2 91 .9±1.3 91 .7±2.2 93 .0±1.4 92 .4±2.3 93 .8±1.5 94 .4±1.6 95 .0±1.2 95 .1±1.6 95 .8±1.2
+
+PCB4 98 .2±0.2 97 .5±0.3 98 .2±0.2 97 .5±0.3 98 .6±0.8 98 .3±0.8 98 .6±0.8 98 .3±0.8 99 .0±0.4 98 .7±0.4 99 .0±0.4 98 .7±0.4
+
+Pipe Fryum 98 .4±1.0 99 .0±0.5 98 .4±1.1 99 .0±0.5 98 .5±1.1 99 .0±0.5 98 .4±1.0 99 .0±0.5 98 .6±0.3 99 .1±0.2 98 .6±0.4 99 .1±0.2
+
+Mean 93 .3±0.6 93 .6±0.5 93 .2±0.6 93 .6±0.5 94 .4±0.7 94 .5±0.6 94 .4±0.7 94 .5±0.6 95 .5±0.4 95 .6±0.3 95 .5±0.4 95 .6±0.3
+
+10 Table A12. Detailed per-class pixel-level AUROC and PRO of DuoAD (DINOv3) on VisA, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Pixel-level AUROC (P-AUC) and Pixel-level PRO (P-PRO). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO
+
+Candle 99 .3±0.0 97 .0±0.2 99 .3±0.0 97 .0±0.2 99 .4±0.0 97 .3±0.2 99 .4±0.0 97 .3±0.2 99 .5±0.0 97 .3±0.1 99 .5±0.0 97 .3±0.1
+
+Capsules 98 .5±0.2 96 .8±0.6 98 .5±0.2 96 .8±0.6 98 .8±0.1 97 .2±0.5 98 .8±0.1 97 .2±0.5 98 .8±0.2 97 .3±0.4 98 .8±0.2 97 .3±0.4
+
+Cashew 98 .6±0.1 98 .5±0.2 99 .1±0.1 98 .5±0.3 98 .9±0.1 98 .6±0.2 99 .3±0.1 98 .6±0.2 99 .1±0.1 98 .6±0.1 99 .4±0.0 98 .7±0.1
+
+Chewinggum 99 .6±0.1 94 .5±0.7 99 .6±0.1 94 .5±0.7 99 .6±0.0 94 .7±0.5 99 .6±0.0 94 .7±0.5 99 .6±0.0 95 .1±0.3 99 .6±0.0 95 .1±0.3
+
+Fryum 96 .9±0.2 94 .5±0.2 96 .9±0.2 94 .5±0.2 97 .1±0.1 94 .8±0.2 97 .1±0.1 94 .8±0.2 97 .3±0.1 95 .0±0.2 97 .3±0.1 95 .0±0.2
+
+Macaroni1 99 .6±0.1 95 .7±0.8 99 .6±0.1 95 .5±0.8 99 .7±0.0 96 .3±0.8 99 .7±0.0 96 .2±0.8 99 .7±0.0 97 .1±0.5 99 .7±0.0 96 .9±0.5
+
+Macaroni2 98 .7±0.1 89 .2±1.2 98 .7±0.1 89 .2±1.2 98 .9±0.1 90 .9±1.2 98 .9±0.1 90 .9±1.2 99 .2±0.1 93 .1±0.8 99 .2±0.1 93 .1±0.8
+
+PCB1 99 .5±0.1 94 .2±0.4 99 .5±0.1 94 .2±0.4 99 .5±0.1 94 .7±0.3 99 .5±0.1 94 .7±0.3 99 .6±0.0 95 .3±0.2 99 .6±0.0 95 .3±0.2
+
+PCB2 96 .9±0.2 86 .8±0.8 96 .9±0.2 86 .8±0.8 97 .4±0.2 88 .9±0.4 97 .4±0.2 88 .9±0.4 97 .6±0.1 90 .3±0.5 97 .6±0.1 90 .3±0.5
+
+PCB3 96 .7±0.2 89 .0±1.7 97 .3±0.2 88 .7±1.5 97 .2±0.2 90 .9±0.7 97 .7±0.2 90 .7±0.7 97 .6±0.2 92 .6±0.5 98 .1±0.1 92 .4±0.5
+
+PCB4 95 .7±0.1 84 .8±0.7 95 .7±0.1 84 .8±0.7 96 .2±0.5 86 .0±3.6 96 .2±0.5 86 .0±3.6 96 .7±0.2 88 .5±2.0 96 .7±0.2 88 .5±2.0
+
+Pipe Fryum 98 .8±0.2 97 .6±0.3 98 .8±0.1 97 .6±0.3 99 .0±0.1 97 .7±0.2 99 .0±0.1 97 .7±0.2 99 .1±0.0 97 .8±0.1 99 .2±0.0 97 .8±0.1
+
+Mean 98 .2±0.0 93 .2±0.2 98 .3±0.0 93 .2±0.2 98 .5±0.1 94 .0±0.4 98 .5±0.1 94 .0±0.4 98 .7±0.1 94 .8±0.2 98 .7±0.0 94 .8±0.2
+
+Table A13. Detailed per-class F1-max performance of DuoAD (DINOv3) on VisA, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Image-level F1-max (I-F1max) and Pixel-level F1-max (P-F1max). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max
+
+Candle 89 .9±2.0 49 .0±1.4 89 .9±2.0 49 .0±1.4 90 .8±1.1 49 .6±0.9 90 .8±1.1 49 .6±0.9 91 .0±0.7 50 .0±0.6 91 .0±0.7 50 .0±0.6
+
+Capsules 95 .4±1.7 54 .2±0.5 95 .4±1.7 54 .2±0.5 96 .2±1.3 55 .1±0.8 96 .2±1.3 55 .1±0.8 96 .7±1.0 55 .9±1.1 96 .7±1.0 55 .9±1.1
+
+Cashew 94 .2±0.8 53 .6±1.2 93 .7±1.1 59 .6±1.1 94 .6±1.2 56 .6±1.2 93 .8±2.5 62 .0±1.6 94 .6±1.5 58 .9±0.7 93 .6±1.7 63 .7±0.5
+
+Chewinggum 96 .9±0.6 76 .4±0.8 96 .8±0.5 76 .4±0.7 96 .7±0.4 76 .5±0.6 96 .8±0.4 76 .6±0.6 96 .5±0.6 76 .5±0.4 96 .9±0.5 76 .5±0.4
+
+Fryum 96 .0±1.0 47 .5±1.0 96 .0±1.0 47 .5±1.0 96 .6±0.7 48 .8±0.6 96 .6±0.7 48 .8±0.6 97 .0±0.6 50 .3±0.5 97 .0±0.6 50 .3±0.5
+
+Macaroni1 88 .3±2.3 33 .8±1.4 87 .4±2.0 32 .0±1.2 88 .0±0.9 33 .9±1.1 87 .7±2.5 32 .2±1.0 89 .9±1.6 34 .0±1.3 88 .8±2.0 32 .1±1.3
+
+Macaroni2 72 .2±2.7 22 .1±4.2 72 .2±2.7 22 .1±4.2 73 .0±2.7 25 .0±1.7 73 .0±2.7 25 .0±1.7 75 .8±2.4 27 .3±1.5 75 .8±2.4 27 .3±1.5
+
+PCB1 87 .5±1.3 78 .8±1.1 87 .5±1.3 78 .8±1.1 88 .6±1.7 80 .4±1.1 88 .6±1.7 80 .4±1.1 91 .9±0.5 81 .4±0.7 91 .9±0.5 81 .4±0.7
+
+PCB2 85 .9±2.2 44 .8±2.9 85 .9±2.2 44 .8±2.9 88 .3±1.2 48 .9±0.8 88 .3±1.2 48 .9±0.8 90 .3±1.0 51 .0±0.4 90 .3±1.0 51 .0±0.4
+
+PCB3 82 .2±2.2 53 .5±0.8 83 .7±2.6 53 .3±0.3 85 .4±2.3 54 .9±1.1 86 .5±1.8 54 .4±0.9 86 .9±2.4 56 .2±0.7 88 .4±2.1 55 .2±0.7
+
+PCB4 95 .0±0.2 33 .8±1.1 95 .0±0.2 33 .8±1.1 95 .5±1.7 38 .0±3.2 95 .5±1.7 38 .0±3.2 96 .4±0.5 40 .0±3.2 96 .4±0.5 40 .0±3.2
+
+Pipe Fryum 97 .0±1.5 53 .7±1.9 97 .0±1.5 54 .1±1.2 96 .9±1.2 56 .2±1.7 96 .9±1.2 56 .6±1.1 96 .8±0.6 58 .8±0.6 96 .8±0.6 59 .1±0.3
+
+Mean 90 .0±0.5 50 .1±0.8 90 .0±0.5 50 .5±0.7 90 .9±0.7 52 .0±0.4 90 .9±0.8 52 .3±0.4 92 .0±0.3 53 .4±0.1 92 .0±0.5 53 .6±0.1
+
+11 Table A14. Detailed per-class image-level AUROC and AUPR of DuoAD (DINOv2) on VisA, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Image-level AUROC (I-AUC) and Image-level AUPR (I-AUPR). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR I-AUC I-AUPR
+
+Candle 94 .0±1.5 94 .3±1.3 94 .0±1.5 94 .3±1.3 94 .7±1.0 94 .8±0.8 94 .7±1.0 94 .8±0.8 95 .0±0.7 95 .0±0.7 95 .0±0.7 95 .0±0.7
+
+Capsules 97 .4±0.5 98 .1±0.4 97 .4±0.5 98 .1±0.4 97 .8±0.7 98 .4±0.6 97 .8±0.7 98 .4±0.6 98 .1±0.6 98 .7±0.4 98 .1±0.6 98 .7±0.4
+
+Cashew 93 .0±1.9 96 .6±0.8 93 .6±2.4 96 .9±1.1 93 .0±4.5 96 .5±2.2 93 .3±3.9 96 .7±1.8 93 .2±4.2 96 .5±2.4 93 .3±3.9 96 .6±2.1
+
+Chewinggum 98 .7±0.4 99 .4±0.2 98 .5±0.5 99 .3±0.2 98 .9±0.3 99 .4±0.1 98 .7±0.3 99 .4±0.1 99 .0±0.3 99 .4±0.1 98 .9±0.2 99 .4±0.1
+
+Fryum 96 .3±1.2 98 .3±0.5 96 .3±1.2 98 .3±0.5 97 .9±0.6 99 .0±0.2 97 .9±0.6 99 .0±0.2 97 .9±0.4 99 .0±0.2 97 .9±0.4 99 .0±0.2
+
+Macaroni1 93 .2±3.0 93 .1±2.9 92 .6±3.2 92 .6±3.0 92 .5±1.8 92 .8±2.1 92 .3±1.9 92 .7±2.2 93 .4±1.8 93 .4±2.1 93 .0±2.0 93 .2±2.3
+
+Macaroni2 77 .0±6.3 75 .2±8.4 77 .0±6.3 75 .2±8.4 79 .5±5.5 77 .6±7.3 79 .5±5.5 77 .6±7.3 85 .4±3.5 85 .5±2.9 85 .4±3.5 85 .5±2.9
+
+PCB1 88 .4±3.8 87 .7±3.9 88 .9±3.3 88 .2±3.6 92 .0±1.8 91 .3±2.3 92 .2±1.5 91 .6±2.1 94 .3±1.3 92 .9±2.1 94 .3±1.2 93 .2±1.9
+
+PCB2 86 .4±3.7 84 .1±4.3 86 .4±3.4 84 .5±4.1 89 .4±0.8 87 .5±2.2 89 .4±0.7 87 .7±2.1 91 .1±0.7 88 .8±2.3 91 .0±0.9 88 .9±2.2
+
+PCB3 89 .3±2.1 90 .8±1.3 90 .6±1.4 92 .0±0.7 90 .8±0.9 91 .9±0.6 91 .8±0.6 92 .9±0.5 92 .6±0.9 93 .4±1.1 93 .7±0.9 94 .5±1.0
+
+PCB4 98 .3±0.3 97 .8±0.4 98 .3±0.3 97 .9±0.4 98 .8±0.7 98 .4±0.9 98 .7±0.6 98 .3±0.8 99 .3±0.2 99 .1±0.3 99 .4±0.2 99 .1±0.2
+
+Pipe Fryum 98 .2±1.3 99 .0±0.6 98 .5±1.3 99 .1±0.6 98 .2±0.9 98 .9±0.5 98 .4±0.8 99 .1±0.4 98 .4±0.6 99 .1±0.3 98 .4±0.8 99 .1±0.4
+
+Mean 92 .5±0.6 92 .9±0.7 92 .7±0.5 93 .0±0.7 93 .6±0.7 93 .9±0.7 93 .7±0.7 94 .0±0.7 94 .8±0.6 95 .1±0.4 94 .9±0.5 95 .2±0.4
+
+Table A15. Detailed per-class pixel-level AUROC and PRO of DuoAD (DINOv2) on VisA, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Pixel-level AUROC (P-AUC) and Pixel-level PRO (P-PRO). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO P-AUC P-PRO
+
+Candle 99 .2±0.0 96 .7±0.5 99 .2±0.0 96 .7±0.5 99 .3±0.0 97 .0±0.3 99 .3±0.0 96 .9±0.3 99 .4±0.0 97 .0±0.3 99 .4±0.0 97 .0±0.3
+
+Capsules 98 .6±0.1 97 .7±0.4 98 .6±0.1 97 .7±0.4 98 .7±0.1 97 .8±0.3 98 .7±0.1 97 .8±0.3 98 .8±0.1 97 .8±0.4 98 .8±0.1 97 .8±0.4
+
+Cashew 98 .4±0.2 98 .1±0.5 98 .6±0.1 98 .3±0.4 98 .7±0.1 98 .2±0.5 98 .9±0.0 98 .3±0.5 98 .8±0.1 98 .1±0.3 99 .0±0.1 98 .3±0.3
+
+Chewinggum 99 .6±0.1 95 .1±0.6 99 .5±0.1 94 .9±0.5 99 .6±0.0 94 .9±0.5 99 .5±0.0 94 .8±0.5 99 .6±0.0 95 .0±0.4 99 .5±0.0 94 .8±0.3
+
+Fryum 95 .9±0.1 93 .4±0.6 95 .9±0.1 93 .4±0.6 96 .3±0.2 93 .8±0.5 96 .3±0.2 93 .8±0.5 96 .6±0.1 94 .1±0.3 96 .6±0.1 94 .1±0.3
+
+Macaroni1 99 .6±0.1 95 .3±0.6 99 .6±0.1 95 .0±0.6 99 .7±0.1 95 .5±0.7 99 .6±0.1 95 .3±0.8 99 .7±0.0 96 .0±0.4 99 .6±0.1 95 .8±0.5
+
+Macaroni2 99 .2±0.1 92 .8±1.2 99 .2±0.1 92 .8±1.2 99 .4±0.1 94 .1±0.9 99 .4±0.1 94 .1±0.9 99 .5±0.1 95 .5±0.3 99 .5±0.1 95 .5±0.3
+
+PCB1 99 .3±0.1 92 .7±0.4 99 .3±0.1 92 .6±0.4 99 .5±0.0 93 .6±0.3 99 .4±0.0 93 .6±0.3 99 .5±0.0 94 .3±0.4 99 .5±0.0 94 .3±0.4
+
+PCB2 96 .5±0.3 86 .5±0.4 96 .5±0.3 86 .4±0.4 97 .0±0.2 88 .1±0.3 97 .0±0.2 88 .1±0.3 97 .2±0.1 89 .5±0.3 97 .2±0.1 89 .5±0.4
+
+PCB3 96 .8±0.2 87 .9±1.3 97 .1±0.2 87 .8±1.3 97 .3±0.2 89 .3±0.9 97 .5±0.2 89 .1±0.8 97 .6±0.1 90 .8±0.5 97 .8±0.1 90 .5±0.6
+
+PCB4 96 .1±0.2 85 .7±0.7 96 .0±0.2 85 .5±0.8 96 .4±0.4 86 .4±2.0 96 .4±0.3 86 .4±1.9 97 .0±0.2 88 .5±0.9 97 .0±0.2 88 .5±0.9
+
+Pipe Fryum 98 .5±0.2 97 .6±0.2 98 .6±0.2 97 .6±0.2 98 .7±0.1 97 .6±0.2 98 .7±0.1 97 .6±0.2 98 .8±0.1 97 .8±0.2 98 .9±0.1 97 .8±0.2
+
+Mean 98 .2±0.1 93 .3±0.1 98 .2±0.1 93 .2±0.1 98 .4±0.1 93 .9±0.3 98 .4±0.1 93 .8±0.3 98 .5±0.0 94 .5±0.2 98 .6±0.0 94 .5±0.2
+
+12 Table A16. Detailed per-class F1-max performance of DuoAD (DINOv2) on VisA, comparing DuoAD and DuoAD SCA under 1-shot, 2-shot, and 4-shot settings. We report Image-level F1-max (I-F1max) and Pixel-level F1-max (P-F1max). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 2-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max I-F1max P-F1max
+
+Candle 87 .7±1.9 41 .0±2.2 87 .7±1.9 41 .0±2.2 88 .6±1.7 41 .4±1.4 88 .6±1.7 41 .4±1.4 89 .1±1.5 42 .2±0.8 89 .1±1.5 42 .2±0.8
+
+Capsules 95 .2±0.7 47 .2±3.1 95 .2±0.7 47 .2±3.1 96 .0±0.8 48 .1±2.6 96 .0±0.8 48 .1±2.6 95 .9±0.5 49 .8±2.3 95 .9±0.5 49 .8±2.3
+
+Cashew 90 .3±1.5 45 .3±1.8 90 .4±2.7 47 .0±1.7 90 .9±3.2 48 .0±0.8 90 .7±3.1 49 .8±0.6 91 .7±2.7 50 .5±1.0 91 .6±2.7 52 .5±1.0
+
+Chewinggum 96 .9±0.6 67 .1±1.7 96 .8±0.4 67 .8±1.9 97 .0±0.4 67 .7±1.2 97 .0±0.6 68 .4±1.6 97 .1±0.4 67 .7±1.0 97 .1±0.4 68 .4±1.4
+
+Fryum 93 .1±1.3 41 .7±0.3 93 .1±1.3 41 .7±0.3 95 .8±0.5 43 .5±1.1 95 .8±0.5 43 .5±1.1 95 .8±0.5 45 .3±0.5 95 .8±0.5 45 .3±0.5
+
+Macaroni1 88 .4±3.5 28 .2±1.3 87 .6±3.3 27 .2±0.9 87 .2±2.7 28 .4±0.8 86 .9±2.8 28 .2±0.9 88 .2±2.5 28 .4±1.1 87 .7±2.7 27 .8±1.3
+
+Macaroni2 75 .1±3.4 23 .6±1.6 75 .1±3.4 23 .6±1.6 75 .9±4.0 24 .0±1.0 75 .9±4.0 24 .0±1.0 79 .2±3.2 24 .6±1.0 79 .2±3.2 24 .6±1.0
+
+PCB1 83 .3±2.6 68 .8±3.5 84 .0±2.1 68 .5±3.3 86 .7±1.3 72 .7±2.3 86 .9±1.3 72 .4±2.4 89 .5±1.4 75 .0±1.5 89 .9±1.3 74 .7±1.4
+
+PCB2 81 .0±3.2 36 .0±2.6 80 .8±3.0 36 .3±2.4 82 .9±0.8 39 .0±0.6 82 .6±1.3 39 .4±0.6 84 .2±1.2 41 .4±0.9 84 .5±1.5 41 .7±0.9
+
+PCB3 82 .0±2.7 46 .8±1.6 83 .5±1.4 47 .9±1.4 83 .4±1.3 48 .5±0.8 84 .3±1.2 49 .3±0.9 85 .6±1.8 49 .9±0.8 86 .6±1.4 49 .6±1.0
+
+PCB4 94 .9±0.9 30 .3±1.8 95 .1±0.8 30 .4±1.9 95 .8±1.7 34 .0±2.4 95 .7±1.3 34 .0±2.4 96 .8±0.7 36 .0±2.3 97 .0±0.5 36 .0±2.4
+
+Pipe Fryum 96 .1±1.7 47 .5±1.6 96 .7±1.8 48 .2±1.5 95 .7±0.9 49 .6±1.4 96 .0±1.1 50 .1±1.3 95 .8±1.1 51 .3±0.8 96 .1±1.1 51 .8±0.7
+
+Mean 88 .7±0.7 43 .6±0.5 88 .8±0.6 43 .9±0.5 89 .7±0.9 45 .4±0.3 89 .7±0.8 45 .7±0.4 90 .7±0.6 46 .8±0.2 90 .9±0.5 47 .0±0.2
+
+Table A17. Detailed per-class image-level performance of DuoAD (DINOv2) on Real-IAD, comparing AugAll and DuoAD-SCA under 1-shot and 4-shot settings. We report Image-level AUROC (I-AUC), Image-level AUPR (I-AUPR), and Image-level F1-max (I-F1max). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> I-AUC I-AUPR I-F1max I-AUC I-AUPR I-F1max I-AUC I-AUPR I-F1max I-AUC I-AUPR I-F1max
+
+Audiojack 74 .9±4.2 62 .6±5.0 60 .0±3.6 75 .4±3.7 65 .0±4.3 60 .1±3.2 84 .2±1.3 73 .7±0.9 68 .9±2.0 84 .4±1.4 75 .1±1.3 68 .7±2.1
+
+Bottle Cap 90 .5±0.8 87 .8±1.1 80 .9±1.0 91 .6±0.8 89 .1±1.1 82 .6±1.1 93 .8±0.6 91 .9±0.9 85 .4±0.8 94 .3±0.5 92 .6±0.7 86 .6±0.9
+
+Button Battery 85 .1±2.2 87 .9±1.6 81 .4±1.4 83 .1±2.4 86 .9±1.6 78 .8±1.9 89 .8±0.7 91 .1±0.5 85 .7±0.8 87 .9±1.2 89 .7±0.8 83 .6±1.2
+
+End Cap 79 .5±1.5 81 .5±1.1 78 .8±0.9 78 .7±1.5 80 .5±1.1 78 .3±0.9 83 .0±0.4 83 .7±0.3 81 .2±0.2 82 .4±0.3 82 .7±0.5 80 .9±0.1
+
+Eraser 90 .8±0.7 88 .0±1.0 78 .5±1.6 90 .5±0.9 87 .7±1.3 78 .1±1.6 93 .0±0.7 90 .4±1.0 81 .8±1.7 92 .7±0.6 90 .0±0.8 81 .1±1.3
+
+Fire Hood 89 .7±0.4 83 .8±0.8 76 .5±0.8 89 .8±0.4 84 .0±0.7 76 .3±1.1 90 .5±0.6 84 .4±1.0 77 .2±1.2 90 .7±0.5 84 .9±0.9 77 .4±0.8
+
+Mint 74 .7±2.4 76 .9±2.8 67 .8±1.7 74 .1±2.1 76 .6±2.4 67 .2±1.5 78 .2±0.5 80 .0±0.6 70 .9±0.6 77 .7±0.6 79 .7±0.6 70 .5±0.5
+
+Mounts 84 .6±0.4 72 .4±0.7 71 .6±0.8 84 .1±0.3 72 .7±0.5 70 .8±0.7 86 .0±0.7 72 .6±1.7 73 .8±0.3 85 .4±0.6 72 .6±1.4 73 .4±0.5
+
+PCB 83 .1±1.2 89 .4±0.7 80 .1±1.0 80 .9±1.1 88 .1±0.5 78 .7±1.0 86 .7±0.6 91 .7±0.4 82 .9±0.5 86 .1±0.7 91 .4±0.4 82 .4±0.5
+
+Phone Battery 89 .8±1.4 87 .1±1.4 79 .0±1.8 89 .6±1.9 87 .0±2.0 78 .4±2.1 92 .6±0.7 90 .0±1.1 82 .7±1.0 92 .4±0.8 89 .8±1.1 82 .5±1.2
+
+Plastic Nut 86 .3±2.7 76 .8±5.2 70 .8±3.0 86 .6±2.5 77 .7±4.6 71 .0±2.8 89 .2±1.3 80 .9±2.3 74 .1±2.1 89 .3±1.2 81 .3±2.1 74 .2±2.0
+
+Plastic Plug 83 .5±1.8 78 .9±2.8 69 .9±2.0 82 .3±1.4 77 .1±2.0 68 .4±1.6 87 .4±0.8 83 .7±1.3 73 .9±1.3 86 .4±1.1 81 .6±2.0 73 .6±1.4
+
+Porcelain Doll 82 .5±1.8 69 .2±3.7 67 .0±1.3 82 .5±1.6 69 .7±3.2 66 .6±1.4 83 .9±1.3 71 .7±2.5 68 .1±1.2 83 .3±2.0 70 .4±4.1 67 .9±1.6
+
+Regulator 69 .5±1.9 44 .9±3.3 52 .9±1.5 70 .0±1.5 44 .4±3.6 53 .8±1.2 76 .6±2.8 54 .1±4.8 57 .8±2.6 77 .0±2.7 53 .9±5.1 58 .1±2.5 
+
+> Rolled Strip Base
+
+86 .8±1.3 92 .5±0.6 86 .3±1.5 82 .2±1.1 90 .4±0.8 84 .8±0.7 93 .3±2.8 96 .1±1.7 91 .5±1.8 91 .6±4.9 95 .2±2.9 91 .1±1.7
+
+SIM Card Set 94 .7±0.8 95 .7±0.7 88 .9±1.1 94 .2±0.9 95 .4±0.7 88 .2±1.2 95 .5±0.2 96 .2±0.1 90 .2±0.4 95 .4±0.3 96 .2±0.2 90 .0±0.6
+
+Switch 87 .6±1.6 90 .1±1.4 80 .0±1.4 87 .4±1.1 89 .9±1.0 79 .6±1.0 92 .3±0.7 93 .7±0.5 84 .8±0.7 91 .9±0.6 93 .3±0.4 84 .3±0.6
+
+Tape 93 .2±2.1 89 .8±2.9 81 .1±3.8 92 .7±2.4 89 .1±3.6 80 .6±3.9 94 .2±1.7 91 .0±2.5 83 .0±3.6 94 .2±1.9 91 .0±2.9 82 .9±3.4
+
+Terminal Block 92 .9±1.8 93 .6±2.8 87 .3±0.8 92 .3±1.9 93 .2±3.0 86 .6±0.8 96 .4±0.3 97 .2±0.3 91 .3±0.8 96 .1±0.3 97 .0±0.3 90 .8±0.7
+
+Toothbrush 77 .6±2.7 79 .9±2.5 74 .9±1.2 77 .9±2.6 80 .7±2.1 74 .8±1.6 83 .1±1.6 85 .2±1.6 78 .0±1.1 82 .9±1.6 85 .3±1.8 77 .6±1.4
+
+Toy 64 .3±6.4 68 .5±6.8 74 .6±0.5 63 .1±5.9 67 .8±6.7 74 .0±0.3 77 .8±2.4 82 .4±4.2 77 .3±0.8 76 .3±2.1 81 .8±4.2 75 .9±0.7
+
+Toy Brick 80 .1±1.4 76 .4±1.8 68 .4±1.3 78 .3±1.7 73 .8±2.2 66 .9±1.7 82 .7±1.7 79 .2±2.6 70 .8±1.6 81 .7±2.1 77 .6±2.8 70 .1±1.9
+
+Transistor 1 86 .0±2.2 89 .5±1.8 81 .1±2.1 85 .1±2.3 89 .2±1.9 80 .2±1.9 90 .7±0.8 93 .1±0.6 84 .9±0.6 90 .3±0.8 92 .8±0.5 84 .4±0.6
+
+U Block 84 .1±1.2 70 .6±2.3 68 .9±1.8 84 .7±1.3 72 .2±2.4 69 .8±2.0 86 .5±1.0 73 .7±2.7 71 .4±1.3 86 .7±1.0 74 .7±2.9 71 .4±1.2
+
+USB 86 .1±1.2 84 .4±1.2 77 .2±1.2 85 .3±1.3 83 .6±1.2 76 .4±1.3 89 .7±0.8 87 .4±1.2 81 .3±0.9 88 .9±1.0 86 .6±1.3 80 .6±1.1
+
+USB Adaptor 86 .1±0.2 81 .6±0.4 74 .1±0.5 85 .7±0.4 81 .2±0.5 73 .7±0.4 86 .4±0.7 81 .6±1.4 74 .3±0.7 86 .3±0.5 81 .5±1.0 74 .2±0.5
+
+VC Pill 93 .8±0.5 92 .5±0.5 84 .5±0.9 93 .4±0.7 92 .3±0.7 83 .7±1.0 95 .3±0.4 94 .2±0.4 87 .0±0.3 95 .1±0.4 94 .1±0.4 86 .7±0.5
+
+Wooden Beads 88 .6±1.0 87 .9±1.0 78 .5±0.8 86 .9±1.6 86 .5±1.9 77 .3±1.8 91 .6±0.8 91 .4±0.9 82 .9±1.2 90 .8±1.0 90 .8±1.0 82 .1±1.4
+
+Woodstick 89 .4±1.4 81 .5±2.2 73 .3±1.9 89 .8±1.6 82 .2±2.4 74 .0±2.4 90 .5±0.9 82 .8±2.1 74 .5±1.6 90 .9±1.2 83 .6±2.2 75 .3±2.1
+
+Zipper 97 .3±1.1 98 .4±0.7 93 .6±1.7 96 .8±1.2 98 .1±0.7 92 .8±1.8 98 .7±0.2 99 .2±0.1 95 .9±0.2 98 .5±0.2 99 .1±0.1 95 .6±0.3
+
+Mean 85 .1±0.3 82 .0±0.3 76 .3±0.2 84 .5±0.3 81 .7±0.3 75 .8±0.2 88 .7±0.2 85 .5±0.4 79 .5±0.2 88 .3±0.2 85 .2±0.4 79 .1±0.2
+
+13 Table A18. Detailed per-class pixel-level performance of DuoAD (DINOv2) on Real-IAD, comparing AugAll and DuoAD-SCA under 1-shot and 4-shot settings. We report Pixel-level AUROC (P-AUC), Pixel-level PRO (P-PRO), and Pixel-level F1-max (P-F1max). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> P-AUC P-PRO P-F1max P-AUC P-PRO P-F1max P-AUC P-PRO P-F1max P-AUC P-PRO P-F1max
+
+Audiojack 98 .9±0.1 93 .7±0.3 27 .5±1.9 98 .9±0.1 93 .9±0.2 31 .2±1.9 99 .3±0.0 95 .5±0.1 38 .6±1.6 99 .3±0.0 95 .6±0.1 40 .5±1.1
+
+Bottle Cap 99 .8±0.0 98 .8±0.0 40 .9±0.4 99 .8±0.0 98 .8±0.0 41 .3±0.5 99 .8±0.0 98 .9±0.1 40 .0±0.4 99 .8±0.0 99 .0±0.1 40 .1±0.5
+
+Button Battery 98 .8±0.0 93 .7±0.2 53 .9±0.5 98 .5±0.1 92 .9±0.3 53 .0±0.5 99 .1±0.0 94 .8±0.1 54 .3±0.3 98 .9±0.0 94 .4±0.1 53 .0±0.3
+
+End Cap 99 .0±0.1 96 .6±0.2 29 .0±0.7 99 .0±0.1 96 .6±0.2 28 .6±1.0 99 .2±0.0 97 .3±0.1 29 .8±0.6 99 .2±0.0 97 .2±0.1 29 .1±0.6
+
+Eraser 99 .8±0.0 99 .0±0.0 46 .4±0.8 99 .8±0.0 99 .0±0.0 46 .9±0.9 99 .8±0.0 99 .1±0.1 46 .3±0.6 99 .8±0.0 99 .1±0.1 46 .7±0.8
+
+Fire Hood 99 .7±0.0 97 .0±0.1 46 .8±2.9 99 .7±0.0 97 .0±0.1 46 .8±2.4 99 .7±0.0 97 .4±0.1 47 .0±2.1 99 .7±0.0 97 .4±0.1 47 .1±2.2
+
+Mint 98 .3±0.1 89 .5±0.9 31 .6±1.1 98 .3±0.2 89 .6±0.9 30 .9±1.0 98 .8±0.0 90 .9±0.2 32 .6±0.4 98 .8±0.0 91 .0±0.2 32 .2±0.4
+
+Mounts 99 .1±0.1 95 .9±1.5 41 .9±1.1 99 .1±0.1 95 .8±1.6 42 .0±0.7 99 .4±0.0 97 .0±0.2 42 .1±0.5 99 .3±0.0 97 .0±0.2 41 .3±0.4
+
+PCB 98 .8±0.0 94 .0±0.1 48 .4±0.5 98 .8±0.1 94 .0±0.1 48 .4±0.7 99 .2±0.0 95 .4±0.0 51 .9±0.1 99 .2±0.0 95 .5±0.0 52 .0±0.2
+
+Phone Battery 99 .2±0.1 98 .2±0.1 45 .1±0.4 99 .7±0.0 98 .2±0.1 46 .1±0.6 99 .6±0.0 98 .5±0.1 45 .9±0.2 99 .7±0.0 98 .5±0.1 48 .0±0.3
+
+Plastic Nut 99 .7±0.0 98 .8±0.1 42 .4±1.0 99 .7±0.0 98 .8±0.1 43 .1±0.8 99 .8±0.0 99 .0±0.0 42 .8±0.5 99 .8±0.0 99 .0±0.0 43 .3±0.2
+
+Plastic Plug 99 .4±0.0 97 .5±0.2 37 .4±0.9 99 .3±0.0 97 .1±0.2 38 .1±0.6 99 .5±0.0 97 .7±0.1 36 .3±1.3 99 .4±0.1 97 .2±0.2 36 .4±1.4
+
+Porcelain Doll 99 .4±0.0 97 .6±0.1 33 .5±2.8 99 .3±0.0 97 .6±0.1 34 .2±2.2 99 .4±0.0 97 .6±0.2 35 .7±0.9 99 .4±0.1 97 .6±0.2 35 .0±2.2
+
+Regulator 98 .8±0.1 92 .9±0.4 18 .0±1.3 98 .8±0.1 92 .9±0.4 17 .7±1.9 99 .2±0.0 95 .0±0.2 29 .9±4.0 99 .2±0.0 95 .0±0.2 29 .6±4.0 
+
+> Rolled Strip Base
+
+99 .7±0.0 98 .9±0.0 40 .6±0.3 99 .6±0.0 98 .7±0.1 41 .9±1.1 99 .8±0.0 99 .2±0.1 44 .2±1.1 99 .8±0.1 99 .2±0.2 45 .6±1.3
+
+SIM Card Set 99 .8±0.0 98 .4±0.1 55 .7±1.4 99 .8±0.0 98 .3±0.0 55 .8±1.5 99 .8±0.0 98 .5±0.1 56 .1±0.4 99 .8±0.0 98 .5±0.1 56 .4±0.4
+
+Switch 97 .2±0.1 95 .0±0.1 54 .1±0.7 97 .2±0.0 95 .0±0.1 53 .7±0.7 97 .9±0.1 96 .4±0.1 57 .2±0.6 98 .0±0.1 96 .4±0.1 56 .5±0.5
+
+Tape 99 .8±0.0 98 .8±0.1 53 .5±1.1 99 .8±0.0 98 .8±0.1 53 .6±1.4 99 .8±0.0 98 .9±0.1 53 .2±1.0 99 .8±0.0 98 .9±0.1 54 .0±1.2
+
+Terminal Block 99 .6±0.0 98 .9±0.1 51 .5±1.2 99 .6±0.0 98 .9±0.1 51 .8±1.2 99 .7±0.0 99 .2±0.0 52 .0±0.3 99 .7±0.0 99 .2±0.0 52 .3±0.4
+
+Toothbrush 96 .0±0.5 82 .7±2.5 31 .9±2.5 95 .8±0.5 82 .7±2.4 31 .6±2.6 96 .9±0.2 85 .7±1.3 36 .8±1.6 96 .7±0.2 85 .5±1.2 36 .1±1.4
+
+Toy 93 .1±0.4 86 .8±0.8 19 .0±8.4 92 .6±0.4 86 .1±0.9 18 .9±8.5 94 .0±0.2 88 .8±0.3 31 .1±7.2 93 .7±0.2 88 .5±0.3 31 .3±7.0
+
+Toy Brick 98 .2±0.1 90 .5±0.7 37 .9±1.3 98 .0±0.2 89 .8±0.9 37 .1±1.8 98 .5±0.2 91 .2±1.1 39 .1±0.7 98 .4±0.2 90 .9±1.1 38 .9±1.0
+
+Transistor 1 99 .0±0.1 95 .8±0.6 45 .1±1.2 99 .0±0.1 95 .7±0.6 46 .3±1.6 99 .4±0.0 97 .3±0.1 47 .0±0.6 99 .4±0.0 97 .2±0.1 48 .0±0.3
+
+U Block 99 .6±0.0 97 .9±0.2 36 .7±2.9 99 .6±0.0 97 .9±0.2 39 .1±3.2 99 .7±0.0 98 .3±0.1 37 .6±2.9 99 .7±0.0 98 .3±0.1 39 .1±3.1
+
+USB 98 .9±0.0 95 .4±0.2 37 .2±0.8 98 .9±0.0 95 .3±0.2 36 .7±0.8 99 .3±0.0 96 .9±0.1 40 .5±0.8 99 .2±0.0 96 .8±0.1 39 .8±0.8
+
+USB Adaptor 99 .6±0.0 97 .5±0.2 37 .2±0.3 99 .6±0.0 97 .5±0.2 37 .4±0.3 99 .7±0.0 97 .9±0.1 36 .3±0.5 99 .7±0.0 97 .9±0.1 36 .7±0.5
+
+VC Pill 99 .4±0.0 96 .2±0.3 60 .3±0.6 99 .3±0.1 96 .0±0.4 60 .2±0.8 99 .5±0.0 96 .6±0.1 63 .3±0.2 99 .5±0.0 96 .5±0.1 63 .2±0.2
+
+Wooden Beads 99 .5±0.0 96 .2±1.1 50 .6±0.5 99 .5±0.0 96 .1±1.1 50 .3±0.8 99 .6±0.0 96 .5±0.6 52 .3±0.9 99 .6±0.0 96 .4±0.6 51 .9±0.5
+
+Woodstick 99 .6±0.1 96 .4±0.5 52 .7±1.1 99 .6±0.1 96 .4±0.5 53 .1±0.9 99 .6±0.0 96 .9±0.1 53 .0±1.1 99 .6±0.0 97 .0±0.1 53 .3±0.9
+
+Zipper 98 .7±0.1 97 .4±0.2 46 .0±0.8 98 .7±0.1 97 .2±0.2 45 .1±0.5 99 .0±0.0 97 .8±0.0 48 .7±0.4 98 .9±0.0 97 .7±0.1 48 .0±0.3
+
+Mean 98 .9±0.0 95 .5±0.1 41 .8±0.6 98 .8±0.0 95 .4±0.1 42 .0±0.6 99 .1±0.0 96 .3±0.1 44 .1±0.4 99 .1±0.0 96 .3±0.1 44 .2±0.4
+
+14 Table A19. Detailed per-class image-level performance of DuoAD (DINOv3) on Real-IAD, comparing AugAll and DuoAD-SCA under 1-shot and 4-shot settings. We report Image-level AUROC (I-AUC), Image-level AUPR (I-AUPR), and Image-level F1-max (I-F1max). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> I-AUC I-AUPR I-F1max I-AUC I-AUPR I-F1max I-AUC I-AUPR I-F1max I-AUC I-AUPR I-F1max
+
+Audiojack 73 .4±3.0 63 .4±3.0 58 .3±2.5 74 .1±2.8 65 .8±2.7 58 .8±2.3 81 .1±1.5 72 .2±2.3 65 .6±2.2 81 .4±1.8 73 .3±2.0 65 .6±2.7
+
+Bottle Cap 91 .5±0.9 89 .9±1.2 81 .5±1.2 92 .2±0.8 91 .0±0.9 82 .8±1.4 93 .9±0.8 93 .0±1.1 85 .3±1.1 94 .3±0.7 93 .4±0.9 86 .1±1.2
+
+Button Battery 77 .4±1.4 82 .7±0.9 76 .3±0.8 67 .5±1.3 72 .4±1.7 75 .1±0.3 84 .1±1.3 87 .3±1.1 79 .7±0.6 79 .4±1.7 82 .1±2.3 78 .2±0.6
+
+End Cap 79 .3±1.2 79 .7±0.8 78 .6±0.8 78 .7±1.2 78 .6±0.8 78 .4±0.8 82 .0±0.6 81 .3±0.6 80 .3±0.6 81 .7±0.6 80 .6±0.5 80 .3±0.6
+
+Eraser 91 .0±0.5 88 .3±0.6 78 .7±0.8 91 .0±0.6 88 .4±0.5 78 .7±0.7 93 .0±0.5 90 .4±0.6 82 .2±0.7 93 .1±0.5 90 .6±0.6 82 .1±1.1
+
+Fire Hood 86 .5±0.7 78 .0±1.5 72 .6±1.0 86 .6±0.7 78 .3±1.3 72 .6±1.1 89 .1±0.4 81 .4±0.8 76 .5±0.7 89 .2±0.4 81 .7±0.8 76 .4±0.6
+
+Mint 73 .3±1.9 75 .9±2.2 66 .3±1.6 72 .3±1.8 75 .0±2.2 65 .6±1.3 77 .3±0.4 79 .8±0.4 69 .8±0.4 76 .7±0.3 79 .2±0.5 69 .3±0.5
+
+Mounts 84 .6±0.7 72 .3±0.5 71 .6±0.7 84 .4±0.5 72 .6±0.4 71 .2±0.6 86 .0±0.6 72 .8±0.9 73 .7±0.5 85 .7±0.5 72 .8±0.7 73 .2±0.3
+
+PCB 83 .5±1.4 89 .9±0.8 80 .5±0.8 81 .5±1.6 88 .7±1.1 79 .1±0.7 87 .7±1.0 92 .6±0.6 83 .5±0.8 87 .4±1.0 92 .4±0.6 83 .2±0.9
+
+Phone Battery 91 .2±0.9 88 .9±0.8 80 .4±1.4 91 .1±0.8 88 .1±0.8 81 .1±1.4 93 .5±0.6 91 .0±1.1 84 .9±0.8 93 .3±0.7 90 .2±1.5 84 .8±1.0
+
+Plastic Nut 86 .1±0.8 77 .8±1.7 70 .4±0.6 86 .5±0.7 78 .7±1.4 70 .7±0.5 87 .6±0.7 79 .3±1.1 72 .4±1.2 87 .9±0.5 79 .9±0.7 72 .4±0.9
+
+Plastic Plug 85 .7±0.7 81 .8±0.8 72 .2±1.0 85 .2±0.5 80 .3±0.7 71 .6±1.0 88 .4±0.2 84 .4±0.3 75 .1±0.7 87 .8±0.5 82 .6±1.1 74 .4±0.8
+
+Porcelain Doll 89 .3±0.2 82 .6±0.6 74 .1±0.6 89 .0±0.2 82 .1±0.6 73 .7±0.5 89 .6±0.9 83 .0±1.6 74 .6±1.3 89 .0±1.0 82 .0±1.9 73 .6±1.6
+
+Regulator 66 .6±2.2 42 .1±1.3 50 .3±2.1 66 .8±2.1 41 .9±2.5 50 .6±1.7 72 .0±2.5 46 .1±2.0 54 .4±2.1 71 .2±1.8 45 .3±2.2 53 .5±1.0 
+
+> Rolled Strip Base
+
+77 .3±0.6 86 .6±0.8 85 .1±1.3 71 .4±0.4 81 .6±0.9 85 .1±1.3 88 .9±6.7 92 .4±4.6 91 .0±2.1 87 .8±8.5 91 .0±6.7 90 .9±2.0
+
+SIM Card Set 96 .2±0.4 96 .8±0.3 91 .0±0.7 95 .8±0.5 96 .4±0.4 90 .4±0.7 96 .7±0.1 97 .1±0.1 91 .9±0.3 96 .5±0.2 96 .9±0.1 91 .6±0.4
+
+Switch 89 .1±1.2 91 .6±1.0 81 .8±1.4 88 .8±1.1 91 .4±0.9 81 .8±1.4 93 .1±0.4 94 .6±0.3 86 .5±0.6 92 .9±0.4 94 .4±0.3 86 .3±0.6
+
+Tape 94 .7±0.8 92 .7±1.1 83 .5±1.5 94 .4±0.8 92 .4±1.0 82 .9±1.3 95 .4±1.0 93 .5±1.4 84 .5±2.5 95 .2±1.1 93 .2±1.6 84 .1±2.4
+
+Terminal Block 92 .0±2.2 93 .3±2.7 85 .5±1.9 91 .3±2.2 92 .9±2.3 84 .1±2.2 94 .6±0.3 95 .7±0.3 87 .4±0.6 94 .0±0.3 95 .2±0.3 86 .3±0.6
+
+Toothbrush 79 .6±3.3 82 .1±3.3 76 .2±1.7 79 .1±3.4 82 .2±2.9 75 .8±2.1 84 .9±0.8 87 .1±0.6 79 .5±0.6 84 .1±1.1 86 .4±0.8 78 .7±0.7
+
+Toy 62 .8±5.6 66 .2±5.3 74 .8±0.4 58 .7±4.4 64 .1±4.4 74 .3±0.2 78 .7±2.7 82 .1±4.5 78 .2±1.0 73 .9±1.8 75 .7±4.0 76 .7±0.6
+
+Toy Brick 77 .5±1.7 72 .1±2.1 66 .9±1.7 76 .6±0.8 70 .0±0.7 66 .3±0.9 80 .5±1.7 75 .7±2.6 69 .3±1.6 79 .6±1.7 73 .8±2.4 68 .4±1.5
+
+Transistor 1 86 .7±4.1 88 .7±4.4 83 .5±1.4 86 .5±3.6 88 .8±3.6 83 .1±1.3 92 .8±0.5 94 .3±0.5 87 .7±0.3 92 .6±0.6 94 .2±0.6 87 .6±0.4
+
+U Block 83 .0±1.2 66 .0±1.5 69 .0±2.1 83 .2±1.0 67 .3±1.4 68 .8±1.6 85 .7±0.5 70 .1±1.7 72 .1±0.6 85 .8±0.5 71 .2±1.6 72 .0±0.6
+
+USB 86 .6±0.7 86 .5±1.0 77 .9±0.6 84 .3±1.1 84 .3±1.4 74 .9±1.2 90 .1±0.6 89 .3±0.6 81 .4±0.5 88 .9±0.7 88 .0±0.8 80 .0±0.8
+
+USB Adaptor 83 .3±1.7 81 .3±1.8 70 .9±1.8 82 .2±1.7 80 .3±1.9 70 .0±1.6 87 .1±0.7 84 .6±0.7 75 .6±1.1 86 .7±0.7 84 .1±0.7 75 .2±1.0
+
+VC Pill 90 .5±0.7 89 .1±0.5 79 .2±0.7 89 .9±0.7 88 .5±0.5 78 .2±0.6 93 .1±0.5 92 .0±0.5 82 .8±0.6 92 .7±0.4 91 .6±0.4 82 .2±0.3
+
+Wooden Beads 87 .7±0.7 86 .5±0.9 77 .3±0.7 87 .0±1.0 86 .2±1.1 76 .6±1.3 90 .5±0.7 89 .6±0.7 80 .6±0.9 89 .7±0.8 89 .1±0.9 79 .7±0.8
+
+Woodstick 85 .1±1.7 72 .9±2.0 66 .6±2.3 85 .2±1.8 73 .2±2.4 66 .7±2.1 87 .4±0.4 75 .7±1.2 69 .6±0.4 87 .5±0.6 76 .0±1.4 69 .7±0.7
+
+Zipper 96 .1±1.4 97 .7±0.9 91 .8±1.6 96 .3±1.5 97 .8±0.9 92 .1±1.6 98 .0±0.1 98 .8±0.1 94 .6±0.1 98 .1±0.2 98 .8±0.1 94 .8±0.1
+
+Mean 84 .3±0.4 81 .5±0.3 75 .8±0.2 83 .3±0.3 80 .6±0.3 75 .4±0.2 88 .1±0.3 84 .9±0.2 79 .0±0.2 87 .5±0.3 84 .2±0.2 78 .6±0.2
+
+15 Table A20. Detailed per-class pixel-level performance of DuoAD (DINOv3) on Real-IAD, comparing AugAll and DuoAD-SCA under 1-shot and 4-shot settings. We report Pixel-level AUROC (P-AUC), Pixel-level PRO (P-PRO), and Pixel-level F1-max (P-F1max). Results are averaged over five random seeds and reported as mean ± standard deviation. 
+
+Class 1-Shot 4-Shot DuoAD DuoAD SCA DuoAD DuoAD SCA            
+
+> P-AUC P-PRO P-F1max P-AUC P-PRO P-F1max P-AUC P-PRO P-F1max P-AUC P-PRO P-F1max
+
+Audiojack 98 .3±0.1 89 .5±0.3 35 .7±1.2 98 .4±0.1 89 .6±0.3 39 .1±1.1 98 .8±0.0 92 .2±0.2 45 .9±1.7 98 .9±0.0 92 .2±0.2 48 .0±1.0
+
+Bottle Cap 99 .8±0.0 98 .5±0.1 43 .5±0.4 99 .8±0.0 98 .5±0.1 43 .6±0.5 99 .8±0.0 98 .7±0.1 43 .6±0.2 99 .8±0.0 98 .7±0.1 43 .8±0.2
+
+Button Battery 98 .2±0.1 90 .6±0.2 49 .7±0.6 97 .8±0.1 89 .1±0.2 35 .6±2.1 98 .7±0.1 92 .7±0.2 53 .4±0.8 98 .5±0.1 92 .1±0.3 47 .2±2.4
+
+End Cap 98 .6±0.1 95 .7±0.3 32 .6±0.3 98 .6±0.1 95 .7±0.3 30 .7±0.6 98 .9±0.0 96 .8±0.0 33 .3±0.2 98 .9±0.0 96 .7±0.0 31 .6±0.2
+
+Eraser 99 .8±0.0 98 .8±0.0 52 .8±0.3 99 .8±0.0 98 .8±0.0 52 .8±0.3 99 .8±0.0 99 .0±0.1 52 .9±0.5 99 .8±0.0 99 .0±0.1 53 .0±0.5
+
+Fire Hood 99 .5±0.0 96 .0±0.2 48 .3±1.3 99 .5±0.0 96 .0±0.2 48 .3±1.4 99 .7±0.0 96 .8±0.1 49 .8±0.5 99 .7±0.0 96 .8±0.1 49 .8±0.5
+
+Mint 97 .4±0.1 89 .5±0.4 32 .5±1.1 97 .4±0.1 89 .4±0.5 31 .7±1.0 98 .0±0.1 91 .0±0.1 34 .1±0.4 98 .0±0.1 91 .0±0.1 33 .4±0.3
+
+Mounts 98 .8±0.1 96 .4±0.7 45 .0±0.8 98 .8±0.1 96 .3±0.7 44 .8±0.2 99 .1±0.0 97 .3±0.2 45 .3±0.2 99 .1±0.0 97 .3±0.2 44 .6±0.3
+
+PCB 99 .1±0.0 93 .7±0.2 58 .4±0.8 99 .0±0.0 93 .5±0.2 57 .9±1.0 99 .5±0.0 95 .7±0.1 61 .4±0.1 99 .5±0.0 95 .7±0.1 61 .1±0.1
+
+Phone Battery 99 .7±0.0 98 .5±0.1 53 .5±0.2 99 .8±0.0 98 .5±0.1 52 .9±0.2 99 .8±0.0 98 .8±0.0 54 .1±0.3 99 .8±0.0 98 .8±0.1 53 .8±0.6
+
+Plastic Nut 99 .7±0.0 98 .2±0.1 46 .9±0.3 99 .7±0.0 98 .2±0.1 47 .7±0.3 99 .8±0.0 98 .8±0.1 46 .9±0.6 99 .8±0.0 98 .8±0.1 47 .7±0.4
+
+Plastic Plug 99 .4±0.0 97 .7±0.1 41 .1±0.4 99 .4±0.0 97 .6±0.1 41 .1±0.4 99 .5±0.0 98 .2±0.1 40 .2±0.4 99 .5±0.0 98 .1±0.1 39 .9±0.8
+
+Porcelain Doll 99 .6±0.0 98 .5±0.0 44 .5±0.7 99 .6±0.0 98 .4±0.0 44 .3±0.9 99 .6±0.0 98 .6±0.0 45 .3±0.9 99 .6±0.0 98 .5±0.0 44 .7±1.0
+
+Regulator 97 .8±0.1 88 .5±0.4 17 .8±1.0 97 .7±0.1 88 .3±0.4 17 .0±1.2 98 .5±0.1 91 .3±0.2 27 .1±4.0 98 .5±0.0 91 .0±0.2 25 .9±3.2 
+
+> Rolled Strip Base
+
+99 .5±0.0 98 .5±0.1 42 .0±1.1 99 .4±0.1 98 .2±0.2 32 .5±3.0 99 .7±0.1 99 .2±0.2 49 .9±5.7 99 .7±0.1 99 .1±0.4 44 .9±12 .4
+
+SIM Card Set 99 .8±0.0 98 .4±0.1 63 .3±1.0 99 .8±0.0 98 .3±0.1 62 .9±1.0 99 .8±0.0 98 .6±0.0 63 .7±0.5 99 .8±0.0 98 .5±0.0 63 .3±0.5
+
+Switch 96 .8±0.0 93 .6±0.1 58 .6±0.3 96 .9±0.0 93 .7±0.1 58 .5±0.3 97 .7±0.1 95 .6±0.2 60 .4±0.1 97 .8±0.1 95 .7±0.2 60 .2±0.1
+
+Tape 99 .7±0.0 98 .3±0.2 59 .1±0.2 99 .7±0.0 98 .3±0.2 58 .9±0.2 99 .7±0.0 98 .4±0.1 59 .1±0.6 99 .7±0.0 98 .4±0.1 59 .0±0.6
+
+Terminal Block 99 .6±0.0 98 .6±0.1 55 .9±0.9 99 .5±0.0 98 .6±0.1 56 .1±0.4 99 .7±0.0 99 .1±0.0 56 .1±0.2 99 .7±0.0 99 .0±0.0 56 .2±0.1
+
+Toothbrush 96 .4±0.4 82 .6±2.2 37 .1±3.0 96 .2±0.4 82 .6±2.2 35 .9±3.0 97 .2±0.2 85 .7±1.2 41 .8±0.6 97 .1±0.2 85 .6±1.1 40 .5±0.7
+
+Toy 89 .8±0.3 83 .3±0.7 16 .9±6.8 89 .5±0.3 82 .5±0.8 14 .7±5.9 90 .7±0.2 85 .6±0.3 32 .1±6.9 90 .5±0.2 85 .2±0.4 24 .1±3.4
+
+Toy Brick 97 .9±0.1 91 .7±0.4 42 .2±1.0 97 .8±0.1 91 .4±0.4 40 .2±0.6 98 .1±0.1 92 .4±0.5 44 .7±1.4 98 .1±0.1 92 .2±0.5 43 .2±1.8
+
+Transistor 1 98 .7±0.2 93 .9±0.7 44 .9±2.6 98 .7±0.2 94 .0±0.7 45 .5±2.9 99 .2±0.0 96 .0±0.1 49 .8±1.2 99 .2±0.0 96 .1±0.1 50 .1±1.0
+
+U Block 99 .6±0.0 97 .5±0.1 42 .8±1.3 99 .6±0.0 97 .5±0.1 45 .0±1.5 99 .7±0.0 98 .0±0.1 45 .4±2.9 99 .7±0.0 98 .0±0.1 47 .3±2.7
+
+USB 98 .6±0.0 94 .7±0.2 44 .8±1.5 98 .6±0.1 94 .4±0.2 44 .7±1.5 99 .1±0.0 96 .6±0.1 47 .2±0.6 99 .1±0.1 96 .4±0.1 46 .7±0.6
+
+USB Adaptor 99 .5±0.0 96 .5±0.2 42 .2±0.3 99 .5±0.0 96 .4±0.2 41 .6±0.3 99 .7±0.0 97 .4±0.1 41 .7±0.4 99 .7±0.0 97 .4±0.1 41 .3±0.4
+
+VC Pill 99 .1±0.1 94 .4±0.3 62 .5±0.4 99 .2±0.1 94 .3±0.4 62 .1±0.5 99 .3±0.0 95 .0±0.2 66 .5±0.5 99 .3±0.0 94 .9±0.2 66 .2±0.5
+
+Wooden Beads 99 .3±0.0 95 .6±0.5 54 .4±0.5 99 .3±0.0 95 .5±0.5 54 .1±0.6 99 .4±0.0 96 .0±0.2 56 .2±0.2 99 .4±0.0 96 .0±0.2 55 .8±0.3
+
+Woodstick 99 .2±0.1 94 .3±0.8 59 .0±1.0 99 .2±0.1 94 .2±0.8 58 .9±0.9 99 .4±0.0 95 .0±0.1 59 .3±0.7 99 .4±0.0 95 .0±0.1 59 .4±0.7
+
+Zipper 98 .6±0.1 96 .9±0.2 48 .7±1.0 98 .6±0.1 96 .7±0.2 47 .3±0.8 98 .9±0.0 97 .4±0.1 51 .3±0.9 98 .9±0.0 97 .3±0.2 50 .3±1.1
+
+Mean 98 .6±0.0 94 .6±0.1 45 .9±0.4 98 .5±0.0 94 .5±0.1 44 .9±0.5 98 .9±0.0 95 .7±0.1 48 .6±0.5 98 .9±0.0 95 .7±0.1 47 .8±0.5
+
+16 bottle cable capsule carpet grid leather 
+
+> Input
+> Ground Truth
+> DuoAD
+> Attention Logits
+
+metal nut pill tile toothbrush transistor zipper 
+
+> Input
+> Ground Truth
+> DuoAD
+> Attention Logits
+
+Figure A5. Anomaly detection results on MVTec dataset with DINOv3. Top to bottom rows correspond to the input image, Ground Truth anomaly mask, DuoAD anomaly map, and reweighting map. 
+
+17 candle cashew chewinggum fryum macaroni1 macaroni2 
+
+> Input
+> Ground Truth
+> DuoAD
+> Attention Logits
+
+pcb1 pcb2 pcb3 pcb4 capsules pipe fryum 
+
+> Input
+> Ground Truth
+> DuoAD
+> Attention Logits
+
+Figure A6. Anomaly detection results on VisA dataset with DINOv3. Top to bottom rows correspond to the input image, Ground Truth anomaly mask, DuoAD anomaly map, and reweighting map. 
+
+18 bottle screw hazelnut carpet grid leather 
+
+Input 
+
+Ground Truth 
+
+DuoAD DINOv3 
+
+Attention Logits DINOv3 
+
+DuoAD DINOv2 
+
+Attention Logits DINOv2 
+
+DuoAD MetaCLIP2 
+
+Attention Logits MetaCLIP2 
+
+Figure A7. Anomaly detection results on MVTec dataset with DINOv2, DINOv3, and MetaCLIP2. 
+
+19

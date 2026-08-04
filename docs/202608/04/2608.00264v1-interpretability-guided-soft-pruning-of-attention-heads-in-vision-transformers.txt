@@ -1,0 +1,2283 @@
+Title: Interpretability-Guided Soft Pruning of Attention Heads in Vision Transformers
+
+URL Source: https://arxiv.org/pdf/2608.00264v1
+
+Published Time: Tue, 04 Aug 2026 00:13:41 GMT
+
+Number of Pages: 31
+
+Markdown Content:
+# INTERPRETABILITY -G UIDED SOFT PRUNING OF ATTENTION 
+
+# HEADS IN VISION TRANSFORMERS 
+
+Kamil Ksi ˛ a˙ zek 1, Piotr Suszy ´ nski ∗,1, Michał Jan Włodarczyk ∗,1, Jacek Tabor 1,2, Przemysław Biecek 1,31 Centre for Credible Artificial Intelligence Warsaw University of Technology Warsaw, Poland  
+
+> 2
+
+Faculty of Mathematics and Computer Science Jagiellonian University Krakow, Poland  
+
+> 3
+
+University of Warsaw Warsaw, Poland 
+
+kamil.ksiazek@pw.edu.pl piotr.suszynski.dokt@pw.edu.pl michal.wlodarczyk@pw.edu.pl jacek.tabor@uj.edu.pl przemyslaw.biecek@pw.edu.pl 
+
+ABSTRACT 
+
+Vision foundation models, such as DINOv2, learn highly expressive representations but rely on massive, opaque architectures that demand substantial computational power and memory. To provide an interpretable-guided and efficient solution to this issue, we first propose a spectral analysis and new visualization technique for individual attention heads based on the Laplacian eigenvectors of their attention maps. Building upon recent observations regarding the block structure of Vision Transformers, we perform semantic clustering of attention heads and identify functional redun-dancies. Leveraging these insights, we introduce SAPER (Soft Attention PrunER), an end-to-end differentiable pruning framework based on the LapSum Soft Top-K approach. Extensive experiments on ImageNet-1K demonstrate that SAPER achieves a highly favorable accuracy-efficiency trade-off, outperforming the competitive RAPTOR baseline in FLOPs reduction while preserving strong classification performance. 
+
+Keywords Interpretable AI · Attention heads · Soft pruning · Semantic clustering · Vision transformers 
+
+1 Introduction 
+
+Vision transformers (ViTs) [14], and in particular self-supervised foundation models such as DINOv2 [27], have become the backbone of a wide range of downstream applications, from image classification to segmentation and dense prediction. Their success, however, comes at a price: these models are heavily over-parameterized, and the multi-head self-attention mechanism [36] contributes to both a computational bottleneck and an increased opaqueness. Each layer hosts a set of attention heads that jointly transform the representation, yet it remains unclear what specific role each head plays, whether functional redundancies exist, and how many heads are strictly necessary to preserve full-model performance. As foundation models migrate from data centers to edge devices, this question is a highly practical one, every retained head translates into latency, memory, and energy consumption, making structured, head-level compression a natural instrument of the Green AI agenda [29, 33]. 
+
+> *
+
+These authors contributed equally to this work arXiv:2608.00264v1 [cs.CV] 31 Jul 2026 SAPER : Soft Attention PrunER Importantly, the redundancy we target is not a defect of the architecture but an emergent consequence of how foundation models are trained. Self-supervised pre-training on hundreds of millions of images [27], as well as techniques such as dropout, rewards the network for maintaining many parallel computational pathways: features useful for one downstream task may be irrelevant for another, and it cannot be determined a priori which specific features will be needed. The result is a general-purpose representation in which, for any specific task, a substantial fraction of attention heads is functionally duplicated or inactive. From this perspective, pruning is a specialization of a general model rather than a repair of a flawed one. Moreover, determining the optimal network substructure is easier after finishing the training, as the lottery ticket hypothesis suggests [16]. While model redundancy is a problem, blind reduction of the model, taking into account only the model’s performance and size, is not always the best solution. Pruning should instead be grounded in an understanding of what the removed components actually compute. This view aligns with a broader shift in the community: the call for a rigorous science of model interpretability [13], the agenda of mechanistic interpretability, which seeks to reverse-engineer the roles of individual model components such as attention heads [30], and, most recently, the program of Model Science [5], which postulates studying trained models as objects of systematic inquiry. Our work instantiates this program for the attention mechanism of vision foundation models: we first explore the functional structure of individual attention heads, and only then refine the model by removing the heads, which this analysis confirms to be redundant. The outline of SAPER is presented in Figure 1. We approach the explainability of attention heads from a graph-theoretic perspective. An attention map can be interpreted as a weighted graph over tokens, and recent work has analyzed such graphs as discrete-time Markov chains [15] or leveraged the spectrum of their Laplacians as a diagnostic signal [6, 38]. Building on this view, we propose Laplace maps: an RGB visualization of individual attention heads obtained from the selected eigenvectors of the normalized Laplacian of the attention graph, with the Fiedler vector [23, 32] capturing the dominant part of each head’s attention pattern. This spectral lens reveals a specialization: early-layer “convolutional” heads respond to global patterns, whereas deeper heads focus on object-level structures, echoing prior observations on the representational structure of ViTs [7, 28]. Our contributions are as follows: • We propose Laplace maps, a novel spectral visualization of individual attention heads based on the attention-graph Laplacian. • Through spectral clustering of attention heads, we identify a shared representation across the network. This generalizes the recent discovery 1 of contiguous representational phases in ViTs by assigning individual heads, rather than whole layers, to functional clusters. • We introduce SAPER 2 (Soft Attention PrunER), a differentiable Top-K head selection framework, which achieves competitive classification performance with a large reduction of FLOPs. 
+
+2 Related works 
+
+2.1 Sub-architecture selection 
+
+Many existing works focus on removing various network parameters, including attention heads, tokens and MLP weights, isolating a high-performing ViT sub-architecture. The proposed methods are not limited to individual parameter scoring and sub-network extraction, but also perform fine-tuning or distill knowledge afterwards. In ViT-Slim [8], optimal sub-architectures are discovered by applying a global L1-norm sparsity penalty driven by a task-specific classification loss. However, applying global, continuous sparsity penalties inherently penalizes the activation magnitude of all attention heads uniformly. In contrast, SAPER utilizes Top-K selection from all heads and temperature annealing, having more freedom in a sub-architecture choice. SaViT [10] performs collaborative pruning of all network components, utilizing Taylor expansions to estimate the joint importance of interconnected network elements. Because it requires memory-intensive operations, SaViT relies on a stochastic evolutionary search. Conversely, SAPER introduces a highly efficient, single-pass differentiable search and gently discovers the optimal sub-architecture during the soft training phase. X-Pruner [40] proposes explainability-aware differentiable masks driven by the gradients of target class identification. The most important units (attention weights, MLP weights and 
+
+> 1Presented in RAPTOR [18].
+> 2The name of our method refers to the game of Minesweeper, because pruning a vision transformer poses a similar puzzle to the one the player faces: the importance of an attention head is not directly observable, but each head exposes indirect evidence, its spectral signature, which progressively reveals the influence of a given head on the model, so that redundant heads are confidently cleared while the “mines”, heads whose removal would destroy the representation, remain untouched.
+
+2SAPER : Soft Attention PrunER 0 0.0 0.0 0.0 0.0 0.0 0.0                                                                   
+
+> 10.0 0.0 0.0 0.0 0.0 0.7
+> 20.0 0.0 0.0 0.0 0.0 0.0
+> 30.0 0.0 0.0 0.0 0.0 0.0
+> 40.0 0.0 0.6 0.0 0.0 0.0
+> 50.0 0.0 0.0 0.0 0.0 0.0
+> 60.4 0.3 0.3 0.3 0.0 0.4
+> 70.4 0.4 0.4 0.4 0.4 0.4
+> 80.5 0.4 1.0 1.0 0.5 0.6
+> 90.6 0.5 0.6 0.5 0.6 0.0
+> 10 1.0 1.0 1.0 1.0 1.0 1.0
+> 11 1.0 1.0 1.0 1.0 0.7 0.7
+
+HEAD SIMILARITY 
+
+ANALYSIS 
+
+> DIFFERENTIABLE
+> REMOVAL OF
+> REDUNDANT HEADS
+> SOFT TOP-K HEAD SELECTION
+> Cluster 0
+> Cluster 1
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> 9
+> 10
+> 11
+> Head
+> Layer
+
+VISUALIZATION OF 
+
+INDIVIDUAL 
+
+ATTENTION HEADS 
+
+> SAPER: SOFT ATTENTION PRUNER FOR VISION TRANSFORMERS
+> HARD FINE-TUNING/ KNOWLEDGE
+> DISTILLATION OF TOP-K HEADS
+> Head
+
+Figure 1: The pipeline of SAPER . Green borders around a subset of heads correspond to Top-K heads selected with LapSum and retained for Hard Top-K fine-tuning/distillation. others) influencing target class identification are preserved while the remaining ones are pruned, according to layer-wise pruning rates. Visual explanation of masks is derived through the LRP-based method [1, 4]. Sequence reduction methods such as ToSA [17] dynamically merge redundant patches. In ToSA, additional blocks are inserted between attention and MLP across encoder layers. Visual and spatial tokens are partitioned into two sets, and the most similar pairs are merged according to the cosine similarity. HEART-ViT [35] simultaneously prunes both tokens and attention heads, evaluating parameter importance through second-order Taylor loss sensitivity. UP-ViT [39] also prunes both channels in attention heads and MLPs, and then iteratively removes blocks. [21] focuses on token pruning, calculating entropy-guided head importance. Also, Adaptive MLP Pruning [31] focuses on the reduction of MLP hidden neurons in ViTs guided by the information entropy criterion. AdaViT [25] does not prepare a static architecture but performs input-conditional computation, dynamically dropping patches, attention heads and transformer blocks. AMAP [20] removes channels from various attention heads in equal proportions. D2-VPR [41] focuses on knowledge distillation for a specific geotagging use case. 
+
+2.2 Attention head pruning 
+
+Another branch of methods focuses on attention heads. However, older methods were evaluated only on transformers for language tasks. [22] proposes differentiable subset pruning, defining a head importance score with the Gumbel-softmax-top-K trick, relaxing the softmax for consecutive attention heads. [26] performs ablation of individual attention heads and iterative pruning, while [37] identifies different roles of attention heads, evaluates their importances with LRP and utilizes stochastic gates for head pruning. 
+
+2.3 Block structure of ViTs 
+
+Some recent approaches consider routing pathways and block structure in ViTs. The method called RAPTOR [18] attempts to compress foundation models by unrolling recurrent blocks, hypothesizing that depth in vision transformers corresponds to functional phase reuse rather than sequential unique transformations. The authors formulate a hypothesis that, due to the block-recurrent structure, original blocks may be replaced by fewer new blocks applied recurrently. The 3SAPER : Soft Attention PrunER partitioning places are identified with the max-cut algorithm on the cosine similarities between layers. Our spectral meta-clustering of attention activations in SAPER empirically proves the existence of these representational phases indicated by RAPTOR, provides deeper insight and is the starting point for further analysis. We propose a different and more flexible approach to pruning than RAPTOR, analyze the role of individual attention heads and demonstrate that functionally analogous heads are present in different depths of the network. 
+
+2.4 Interpretability of attention heads in ViTs 
+
+A parallel line of research seeks not to remove attention heads but to understand what they compute. Self-supervised ViTs are known to develop object-centric attention, as first shown by DINO [7], and different heads specialise into distinct functional roles that emerge during training rather than being imposed by the architecture [28, 37]. A large body of attribution methods explains ViT predictions by propagating attention across layers, from Attention Rollout and Attention Flow [2] to relevance-propagation approaches based on Deep Taylor Decomposition [9] and attention-aware layer-wise relevance propagation designed specifically for transformer attention layers [3]. These methods are predominantly per-prediction and label-dependent; in contrast, SAPER Laplace maps characterize the intrinsic structure of a head’s attention graph independently of any downstream label, yielding a signature that also serves as a pruning criterion. Various methods treat the attention map as a graph and analyze it spectrally. Zero-TPrune [38] leverages the attention graph, including a stationary-distribution importance derived from its Markov interpretation, to prune tokens without training, while [15] formalize the attention matrix as a discrete-time Markov chain whose metastable states expose token importance and semantic grouping; spectral features of attention maps have likewise been used as diagnostic signals elsewhere, e.g. for hallucination detection [6]. SAPER inherits this graph-theoretic view but turns it toward head-level interpretability and compression: we use the normalized-Laplacian spectrum of each head, mapping the Fiedler vector and the next two eigenvectors to RGB, both to visualize a head’s partitioning behavior and to identify functionally redundant heads for differentiable selection. 
+
+3 Methods 
+
+3.1 Semantic clustering 
+
+With semantic clustering, we want to not only verify the existence of phase structure in vision transformers, but also identify structurally similar heads, sometimes located in different network depths. The limitation of RAPTOR [18] is that consecutive blocks have to be contiguous, while in our approach, the assignment of each head is dependent only on the representation that it produces. Therefore, we can identify a more subtle model topology than RAPTOR, and we analyze a more general case. We conduct our analysis on N images sampled from a given dataset. During the forward pass through the network L
+
+layers, we extract the pre-softmax attention logit matrix for each attention head h ∈ { 1, ..., H } and image i ∈ { 1, ..., N }.Let this matrix be denoted as Ahi ∈ RD×D, where D represents the total sequence length (i.e. the number of query and key tokens). In our experimental setup utilizing DINOv2 with ViT-S, the total number of heads across the network is 
+
+H = 72 (12 layers × 6 heads), and we sample N = 50 , 000 images from the ImageNet-1K validation set. To analyze the distribution of global contextual information across local spatial features, we isolate the attention connections originating from the query CLS token (assigned to index 0) to the key spatial patch tokens (indices 1 through D − 1). We define the resulting spatial attention probability vector for head h and image i as phi ∈ RD−1.To properly reconstruct the representational flow, softmax normalization must be computed over the entire sequence, including the CLS token self-attention, before discarding the corresponding dimension. Thus, the j–th element of phi is derived as 
+
+phi [j] = exp( Ahi [0 , j ]) 
+
+PD−1 
+
+> k=0
+
+exp( Ahi [0 , k ]) , (1) where Ahi [0 , j ] denotes the unnormalized logit between the CLS token and the j–th key token. Next, we extract the maximum attention value (the most expressive patch) across the spatial patches for each head, yielding a feature matrix of shape N × 72 . We then compute the Pearson correlation coefficient between all pairs of heads, resulting in a H × H similarity matrix S. Finally, we apply spectral clustering to S to partition the heads into K
+
+distinct clusters. Mathematically, spectral clustering corresponds to the normalized cut problem [23], which minimizes the inter-cluster edge weights while penalizing unbalanced cluster sizes. From a probabilistic perspective, this process can also be interpreted as clustering the states of a Markov chain [24]. 4SAPER : Soft Attention PrunER L0-H0 
+
+> L0-H1
+> L0-H2
+> L0-H3
+> L0-H4
+> L0-H5
+> L1-H0
+> L1-H1
+> L1-H2
+> L1-H3
+> L1-H4
+> L1-H5
+> L2-H0
+> L2-H1
+> L2-H2
+> L2-H3
+> L2-H4
+> L2-H5
+> L3-H0
+> L3-H1
+> L3-H2
+> L3-H3
+> L3-H4
+> L3-H5
+> L4-H0
+> L4-H1
+> L4-H2
+> L4-H3
+> L4-H4
+> L4-H5
+> L5-H0
+> L5-H1
+> L5-H2
+> L5-H3
+> L5-H4
+> L5-H5
+> L6-H0
+> L6-H1
+> L6-H2
+> L6-H3
+> L6-H4
+> L6-H5
+> L7-H0
+> L7-H1
+> L7-H2
+> L7-H3
+> L7-H4
+> L7-H5
+> L8-H0
+> L8-H1
+> L8-H2
+> L8-H3
+> L8-H4
+> L8-H5
+> L9-H0
+> L9-H1
+> L9-H2
+> L9-H3
+> L9-H4
+> L9-H5
+> L10-H0
+> L10-H1
+> L10-H2
+> L10-H3
+> L10-H4
+> L10-H5
+> L11-H0
+> L11-H1
+> L11-H2
+> L11-H3
+> L11-H4
+> L11-H5
+> L0-H0
+> L0-H1
+> L0-H2
+> L0-H3
+> L0-H4
+> L0-H5
+> L1-H0
+> L1-H1
+> L1-H2
+> L1-H3
+> L1-H4
+> L1-H5
+> L2-H0
+> L2-H1
+> L2-H2
+> L2-H3
+> L2-H4
+> L2-H5
+> L3-H0
+> L3-H1
+> L3-H2
+> L3-H3
+> L3-H4
+> L3-H5
+> L4-H0
+> L4-H1
+> L4-H2
+> L4-H3
+> L4-H4
+> L4-H5
+> L5-H0
+> L5-H1
+> L5-H2
+> L5-H3
+> L5-H4
+> L5-H5
+> L6-H0
+> L6-H1
+> L6-H2
+> L6-H3
+> L6-H4
+> L6-H5
+> L7-H0
+> L7-H1
+> L7-H2
+> L7-H3
+> L7-H4
+> L7-H5
+> L8-H0
+> L8-H1
+> L8-H2
+> L8-H3
+> L8-H4
+> L8-H5
+> L9-H0
+> L9-H1
+> L9-H2
+> L9-H3
+> L9-H4
+> L9-H5
+> L10-H0
+> L10-H1
+> L10-H2
+> L10-H3
+> L10-H4
+> L10-H5
+> L11-H0
+> L11-H1
+> L11-H2
+> L11-H3
+> L11-H4
+> L11-H5
+
+Similarity Matrix (sorted by layer & head) 
+
+2 clusters 
+
+1.00 
+
+0.75 
+
+0.50 
+
+0.25 
+
+0.00 
+
+0.25 
+
+0.50 
+
+0.75 
+
+1.00 
+
+Semantic Clustering Results (Pearson Correlation) 
+
+DB=1.109, Sil=0.118 
+
+(a) H0 H1 H2 H3 H4 H5 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+1 0 0 0 1 1
+
+0 0 1 1 1 0
+
+1 1 1 1 1 1
+
+1 1 1 0 1 1
+
+Semantic Cluster Assignments 
+
+(Layers x Heads) 
+
+Red boxes = representative heads 
+
+Semantic Clustering Results (Pearson Correlation) 
+
+DB=1.109, Sil=0.118 (b) AAA AAAB BBBBBCCCCCCDDDDDDEEEEE E FF FFF FGGGGGGHHHHHHIIIIIIJJJJJJKKKKKKL L LLLL
+
+−200 
+
+−100 0100 AAAAAAAAAAAABBBBBBBBB BBBC CCCCCCCCCCCDDDD DDDDDDDDEEEEEEEEEEEEFFFFFFFFFFFFGGG GGG GGGGGGH H H HHHHHHHHHIIIIIIIIII I IJJJJJJJJJJJJKKKKKKKKKKKK LLL LL L LLLLLL
+
+−200 −100 0 100 200 
+
+−200 
+
+−100 0100 200 Layer A: 0 B: 1 C: 2 D: 3 E: 4 F: 5 G: 6 H: 7 I: 8 J: 9 K: 10 L: 11 PCA projections for ViT-S and ViT-B First component PCA results for ViT-S PCA results for ViT-B Second component (c) H0 H1 H2 H3 H4 H5 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 0 1 0 0 0
+
+0 0 2 0 1 1
+
+2 2 0 0 0 1
+
+2 0 0 0 0 0
+
+1 2 2 2 0 0
+
+0 1 1 2 0 2
+
+2 2 1 2 2 2
+
+0 1 2 2 1 1
+
+2 1 2 2 3 2
+
+1 1 3 3 3 1
+
+3 3 3 3 3 3
+
+3 3 3 1 3 3
+
+assignments (red = representative) 
+
+semantic pearson correlation | k=4 | DB=2.267 Sil=0.115 
+
+(d) H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 1 0 0 0 1 0 0 1
+
+0 0 1 0 0 0 0 0 0 0 1 1
+
+0 0 0 1 0 1 0 0 0 0 1 0
+
+1 0 1 0 0 1 0 1 0 0 1 1
+
+1 0 1 0 0 1 1 1 0 1 1 0
+
+1 1 1 1 1 1 0 1 1 1 1 1
+
+assignments (red = representative) 
+
+semantic pearson correlation | k=2 | DB=1.416 Sil=0.079 (e) H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 1 0 0 0 0 0 0 0 0 0 0
+
+0 1 0 0 0 0 0 0 1 0 0 1
+
+1 1 0 0 1 0 0 1 2 1 1 0
+
+1 1 1 0 1 1 0 1 2 1 1 1
+
+0 0 1 1 0 1 0 0 1 1 0 1
+
+0 1 1 0 0 0 1 1 1 0 0 1
+
+1 1 0 0 1 1 0 1 1 1 1 1
+
+0 1 1 2 0 1 0 1 1 0 1 3
+
+1 0 1 1 0 1 0 0 0 1 1 1
+
+3 2 3 2 2 3 2 3 2 2 3 2
+
+3 2 3 2 2 2 3 2 2 2 2 2
+
+3 3 3 3 3 3 1 3 3 2 3 3
+
+assignments (red = representative) 
+
+semantic pearson correlation | k=4 | DB=2.012 Sil=0.078 (f) 
+
+Figure 2: Results of the ViT structure analysis with head activations on the ImageNet-1K dataset a) ViT-S head similarity matrix in terms of the Pearson correlation coefficient; b), d) Semantic clustering of ViT-S attention heads with 2 and 4 clusters, respectively. The red frames indicate the cluster “representatives”, i.e. the most similar head to the cluster center; c) Projection of the two most important principal components based on selected statistics of patches for activations on ImageNet-1K, with distinction into individual layers and heads; e), f) Similarly as for b and d, but for the ViT-B backbone. Additionally, assume that P ∈ RH×3N is a matrix whose rows correspond to attention heads of a given model and columns represent the maximum, average and standard deviation of individual patch tokens for N consecutive images. We perform principal component analysis (PCA), reducing the size of feature vectors from 3N to 2, to visualize similarities between heads in a two-dimensional plot. To further compare the head structure of both models, we perform PCA on a joint set of heads of the two considered ViT models. 
+
+3.2 Laplace maps 
+
+An attention map for the head h and the image i, Ahi ∈ RD×D, can be interpreted as a weighted graph G = ( V, E ). In this formulation, the vertices V represent individual tokens, and edges E (and their corresponding weights) encode the strength of the attention between pairs of tokens. In such a context, graph-theoretic analysis may be leveraged. For instance, recent work considered attention matrices as discrete-time Markov chains to analyze their convergence to stationary states [15]. Therefore, we propose a graph-based visualization method for attention maps to better understand the specific roles of individual attention heads. 5SAPER : Soft Attention PrunER We begin by calculating a normalized Laplacian of the attention graph, which is a symmetric positive semi-definite matrix, along with its eigenvectors and eigenvalues. Then, we extract the eigenvectors corresponding to the second, third and fourth smallest eigenvalues and normalize the resulting coordinates. Crucially, the eigenvector associated with the second smallest eigenvalue of the Laplacian, often called the Fiedler vector, represents the real-valued solution to the minimum cut problem [23]. Finally, we construct an RGB image by mapping these three eigenvectors to the red, green, and blue channels, respectively. We generate these visual representations for individual dataset samples across all attention heads to qualitatively assess their behavior. 
+
+3.3 Differentiable attention head selection 
+
+LapSum [34] formulates a differentiable relaxation of the discrete (hard) top-k selection problem, commonly referred to as the soft top-k operation. In hard top-k, given a score vector r = ( r0, r 1, ..., r n−1) ∈ Rn, one creates a n–dimensional binary mask ˆp ∈ { 0, 1}n. In this mask, ones correspond to the highest k scores in r, and zeros to the remaining n − k
+
+elements. Equivalently, this establishes a strict threshold between the k–th and (k + 1) –th sorted elements of r. In the hard top-k, k is restricted to integer values, while in the soft top-k we can select an arbitrary continuous budget 
+
+k ∈ (0 , n ). Therefore, it produces a soft mask whose elements sum to a total mass k. LapSum computes the soft selection probabilities p = ( p0, p 1, ..., p n−1) such that the i–th component ( i ∈ { 0, 1, ..., n − 1}) is given by: 
+
+pi = LapSum (ri, α ) = Lap 
+
+ b − ri
+
+α
+
+
+
+, (2) where pi ∈ [0 , 1] represents the soft selection weight for the i–th score ( ri) under the constraint Pn−1 
+
+> i=0
+
+pi = k. The parameter α < 0 acts as a negative temperature, and Lap( ·) represents the cumulative distribution function (CDF) of the Laplace distribution: 
+
+Lap( x) = 
+
+ 12 exp( x) x ≤ 01 − 12 exp( −x) x > 0. (3) As α → 0−, the soft mask sharply approaches the Heaviside step function, recovering the exact hard top-k ranking of the scores. The scalar barrier b is determined through an inverse-CDF query on a smoothed cumulative curve defined by the sorted scores. LapSum is leveraged in our method to select the top-k attention heads in an end-to-end differentiable manner. Its time complexity is equal to O(n · log( n)) .
+
+4 Experiments 
+
+4.1 Procedure 
+
+We selected RAPTOR [18] as our main baseline due to the extension of its findings. RAPTOR identified a block structure in ViTs and replaced the original pre-trained blocks with a smaller number of recurrent block partitions, while, in our case, blocks are not necessarily contiguous, but individual heads are assigned to one of the clusters. In the case of RAPTOR, the minimum number of heads is equal to 6B for ViT-S and 12 B for ViT-B, where B is the number of selected blocks (at least 2). Our method enables using any number of attention heads k ∈ { 1, ..., n }, where n is the total number of heads ( n = 72 in ViT-S and n = 144 in ViT-B). To ensure a reliable comparison with RAPTOR, we performed experiments on DINOv2 ViT-S and ViT-B [27], focusing on ImageNet-1K [12] and CIFAR-100 [19]. We evaluated SAPER in two modes: pure fine-tuning or knowledge distillation from the initial DINOv2 model. The selected model is initially trained for Ns epochs with simultaneous soft top-k head selection, then trained for Nh consecutive epochs only with the k most important attention heads according to the previous option (hard top-k stage). With pure fine-tuning, the model is trained with a linear classification probe and utilizing a cross-entropy loss, while in knowledge distillation, the loss is the cosine similarity between the outputs of the selected layers of the teacher and corresponding student model activations after a linear projection. The details of hyperparameters are described in Appendix. The experiment assessing the relationship between various model attention heads has been performed on the ImageNet-1K validation set, i.e. for N = 50 , 000 .6SAPER : Soft Attention PrunER 
+
+4.2 Results Semantic clustering Our semantic clustering results align with the observations of RAPTOR, revealing the block structure across both ViT variants, see Figure 2 and Appendix. In ViT-S, we identified a clear functional distinction between heads in layers L0-L7 and those in L8-L12. Notably, individual heads within the last four layers, surrounded by heads from Cluster 1, retain high similarity to early-layer representations, mainly assigned to Cluster 0. A similar observation can be made for ViT-B, characterized by a continuous transition between L8 and L9. Increasing the cluster granularity further narrows the distinct late-stage head representations to the final two to three layers of ViT-S. While specific head assignments vary slightly between CIFAR-100 and ImageNet-1K, the overall structural dynamics remain comparable across datasets. Crucially, our findings generalize RAPTOR block-structure discoveries, as we compare the role of individual attention heads, not only the entire layers, and we demonstrate that functionally analogous heads are sometimes present in different depths of the network. For instance, L11H3 in ViT-S and L11H6 in ViT-B produce representations more similar to those of much earlier layers. −200 −100 0 100 200   
+
+> −150
+> −100
+> −50
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> Model ViT-S ViT-B
+
+Common PCA for ViT-S and ViT-B heads (dots only) 
+
+> Principal component 1
+> Principal component 2
+
+Figure 3: Results of the PCA performed on a common set of heads’ activations from both ViT-S and ViT-B on the validation set of ImageNet-1K. Semi-transparent markers correspond to the pruned heads for an exemplary SAPER run, the same as presented in Laplace maps in Figure 5. 
+
+Principal component analysis In ViT-S, we observe a smooth transition between consecutive layers, especially across the positions of most heads from L7 to L11, as presented in Figure 2c. However, individual heads from the last layers are more similar to early-layer heads than to the neighboring ones. Without affecting the conclusions, we flipped the sign of X-axis coordinates for all ViT-B points to more easily compare them with ViT-S heads. In general, the average position of heads from the i-th layer is between heads from layer i − 1 and layer i + 1 , where i ∈ { 1, ..., 10 }.In ViT-B, the tendency is comparable, but similar coordinates mainly refer to heads from L0 and L1, and to heads from L9 to L11. In the remaining cases, the heads are more dispersed than for ViT-S, also due to the higher total number of attention heads, but still, a smooth transition between PC coordinates of subsequent layer heads may be noticed. Additionally, based on PCA calculated for a joint set of heads’ activations from two ViT variants, we hypothesize that ViT-S samples the representation space more sparsely than ViT-B due to a lower number of heads, as visible in Figure 3. Most of the subspace area with ViT-B heads contains ViT-S heads in their close neighborhood. It suggests that both models uncover similar features, but ViT-B, due to its size, can do it more precisely than ViT-S. Moreover, when we select only the Top-24 heads chosen by the exemplary ViT models, as in the Laplace maps in Figure 5, this subset of heads is scattered throughout the space of two principal components. The explained variance ratios for these components (out of 150 , 000 values) are 18 .8, 14 .1 and 14 .0% for ViT-S, ViT-B and both models, respectively. A more detailed plot, consisting of a preview of individual layer heads, is presented in Appendix. 7SAPER : Soft Attention PrunER L0            
+
+> H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11
+> Ground Truth (a)
+> Laplace Map (b)
+
+Figure 4: DINOv2 Head Laplacian visualization . The (left) image displays the full Laplacian visualization map extracted from a DINOv2 ViT-B model over all layers and heads. On the (right) image a specific magnified region of the generated feature map (b) is compared alongside its corresponding ground truth image (a). 
+
+Laplace maps Laplace maps help understand the role of individual attention heads, leading to a more accurate per-sample investigation. The consecutive attention heads focus on various details of the image and have different tasks in a given model. From the exemplary dog image (Figure 4), it can be suspected that selected heads identify main object shapes (L5H5), others isolate the main object from the background (L8H2, L8H11), while some heads capture different dog body parts (L11H3). Furthermore, several attention heads provide similar representation, e.g. L4H1 and L4H3, L6H0 and L6H2. In general, we observe that early layers process edge/texture patches (like L1H0, L3H1 and L3H8 in ViT-B, which we can call ”convolutional” heads), while deeper layers attend to global semantic structures. Also, some attention activations are sparse and mostly only a few patches are illuminated (L0H1, L0H10, L10H10), especially in initial layers. Based on Figure 5, we notice that SAPER tends to retain deeper heads that concentrate on more abstract object representation, especially in ViT-S. We can also observe that among the Top-24 heads, individual heads were focusing on detection of edges (like L3H1 in ViT-S and L4H1 in ViT-B), general shapes (L5H5 in ViT-B) or contained only single outlying tokens (L9H4 in ViT-S or L10H10 in ViT-B) in the case of analyzed images. We hypothesize that such heads with local spikes can still provide valuable information due to the lack of register tokens [11], but it requires further investigation. More Laplace maps are depicted in Appendix. 
+
+Attention head selection SAPER realizes an accuracy-efficiency trade-off, allowing one to choose any number of attention heads, see Table 1. Understandably, classification accuracy of SAPER is strongly dependent on the desired number of attention heads to be retained, often exceeding 10% between the results for 6 and 48 heads. What is particularly important, for 6 heads (out of 144), SAPER with ViT-B achieved ≈ 73% of classification accuracy, being only ≈ 8% worse compared to the model with 24 heads. Therefore, SAPER offers a massive reduction in the number of attention heads without catastrophic loss of accuracy. In terms of computational cost, SAPER consistently achieves lower FLOPs than the base DINOv2 model across all head-selection budgets and both ViT backbones, as visible in Table 2. Compared to RAPTOR, SAPER reduces GFLOPs by roughly a factor of two at matching head counts (e.g., 32 .17 vs. 61 .86 GFLOPs for ViT-B at k = 24 ), despite retaining a higher parameter count than RAPTOR in the corresponding configurations (e.g, 62 .96 M vs. 20 .49 Mparameters for ViT-B at k = 24 ). This efficiency advantage stems from SAPER’s ability to select an arbitrary number of individual heads, rather than being restricted to RAPTOR’s block-multiple constraint. 8SAPER : Soft Attention PrunER H0 H1 H2 H3 H4 H5 
+
+> L0
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11
+
+(a) ViT-S H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11  
+
+> L0
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11
+
+(b) ViT-B 
+
+Figure 5: Laplace visualization maps for selected ViT-S and ViT-B models trained on the ImageNet-1K dataset. Semi-transparent heads were selected for pruning by SAPER, while fully visible ones, bordered by red, were among Top-24 heads. RAPTOR cannot be evaluated at all for k = 6 in the case of both ViT variants, and for k = 12 with ViT-B, since its minimum head count is a multiple of the number of heads in a single layer ( 6B or 12 B heads, with B ≥ 2 blocks). Also, the authors of RAPTOR did not consider a single block for the entire network. In such scenarios, RAPTOR is excluded from scores. At k = 24 , the two methods become directly comparable, and RAPTOR achieves a slightly higher accuracy than SAPER, while still requiring roughly twice the GFLOPs of SAPER. On CIFAR-100, SAPER consistently outperforms RAPTOR at every head budget for which a comparison is possible, all while using substantially fewer GFLOPs than RAPTOR. In 11 out of 20 cases, the knowledge distillation mode performed better than fine-tuning, excluding the CIFAR-100 with ViT-S experiments and ViT-B for k = 12 , but the scores were comparable. For ImageNet-1K, the contrast between the two modes was much more favorable to distillation. It is necessary to emphasize that in all experiments, excluding the fine-tuning of ViT-S on CIFAR-100, all attention heads were frozen throughout all training phases. Only the remaining network parameters were modified since the adjustment of pre-trained attention heads was usually harmful to models. All details regarding the considered hyperparameters and highest-performing settings are described in Appendix. 
+
+5 Conclusions 
+
+We introduce SAPER, an end-to-end differentiable head pruning framework which bridges the gap between inter-pretability and efficiency. We demonstrate that analogous attention heads operate not only within contiguous blocks, but also across varying depths of the network. Furthermore, we design a novel spectral visualization method to interpret the specific tasks of individual attention heads. This technique allows us to explicitly distinguish between ”convolutional” heads and those responsible for extracting more complex, global semantic dependencies. Finally, we design SAPER to differentiably select a subset of important heads based on LapSum, proposing a flexible approach to pruning. We evaluate our approach on ImageNet-1K and CIFAR-100, confirming that we maintained competitive classification accuracy while significantly reducing FLOPs. Our paper is a step forward towards interpretable and transparent vision foundation models, ensuring tools for preview of the behavior of individual attention heads and differentiable network 9SAPER : Soft Attention PrunER Table 1: The overall performance of SAPER in two modes: model fine-tuning and knowledge distillation, two ViT variants: ViT-Small (ViT-S) and ViT-Base (ViT-B), and two datasets: ImageNet-1K and CIFAR-100, compared with RAPTOR [18] On CIFAR-100, we reproduce the authors’ results, and on ImageNet-1K we report accuracy from Table 1 in [18]. Results of SAPER are averaged over 3 runs. Head allocations are denoted as subscripts, and the highest-performing method in each category is bolded. Results denoted by ” ✗” are not possible to obtain since the total number of heads used by RAPTOR must be a multiple of the number of heads in a single layer, and the authors do not consider single blocks. Also, RAPTOR was not trained in a fine-tune mode. Best results in a given setting are bolded when both RAPTOR and SAPER scores are calculated. N/A corresponds to non-applicable cases. 
+
+ImageNet-1K CIFAR-100 ViT-S ViT-B ViT-S ViT-B Fine-tuned Distilled Fine-tuned Distilled Fine-tuned Distilled Fine-tuned Distilled Method ACC ACC ACC ACC ACC ACC ACC ACC 
+
+DINOv2 80 .72 ±0.21 N/A 84 .14 ±0.32 N/A 90 .81 ±0.10 N/A 92 .51 ±0.49 N/A
+
+RAPTOR 6 ✗ ✗ ✗ ✗ ✗ ✗ ✗ ✗
+
+SAPER 6 60 .33 ±0.33 68 .86 ±1.39 58 .77 ±2.27 72 .97 ±1.78 80 .41 ±0.85 77 .12 ±0.19 78 .25 ±0.55 78 .72 ±0.13 
+
+RAPTOR 12 ✗ ✗ ✗ ✗ ✗ 83 .48 ±0.52 ✗ ✗
+
+SAPER 12 68 .18 ±1.33 71 .78 ±0.08 64 .33 ±4.12 77 .54 ±0.52 84 .48 ±0.17 83 .78 ±0.58 83 .44 ±0.44 81 .52 ±0.66 
+
+RAPTOR 24 ✗ − ✗ 81 .2±0.2 ✗ 85 .74 ±0.21 ✗ 89 .02 ±0.22 
+
+SAPER 24 74 .82 ±0.10 77 .99 ±0.05 74 .83 ±0.14 80 .58 ±0.30 87 .57 ±0.10 86 .21 ±0.05 87 .71 ±0.34 89 .66 ±0.69 
+
+RAPTOR 36 ✗ − ✗ 83 .0±0.1 ✗ 86 .70 ±0.32 ✗ 90 .46 ±0.20 
+
+SAPER 36 77 .47 ±0.06 78 .94 ±0.10 77 .68 ±0.06 81 .32 ±0.20 88 .90 ±0.23 86 .91 ±0.19 89 .19 ±0.33 90 .29 ±0.08 
+
+RAPTOR 48 ✗ − ✗ 83 .2±0.1 ✗ 87 .34 ±0.40 ✗ 90 .85 ±0.10 
+
+SAPER 48 79 .17 ±0.09 79 .39 ±0.05 79 .67 ±0.11 81 .99 ±0.16 89 .79 ±0.18 87 .56 ±0.21 90 .18 ±0.20 91 .39 ±0.13 
+
+Table 2: The number of FLOPs and parameters used by SAPER and RAPTOR [18] in two ViT variants: ViT-Small (ViT-S) and ViT-Base (ViT-B). Results denoted by ” ✗” concern settings not considered by the authors of RAPTOR. Best results in each scenario are bolded when both RAPTOR and SAPER scores are calculated. 
+
+FLOPs Parameters ViT-S ViT-B ViT-S ViT-B #GFLOPs #GFLOPs #Mparams #Mparams 
+
+DINOv2 12 .25 46 .33 22 .06 86 .58 
+
+RAPTOR 6 ✗ ✗ ✗ ✗
+
+SAPER 6 7.80 30 .05 15 .56 59 .42 
+
+RAPTOR 12 16 .15 ✗ 5.53 ✗
+
+SAPER 12 8.20 30 .75 16 .15 60 .60 
+
+RAPTOR 24 16 .15 61 .86 7.91 20 .49 
+
+SAPER 24 9.01 32 .17 17 .33 62 .96 
+
+RAPTOR 36 16 .15 61 .86 10 .30 29 .98 
+
+SAPER 36 9.82 33 .58 18 .51 65 .33 
+
+RAPTOR 48 16 .15 61 .86 12 .68 39 .47 
+
+SAPER 48 10 .63 35 .00 19 .69 67 .69 
+
+pruning. In future work, we plan to extend SAPER to the token level, either to select a given number of tokens from consecutive heads or a total number of tokens to retain throughout the entire network, including MLP weights. 
+
+Acknowledgments 
+
+Work on this project is financially supported by the Foundation for Polish Science (FNP) grant ‘Centre for Credible AI’ No. FENG.02.01-IP.05-0058/24. Also, we gratefully acknowledge Polish high-performance computing infrastructure 10 SAPER : Soft Attention PrunER PLGrid (HPC Center: ACK Cyfronet AGH) for providing computer facilities and support within computational grants no. PLG/2026/019755 and PLG/2026/019528. 
+
+References 
+
+[1] Abnar, S., Zuidema, W.: Quantifying attention flow in transformers. In: Jurafsky, D., Chai, J., Schluter, N., Tetreault, J. (eds.) Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics. pp. 4190–4197. Association for Computational Linguistics, Online (Jul 2020). https://doi.org/10.18653/v1/2020.acl-main.385, https://aclanthology.org/2020.acl-main.385/ 
+
+[2] Abnar, S., Zuidema, W.: Quantifying attention flow in transformers. In: Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL). pp. 4190–4197. Association for Computational Linguistics (2020) [3] Achtibat, R., Hatefi, S.M.V., Dreyer, M., Jain, A., Wiegand, T., Lapuschkin, S., Samek, W.: AttnLRP: Attention-aware layer-wise relevance propagation for transformers. In: Proceedings of the 41st International Conference on Machine Learning (ICML). Proceedings of Machine Learning Research, vol. 235, pp. 135–168. PMLR (2024) [4] Bach, S., Binder, A., Montavon, G., Klauschen, F., Müller, K.R., Samek, W.: On pixel-wise explanations for non-linear classifier decisions by layer-wise relevance propagation. PLOS ONE 10 (7), 1–46 (07 2015). https://doi.org/10.1371/journal.pone.0130140, https://doi.org/10.1371/journal.pone.0130140 
+
+[5] Biecek, P., Longo, L., Zhou, J., Fel, T., Holzinger, A., Samek, W.: The case for model science: Verify, explore, steer, refine. arXiv preprint arXiv:2606.01189 (2026) [6] Binkowski, J., Janiak, D., Sawczyn, A., Gabrys, B., Kajdanowicz, T.J.: Hallucination detection in LLMs using spectral features of attention maps (2025), https://openreview.net/forum?id=tm5JQTpBhj 
+
+[7] Caron, M., Touvron, H., Misra, I., Jegou, H., Mairal, J., Bojanowski, P., Joulin, A.: Emerging properties in self-supervised vision transformers. In: 2021 IEEE/CVF International Conference on Computer Vision (ICCV). pp. 9630–9640 (2021) [8] Chavan, A., Shen, Z., Liu, Z., Liu, Z., Cheng, K.T., Xing, E.: Vision transformer slimming: Multi-dimension searching in continuous optimization space (2022) [9] Chefer, H., Gur, S., Wolf, L.: Transformer interpretability beyond attention visualization. In: 2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 782–791 (2021) [10] Chuanyang, Z., Li, Z., Zhang, K., Yang, Z., Tan, W., Xiao, J., Ren, Y., Pu, S.: SAVit: Structure-aware vision trans-former pruning via collaborative optimization. In: Oh, A.H., Agarwal, A., Belgrave, D., Cho, K. (eds.) Advances in Neural Information Processing Systems (2022), https://openreview.net/forum?id=w5DacXWzQ-Q 
+
+[11] Darcet, T., Oquab, M., Mairal, J., Bojanowski, P.: Vision transformers need registers. In: The Twelfth International Conference on Learning Representations (2024), https://openreview.net/forum?id=2dnO3LLiJ1 
+
+[12] Deng, J., Dong, W., Socher, R., Li, L.J., Li, K., Fei-Fei, L.: Imagenet: A large-scale hierarchical image database. In: 2009 IEEE conference on computer vision and pattern recognition. pp. 248–255. IEEE (2009) [13] Doshi-Velez, F., Kim, B.: Towards a rigorous science of interpretable machine learning (2017), https://arxiv. org/abs/1702.08608 
+
+[14] Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., Houlsby, N.: An image is worth 16x16 words: Transformers for image recognition at scale. In: International Conference on Learning Representations (ICLR) (2021) [15] Erel, Y., Dünkel, O., Dabral, R., Golyanik, V., Theobalt, C., Bermano, A.H.: Attention (as discrete-time markov) chains. In: The Thirty-ninth Annual Conference on Neural Information Processing Systems (2026), 
+
+https://openreview.net/forum?id=wy2FwyNYro 
+
+[16] Frankle, J., Carbin, M.: The lottery ticket hypothesis: Finding sparse, trainable neural networks. In: International Conference on Learning Representations (2019), https://openreview.net/forum?id=rJl-b3RcF7 
+
+[17] Huang, H.W., Chai, W., Chen, K.M., Yang, C.Y., Hwang, J.N.: Tosa: Token merging with spatial awareness. In: 2025 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). pp. 9654–9660. IEEE (2025) [18] Jacobs, M., Fel, T., Hakim, R., Brondetta, A., Ba, D.E., Keller, T.A.: Block recurrent dynamics in vision transformers. In: The Fourteenth International Conference on Learning Representations (2026), https:// openreview.net/forum?id=gH3HhnfWLC 
+
+[19] Krizhevsky, A.: Learning multiple layers of features from tiny images. Tech. rep., University of Toronto (2009) 11 SAPER : Soft Attention PrunER [20] Lee, E., Hwang, Y.: Amap: Automatic multihead attention pruning by similarity-based prun-ing indicator. IEEE Transactions on Neural Networks and Learning Systems 37 (1), 357–370 (2026). https://doi.org/10.1109/TNNLS.2025.3606750 [21] Lee, S., Kim, B.s.: Entropy-guided head importance for token pruning in vision transformers. In: 2024 IEEE Inter-national Conference on Consumer Electronics-Asia (ICCE-Asia). pp. 1–3 (2024). https://doi.org/10.1109/ICCE-Asia63397.2024.10773748 [22] Li, J., Cotterell, R., Sachan, M.: Differentiable subset pruning of transformer heads. Transactions of the As-sociation for Computational Linguistics 9, 1442–1459 (2021). https://doi.org/10.1162/tacl_a_00436, https: //aclanthology.org/2021.tacl-1.86/ 
+
+[23] Liu, N., Stewart, W.J.: Markov Chains and Spectral Clustering, pp. 87–98. Springer Berlin Heidel-berg, Berlin, Heidelberg (2011). https://doi.org/10.1007/978-3-642-25575-5_8, https://doi.org/10.1007/ 978-3-642-25575-5_8 
+
+[24] Meila, M., Shi, J.: Learning segmentation by random walks. In: Leen, T., Dietterich, T., Tresp, V. (eds.) Advances in Neural Information Processing Systems. vol. 13. MIT Press (2000), https://proceedings.neurips.cc/ paper_files/paper/2000/file/069654d5ce089c13f642d19f09a3d1c0-Paper.pdf 
+
+[25] Meng, L., Li, H., Chen, B.C., Lan, S., Wu, Z., Jiang, Y.G., Lim, S.N.: Adavit: Adaptive vision transformers for efficient image recognition. 2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) pp. 12299–12308 (2021), https://api.semanticscholar.org/CorpusID:244729636 
+
+[26] Michel, P., Levy, O., Neubig, G.: Are sixteen heads really better than one? In: Wallach, H., Larochelle, H., Beygelzimer, A., d'Alché-Buc, F., Fox, E., Garnett, R. (eds.) Advances in Neural Information Processing Systems. vol. 32. Curran Associates, Inc. (2019), https://proceedings.neurips.cc/paper_files/paper/2019/ file/2c601ad9d2ff9bc8b282670cdd54f69f-Paper.pdf 
+
+[27] Oquab, M., Darcet, T., Moutakanni, T., Vo, H.V., Szafraniec, M., Khalidov, V., Fernandez, P., HAZIZA, D., Massa, F., El-Nouby, A., Assran, M., Ballas, N., Galuba, W., Howes, R., Huang, P.Y., Li, S.W., Misra, I., Rabbat, M., Sharma, V., Synnaeve, G., Xu, H., Jegou, H., Mairal, J., Labatut, P., Joulin, A., Bojanowski, P.: DINOv2: Learning robust visual features without supervision. Transactions on Machine Learning Research (2024), 
+
+https://openreview.net/forum?id=a68SUt6zFt , featured Certification [28] Raghu, M., Unterthiner, T., Kornblith, S., Zhang, C., Dosovitskiy, A.: Do vision transformers see like convolutional neural networks? In: Beygelzimer, A., Dauphin, Y., Liang, P., Vaughan, J.W. (eds.) Advances in Neural Information Processing Systems (2021), https://openreview.net/forum?id=R-616EWWKF5 
+
+[29] Schwartz, R., Dodge, J., Smith, N.A., Etzioni, O.: Green ai. Commun. ACM 63 (12), 54–63 (2020). https://doi.org/10.1145/3381831, https://doi.org/10.1145/3381831 
+
+[30] Sharkey, L., Chughtai, B., Batson, J., Lindsey, J., Wu, J., Bushnaq, L., Goldowsky-Dill, N., Heimersheim, S., Ortega, A., Bloom, J.I., Biderman, S., Garriga-Alonso, A., Conmy, A., Nanda, N., Rumbelow, J.M., Wattenberg, M., Schoots, N., Miller, J., Saunders, W., Michaud, E.J., Casper, S., Tegmark, M., Bau, D., Todd, E., Geiger, A., Geva, M., Hoogland, J., Murfet, D., McGrath, T.: Open problems in mechanistic interpretability. Transactions on Machine Learning Research (2025), https://openreview.net/forum?id=91H76m9Z94 
+
+[31] Shen, C.: Adaptive mlp pruning for large vision transformers (2026), https://arxiv.org/abs/2603.08100 
+
+[32] Shi, J., Malik, J.: Normalized cuts and image segmentation. IEEE Transactions on Pattern Analysis and Machine Intelligence 22 (8), 888–905 (2000) [33] Strubell, E., Ganesh, A., McCallum, A.: Energy and policy considerations for deep learning in NLP. In: Korhonen, A., Traum, D., Màrquez, L. (eds.) Proceedings of the 57th Annual Meeting of the Associa-tion for Computational Linguistics. pp. 3645–3650. Association for Computational Linguistics (Jul 2019). https://doi.org/10.18653/v1/P19-1355, https://aclanthology.org/P19-1355/ 
+
+[34] Struski, L., Bednarczyk, M.B., Podolak, I.T., Tabor, J.: Lapsum - one method to differentiate them all: Ranking, sorting and top-k selection. In: The International Conference on Machine Learning (ICML) 2025 (2025) [35] Uddin, M.H., Seymour, L., Baidya, S.: Heart-vit: Hessian-guided efficient dynamic attention and token pruning in vision transformer (2025), https://arxiv.org/abs/2512.20120 
+
+[36] Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, L.u., Polo-sukhin, I.: Attention is all you need. In: Guyon, I., Luxburg, U.V., Bengio, S., Wallach, H., Fergus, R., Vishwanathan, S., Garnett, R. (eds.) Advances in Neural Information Processing Systems. vol. 30. Curran Associates, Inc. (2017), https://proceedings.neurips.cc/paper_files/paper/2017/file/ 3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf 
+
+12 SAPER : Soft Attention PrunER [37] Voita, E., Talbot, D., Moiseev, F., Sennrich, R., Titov, I.: Analyzing multi-head self-attention: Specialized heads do the heavy lifting, the rest can be pruned. In: Korhonen, A., Traum, D., Màrquez, L. (eds.) Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics. pp. 5797–5808. Association for Computational Linguistics, Florence, Italy (Jul 2019). https://doi.org/10.18653/v1/P19-1580, https://aclanthology.org/ P19-1580/ 
+
+[38] Wang, H., Dedhia, B., Jha, N.K.: Zero-tprune: Zero-shot token pruning through leveraging of the attention graph in pre-trained transformers. In: 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 16070–16079 (2024) [39] Yu, H., Wu, J.: A unified pruning framework for vision transformers. Science China Information Sciences 66 (7) (2023). https://doi.org/10.1007/s11432-022-3646-6 [40] Yu, L., Xiang, W.: X-pruner: explainable pruning for vision transformers. In: 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). pp. 24355–24363 (2023). https://doi.org/10.1109/CVPR52729.2023.02333 [41] Zhang, Z., Zhang, J., Zhou, B., Duan, L., Chen, H.: D 2-vpr: A parameter-efficient visual-foundation-model-based visual place recognition method via knowledge distillation and deformable aggregation (2025), https: //arxiv.org/abs/2511.12528 
+
+13 SAPER : Soft Attention PrunER 
+
+A Head number ablation study 4 8 16 32 64 128 
+
+> k (retained attention heads)
+> 0.50
+> 0.55
+> 0.60
+> 0.65
+> 0.70
+> 0.75
+> 0.80
+> 0.85
+> Validation top-1 accuracy
+> small unpruned ceiling 0.807
+> base unpruned ceiling 0.841
+> Accuracy vs. number of retained heads
+> training mode · ViT model
+> distill · base
+> distill · small
+> finetune · base
+> finetune · small
+
+Figure 6: The study on the influence of the number of retained heads on classification accuracy for ImageNet-1K and both training modes: fine-tuning and knowledge distillation, and both model sizes: ViT-Base (base) and ViT-Small (small). Results averaged over 2 seeds. Figure 6 shows the dependence between the number of retained heads and classification accuracy for various training modes and ViT models for ImageNet-1K. We can observe that the fine-tune mode is less resilient to head pruning than knowledge distillation. For ViT-S, the accuracy drops to ≈ 65% in knowledge distillation, while in fine-tuning, the score is much lower ( ≈ 52% ). All considered models exceed 70% accuracy for slightly more than 16 heads, and this number of heads guarantees at least 75% for distilled models. 
+
+B Laplace maps 
+
+Figures 7–8 present Laplace maps for all attention heads (and layers) for both considered ViT variants and two selected images from the ImageNet-1K dataset. They demonstrate the diversity of tasks of individual heads (detecting edges, simple or more abstract shapes, etc.). Also, while in many cases their roles are rather clear, for some heads it is more subtle (like L11H10 in ViT-B). In the case of early-layer heads, for presented images, the corresponding Laplace maps are almost single-colored, excluding individual pixels. Additionally, Figure 9 depicts Laplace maps selected by SAPER during the pruning of the models to 24 and 6 heads, for the same image as shown in the first row of Figure 7. It may be concluded that SAPER retained heads responsible for various tasks, including edge detection, but in the stricter setting with 6 heads, chooses sparse-active heads with a few outlying tokens. Such tokens may hold global information and constitute a ”supplement” to the CLS token in the classification task, but this hypothesis requires further verification with a large batch of samples, e.g. through probability distribution estimation and inter-token correlation analysis. 
+
+C Semantic clustering 
+
+In ViT-S, nearly all heads from the final two layers form a distinct cluster, which also incorporates selected heads from L7–L9, depending on the specific clustering and dataset configuration. This pattern indicates the emergence of highly specialized representations within the final three to four layers, particularly in L10 and L11. When the cluster granularity is increased, subsequent substructures are formed primarily from Cluster 0 of the two-cluster setting (see Figures 10a and 11a). Furthermore, L0 heads consistently map to a single cluster across all configurations, with a single exception in the ImageNet-1K four-cluster setup (Figure 11c). Crucially, these assignments reveal that individual heads at varying network depths frequently produce similar activations. This nuanced behavior is obscured by the layer-level block split performed by RAPTOR. 14 SAPER : Soft Attention PrunER L0                                 
+
+> H0 H1 H2 H3 H4 H5
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11 L0
+> H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11
+> Ground Truth (a)
+> Laplace Map (b) L0
+> H0 H1 H2 H3 H4 H5
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11 L0
+> H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11
+> Ground Truth (a)
+
+# H4 H5 L0 
+
+# H0 H1 H2 H3 
+
+# L1 
+
+# L2 
+
+# L3 
+
+# L4 
+
+# L5 
+
+# L6 
+
+# L7 
+
+> Laplace Map (b)
+
+Figure 7: Laplace maps for the two selected samples of the ImageNet-1K dataset for all attention heads of ViT-S (left column), ViT-B (middle column), with corresponding ground truth images (a mountain and a traffic light) and enlarged selected Laplace maps (right column). ViT-B exhibits comparable structural dynamics, while the strong substructure is notable in the final three layers. On CIFAR-100, no heads from L0–L9 assign to Cluster 1, while for ImageNet-1K, isolated heads from L6–L8 belong to the cluster dominated by the last layer heads (compare Figures 12a and 13a). While a four-cluster setup consistently partitions Cluster 0 and 1 from the two-cluster setup (see Figures 12c and 13c) into further substructures, a three-cluster configuration yields dataset-dependent behaviors. Specifically, the third cluster on CIFAR-100 isolates a subset of heads from the final three ViT-B layers, while for ImageNet-1K it contains individual heads scattered throughout the entire network. This indicates that the macro-level observations, such as distinct last layer representations, generalize across datasets, while the fine-grained head assignments remain dataset-specific. 15 SAPER : Soft Attention PrunER L0                 
+
+> H0 H1 H2 H3 H4 H5
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11 L0
+> H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11
+> Ground Truth (a)
+
+# L9 
+
+# L10 
+
+# L11                 
+
+> Laplace Map (b) L0
+> H0 H1 H2 H3 H4 H5
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11 L0
+> H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11
+> Ground Truth (a)
+
+# L2 
+
+# L3 
+
+# L4 
+
+# L5 
+
+# L6 
+
+# L7 
+
+# L8 
+
+# L9 
+
+> Laplace Map (b)
+
+Figure 8: Laplace maps for the two selected samples of the ImageNet-1K dataset for all attention heads of ViT-S (left column), ViT-B (middle column), with corresponding ground truth images (a dog and a car), and enlarged selected Laplace maps (right column). 
+
+D Principal component analysis 
+
+Figure 14 shows the results of the Principal Component Analysis based on the activations of the two considered ViT variants, with the heads of consecutive layers marked separately, clearly demonstrating dependencies between the positions of subsequent layer heads. For instance, the heads of layers 0 and 1 have high positive values of Proj _X and 
+
+Proj _Y, while the heads of layers 9–11 are mainly located in the upper left corner of the images. 
+
+E Experiments setup 
+
+We implemented SAPER in Python 3.11.5 and used following libraries: torch 2.9.1, torchvision 0.24.1, transformers 4.57.3, datasets 4.4.1, networkx 3.6.1, scikit-learn 1.8.0, pillow 12.0.0, pyarrow 22.0.0, zarr 3.1.6, numcodecs 0.16.5, numpy 2.3.5, pandas 2.3.3, huggingface-hub 0.36.0, tokenizers 0.22.1, safetensors 0.7.0, python-dotenv 1.2.1, pyyaml 16 SAPER : Soft Attention PrunER 6.0.3, tqdm 4.67.1, requests 2.32.5, matplotlib 3.10.8, seaborn 0.13.2, ruff 0.15.0, pytest 9.0.2, psutil 7.2.2, nvidia-ml-py 13.590.48, optuna 4.7.0, optuna-integration 4.7.0, tensorboard 2.20.0, wandb 0.25.1. For runs on the CIFAR-100 dataset, we used NVIDIA A100 SXM4 40GB and NVIDIA H200 graphics cards available on a cluster running Slurm 26.05.2. For runs on the ImageNet-1K dataset, we used NVIDIA GH200 120GB graphics cards. We employed an iterative hyperparameter search strategy in which we gradually narrowed down the tuning ranges of the hyperparameters or set some of them to fixed values, which were found to be best in previous tuning iterations. 
+
+E.1 Hyperparameters 
+
+Some of the hyperparameters that we used included: 
+
+alpha_init : the value of the α hyperparameter of LapSum, annealed from al-pha_init to alpha_final (which was fixed at 0.01) over alpha_anneal_epochs using 
+
+alpha_anneal_schedule schedule. 
+
+alpha_anneal_epochs : the number of epochs over which LapSum α-annealing is performed. 
+
+alpha_anneal_schedule : the schedule used for α-annealing, one of: ’cosine’, ’geometric’, ’linear’. 
+
+annealing_start_coeff : controls when the LapSum α-annealing starts, calculated as 
+
+round (annealing _start _coeff · (epochs − alpha _anneal _epochs)) .
+
+This hyperparameter may be tuned independently from alpha_anneal_epochs .
+
+k : the number of heads to be retained after pruning. 
+
+k_warmup_epochs : the number of initial epochs over which we linearly reduce the k hyperparameter, from all the heads (72 for ViT-S, 144 for ViT-B) to the value specified by k (set to 24 for all the Optuna tuning runs). 
+
+score_init : initialization method for LapSum head importance scores; (1) 0.01 · N (0 , 1) , (2) N (0 , 1) and (3) N (0 ,1)  
+
+> √n
+
+.
+
+weight_decay : L2 regularization hyperparameter, applied to all trained model parameters apart from LapSum selector scores. If not specified otherwise, we use 2 · 10 −5.
+
+selector_grad_clip_norm : used for gradient norm clipping only for the LapSum selector score gradients. In all experiments, we set it to 5.
+
+backbone_freezing_strategy : specifies which parameters of the backbone network are trainable. ’ unfreeze_all ’ means that all the backbone parameters are trainable, ’ freeze_attention ’ means all attention parameters (query, key and values) are frozen while the rest of backbone is trainable, ’ freeze_attention_and_mlp ’ is similar but, apart from attention parameters, also MLP weights at the end of each layer are left as untrainable and ’ freeze_all ’ means that the whole backbone network is untrainable. In all cases, the linear classifier is trainable, and for the distillation runs the student network projections are always trainable. 
+
+backbone_lr : the initial learning rate used for training the backbone parameters. Along with other learning rate hyperparameters, it is annealed using lr_scheduler (for all tuning runs it was held fixed at ’cosine’) from the initial learning rate to a value calculated as 
+
+lr _scheduler _param · min {backbone _lr , selector _lr , lr }.
+
+selector_lr : the initial learning rate for the LapSum head selector parameters. 
+
+lr : the default learning rate, used for all parameters apart from backbone and selector parameters. In practice, this means that it is used for the linear classifier in the fine-tune mode, and for the student network projections as well as for the final linear probe (not used in the tuning runs) in the distillation mode. 
+
+lr_scheduler_param : used as a hyperparameter for the lr_scheduler and has different meaning depending on the selected scheduler. For ’exponential’ and ’step’ learning rate schedulers, lr_scheduler_param is used for the γ
+
+parameter, with common values such as 0.95 or 0.99. For ’cosine’, lr_scheduler is used to calculate the final learning rate eta_min .
+
+distill_layers : a set of layers for which we compute the distillation loss against the same layer of the teacher network; example value: {4, 8, −1}, where −1 identifies the last feature extractor layer and numbering of layers starts from one. 
+
+distill_loss : the distillation loss, one of ’cosine’, ’kl’ (Kullback-Leibler divergence) or ’mse’ (mean squared error). 17 SAPER : Soft Attention PrunER 
+
+kl_temp : used only with Kullback-Leibler divergence loss; it sets the temperature used for softening the student and teacher activations by dividing them before the softmax application. 
+
+distill_token_pool : defines which tokens are used for the distillation: ’all’ - the whole hidden state of a layer, ’cls’ -only the CLS token, ’cls_mean’ - the CLS token and the mean of the patch tokens, kept as two tokens. 
+
+teacher_forcing_mode : when active, the backbone network is effectively divided into subsegments defined by 
+
+distill_layers . In such a case, at each specified layer, we calculate the distillation loss by comparing the teacher activations (denoted as ’ teacher ’) with the corresponding activations of the student network (’ student ’). Then, we overwrite the student activations for that layer, according to one of the modes. The ’mix’ mode combines teacher and student activations using 
+
+λ · teacher + (1 − λ) · student, 
+
+while ’sample’ mode means that with probability λ, we select only the teacher activations per given sample, and only the student activations otherwise. The λ parameter is cosine annealed through 
+
+teacher_forcing_anneal_epochs from teacher_forcing_alpha_start to 0. 
+
+E.2 Hyperparameter tuning on CIFAR-100 Fine-tuning of ViT-S In the ViT-S variant of DINOv2 with the fine-tuning training mode, we train a linear classifier on top of the backbone network. We executed a total of 235 trials in three hyperparameter optimization iterations. We executed 40 epochs of soft-mask training followed by either 90 or 40 epochs of hard-mask training (to reduce computation time). We selected a batch size of 256. Overall, we searched the hyperparameter space presented in Table 3. hyperparameter range/values best value alpha_init 1 (fixed) 1alpha_anneal_epochs [0, 40] then 
+
+−−→ [0, 5] 0alpha_anneal_schedule {’cosine’, ’geometric’, ’linear’} ’cosine’ annealing_start_coeff [0, 1] 0.327 score_init 0.01 · N (0 , 1) (fixed) 0.01 · N (0 , 1) 
+
+k_warmup_epochs [0, 20] 10 backbone_freezing_strategy {’unfreeze_all’, ’freeze_attention’, ’freeze_attention_and_mlp’, ’freeze_all’} ’unfreeze_all’ backbone_lr 5 · 10 −5 (fixed) then 
+
+−−→ [10 −7, 10 −3] 5 · 10 −5
+
+selector_lr [10 −5, 10 −2] 9.9 · 10 −3
+
+lr [10 −6, 10 −2] 7.766 · 10 −5
+
+lr_scheduler_param {0.1, 0.033333, 0.01, 0.0} 0.1 Table 3: The set of considered hyperparameters for fine-tuning of ViT-S on CIFAR-100. 
+
+Distillation of ViT-S We performed a separate hyperparameter optimization for ViT-S in the knowledge distillation training mode. In such a case, we used the kNN classifier to score the model. Since, in the distillation runs, we do not have a linear classifier, the lr hyperparameter was used only for linear student projections. We executed a total of 269 trials, with the last 75 trials focused on checking whether performing distillation on the output of the Multi-Head Attention block is better than on the entire model layer, after the MLP layer, as well as on checking whether teacher forcing is beneficial. In these runs, the teacher_forcing_anneal_epochs was fixed to 5, and the 
+
+teacher_forcing_alpha_start was set to 0.5. We found that distillation on the entire model layer (at the output of the MLP layer) and without teacher forcing provides better results. We performed 40 epochs of soft-mask training followed by 40 epochs of hard-mask training and used a batch size of 256. The summary of the evaluated hyperparameter space is described in Table 4. 
+
+Fine-tuning of ViT-B In this scenario, we performed a single hyperparameter run comprising 159 trials. We set the batch size to 64, which has an impact on learning rate values. The soft-mask training phase consisted of 25 epochs, followed by 5 epochs of hard-mask training. The summary of the considered hyperparameters and their ranges is presented in Table 5. 18 SAPER : Soft Attention PrunER hyperparameter range/values best value alpha_init {1, 3, 5} 1alpha_anneal_epochs [0, 8] 2alpha_anneal_schedule ’cosine’ (fixed) ’cosine’ annealing_start_coeff [0, 1] 0.518 score_init 0.01 · N (0 , 1) (fixed) 0.01 · N (0 , 1) 
+
+k_warmup_epochs [0, 10] 5backbone_freezing_strategy {’unfreeze_all’, ’freeze_attention’} ’freeze_attention’ backbone_lr [5 · 10 −6, 5 · 10 −4] 1.079 · 10 −4
+
+selector_lr [5 · 10 −5, 5 · 10 −2] 7.493 · 10 −3
+
+lr 10 −3 (fixed) 10 −3
+
+lr_scheduler_param 0.1 (fixed) 0.1 distill_layers {’all_layers’, ’4,8,-1’, ’6,-1’, ’-1’} ’-1’ distill_loss {’cosine’, ’kl’, ’mse’} ’cosine’ kl_temp [1 , 4] 1distill_token_pool {’all’, ’cls’, ’cls_mean’} ’cls_mean’ teacher_forcing_mode {’mix’, ’sample’, ’none’} ’mix’ Table 4: The set of considered hyperparameters for knowledge distillation of ViT-S on CIFAR-100. hyperparameter range/values best value alpha_init 1 (fixed) 1alpha_anneal_epochs [0, 5] 2alpha_anneal_schedule ’geometric’ (fixed) ’geometric’ annealing_start_coeff [0, 1] 0.091 weight_decay 2.0 · 10 −6 (fixed) 2.0 · 10 −6
+
+score_init N (0 ,1)  
+
+> √n
+
+(fixed) N (0 ,1) 
+
+> √n
+
+k_warmup_epochs [0, 10] 9backbone_freezing_strategy ’freeze_attention’ (fixed) ’freeze_attention’ backbone_lr [10 −6, 10 −3] 2.654 · 10 −5
+
+selector_lr [10 −5, 10 −2] 1.598 · 10 −3
+
+lr [10 −4, 10 −2] 2.807 · 10 −3
+
+lr_scheduler_param 0.1 (fixed) 0.1 Table 5: The set of considered hyperparameters for fine-tuning of ViT-B on CIFAR-100. 
+
+Distillation of ViT-B We also evaluated various hyperparameter sets for knowledge distillation of ViT-B models, running an additional 62 trials. Here, the 40-epoch soft-mask training phase was followed by 40 epochs of hard-mask training. We used a batch size of 256. The ranges of the considered hyperparameters are depicted in Table 6. 
+
+E.3 Hyperparameter tuning on ImageNet-1K Fine-tuning of ViT-S In this scenario, we performed a single hyperparameter optimization run comprising 205 trials. We set the batch size to 256, and in each epoch we processed a random subset of 64,000 examples, not the whole training set, in contrast to CIFAR-100 experiments. The soft-mask training phase consisted of 20 epochs, followed by 10 epochs of hard-mask training. The summary of the considered hyperparameters and their ranges is presented in Table 7, while optimization scores for individual runs are shown in Figure 15. 
+
+Distillation of ViT-S To speed up distillation runs on the ImageNet-1K dataset, we precomputed and cached in memory the teacher network activations, and we also cached prepared image samples. We used a batch size of 256 and 64,000 samples per epoch, as well as 64,000 samples for kNN evaluation. We executed 208 trials. The ranges of the considered hyperparameters are shown in Table 8, while optimization scores for consecutive trials are presented in Figure 17. 19 SAPER : Soft Attention PrunER hyperparameter range/values best value alpha_init 1 (fixed) 1alpha_anneal_epochs [0, 5] 4alpha_anneal_schedule ’cosine’ (fixed) ’cosine’ annealing_start_coeff [0, 1] 0.618 score_init 0.01 · N (0 , 1) (fixed) 0.01 · N (0 , 1) 
+
+k_warmup_epochs 0 (fixed) 0backbone_freezing_strategy ’freeze_attention’ (fixed) ’freeze_attention’ backbone_lr [10 −6, 10 −3] 3.019 · 10 −5
+
+selector_lr [5 · 10 −5, 5 · 10 −2] 5.068 · 10 −4
+
+lr 10 −3 (fixed) 10 −3
+
+lr_scheduler_param 0.1 (fixed) 0.1 distill_layers {’all_layers’, ’8,-1’, ’-1’} ’8,-1’ distill_loss ’cosine’ (fixed) ’cosine’ distill_token_pool ’cls_mean’ (fixed) ’cls_mean’ Table 6: The set of considered hyperparameters for knowledge distillation of ViT-B on CIFAR-100. hyperparameter range/values best value alpha_init [0.5, 10.0] 3.56261 alpha_final [10 −4, 10 −1] 2.283 · 10 −3
+
+alpha_anneal_epochs [0, 15] 9alpha_anneal_schedule {’cosine’, ’geometric’, ’linear’} ’geometric’ annealing_start_coeff [0, 1] 0.0284836 weight_decay [10 −6, 10 −3] 2.246 · 10 −6
+
+score_init 0.01 · N (0 , 1) (fixed) 0.01 · N (0 , 1) 
+
+k_warmup_epochs [0, 16] 4backbone_freezing_strategy ’freeze_attention’ (fixed) ’freeze_attention’ backbone_lr [5 · 10 −7, 5 · 10 −4] 2.884 · 10 −5
+
+selector_lr [0 .001 , 0.5] 4.489 · 10 −2
+
+lr [5 · 10 −4, 0.5] 1.062 · 10 −3
+
+lr_scheduler_param 0 (fixed) 0Table 7: The set of considered hyperparameters for fine-tuning of ViT-S on ImageNet-1K. 
+
+Fine-tuning of ViT-B In this scenario, we executed a single hyperparameter optimization round comprising 206 trials. The batch size was set to 256, and in each epoch, we processed a random subset of 64000 data samples. As previously, the training pipeline was divided into two distinct stages: an initial 20-epoch soft-mask training, succeeded by 10 epochs of hard-mask training. The summary of the optimized hyperparameters and their ranges is presented in Table 9, while individual runs are depicted in Figure 16. 
+
+Distillation of ViT-B In this setting, we conducted 207 trials using a batch size of 256, sampling 64 , 000 images per epoch for both training and kNN evaluation. The search spaces for all evaluated hyperparameters are detailed in Table 10, while results of the optimization process are shown in Figure 18. 20 SAPER : Soft Attention PrunER hyperparameter range/values best value alpha_init [0.5, 10.0] 9.30041 alpha_final [10 −3, 10 −1] 3.820 · 10 −3
+
+alpha_anneal_epochs [0, 15] 9alpha_anneal_schedule {’cosine’, ’geometric’, ’linear’} ’geometric’ annealing_start_coeff [0, 1] 0.46637 weight_decay [10 −6, 10 −3] 1.973 · 10 −6
+
+score_init 0.01 · N (0 , 1) (fixed) 0.01 · N (0 , 1) 
+
+k_warmup_epochs [0, 16] 10 backbone_freezing_strategy ’freeze_attention’ (fixed) ’freeze_attention’ backbone_lr [5 · 10 −7, 5 · 10 −4] 4.364 · 10 −5
+
+selector_lr [10 −4, 0.5] 3.636 · 10 −2
+
+lr [3 · 10 −4, 0.5] 4.227 · 10 −4
+
+lr_scheduler_param 0.1 (fixed) 0.1 distill_layers {’all_layers’, ’8,-1’, ’-1’} ’8,-1’ distill_loss ’cosine’ (fixed) ’cosine’ distill_token_pool ’cls_mean’ (fixed) ’cls_mean’ Table 8: The set of considered hyperparameters for knowledge distillation of ViT-S on ImageNet-1K. hyperparameter range/values best value alpha_init [0.5, 10.0] 1.26986 alpha_final [10 −4, 10 −1] 4.449 · 10 −4
+
+alpha_anneal_epochs [0, 15] 1alpha_anneal_schedule {’cosine’, ’geometric’, ’linear’} ’geometric’ annealing_start_coeff [0, 1] 0.487653 weight_decay [10 −6, 10 −3] 1.565 · 10 −6
+
+score_init 0.01 · N (0 , 1) (fixed) 0.01 · N (0 , 1) 
+
+k_warmup_epochs [0, 16] 8backbone_freezing_strategy ’freeze_attention’ (fixed) ’freeze_attention’ backbone_lr [5 · 10 −7, 10 −3] 3.630 · 10 −5
+
+selector_lr [5 · 10 −7, 10 −3] 5.936 · 10 −3
+
+lr [5 · 10 −4, 0.5] 9.462 · 10 −4
+
+lr_scheduler_param 0 (fixed) 0Table 9: The set of considered hyperparameters for fine-tuning of ViT-B on ImageNet-1K. 21 SAPER : Soft Attention PrunER H0 H1 H2 H3 H4 H5                 
+
+> L0
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11
+> L0
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11 H0 H1 H2 H3 H4 H5
+> L0
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11
+
+(a) ViT-S H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11  
+
+> L0
+> L1
+> L2
+> L3
+> L4
+> L5
+> L6
+> L7
+> L8
+> L9
+> L10
+> L11
+
+(b) ViT-B 
+
+Figure 9: Laplace visualization maps for selected ViT-S and ViT-B models trained on the ImageNet-1K dataset, for an exemplary sample. Semi-transparent heads were selected for pruning by SAPER, while fully visible ones, bordered by red or orange, were among Top-24 or Top-6 heads, respectively. 22 SAPER : Soft Attention PrunER H0 H1 H2 H3 H4 H5                                                             
+
+> Head
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+> 000000
+> 000000
+> 000000
+> 000000
+> 000000
+> 000000
+> 000000
+> 001000
+> 000011
+> 001110
+> 111111
+> 111011
+> assignments (red = representative)
+> semantic pearson correlation | k=2 | DB=2.055 Sil=0.072
+
+(a) 2 clusters Silhouette score: 0.072 H0 H1 H2 H3 H4 H5                                                             
+
+> Head
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+> 000000
+> 000000
+> 110001
+> 100000
+> 000100
+> 100111
+> 110011
+> 101100
+> 111021
+> 111111
+> 222222
+> 222122
+> assignments (red = representative)
+> semantic pearson correlation | k=3 | DB=1.848 Sil=0.075
+
+(b) 3 clusters Silhouette score: 0.075 H0 H1 H2 H3 H4 H5                                                             
+
+> Head
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+> 000000
+> 011011
+> 110101
+> 101100
+> 011200
+> 211121
+> 220112
+> 201100
+> 221232
+> 223222
+> 333333
+> 333233
+> assignments (red = representative)
+> semantic pearson correlation | k=4 | DB=1.972 Sil=0.080
+
+(c) 4 clusters Silhouette score: 0.080 
+
+Figure 10: Semantic clustering of ViT-S attention heads for the CIFAR-100 dataset (2, 3 and 4 clusters). We can see the separation of the last few layers, and above all, the last two layers, which is in line with the results obtained by RAPTOR. However, our results paint a more nuanced picture, not fitting into rigid layers-only division. hyperparameter range/values best value alpha_init [0.5, 10.0] 1.56981 alpha_final [10 −3, 10 −1] 9.904 · 10 −3
+
+alpha_anneal_epochs [0, 15] 11 alpha_anneal_schedule {’cosine’, ’geometric’, ’linear’} ’geometric’ annealing_start_coeff [0, 1] 0.247263 weight_decay [10 −6, 10 −3] 2.072 · 10 −6
+
+score_init 0.01 · N (0 , 1) (fixed) 0.01 · N (0 , 1) 
+
+k_warmup_epochs [0, 16] 9backbone_freezing_strategy ’freeze_attention’ (fixed) ’freeze_attention’ backbone_lr [5 · 10 −7, 5 · 10 −4] 7.625 · 10 −5
+
+selector_lr [10 −7, 0.1] 9.189 · 10 −2
+
+lr [3 · 10 −4, 0.5] 6.789 · 10 −3
+
+lr_scheduler_param 0.1 (fixed) 0.1 distill_layers {’all_layers’, ’8,-1’, ’-1’} ’8,-1’ distill_loss ’cosine’ (fixed) ’cosine’ distill_token_pool ’cls_mean’ (fixed) ’cls_mean’ Table 10: The set of considered hyperparameters for distillation of ViT-B on ImageNet-1K. 23 SAPER : Soft Attention PrunER H0 H1 H2 H3 H4 H5 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+0 0 0 0 0 0
+
+1 0 0 0 1 1
+
+0 0 1 1 1 0
+
+1 1 1 1 1 1
+
+1 1 1 0 1 1
+
+assignments (red = representative) 
+
+> semantic pearson correlation | k=2 | DB=1.109 Sil=0.118
+
+(a) 2 clusters Silhouette score: 0.118 H0 H1 H2 H3 H4 H5 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 0 0 0 0 0
+
+0 0 1 0 1 0
+
+1 1 0 0 0 0
+
+1 0 1 0 0 0
+
+0 1 1 1 0 1
+
+1 0 1 1 1 1
+
+1 1 0 1 1 1
+
+1 0 1 1 0 0
+
+1 0 1 1 2 1
+
+1 1 2 2 2 1
+
+2 2 2 2 2 2
+
+2 2 2 1 2 2
+
+assignments (red = representative) 
+
+> semantic pearson correlation | k=3 | DB=1.507 Sil=0.133
+
+(b) 3 clusters Silhouette score: 0.133 H0 H1 H2 H3 H4 H5 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 0 1 0 0 0
+
+0 0 2 0 1 1
+
+2 2 0 0 0 1
+
+2 0 0 0 0 0
+
+1 2 2 2 0 0
+
+0 1 1 2 0 2
+
+2 2 1 2 2 2
+
+0 1 2 2 1 1
+
+2 1 2 2 3 2
+
+1 1 3 3 3 1
+
+3 3 3 3 3 3
+
+3 3 3 1 3 3
+
+assignments (red = representative) 
+
+> semantic pearson correlation | k=4 | DB=2.267 Sil=0.115
+
+(c) 4 clusters Silhouette score: 0.115 
+
+Figure 11: Semantic clustering of ViT-S attention heads for the ImageNet-1K dataset (2, 3 and 4 clusters). The resulting clusterings are similar to those obtained for the CIFAR-100 dataset. 24 SAPER : Soft Attention PrunER H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 1 0 1 1 0 1 0 1 1 0 1
+
+1 1 1 1 1 1 1 1 1 1 1 1
+
+0 1 0 1 0 1 1 1 0 1 0 1
+
+assignments (red = representative) 
+
+semantic pearson correlation | k=2 | DB=1.328 Sil=0.078 
+
+(a) 2 clusters, Silhouette score: 0.078 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 1 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+1 2 1 2 2 0 2 1 2 2 1 2
+
+2 2 2 2 2 2 2 2 2 2 2 2
+
+1 2 1 2 1 2 2 2 1 2 1 2
+
+assignments (red = representative) 
+
+semantic pearson correlation | k=3 | DB=1.377 Sil=0.086 (b) 3 clusters, Silhouette score: 0.086 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 1 0 1 1 0 0 1 0 0 0 1
+
+0 0 0 0 1 1 1 1 1 1 1 1
+
+1 1 0 1 1 1 1 1 1 1 1 0
+
+1 1 1 1 0 1 0 1 1 1 1 1
+
+0 0 1 0 0 0 0 0 1 1 1 0
+
+1 0 0 0 0 0 0 1 0 0 0 0
+
+1 0 0 0 0 0 0 1 1 0 0 1
+
+0 0 2 0 0 0 0 0 0 0 0 1
+
+0 0 0 0 0 1 0 0 0 0 1 1
+
+3 2 3 2 2 1 2 3 2 2 3 2
+
+2 2 2 2 2 2 2 2 2 2 2 2
+
+3 2 3 3 3 3 2 2 3 2 3 2
+
+assignments (red = representative) 
+
+semantic pearson correlation | k=4 | DB=2.022 Sil=0.097 
+
+(c) 4 clusters, Silhouette score: 0.097 
+
+Figure 12: Semantic clustering of ViT-B attention heads for the CIFAR-100 dataset (2, 3 and 4 clusters). Separation of the last three layers is most prominent. When 4 clusters are used, the phase transition between L4 and L5 becomes apparent, matching the ViT-B block structure discovered by RAPTOR. 25 SAPER : Soft Attention PrunER H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 0 0 0 0 0 0 0 0
+
+0 0 0 0 1 0 0 0 1 0 0 1
+
+0 0 1 0 0 0 0 0 0 0 1 1
+
+0 0 0 1 0 1 0 0 0 0 1 0
+
+1 0 1 0 0 1 0 1 0 0 1 1
+
+1 0 1 0 0 1 1 1 0 1 1 0
+
+1 1 1 1 1 1 0 1 1 1 1 1
+
+assignments (red = representative) 
+
+semantic pearson correlation | k=2 | DB=1.416 Sil=0.079 
+
+(a) 2 clusters, Silhouette score: 0.079 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 1 0 0 0 0 0 0 0 0 0 0
+
+0 1 0 0 0 0 0 0 1 0 0 0
+
+1 1 0 0 1 0 0 1 1 1 1 0
+
+1 1 1 0 1 1 0 1 1 1 1 1
+
+0 0 1 1 0 1 0 0 1 1 0 1
+
+0 1 1 0 0 0 1 1 1 0 0 1
+
+1 1 0 0 1 1 0 1 1 1 1 1
+
+0 1 1 1 0 0 0 1 1 1 1 2
+
+1 0 1 1 0 1 0 0 0 1 1 1
+
+2 1 2 1 1 2 1 2 1 1 2 2
+
+2 1 2 1 1 1 2 2 1 2 1 1
+
+2 2 2 2 2 2 1 2 2 2 2 2
+
+assignments (red = representative) 
+
+semantic pearson correlation | k=3 | DB=1.730 Sil=0.081 (b) 3 clusters, Silhouette score: 0.081 H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 
+
+Head 
+
+> L0 L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11
+> Layer
+
+0 1 0 0 0 0 0 0 0 0 0 0
+
+0 1 0 0 0 0 0 0 1 0 0 1
+
+1 1 0 0 1 0 0 1 2 1 1 0
+
+1 1 1 0 1 1 0 1 2 1 1 1
+
+0 0 1 1 0 1 0 0 1 1 0 1
+
+0 1 1 0 0 0 1 1 1 0 0 1
+
+1 1 0 0 1 1 0 1 1 1 1 1
+
+0 1 1 2 0 1 0 1 1 0 1 3
+
+1 0 1 1 0 1 0 0 0 1 1 1
+
+3 2 3 2 2 3 2 3 2 2 3 2
+
+3 2 3 2 2 2 3 2 2 2 2 2
+
+3 3 3 3 3 3 1 3 3 2 3 3
+
+assignments (red = representative) 
+
+semantic pearson correlation | k=4 | DB=2.012 Sil=0.078 
+
+(c) 4 clusters, Silhouette score: 0.078 
+
+Figure 13: Semantic clustering of ViT-B attention heads for the ImageNet-1K dataset (2, 3 and 4 clusters). These results highlight a more complex landscape, indicating that per-layer block division may be an oversimplification of the attention heads structure. However, the last three layers still create a separate subblock. 26 SAPER : Soft Attention PrunER Layer 8 Layer 9 Layer 10 Layer 11                  
+
+> Layer 4 Layer 5 Layer 6 Layer 7
+> Layer 0 Layer 1 Layer 2 Layer 3
+> -200 -100 0100 200 -200 -100 0100 200 -200 -100 0100 200 -200 -100 0100 200 -200 -100 0100 200 -200 -100 0100 200 -200 -100 0100 200
+
+Proj_X Proj_Y  model_name ViT-B ViT-S 
+
+Figure 14: Extended results of the Principal Component Analysis performed on a common set of heads’ activations from both ViT-S and ViT-B on the validation set of ImageNet-1K. In each subplot, heads from different layers are marked as blue or red. Dependencies in the coordinates of the two main components between most of the subsequent layer heads suggest a visible relationship. 27 SAPER : Soft Attention PrunER 10 −3 10 −2 10 −1
+
+lr (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+lr 
+
+> best trial
+
+10 −3 10 −2 10 −1
+
+selector_lr (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+selector_lr 
+
+> best trial
+
+10 −6 10 −5 10 −4
+
+backbone_lr (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+backbone_lr 
+
+> best trial
+
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+
+k_warmup_epochs 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+k_warmup_epochs 
+
+10 0 10 1
+
+alpha_init (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+alpha_init 
+
+> best trial
+
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 
+
+alpha_anneal_epochs 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+alpha_anneal_epochs 
+
+0.0 0.2 0.4 0.6 0.8 
+
+annealing_start_coe ff 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+annealing_start_coe ff 
+
+> best trial
+
+10 −4 10 −3 10 −2 10 −1
+
+alpha_ fi nal (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+alpha_ fi nal 
+
+> best trial
+
+cosine geometric linear 
+
+alpha_anneal_schedule 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+alpha_anneal_schedule 
+
+10 −6 10 −5 10 −4 10 −3
+
+weight_decay (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+weight_decay 
+
+> best trial
+
+0
+
+25 
+
+50 
+
+75 
+
+100 
+
+125 
+
+150 
+
+175 
+
+200 
+
+> trial
+
+Figure 15: Classification accuracy for consecutive hyperparameters during ImageNet-1K optimization with Optuna. The presented scenario concerns the fine-tuning mode in ViT-S, and the highest performing setting is denoted by ⋆ and equals ≈ 0.74 .28 SAPER : Soft Attention PrunER 10 −3 10 −2 10 −1
+
+lr (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+lr 
+
+> best trial
+
+10 −6 10 −5 10 −4 10 −3 10 −2
+
+selector_lr (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+selector_lr 
+
+> best trial
+
+10 −6 10 −5 10 −4 10 −3
+
+backbone_lr (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+backbone_lr 
+
+> best trial
+
+0 1 2 3 4 5 6 7 8 9
+
+10 11 12 13 14 
+
+k_warmup_epochs 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+k_warmup_epochs 
+
+10 0 10 1
+
+alpha_init (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+alpha_init 
+
+> best trial
+
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 
+
+alpha_anneal_epochs 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+alpha_anneal_epochs 
+
+0.0 0.2 0.4 0.6 0.8 
+
+annealing_start_coe ff 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+annealing_start_coe ff 
+
+> best trial
+
+10 −4 10 −3 10 −2 10 −1
+
+alpha_ fi nal (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+alpha_ fi nal 
+
+> best trial
+
+cosine geometric linear 
+
+alpha_anneal_schedule 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+alpha_anneal_schedule 
+
+10 −6 10 −5 10 −4 10 −3
+
+weight_decay (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> val probe top-1
+
+weight_decay 
+
+> best trial
+
+0
+
+25 
+
+50 
+
+75 
+
+100 
+
+125 
+
+150 
+
+175 
+
+200 
+
+> trial
+
+Figure 16: Classification accuracy for consecutive hyperparameters during ImageNet-1K optimization with Optuna. The presented scenario concerns the fine-tuning mode in ViT-B, and the highest performing setting is denoted by ⋆ and equals ≈ 0.74 .29 SAPER : Soft Attention PrunER 10 −3 10 −2 10 −1
+
+lr (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+lr 
+
+> best trial
+
+10 −4 10 −3 10 −2 10 −1
+
+selector_lr (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+selector_lr 
+
+> best trial
+
+10 −6 10 −5 10 −4
+
+backbone_lr (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+backbone_lr 
+
+> best trial
+
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+
+k_warmup_epochs 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+k_warmup_epochs 
+
+10 0 10 1
+
+alpha_init (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+alpha_init 
+
+> best trial
+
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 
+
+alpha_anneal_epochs 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+alpha_anneal_epochs 
+
+0.2 0.4 0.6 0.8 
+
+annealing_start_coe ff 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+annealing_start_coe ff 
+
+> best trial
+
+3 × 10 −3 10 −2 3 × 10 −2
+
+alpha_ fi nal (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+alpha_ fi nal 
+
+> best trial
+
+cosine geometric linear 
+
+alpha_anneal_schedule 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+alpha_anneal_schedule 
+
+10 −6 10 −5 10 −4 10 −3
+
+weight_decay (log) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+weight_decay 
+
+> best trial
+
+-1 1,2,3,4,5,6,7,8,9,10,11,12 8,-1 
+
+distill_layers 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+distill_layers 
+
+0
+
+25 
+
+50 
+
+75 
+
+100 
+
+125 
+
+150 
+
+175 
+
+200 
+
+> trial
+
+Figure 17: Classification accuracy for consecutive hyperparameters during ImageNet-1K optimization with Optuna. The presented scenario concerns the knowledge distillation mode in ViT-S, and the highest performing setting is denoted by ⋆ and equals ≈ 0.68 .30 SAPER : Soft Attention PrunER 10 −3 10 −2 10 −1
+
+lr (log) 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+lr 
+
+> best trial
+
+10 −7 10 −6 10 −5 10 −4 10 −3 10 −2 10 −1
+
+selector_lr (log) 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+selector_lr 
+
+> best trial
+
+10 −6 10 −5 10 −4
+
+backbone_lr (log) 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+backbone_lr 
+
+> best trial
+
+0 1 2 3 4 5 6 7 8 9
+
+10 11 12 13 14 
+
+k_warmup_epochs 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+k_warmup_epochs 
+
+10 0 10 1
+
+alpha_init (log) 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+alpha_init 
+
+> best trial
+
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 
+
+alpha_anneal_epochs 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+alpha_anneal_epochs 
+
+0.2 0.4 0.6 0.8 
+
+annealing_start_coe ff 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+annealing_start_coe ff 
+
+> best trial
+
+3 × 10 −3 10 −2 3 × 10 −2
+
+alpha_ fi nal (log) 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+alpha_ fi nal 
+
+> best trial
+
+cosine geometric linear 
+
+alpha_anneal_schedule 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+alpha_anneal_schedule 
+
+10 −6 10 −5 10 −4 10 −3
+
+weight_decay (log) 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+weight_decay 
+
+> best trial
+
+-1 1,2,3,4,5,6,7,8,9,10,11,12 8,-1 
+
+distill_layers 
+
+0.2 
+
+0.4 
+
+0.6 
+
+> kNN acc
+
+distill_layers 
+
+0
+
+25 
+
+50 
+
+75 
+
+100 
+
+125 
+
+150 
+
+175 
+
+200 
+
+> trial
+
+Figure 18: Classification accuracy for consecutive hyperparameters during ImageNet-1K optimization with Optuna. The presented scenario concerns the knowledge distillation mode in ViT-B, and the highest performing setting is denoted by 
+
+⋆ and equals ≈ 0.73 .31

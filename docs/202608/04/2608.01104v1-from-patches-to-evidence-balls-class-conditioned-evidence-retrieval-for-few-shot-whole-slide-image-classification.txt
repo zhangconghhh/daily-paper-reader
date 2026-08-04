@@ -1,0 +1,633 @@
+Title: From Patches to Evidence Balls: Class-Conditioned Evidence Retrieval for Few-Shot Whole Slide Image Classification
+
+URL Source: https://arxiv.org/pdf/2608.01104v1
+
+Published Time: Tue, 04 Aug 2026 01:13:02 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# From Patches to Evidence Balls: Class-Conditioned Evidence Retrieval for Few-Shot Whole Slide Image Classification 
+
+Di Zhang 1 Li Zhang 2* Jiashuai Liu 1 Junbo Lu 1 Zhi Zeng 1 Jiusong Ge 1
+
+Chunze Yang 1 Yi Niu 1 Jian Chen 3 Kai He 4 Zeyu Gao 3* Chen Li 11XJTU 2JUFE 3University of Cambridge 4NUS 
+
+Abstract 
+
+Whole slide image (WSI) classification is an evidence-driven task, where diagnostic cues are often sparse, spa-tially organized, and class-dependent. Existing multi-ple instance learning (MIL) and vision-language meth-ods aggregate a large pool of patch features into a sin-gle global slide representation. Under few-shot supervi-sion, limited slide-level labels make it difficult to learn a reliable aggregation mechanism that organizes sparse local cues into compact and coherent diagnostic evi-dence. Moreover, a shared slide representation com-presses evidence supporting a candidate class and its al-ternatives into the same feature, limiting class-specific rea-soning and interpretability. To address these issues, we propose EviBall , a class-conditioned evidence retrieval framework for few-shot WSI classification. EviBall orga-nizes local patches into Evidence Balls through semantic-spatial assignment and center refinement, yielding com-pact and spatially coherent evidence units under weak su-pervision. It then uses task-specific class queries, includ-ing language-guided queries for morphology-oriented tasks and molecular-guided queries for molecular endpoint pre-diction, to retrieve supporting evidence balls and produce class-conditioned evidence representations for direct class-wise prediction. By introducing structured evidence units and task-relevant semantic guidance, EviBall reduces the reliance on learning an unconstrained global aggregation mechanism from scarce slide-level labels. It therefore refor-mulates few-shot WSI classification as structured evidence retrieval and competition among candidate classes. Ex-tensive experiments across four morphology-oriented and molecular endpoint WSI tasks demonstrate that EviBall consistently outperforms conventional and vision-language MIL baselines under diverse few-shot settings, while pro-viding spatially localized and class-specific evidence for each prediction. 
+
+> *
+
+Co-corresponding authors. < zg323@cam.ac.uk >Patch              
+
+> Aggregation
+> A) Vision-only MIL Patch Encoder
+> Results
+> B) Multimodal MIL
+> C) EviBall
+> Slide
+> Feature
+> Classifier
+> Patch
+> Aggregation
+> Patch Encoder
+> Slide
+> Feature IDC shows irregular …
+> ILC shows small … LLM
+> Patch Encoder
+> Evidence Ball Construction
+> Support-aware
+> Cross-Attention Class-Conditioned
+> Evidence Feature
+> Results
+> Class-wise Classifier
+> •Fragmented patch evidence
+> •Class-agnostic aggregation
+> •Text-only semantic prior
+> •Fused global slide feature
+> Results
+> Classifier
+> •Structured evidence balls
+> •Modality-agnostic class queries
+> •Class-conditioned features
+> IDC shows irregular …
+> ILC shows small …
+> LLM
+> Task-relevant
+> RNA: {Gene name}
+> RNA Model
+> Molecular-guided Queries Language-guided Queries
+> OR
+> Proposed Method
+> Evidence Ball
+> Support Mass kq
+> …
+> …
+> Aggregated
+> Spatial Center agg
+> ks
+> …
+> Aggregated Sem-
+> antic Center agg
+> kc
+> Three Key
+> Attributes of the Evidence Ball
+> Spatial-gated Center Update
+
+Figure 1. Motivation of EviBall. Vision-only MIL relies on frag-mented patch-level evidence, while LLM-based multimodal MIL often uses text-limited semantic guidance and global feature fu-sion. EviBall constructs structured evidence balls and performs class-conditioned evidence retrieval with task-relevant semantic queries. 
+
+1. Introduction 
+
+Histopathological examination plays a central role in dis-ease diagnosis, tumor grading, biomarker assessment, and prognosis prediction. With the increasing digitization of glass slides into whole-slide images (WSIs), computational pathology has enabled data-driven models to assist patholo-gists in large-scale and objective tissue analysis [21]. How-ever, WSI classification [17] is fundamentally different from conventional natural image recognition. Unlike nat-ural images, where a prediction can often be made from a holistic object-level representation, a WSI is classified based on sparse, spatially organized, and class-dependent histological evidence distributed across a gigapixel-scale tissue landscape [10]. Such evidence may occupy only a small fraction of the entire slide and is often embedded in highly heterogeneous tissue contexts [16]. This evidence-centric nature [28] makes few-shot WSI classification particularly challenging. To process gigapixel WSIs using only slide-level supervision, existing methods commonly adopt multiple instance learning (MIL), repre-senting each slide as a bag of patch features and aggre-gating them into a slide-level representation for prediction. 1arXiv:2608.01104v1 [cs.CV] 2 Aug 2026 However, in many clinically relevant tasks [12, 30], reliable slide-level labels are costly and time-consuming to obtain, as they often require molecular assays, expert pathological review, or long-term clinical follow-up. As a result, only a handful of labeled slides may be available for each class. Under such limited supervision, the model must identify class-discriminative evidence from thousands of heteroge-neous patches, although only a small fraction may be rele-vant to the target endpoint. This makes it difficult to learn a reliable aggregation mechanism that preserves sparse diag-nostic evidence. However, existing MIL paradigms are not explicitly de-signed to organize such sparse local cues into reliable and class-specific evidence. As illustrated in Fig. 1, vision-only MIL methods [14] typically aggregate fragmented patch ev-idence into a class-agnostic global slide representation [13]. Moreover, the spatial organization and support strength of local evidence are often not explicitly modeled, causing di-agnostically relevant cues to remain fragmented or be di-luted during aggregation. Recent multimodal MIL meth-ods [11] introduce semantic guidance, but commonly rely on text-only priors and fuse semantic information into a shared slide feature. Such language guidance may be in-formative for morphology-oriented tasks but indirect for molecular endpoints, while global fusion can entangle the evidence supporting candidate classes. These limitations call for organizing local cues into coherent evidence units, incorporating task-relevant semantics, and preserving class-specific evidence under limited supervision. Motivated by these observations, we propose EviBall, a class-conditioned evidence retrieval framework that re-casts few-shot WSI classification as structured evidence reasoning rather than global slide representation learning. EviBall first organizes fragmented patch instances into Ev-idence Balls , compact evidence units that jointly encode semantic content, spatial organization, and evidence sup-port mass. These structured units are then queried us-ing task-relevant class semantics, derived from language descriptions for morphology-oriented tasks or RNA rep-resentations for molecular endpoint prediction. Through support-aware cross-attention, each class query selectively retrieves its supporting evidence balls to form a distinct class-conditioned representation for prediction. To fur-ther reduce redundant evidence, we introduce a same-region diversity regularizer that encourages co-located ev-idence balls to capture complementary local patterns. We evaluate EviBall on multiple few-shot WSI classifica-tion tasks under 1-, 2-, 4-, and 8-shot settings, covering both morphology-oriented classification and molecular end-point prediction. Compared with representative vision-only MIL methods and LLM-based multimodal MIL base-lines, EviBall achieves strong and generally superior per-formance across tasks and shot numbers, demonstrating the effectiveness of structured evidence construction and class-conditioned evidence retrieval. Notably, on molecular end-point prediction, the molecular-guided variant further im-proves or complements the LLM-guided variant, suggesting that task-relevant molecular semantics can provide more ap-propriate class guidance than text-only priors. Our main contributions are summarized as follows: • We propose EviBall, an evidence-centric framework for few-shot WSI classification that introduces evidence balls to shift the modeling focus from isolated patch instances to compact, spatially coherent evidence units. • We introduce task-adaptive semantic querying that ex-tends multimodal MIL beyond language-only guidance. EviBall employs LLM-derived morphological semantics for morphology-oriented tasks and molecular-derived se-mantics for molecular endpoint prediction. • We develop a support-aware, class-conditioned evidence decoder, in which each class query selectively retrieves semantically relevant evidence balls to form a dedicated evidence representation for class-wise prediction. • Extensive experiments on multiple few-shot WSI clas-sification tasks demonstrate the effectiveness of EviBall against representative vision-only and multimodal MIL baselines, with the molecular-guided variant showing ad-ditional benefits for molecular endpoint prediction. 
+
+2. Related Works 
+
+MIL and Multimodal Learning for WSI Classification. 
+
+Due to the gigapixel scale of WSIs and the scarcity of dense annotations, multiple instance learning has become a dominant weakly supervised paradigm for WSI classifi-cation [29]. Existing methods improve slide-level model-ing through attention pooling [14], instance selection [4], dual-stream learning [9], transformer-based contextualiza-tion [19], and few-shot feature adaptation or regulariza-tion [25]. Multimodal approaches further incorporate se-mantic priors from class names, textual descriptions, or vision-language models [5, 7, 20]. However, most methods remain patch-centric and aggregate or fuse patch features into a global slide representation, without explicitly orga-nizing them into structured evidence units for class-wise re-trieval. 
+
+Evidence-Centric Representation in WSI Analysis. 
+
+Recent studies have moved toward evidence-centric model-ing by identifying discriminative patches [19], learning pro-totypes [20], performing multi-agent diagnostic reasoning [24] or constructing graphs [32]. Nevertheless, these evi-dence units are typically represented primarily by semantic features. EviBall constructs evidence balls characterized by semantic centers, spatial centers, and relative support mass, enabling class-conditioned reasoning over explicit evidence 2RNA Language Model Vocabulary 
+
+Patch 
+
+Encoder 
+
+> Evidence Ball Construction
+
+Support-aware 
+
+Cross-Attention 
+
+> Class-wise Classifier
+
+Bag 
+
+> ...
+> Pathology Language Model
+
+OR  
+
+> Task-relevant
+> RNA: {Gene name}
+> Low
+> Expr. Bin
+> High
+> Expr. Bin
+> Key Value
+
+Trainable Module 
+
+Frozen Module 
+
+> Patch Features
+
+## … 
+
+> Evidence Balls
+> Semantic Feature k
+
+c
+
+> Evidence Balls
+> Support Mass  kq
+> …
+> bias
+> Aggregated
+> Spatial Feature
+
+## …
+
+> agg
+> k
+
+s
+
+> Spatial-gated Center Update
+
+Class 1 
+
+Class 2 
+
+> 1
+
+o
+
+> 2
+
+o
+
+LLM         
+
+> In high-resolution H&E whole-slide images, lung adenocarci-noma typically shows gland-forming, acinar, papillary…
+> In high-resolution H&E whole-slide images, lung squamous cell carcinoma typically shows solid nests or ...
+
+Adapter  
+
+> Query
+> Class-wise Classifier
+
+Class-specific Logit Prediction 
+
+> Class-1
+> Evidence Feature
+> Class-2
+> Evidence Feature
+
+Select by Task 
+
+Patch Feature Extraction 
+
+Class Semantic 
+
+Query Generation    
+
+> Describe the core visual features of {class} in high-resolution H&E whole-slide images.
+
+Figure 2. Framework of EviBall. Given a WSI, patch features are first extracted by a frozen patch encoder and organized into structured evidence balls with semantic, spatial, and support mass attributes. Task-relevant class semantic queries are then generated from either language or RNA semantics. Through support-aware cross-attention, each class query retrieves its supporting evidence balls to form a class-conditioned representation, which is finally used for class-wise slide-level prediction. 
+
+units. A detailed comparison is provided in the Appendix. 
+
+3. Methodology 
+
+3.1. Problem Formulation 
+
+A WSI is a gigapixel-scale image that cannot be directly processed in the same way as conventional natural images. A common practice in computational pathology is therefore to divide each WSI into a set of smaller patches and ex-tract patch-level features using a pretrained encoder. Let 
+
+D = {(Xm, y m)}Mm=1 denote a weakly supervised WSI classification dataset, where Xm is the m-th whole slide image and ym ∈ { 1, . . . , C } is its slide-level label over C
+
+classes. Following common WSI pipelines, each slide is di-vided into a set of non-overlapping patches and encoded by a pretrained patch encoder. Thus, a WSI is represented as a bag of patch-level instances: Xm = {(hi, p i)}Ni=1 , where 
+
+hi ∈ Rd denotes the feature of the i-th patch, pi ∈ R2 de-notes its spatial coordinate, and N is the number of patches in the slide. During training, only the slide-level label ym is available, while patch-level diagnostic annotations are not provided. To enable few-shot WSI classification with structured and task-relevant evidence, we propose EviBall, as illus-trated in Fig. 2. EviBall comprises three components: a frozen CONCH v1.5 encoder [15] followed by evidence ball construction to form compact evidence units with se-mantic, spatial, and support mass information, task-relevant class semantic queries derived from language or RNA queries, and support-aware cross-attention that retrieves class-specific evidence for class-wise prediction. 
+
+3.2. Evidence Ball Construction 
+
+Evidence ball construction aims to move beyond isolated patch instances by grouping patch-level observations into compact structured evidence ball units. Given a WSI bag 
+
+Xm, EviBall constructs a set of evidence balls 
+
+Bm = {Bk}Kk=1 = {(ck, s k, q k)}Kk=1 , (1) where ck, sk, and qk denote the semantic center, spatial cen-ter, and relative support mass of the k-th evidence ball, re-spectively. The construction consists of diversity-aware ini-tialization, local patch-to-ball assignment, and evidence ball refinement, as illustrated in Fig. 3. 
+
+Diversity-aware initialization. The patch features are first arranged into a spatial feature grid according to their coordinates and then partitioned into non-overlapping local regions. Every M × M neighboring patches are treated as one local region, where M denotes the region size. Within each valid region Rr , the least similar patch pair is selected 3Initial Ball Selection        
+
+> …
+> …
+> Semantic Center Spatial
+> Center
+> Diversity-aware Initialization
+> …
+> …
+> Patch Feature
+> Patch Information
+> LSSA
+> Patch Coordinate
+> Ball-wise Softmax Patch-wise Softmax
+> Patch-to-Ball Assignment
+> Ball Evidence Aggregation
+> Mean
+> Evidence Balls
+> Support Mass kq
+> ……
+> Aggregated
+> Spatial Center agg
+> ks
+> …
+> Aggregated Sem-
+> antic Center agg
+> kc
+> Weighted Aggregation
+> Local Affinity Matrix G
+> Patch Region
+> Local
+> Evidence Binding
+
+Figure 3. Overview of Evidence Ball Construction. 
+
+to initialize two semantically diverse evidence balls: 
+
+(ir , j r ) = arg min   
+
+> i,j ∈R r, i ̸=j
+
+sim( hi, h j ). (2) The two selected seed patches independently initialize two candidate evidence balls: Binit  
+
+> ir
+
+= ( cir , s ir ), and Binit  
+
+> jr
+
+=(cjr , s jr ). Collecting the initialized balls from all valid local regions yields 
+
+Binit  
+
+> m
+
+= [
+
+> Rr
+
+{Binit  
+
+> ir
+
+, B init  
+
+> jr
+
+} = {(cinit  
+
+> k
+
+, s init  
+
+> k
+
+)}Kk=1 . (3) At this initialization stage, each candidate ball only con-tains an initial semantic center and spatial center; its rela-tive support mass is not computed until the subsequent soft assignment and refinement steps. By initializing two se-mantically diverse balls within each local region, EviBall preserves heterogeneous patch patterns as separate candi-date evidence. 
+
+Local Evidence Binding. To transform seed-level candi-dates into evidence balls, EviBall aggregates semantically consistent patches around each initialized seed within a lo-cal spatial neighborhood. Specifically, for each initialized ball Binit  
+
+> k
+
+, we define a neighboring patch set Nk consist-ing of patches from the same or adjacent local regions. The subsequent local evidence binding is performed only within 
+
+Nk, which encourages each ball to capture a coherent local evidence pattern while reducing the noise of global match-ing. We introduce a Local Semantic-Spatial Affinity (LSSA) operation to measure the compatibility between each initial-ized evidence ball and its neighboring patches. Specifically, we compute a local affinity matrix G = [ gki ] ∈ RK×N ,where the k-th row corresponds to the k-th evidence ball and the i-th column corresponds to the i-th patch. The LSSA score is defined as 
+
+gki =
+
+
+
+(WQcinit  
+
+> k
+
+)⊤(WK hi)
+
+√d − λ ∥sinit  
+
+> k
+
+− pi∥2
+
+M , i ∈ N k,
+
+−∞ , i / ∈ N k,
+
+(4) where WQ and WK are learnable projection matrices, d is the feature dimension, and λ controls the spatial distance penalty. From the same masked LSSA logits, EviBall ap-plies a ball-wise softmax and a patch-wise softmax to derive two complementary normalized weights: 
+
+αki = Softmax ball (G)ki , βki = Softmax patch (G)ki .
+
+(5) Here, the ball-wise softmax normalizes over candidate ev-idence balls for each patch and produces patch-to-ball as-signment weights, whereas the patch-wise softmax normal-izes over neighboring patches for each evidence ball and produces evidence aggregation weights. We estimate the evidence support mass of Bk by its av-erage patch membership qk = 1
+
+> N
+
+PNi=1 αki . In contrast, the ball-wise contribution βki indicates how much patch i
+
+contributes to refining evidence ball Bk among its neigh-boring patches. Using these contribution weights, EviBall composes aggregated semantic and spatial centers: 
+
+cagg  
+
+> k
+
+=
+
+> N
+
+X
+
+> i=1
+
+βki Wv hi, sagg  
+
+> k
+
+=
+
+> N
+
+X
+
+> i=1
+
+βki pi. (6) 
+
+Spatial-gated center update. To obtain the final seman-tic center, EviBall further applies a spatial-gated center up-date. The spatial displacement between the provisional spa-tial center and the aggregated spatial center is computed as 
+
+∆sk = ∥sagg  
+
+> k
+
+− sinit  
+
+> k
+
+∥2. We then define a spatial gate: 
+
+ρk = ∆sk
+
+∆sk + 1
+
+> K
+
+PKk′=1 ∆sk′
+
+. (7) The spatial gate controls the refinement of the semantic cen-ter by modulating how much it moves toward the locally composed semantic evidence: 
+
+ck = (1 − ρk) cinit  
+
+> k
+
++ρkcagg  
+
+> k
+
+, sk = (1 − ρk) sinit  
+
+> k
+
++ρksagg  
+
+> k
+
+.
+
+(8) The refined evidence ball is therefore represented as Bk =(ck, s k, q k). The spatial gate further stabilizes center re-finement by allowing large semantic updates only when the spatial center is consistently shifted by its local evidence. 43.3. Class Semantic Query Generation 
+
+To retrieve evidence in a class-aware manner, EviBall as-signs each candidate class a semantic query. Specifically, we instantiate the queries with language-model-derived semantics for morphology-oriented tasks and molecular-model-derived semantics for molecular endpoint prediction. 
+
+Language-guided queries. For morphology-oriented tasks, class-specific pathological descriptions are generated by an LLM and encoded by the frozen TITAN text encoder [3], whose [CLS] token serves as the semantic query. This provides a morphology-aware semantic representation for each candidate class. For a fair comparison, all VLM-based MIL methods use the same class descriptions and frozen TITAN text encoder. 
+
+Molecular-guided queries. For molecular endpoint pre-diction, textual descriptions may provide only indirect pri-ors because the target labels are defined by molecular states. We therefore construct molecular-guided semantic queries using a pretrained transcriptomic foundation model, scGPT [2]. For a binary endpoint associated with a marker gene g, the negative and positive classes are represented by low- and high-expression bins, respectively. Following the categorical input formulation of scGPT, the molecular query for class c is defined as 
+
+uc = GeneEnc( g) + ValueEnc( bc), bc ∈ { b−, b +},
+
+(9) where b− and b+ denote the low- and high-expression states. 
+
+Query projection. Since the semantic queries from dif-ferent sources may lie in different embedding spaces, we use a source-specific adapter to project them into the ev-idence ball space: ec = Adapter( uc) ∈ Rd, where 
+
+c ∈ { 1, . . . , C }. Here, ec is the final class semantic query used by the evidence retrieval module. This design allows EviBall to use language-guided queries for morphology-oriented tasks and molecular-guided queries for molecular endpoints within a unified class-conditioned evidence re-trieval framework. 
+
+3.4. Class-Conditioned Evidence Retrieval 
+
+Given the class semantic queries and the constructed ev-idence balls, EviBall performs class-conditioned evidence retrieval for slide-level prediction. Unlike conventional MIL methods that aggregate all evidence into a single global slide representation, EviBall allows each class query to retrieve its own supporting evidence balls, reformulat-ing WSI classification as class-wise evidence retrieval and competition. 
+
+Support-aware evidence retrieval. Given the class se-mantic queries {ec}Cc=1 and the evidence ball set Bm =
+
+{(ck, s k, q k)}Kk=1 for the m-th WSI, EviBall performs support-aware cross-attention: 
+
+Z = Softmax 
+
+ QK ⊤
+
+√d + γ U ⊤
+
+
+
+V, (10) where Q is obtained from the class semantic queries by a linear transformation, and K and V are obtained from the semantic centers of evidence balls through learnable linear projections. Here, γ > 0 is a learnable scale constrained to be positive, ensuring that evidence balls with higher support receive larger additive attention biases, and d is the feature dimension, and U = [ u1, . . . , u K ]⊤ ∈ Rk×1 denotes the standardized support scores uk = log qk −μσ , where μ and σ
+
+are computed over evidence balls in the WSI. The support term γU ⊤ provides an additive evidence support bias, favoring better-supported evidence balls when their semantic relevance is comparable. 
+
+Class-wise prediction. The class-conditioned representa-tions are refined and converted into class logits by class-specific prediction heads: 
+
+˜Z = FFN(LN( Z)) , p = Softmax([ g1(˜ z1), . . . , g C (˜ zC )]) ,
+
+(11) where ˜zc is the c-th row of ˜Z, FFN denotes a feed-forward network, and gc(·) denotes the prediction head for class 
+
+c. Since each zc is decoded from the corresponding class query, the final prediction is based on class-specific evi-dence representations rather than a single global slide em-bedding. 
+
+3.5. Optimization 
+
+EviBall is trained under the standard weakly supervised setting, where only slide-level labels are available. The class-wise logits produced by class-conditioned evidence retrieval are supervised with the standard cross-entropy loss 
+
+LCE using the slide-level label. To promote complementary evidence modeling within each local region, we introduce a same-region diversity reg-ularizer for the two co-located evidence balls. For each valid region Rr , let cri and crj denote the refined semantic centers of the two evidence balls initialized from the seed pair in Eq. (2). The diversity regularizer is defined as 
+
+Ldiv = 1
+
+RmRmX
+
+> r=1
+
+max  0, sim( cri , c rj ) − δ, (12) where Rm is the number of valid regions in the m-th WSI, 
+
+sim( ·, ·) denotes cosine similarity, and δ is a similarity mar-gin. This margin-based objective penalizes co-located evi-dence balls only when their semantic similarity exceeds δ,5Task 
+
+Methods 1-shot 2-shot 4-shot 8-shot ACC AUC or F1 ACC AUC or F1 ACC AUC or F1 ACC AUC or F1 RCC-Subtyping ABMIL 54 .10 ±11 .73 77 .40 ±4.90 51 .47 ±15 .30 81 .62 ±8.25 52 .79 ±16 .43 78 .21 ±7.87 73 .53 ±11 .00 80 .98 ±10 .68 
+
+CLAM 51 .02 ±7.48 79 .54 ±9.00 39 .05 ±6.93 72 .22 ±9.00 61 .48 ±21 .91 76 .88 ±8.43 86 .57 ±5.20 77 .52 ±6.86 
+
+TransMIL 47 .75 ±10 .39 81 .65 ±3.74 52 .07 ±12 .96 86 .81 ±2.83 50 .75 ±14 .90 84 .17 ±6.86 72 .64 ±12 .33 85 .08 ±6.48 
+
+RRT 56 .42 ±14 .14 87 .13 ±6.86 71 .44 ±12 .49 86 .20 ±5.29 63 .40 ±12 .25 85 .61 ±6.63 80 .58 ±15 .78 82 .74 ±8.25 
+
+DSMIL 49 .53 ±14 .11 59 .07 ±15 .09 47 .06 ±7.62 75 .29 ±5.83 58 .99 ±14 .80 80 .45 ±7.75 80 .31 ±12 .96 80 .02 ±11 .14 
+
+ViLaMIL 70 .85 ±13 .27 68 .86 ±10 .95 74 .89 ±14 .07 76 .19 ±7.21 84 .44 ±6.08 79 .98 ±7.94 83 .53 ±6.78 78 .68 ±10 .05 
+
+FOCUS 59 .94 ±11 .87 86 .61 ±6.40 64 .92 ±7.00 83 .57 ±7.07 50 .92 ±12 .53 84 .75 ±7.81 65 .97 ±16 .46 79 .76 ±10 .58 
+
+MUSE 60 .21 ±8.72 86 .46 ±10 .21 43 .22 ±13 .31 78 .30 ±4.69 69 .44 ±10 .20 86 .75 ±5.10 66 .87 ±18 .96 85 .29 ±4.38 
+
+EviBall 78 .26 ±11 .24 89 .17 ±4.17 77 .90 ±14 .33 83 .11 ±8.39 88 .34 ±6.82 87 .30 ±10 .38 86 .56 ±9.15 85 .41 ±8.59 
+
+> BRCA-Subtyping
+
+ABMIL 57 .70 ±11 .73 70 .22 ±13 .97 57 .59 ±7.16 71 .23 ±9.24 60 .13 ±9.55 76 .29 ±10 .52 74 .34 ±12 .63 85 .88 ±7.91 
+
+CLAM 55 .73 ±9.53 65 .43 ±14 .73 51 .99 ±4.93 59 .99 ±5.74 60 .01 ±12 .27 74 .57 ±9.17 75 .82 ±8.07 86 .54 ±7.01 
+
+TransMIL 58 .05 ±3.22 66 .30 ±11 .19 55 .91 ±8.36 64 .86 ±9.81 53 .17 ±3.89 64 .97 ±5.19 59 .02 ±7.01 78 .37 ±10 .61 
+
+RRT 58 .46 ±9.09 70 .64 ±11 .38 60 .42 ±6.59 74 .50 ±6.59 59 .16 ±9.29 81 .54 ±7.07 77 .13 ±7.84 87 .58 ±5.40 
+
+DSMIL 53 .62 ±5.75 57 .93 ±5.41 51 .69 ±2.70 59 .15 ±7.95 55 .27 ±4.85 66 .41 ±7.52 55 .05 ±6.52 67 .14 ±12 .22 
+
+ViLaMIL 59 .22 ±10 .06 70 .47 ±14 .30 65 .79 ±7.87 76 .68 ±5.64 61 .61 ±10 .10 75 .00 ±5.49 63 .05 ±13 .20 70 .37 ±16 .56 
+
+FOCUS 59 .25 ±9.00 66 .91 ±9.10 60 .44 ±8.58 70 .51 ±10 .08 56 .72 ±5.51 72 .20 ±5.09 68 .67 ±11 .31 81 .36 ±7.07 
+
+MUSE 54 .89 ±7.63 64 .26 ±10 .35 50 .53 ±1.75 60 .69 ±10 .68 55 .49 ±4.12 64 .19 ±7.04 69 .23 ±4.55 78 .19 ±8.89 
+
+EviBall 61 .08 ±8.25 75 .94 ±8.25 65 .85 ±6.22 77 .43 ±3.31 71 .58 ±12 .67 85 .02 ±6.57 81 .17 ±6.93 88 .15 ±5.94 
+
+> IMP-Grading
+
+ABMIL 45 .22 ±9.49 48 .05 ±10 .98 72 .27 ±14 .55 73 .40 ±15 .98 78 .85 ±8.96 80 .32 ±10 .57 83 .33 ±13 .20 85 .48 ±8.23 
+
+CLAM 43 .24 ±10 .19 48 .26 ±8.30 59 .63 ±19 .17 59 .13 ±16 .15 75 .75 ±5.55 78 .61 ±5.76 85 .59 ±5.40 87 .08 ±4.21 
+
+TransMIL 39 .04 ±5.27 46 .84 ±5.96 47 .43 ±5.98 54 .66 ±3.90 57 .30 ±7.42 63 .08 ±5.95 70 .31 ±13 .63 73 .26 ±11 .29 
+
+RRT 47 .44 ±10 .72 49 .74 ±10 .51 46 .94 ±18 .09 48 .00 ±17 .90 72 .49 ±13 .51 78 .47 ±8.27 76 .80 ±18 .37 77 .49 ±19 .31 
+
+DSMIL 43 .36 ±10 .26 48 .15 ±15 .56 53 .53 ±14 .30 59 .76 ±12 .07 71 .47 ±3.42 75 .82 ±5.02 81 .29 ±4.25 82 .31 ±3.87 
+
+ViLaMIL 46 .17 ±10 .15 40 .30 ±7.99 47 .31 ±10 .93 45 .31 ±6.24 41 .57 ±9.92 45 .07 ±5.80 52 .70 ±5.16 51 .69 ±2.73 
+
+FOCUS 46 .06 ±6.96 50 .01 ±8.24 57 .36 ±6.90 61 .65 ±7.84 70 .85 ±8.32 73 .06 ±5.96 70 .15 ±12 .46 68 .88 ±15 .09 
+
+MUSE 38 .18 ±6.26 41 .48 ±10 .94 38 .65 ±2.48 46 .14 ±3.40 62 .44 ±18 .45 65 .87 ±16 .50 85 .38 ±5.07 84 .46 ±4.97 
+
+EviBall 50 .85 ±9.91 55 .25 ±11 .35 74 .20 ±7.73 75 .65 ±4.41 80 .37 ±4.82 81 .45 ±4.02 87 .62 ±2.93 88 .06 ±3.62 
+
+> BCNB-PR
+
+ABMIL 51 .90 ±2.77 55 .68 ±6.72 50 .57 ±0.97 54 .14 ±7.52 53 .22 ±4.65 60 .09 ±7.22 50 .71 ±1.74 54 .73 ±7.76 
+
+CLAM 56 .15 ±10 .27 57 .41 ±12 .20 52 .99 ±4.81 55 .42 ±6.01 53 .47 ±4.82 60 .64 ±8.28 56 .99 ±1.63 62 .10 ±5.82 
+
+TransMIL 52 .07 ±4.86 55 .82 ±7.56 49 .11 ±5.43 50 .65 ±7.68 54 .63 ±6.26 56 .41 ±10 .67 50 .28 ±5.77 52 .81 ±6.65 
+
+RRT 54 .67 ±5.51 56 .06 ±11 .97 52 .81 ±4.35 54 .60 ±7.75 57 .87 ±9.46 63 .52 ±8.74 56 .09 ±7.65 63 .05 ±9.21 
+
+DSMIL 50 .28 ±0.94 48 .49 ±4.72 52 .12 ±2.36 53 .10 ±5.43 55 .77 ±8.79 58 .66 ±9.66 54 .19 ±6.78 55 .41 ±8.56 
+
+ViLaMIL 54 .98 ±6.46 55 .93 ±11 .18 55 .89 ±7.09 55 .38 ±9.15 54 .82 ±7.42 61 .86 ±5.39 55 .03 ±5.07 63 .55 ±9.78 
+
+FOCUS 50 .60 ±3.42 53 .78 ±9.48 47 .94 ±2.24 50 .54 ±8.51 56 .15 ±7.92 58 .79 ±8.27 53 .57 ±8.57 57 .43 ±11 .42 
+
+MUSE 50 .98 ±2.79 50 .65 ±1.97 50 .21 ±3.22 48 .45 ±7.61 52 .34 ±2.92 52 .42 ±8.22 51 .30 ±4.55 52 .22 ±12 .06 
+
+EviBall-LLM 55 .05 ±5.76 63 .25 ±8.48 52 .85 ±4.04 58 .48 ±8.09 57 .47 ±4.45 64 .20 ±7.10 61 .37 ±6.50 65 .58 ±5.23 
+
+EviBall-RNA 58 .11 ±6.41 62 .39 ±8.01 56 .34 ±8.73 59 .43 ±9.22 59 .57 ±8.15 65 .51 ±9.99 60 .18 ±2.80 66 .76 ±4.32 
+
+Table 1. Few-shot performance on four WSI classification tasks. BCNB-PR additionally reports EviBall-RNA. 
+
+thereby discouraging redundant local evidence representa-tions. The final training objective is L = (1 − λdiv )LCE +
+
+λdiv Ldiv , where λdiv controls the strength of the diversity regularization. 
+
+4. Experiments 
+
+4.1. Experimental Settings 
+
+Datasets. We evaluate EviBall on four few-shot WSI clas-sification tasks built from five public datasets. Specifi-cally, RCC-Subtyping is constructed by combining CPTAC-CCRCC [1] and DHMC-RCC [33]. BRCA-Subtyping is evaluated on TCGA-BRCA (Tomczak et al. 2015). IMP-Grading is evaluated on IMP-CRS 2024 [18], and BCNB-PR prediction is evaluated on BCNB [26]. Detailed dataset descriptions and task definitions are provided in Appendix. 
+
+Few-shot protocol. Following the common training-shot protocol, we perform patient-level five-fold cross-validation with a 6:2:2 train/validation/test split. Only the training pool is subsampled to H WSIs per class ( H ∈ { 1, 2, 4, 8}), while the validation and test folds remain unchanged. All 6methods use identical splits, nested support sets, validation data, and model-selection procedures. 
+
+Implementation details. We use AdamW as the opti-mizer with a learning rate of 2 × 10 −4. Models are trained for up to 200 epochs with early stopping patience of 10. For fair comparison, all methods use the same frozen CONCH v1.5 patch encoder for visual feature extraction. For meth-ods requiring textual class semantics, we use the TITAN text encoder as the common text encoder. All experiments are conducted on a single NVIDIA RTX 4090 GPU. 
+
+Evaluation metrics. Following the evaluation protocols of [3, 31], we report balanced accuracy (ACC) as the pri-mary metric to account for class imbalance. For binary classification tasks, AUC is used as the secondary metric, whereas F1 score is used for multi-class tasks with three or more classes. Results are reported as mean and standard deviation over five folds. 
+
+4.2. Main Results 
+
+To validate the effectiveness of EviBall, we compare EviBall with representative WSI classification baselines, including attention-based MIL methods ABMIL (Ilse et al. 2018), CLAM [14], and DSMIL [9], transformer-based MIL methods TransMIL [19] and RRT [22], as well as recent structure-aware or few-shot WSI methods ViL-aMIL [20], FOCUS [6], and MUSE [27]. The results are reported in Table 1. Overall, EviBall achieves the best performance in most task-shot-metric settings, demonstrat-ing the effectiveness of structured evidence balls and class-conditioned evidence retrieval. Beyond the commonly eval-uated multi-shot settings [6, 27], we additionally include the 1-shot regime as an extreme stress test. EviBall achieves the best or competitive performance across all four tasks. The performance gains remain consistent across the more sta-ble multi-shot settings, indicating that EviBall is effective under varying levels of label scarcity. This consistency sug-gests that the improvements do not depend on a particular shot regime. Instead, class-conditioned retrieval over struc-tured evidence balls provides more reliable evidence than global slide-level aggregation under limited supervision. For the molecular endpoint task BCNB-PR, EviBall-RNA generally achieves stronger performance than EviBall-LLM, especially under 2/4/8-shot settings. This indicates that molecular-guided class queries provide more task-relevant semantics for molecular endpoint prediction than text-only class descriptions. Meanwhile, EviBall-LLM remains competitive in several settings, showing that the EviBall framework can flexibly incorporate different se-mantic sources. These results support our design of using task-relevant class queries to retrieve and compete over ev-idence balls. 
+
+4.3. Ablation Study 
+
+To evaluate the contribution of each component, we con-duct ablation studies on RCC-Subtyping under 1/2/4/8-shot settings, as shown in Table 2. Variant I replaces Evidence Balls with patch-level cross-attention. Variant II averages the class-conditioned representations into a shared slide fea-ture. Variant III removes the spatial distance penalty in Eq. 4, while Variant IV removes the support mass bias from the support-aware cross-attention in Eq. 10. Variant V re-moves the spatial-gated center update. Variant I causes the largest performance drop, demon-strating the importance of organizing fragmented patches into structured evidence balls. Variant II also consistently degrades performance, particularly in low-shot settings, confirming the benefit of class-conditioned evidence re-trieval over global feature aggregation. Removing the sup-port bias or spatial-gated update generally reduces perfor-mance, showing that evidence support mass and spatially aware refinement improve retrieval robustness. By com-parison, removing spatial affinity has a smaller effect, sug-gesting that semantic similarity primarily determines patch-to-ball assignment, while spatial information mainly pre-serves evidence locality and coherence. Overall, structured evidence ball construction and class-conditioned retrieval are the main contributors to EviBall, with support-aware and spatially aware components providing further improve-ments. To further assess robustness, the Appendix reports sensitivity analyses of λdiv , the number of Evidence Balls 
+
+K, and λspatial , together with ablations on region-seed se-lection strategies and LLM choices for class-query genera-tion. 
+
+4.4. Interpretability and Evidence Analysis 
+
+To examine how EviBall handles competing diagnostic ev-idence within a histologically heterogeneous slide, we an-alyze a breast cancer case originally diagnosed as mixed IDC–ILC but reclassified as ILC after centralized review of the TCGA slide, as shown in Fig. 4. After review by a pathologist, this WSI was found to contain limited evi-dence of IDC and extensive evidence of ILC. EviBall re-trieves evidence for both classes: the IDC query highlights desmoplastic stroma and epithelial nests, whereas the ILC query focuses on single-file infiltration, discohesive tumor cells, and pleomorphic ILC-like regions. Although local-ized IDC-like cues remain, ILC-associated evidence is more spatially extensive and receives stronger collective class-to-ball relevance, leading to the final ILC prediction. 
+
+5. Conclusion 
+
+We presented EviBall, a class-conditioned evidence re-trieval framework for few-shot WSI classification. EviBall organized local patches into structured evidence balls and 7−0.03  −0.02  −0.01  0.00  0.01  0.02    
+
+> Class -to -ball relevance (IDC ← → ILC )
+> 304 Ball
+> 113 Ball
+> 319 Ball
+> 158 Ball
+> 142 Ball
+> 141 Ball
+> 250 Ball
+> 282 Ball
+> Representative Evidence Balls
+
+TCGA-A2-A0CO-01Z-00-DX1.B191DADE-7DEA-4575-AED7-1C52BE15B8D5_class1 
+
+(a) WSI  Class IDC  Class ILC  
+
+> Evidence Ball
+
+(b) Evidence Ball Analysis 
+
+(c) Spatial Distribution of Evidence Ball  (d) Class IDC Patch  (e) Class ILC Patch 
+
+> Class-to-ball relevance (ILC—IDC)
+> Representative Evidence Balls
+> IDC-like
+> epithelial nests
+> IDC Tumor– Stroma Interface
+> IDC-associated desmoplastic stroma
+> Pleomorphic ILC-like cells
+> Discohesive ILC-like infiltration
+> Single-file ILC-like infiltration
+
+Figure 4. Class-conditioned evidence analysis on a heterogeneous breast cancer slide. (a) H&E whole-slide image. (b) Differential relevance of representative evidence balls to IDC and ILC. (c) Spatial distribution of class-associated evidence balls. (d–e) IDC- and ILC-conditioned patch responses with representative histological regions. Method 1-shot 2-shot 4-shot 8-shot ACC F1 ACC F1 ACC F1 ACC F1 I 75.7 76.9 75.1 75.6 76.0 78.3 84.3 81.0 II 69.2 82.3 68.8 82.4 79.2 86.3 82.8 78.4 III 77.2 88.6 77.3 82.0 88.3 87.2 86 .9 83.5 IV 76.3 84.9 76.9 78.9 87.7 84.5 85.0 85.2 V 77.9 86.6 77.6 82.4 86.7 83.9 83.0 82.6 EviBall 78 .3 89 .2 77 .9 83 .1 88 .3 87 .3 86 .6 85 .4
+
+Table 2. Ablation study on RCC-Subtyping. Variant definitions are described in the text. 
+
+retrieved them using task-relevant class queries, enabling class-specific reasoning beyond global slide aggregation. Experiments across morphology-oriented and molecular endpoint tasks demonstrated consistent improvements over existing baselines, while providing spatially localized and class-specific evidence for interpretable prediction. 
+
+Acknowledgements 
+
+This work was partially supported by the National Natural Science Foundation of China (Grant No. 62506291), the National Science and Technology Major Project (Grant No. 2025ZD0544802), the Key Research and Development Pro-gram of Shaanxi Province (Grant No. 2024SF-GJHX-32), the Key Research and Development Program of Ningxia Hui Autonomous Region (Grant No. 2023BEG02023), the Noncommunicable Chronic Diseases–National Science and Technology Major Project (Grant No. 2024ZD0527700), the project “Research on Key Technologies for Full-Chain Intelligent Pathological Diagnosis” (Grant No. HX202440) of The First Affiliated Hospital of Xi’an Jiaotong Univer-sity, and GE HealthCare. 
+
+References 
+
+[1] David J Clark, Saravana M Dhanasekaran, Francesca Pe-tralia, Jianbo Pan, Xiaoyu Song, Yingwei Hu, Felipe da Veiga Leprevost, Boris Reva, Tung-Shing M Lih, Hui-Yin Chang, et al. Integrated proteogenomic characterization of clear cell renal cell carcinoma. Cell , 179(4):964–983, 2019. 6[2] Haotian Cui, Chloe Wang, Hassaan Maan, Kuan Pang, Fengning Luo, Nan Duan, and Bo Wang. scgpt: toward building a foundation model for single-cell multi-omics us-ing generative ai. Nature methods , 21(8):1470–1480, 2024. 5[3] Tong Ding, Sophia J Wagner, Andrew H Song, Richard J Chen, Ming Y Lu, Andrew Zhang, Anurag J Vaidya, Guil-laume Jaume, Muhammad Shaban, Ahrong Kim, et al. Amultimodal whole-slide foundation model for pathology. 
+
+Nature Medicine , 31(11):3749–3761, 2025. 5, 7 
+
+8[4] Zhouyu Fu, Antonio Robles-Kelly, and Jun Zhou. Milis: Multiple instance learning with instance selection. IEEE Transactions on Pattern Analysis and Machine Intelligence ,33(5):958–977, 2010. 2 [5] Zeyu Gao, Kai He, Weiheng Su, Ines P Machado, William McGough, Mercedes Jimenez-Linan, Brian Rous, Chunbao Wang, Chengzu Li, Xiaobo Pang, et al. Alpaca: Adapt-ing llama for pathology context analysis to enable slide-level question answering. medRxiv , pages 2025–04, 2025. 2 [6] Zhengrui Guo, Conghao Xiong, Jiabo Ma, Qichen Sun, Lishuang Feng, Jinzhuo Wang, and Hao Chen. Focus: Knowledge-enhanced adaptive visual compression for few-shot whole slide image classification. In Proceedings of the Computer Vision and Pattern Recognition Conference , pages 15590–15600, 2025. 7 [7] Zhi Huang, Federico Bianchi, Mert Yuksekgonul, Thomas J Montine, and James Zou. A visual–language foundation model for pathology image analysis using medical twitter. 
+
+Nature Medicine , 29(9):2307–2316, 2023. 2 [8] Maximilian Ilse, Jakub Tomczak, and Max Welling. Attention-based deep multiple instance learning. In Proceed-ings of the International Conference on Machine Learning ,pages 2127–2136, 2018. 7 [9] Bin Li, Yin Li, and Kevin W Eliceiri. Dual-stream multiple instance learning network for whole slide image classifica-tion with self-supervised contrastive learning. In Proceed-ings of the IEEE/CVF conference on Computer Vision and Pattern Recognition , pages 14318–14328, 2021. 2, 7 [10] Jiawen Li, Jiali Hu, Xitong Ling, Renao Yan, Yuxuan Chen, Tian Guan, and Yonghong He. Turning pre-trained vi-sion transformers into end-to-end histopathology whole slide image models for survival prediction. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 21046–21056, 2026. 1 [11] Junjian Li, Hulin Kuang, Jin Liu, Hailin Yue, Mengshen He, and Jianxin Wang. Universal-to-specific: Dynamic knowledge-guided multiple instance learning for few-shot whole slide image classification. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 26614–26623, 2026. 2 [12] Yang Li, Jiusong Ge, Shilei Cao, Yingkang Zhan, Zhang-peng Gong, Jiawei Niu, Jiashuai Liu, Di Zhang, and Chen Li. Similarity-aware dual-perspective learning for medical event prediction. In 2025 IEEE International Conference on Bioinformatics and Biomedicine (BIBM) , pages 6263–6270. IEEE, 2025. 2 [13] Xin Liu, Weijia Zhang, Wei Tang, Thuc Duy Le, Jiuyong Li, Lin Liu, and Min-Ling Zhang. From correlation to cau-sation: Max-pooling-based multi-instance learning leads to more robust whole slide image classification. arXiv preprint arXiv:2408.09449 , 2024. 2 [14] Ming Y Lu, Drew FK Williamson, Tiffany Y Chen, Richard J Chen, Matteo Barbieri, and Faisal Mahmood. Data-efficient and weakly supervised computational pathology on whole-slide images. Nature Biomedical Engineering , 5(6):555– 570, 2021. 2, 7 [15] Ming Y Lu, Bowen Chen, Drew FK Williamson, Richard J Chen, Ivy Liang, Tong Ding, Guillaume Jaume, Igor Odintsov, Long Phi Le, Georg Gerber, et al. A visual-language foundation model for computational pathology. 
+
+Nature Medicine , 30(3):863–874, 2024. 3 [16] Jiawei Niu, Jian Chen, Di Zhang, Junbo Lu, Zhangcheng Liao, Xuhao Liu, Honglin Zhong, Mireia Crispin-Ortuzar, Chen Li, Zeyu Gao, et al. Age-mil: Anchor-guided evi-dence learning for patient-level prediction. arXiv preprint arXiv:2606.12126 , 2026. 1 [17] Yi Niu, Jiashuai Liu, Yingkang Zhan, Jiangbo Shi, Jian Chen, Di Zhang, Chen Li, and Zeyu Gao. Learning het-erogeneous embedding with prototype-aware graph atten-tion for whole slide image classification. In 2025 IEEE In-ternational Conference on Bioinformatics and Biomedicine (BIBM) , pages 2671–2678. IEEE, 2025. 1 [18] Sara P Oliveira, Pedro C Neto, Joao Fraga, Diana Mon-tezuma, Ana Monteiro, Jo˜ ao Monteiro, Liliana Ribeiro, Sofia Gonc ¸alves, Isabel M Pinto, and Jaime S Cardoso. CAD sys-tems for colorectal cancer from wsi are still not ready for clinical acceptance. Scientific Reports , 11(1):14358, 2021. 6 [19] Zhuchen Shao, Hao Bian, Yang Chen, Yifeng Wang, Jian Zhang, Xiangyang Ji, et al. TransMIL: Transformer based correlated multiple instance learning for whole slide image classification. Advances in Neural Information Processing Systems , 34:2136–2147, 2021. 2, 7 [20] Jiangbo Shi, Chen Li, Tieliang Gong, Yefeng Zheng, and Huazhu Fu. Vila-mil: Dual-scale vision-language multiple instance learning for whole slide image classification. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vi-sion and Pattern Recognition , pages 11248–11258, 2024. 2, 7[21] Andrew H Song, Guillaume Jaume, Drew FK Williamson, Ming Y Lu, Anurag Vaidya, Tiffany R Miller, and Faisal Mahmood. Artificial intelligence for digital and computa-tional pathology. Nature Reviews Bioengineering , 1(12): 930–949, 2023. 1 [22] Wenhao Tang, Fengtao Zhou, Sheng Huang, Xiang Zhu, Yi Zhang, and Bo Liu. Feature re-embedding: Towards foun-dation model-level performance in computational pathology. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 11343–11352, 2024. 7[23] Katarzyna Tomczak, Patrycja Czerwi´ nska, and Maciej Wiz-nerowicz. Review the cancer genome atlas (tcga): an im-measurable source of knowledge. Contemporary Oncol-ogy/Wsp´ ołczesna Onkologia , 2015(1):68–77, 2015. 6 [24] Luca L Weishaupt, Chengkuan Chen, Drew FK Williamson, Richard J Chen, Guillaume Jaume, Tong Ding, Bowen Chen, Anurag Vaidya, Long Phi Le, Ming Y Lu, et al. Evidence-based diagnostic reasoning with multi-agent copilot for hu-man pathology. arXiv preprint arXiv:2506.20964 , 2025. 2 [25] Bryan Wong, Jongwoo Kim, Huazhu Fu, and Mun Yi. Few-shot learning from gigapixel images via hierarchical vision-language alignment and modeling. Advances in Neural In-formation Processing Systems , 38:71313–71354, 2026. 2 [26] Feng Xu, Chuang Zhu, Wenqi Tang, Ying Wang, Yu Zhang, Jie Li, Hongchuan Jiang, Zhongyue Shi, Jun Liu, and Mulan Jin. Predicting axillary lymph node metastasis in early breast 
+
+9cancer using deep learning on primary tumor biopsy slides. 
+
+Frontiers in Oncology , 11:759007, 2021. 6 [27] Jiahao Xu, Sheng Huang, Xin Zhang, Zhixiong Nan, Jiajun Dong, and Nankun Mu. Muse: Harnessing precise and di-verse semantics for few-shot whole slide image classifica-tion. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition (CVPR) , pages 33911– 33921, 2026. 7 [28] Huimin Yan, Liang Bai, Xian Yang, and Long Chen. Llm-guided diagnostic evidence alignment for medical vision-language pretraining under limited pairing. arXiv preprint arXiv:2602.07540 , 2026. 1 [29] Jiawen Yao, Xinliang Zhu, Jitendra Jonnagaddala, Nicholas Hawkins, and Junzhou Huang. Whole slide images based cancer survival prediction using attention guided deep multi-ple instance learning networks. Medical image analysis , 65: 101789, 2020. 2 [30] Di Zhang, Jiusong Ge, Jiashuai Liu, Chunbao Wang, Tieliang Gong, Zeyu Gao, and Chen Li. StaDis: Stability dis-tance to detecting out-of-distribution data in computational pathology. Medical Image Analysis , page 103774, 2025. 2 [31] Di Zhang, Zhangpeng Gong, Xiaobo Pang, Jiashuai Liu, Junbo Lu, Hao Cui, Jiusong Ge, Zhi Zeng, Kai Yi, Yinghua Li, et al. CARE: A molecular-guided foundation model with adaptive region modeling for whole slide image analysis. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vi-sion and Pattern Recognition , pages 21078–21088, 2026. 7 [32] Yi Zheng, Rushin H Gindra, Emily J Green, Eric J Burks, Margrit Betke, Jennifer E Beane, and Vijaya B Kolacha-lama. A graph-transformer for whole slide image classifica-tion. IEEE transactions on medical imaging , 41(11):3003– 3015, 2022. 2 [33] Mengdan Zhu, Bing Ren, Ryland Richards, Matthew Suri-awinata, Naofumi Tomita, and Saeed Hassanpour. Develop-ment and evaluation of a deep neural network for histologic classification of renal cell carcinoma on biopsy and surgical resection slides. Scientific reports , 11(1):1–9, 2021. 6 
+
+10

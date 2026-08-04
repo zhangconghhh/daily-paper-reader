@@ -1,0 +1,294 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-04T21:56:47.745987+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2608.00586v1",
+      "source": "arxiv",
+      "title": "Representation Transfer of Foundation Models for Ultra-Widefield Retinal Imaging",
+      "abstract": "Despite the widespread adoption of foundation models as feature extractors for medical imaging, relatively little is understood about how different pretraining strategies influence the transferability of learned representations to weakly supervised ophthalmic imaging tasks. We investigate this question in ultra-widefield (UWF) retinal imaging by evaluating foundation model representations within a patch-based multiple instance learning (MIL) framework for disease classification on UWF images. We compare Vision Transformer encoders pretrained with supervised, Masked Autoencoder (MAE), and self-distillation objectives, while keeping the downstream aggregation architecture unchanged. Within a controlled comparison of ViT-B encoders pretrained on ImageNet-1k, the choice of pretraining objective substantially influenced frozen representation transfer, with supervised and self-distillation-based models outperforming MAE. A contemporary DINOv3 model pretrained at a larger scale achieved the strongest overall performance, with a quadratic weighted kappa of 0.863 for five-class diabetic retinopathy grading, comparable with DINOv1. Attention analysis further revealed distinct patch-aggregation behaviours associated with the different pretrained representations, while partial fine-tuning substantially reduced the performance gap for MAE. These findings suggest that pretraining strategy influences both representation transferability and the subsequent aggregation of patch-level evidence within MIL, resulting in differences in downstream classification performance.",
+      "authors": [
+        "Mingya Alexa Gong",
+        "Da Ma",
+        "Lovre Antonio Budimir",
+        "Ivana Matovinovic",
+        "Sven Loncaric",
+        "Myeong Jin Ju",
+        "Yukun Zhou",
+        "Siegfried K. Wagner",
+        "Pearse A. Keane",
+        "Marinko V. Sarunic"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-01T10:53:26+00:00",
+      "link": "https://arxiv.org/pdf/2608.00586v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "compares supervised, MAE, and self-distillation (DINO-style) ViT foundation encoders as feature extractors for disease classification",
+      "llm_evidence_cn": "比较有监督、MAE与自蒸馏（类DINO）ViT基础编码器作为疾病分类特征提取器",
+      "llm_evidence": "比较有监督、MAE与自蒸馏（类DINO）ViT基础编码器作为疾病分类特征提取器",
+      "canonical_evidence": "比较有监督、MAE与自蒸馏（类DINO）ViT基础编码器作为疾病分类特征提取器",
+      "llm_tldr_en": "Evaluates how supervised, MAE, and self-distillation (DINO-style) ViT encoders transfer to weakly supervised disease classification in ultra-widefield retinal imaging, keeping the MIL aggregation fixed to isolate representation quality.",
+      "llm_tldr_cn": "基础模型在医学影像中广泛用作特征提取器，但不同预训练策略对弱监督分类迁移能力的影响尚不明确。本文在超广角视网膜影像疾病分类中，固定下游patch级多实例聚合架构，仅更换有监督、MAE和自蒸馏（类DINO）预测练的ViT-B编码器进行受控比较。结果显示预测练策略显著影响表征迁移与分类性能，为选择基础模型提供经验依据。这项工作直接服务于基础模型图像分类与自监督ViT表征评估。",
+      "llm_tldr": "基础模型在医学影像中广泛用作特征提取器，但不同预训练策略对弱监督分类迁移能力的影响尚不明确。本文在超广角视网膜影像疾病分类中，固定下游patch级多实例聚合架构，仅更换有监督、MAE和自蒸馏（类DINO）预测练的ViT-B编码器进行受控比较。结果显示预测练策略显著影响表征迁移与分类性能，为选择基础模型提供经验依据。这项工作直接服务于基础模型图像分类与自监督ViT表征评估。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.00976v1",
+      "source": "arxiv",
+      "title": "Location-Aware Fine-Grained Representation Learning for Medical Vision Foundation Models",
+      "abstract": "Fine-grained visual representations are essential for medical image analysis, particularly when diagnostically relevant evidence is subtle and spatially localized. Modern transformer-based medical vision encoders must therefore learn patch-level representations that are both clinically meaningful and spatially consistent. Without these properties, large vision-language models (LVLMs) operate on an ambiguous visual foundation, limiting their ability to generate clinically reliable and spatially grounded responses. However, existing training strategies for medical vision encoders rarely achieve both objectives. Image-text alignment provides clinically meaningful supervision primarily at the image level, leaving the spatial localization of diagnostic evidence weakly constrained. In contrast, self-supervised learning promotes spatial consistency but lacks the semantic supervision needed to distinguish visually similar yet clinically distinct regions. To address this gap, we present LoFi, a medical vision foundation model built on location-aware fine-grained representation learning. LoFi trains a vision encoder with a lightweight large language model under grounding and grounded captioning objectives. Because these objectives require predicting location from clinical text and vice versa, spatial consistency emerges without any explicit patch-level regularization. To enable training at scale, we construct MedG, a large-scale medical grounding dataset of 4.48M image-text-box triplets curated from 84 datasets spanning 7 modalities. Across phrase grounding, visual question answering, and region-based organ classification under perturbations, LoFi consistently outperforms general-purpose and medical vision foundation models as well as state-of-the-art LVLMs. Code is available at https://github.com/myeongkyunkang/lofi-medg.",
+      "authors": [
+        "Myeongkyun Kang",
+        "Yanting Yang",
+        "Xiaoxiao Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-02T03:59:07+00:00",
+      "link": "https://arxiv.org/pdf/2608.00976v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Location-aware fine-grained representation learning for transformer-based medical vision foundation models, directly fitting foundation models for fine-grained visual classification.",
+      "llm_evidence_cn": "面向基于Transformer的医学视觉基础模型做位置感知细粒度表示学习，契合细粒度视觉分类的基础模型需求。",
+      "llm_evidence": "面向基于Transformer的医学视觉基础模型做位置感知细粒度表示学习，契合细粒度视觉分类的基础模型需求。",
+      "canonical_evidence": "面向基于Transformer的医学视觉基础模型做位置感知细粒度表示学习，契合细粒度视觉分类的基础模型需求。",
+      "llm_tldr_en": "Proposes location-aware fine-grained representation learning for transformer-based medical vision foundation models, improving patch-level clinical semantics and spatial consistency for reliable downstream LVLM and medical image analysis.",
+      "llm_tldr_cn": "医学影像中诊断证据往往细微且局部，但现有训练策略多只在图像级提供语义监督，难以学到位置一致的细粒度表示。本文提出位置感知的细粒度表示学习方法，使基于Transformer的医学视觉编码器在patch层面同时具备临床语义和空间一致性。该方法可增强大型视觉-语言模型的视觉基础，提升医学图像分析中的细粒度识别与空间定位能力。",
+      "llm_tldr": "医学影像中诊断证据往往细微且局部，但现有训练策略多只在图像级提供语义监督，难以学到位置一致的细粒度表示。本文提出位置感知的细粒度表示学习方法，使基于Transformer的医学视觉编码器在patch层面同时具备临床语义和空间一致性。该方法可增强大型视觉-语言模型的视觉基础，提升医学图像分析中的细粒度识别与空间定位能力。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Foundation models for fine grained visual classification",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.23924v1",
+      "source": "arxiv",
+      "title": "DuoAD: Leveraging [CLS] Dual Characteristics for Training-Free Few-Shot Anomaly Detection",
+      "abstract": "Vision foundation models have enabled strong training-free anomaly detection (AD). However, most existing approaches rely primarily on independent local patch features, leaving the global contextual information encoded by Vision Transformers (ViTs) underexploited. In this work, we identify the dual characteristics of the ViT [CLS] token: its embedding provides anomaly-invariant global semantic representation, while its attention maps implicitly highlight spatially abnormal regions. Building on this observation, we propose a fully automated AD framework leveraging global context to remove manual tunings. Our framework introduces (1) an automatic augmentation selection strategy driven by [CLS]-level semantic consistency, and (2) an attention-guided feature reweighting mechanism that dynamically adjusts patch contributions according to [CLS] attention saliency. By integrating these components over multi-level features, our method achieves stable anomaly scoring and precise localization without training or parameter tuning. Under the one-shot setting, it achieves Image-AUC scores of 97.7%, 93.2%, and 84.5% on MVTec-AD, VisA, and Real-IAD. Using a single fixed configuration across categories, backbones, and datasets, the method establishes a new state-of-the-art for plug-and-play, training-free anomaly detection while maintaining strong robustness and practical scalability.",
+      "authors": [
+        "Jyun-Ze Tang",
+        "Po-Han Huang",
+        "Ming-Ching Chang",
+        "Chih-Fan Hsu",
+        "Jeng-Lin Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-27T01:31:48+00:00",
+      "link": "https://arxiv.org/pdf/2607.23924v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "uses ViT [CLS] token and attention maps from vision foundation models for image-level anomaly detection",
+      "llm_evidence_cn": "利用视觉基础模型的ViT [CLS]令牌和注意力图进行图像级异常检测",
+      "llm_evidence": "利用视觉基础模型的ViT [CLS]令牌和注意力图进行图像级异常检测",
+      "canonical_evidence": "利用视觉基础模型的ViT [CLS]令牌和注意力图进行图像级异常检测",
+      "llm_tldr_en": "DuoAD exploits the dual role of ViT's CLS token—global semantics and anomaly-aware attention—to build a training-free few-shot anomaly detection method for images using vision foundation models.",
+      "llm_tldr_cn": "现有基于视觉基础模型的异常检测主要依赖局部补丁特征，忽视了ViT编码的全局上下文信息。DuoAD发现[CLS]令牌的嵌入提供异常不变的全局语义、注意力图能高亮异常区域，并据此设计无训练少样本框架。通过自动增强选择和注意力引导机制，在多个数据集上实现无需手工调参的强检测性能。该方法拓展了视觉基础模型在图像分类任务中的应用方式。",
+      "llm_tldr": "现有基于视觉基础模型的异常检测主要依赖局部补丁特征，忽视了ViT编码的全局上下文信息。DuoAD发现[CLS]令牌的嵌入提供异常不变的全局语义、注意力图能高亮异常区域，并据此设计无训练少样本框架。通过自动增强选择和注意力引导机制，在多个数据集上实现无需手工调参的强检测性能。该方法拓展了视觉基础模型在图像分类任务中的应用方式。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.00264v1",
+      "source": "arxiv",
+      "title": "Interpretability-Guided Soft Pruning of Attention Heads in Vision Transformers",
+      "abstract": "Vision foundation models, such as DINOv2, learn highly expressive representations but rely on massive, opaque architectures that demand substantial computational power and memory. To provide an interpretable-guided and efficient solution to this issue, we first propose a spectral analysis and new visualization technique for individual attention heads based on the Laplacian eigenvectors of their attention maps. Building upon recent observations regarding the block structure of Vision Transformers, we perform semantic clustering of attention heads and identify functional redundancies. Leveraging these insights, we introduce SAPER (Soft Attention PrunER), an end-to-end differentiable pruning framework based on the LapSum Soft Top-K approach. Extensive experiments on ImageNet-1K demonstrate that SAPER achieves a highly favorable accuracy-efficiency trade-off, outperforming the competitive RAPTOR baseline in FLOPs reduction while preserving strong classification performance.",
+      "authors": [
+        "Kamil Książek",
+        "Piotr Suszyński",
+        "Michał Jan Włodarczyk",
+        "Jacek Tabor",
+        "Przemysław Biecek"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-31T20:14:03+00:00",
+      "link": "https://arxiv.org/pdf/2608.00264v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Focuses on DINOv2 vision foundation models and ViT attention head pruning, supporting efficient transformer-based classification models.",
+      "llm_evidence_cn": "以DINOv2视觉基础模型和ViT注意力头软剪枝为核心，有助于高效的Transformer分类模型。",
+      "llm_evidence": "以DINOv2视觉基础模型和ViT注意力头软剪枝为核心，有助于高效的Transformer分类模型。",
+      "canonical_evidence": "以DINOv2视觉基础模型和ViT注意力头软剪枝为核心，有助于高效的Transformer分类模型。",
+      "llm_tldr_en": "Proposes SAPER, an interpretability-guided soft pruning framework for ViT attention heads, applied to DINOv2 foundation models; uses spectral analysis and semantic clustering to identify redundancy, preserving performance while reducing compute.",
+      "llm_tldr_cn": "视觉基础模型（如DINOv2）表示能力强但模型庞大且内部结构难以解释。本文基于注意力图的拉普拉斯特征向量提出谱分析与可视化，对注意力头进行语义聚类以发现功能冗余，并提出端到端可微的SAPER软剪枝框架。实验表明，该框架能在降低计算和内存开销的同时保持表示能力，为视觉Transformer的高效部署和可解释应用提供了实用工具。",
+      "llm_tldr": "视觉基础模型（如DINOv2）表示能力强但模型庞大且内部结构难以解释。本文基于注意力图的拉普拉斯特征向量提出谱分析与可视化，对注意力头进行语义聚类以发现功能冗余，并提出端到端可微的SAPER软剪枝框架。实验表明，该框架能在降低计算和内存开销的同时保持表示能力，为视觉Transformer的高效部署和可解释应用提供了实用工具。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.01104v1",
+      "source": "arxiv",
+      "title": "From Patches to Evidence Balls: Class-Conditioned Evidence Retrieval for Few-Shot Whole Slide Image Classification",
+      "abstract": "Whole slide image (WSI) classification is an evidence-driven task, where diagnostic cues are often sparse, spatially organized, and class-dependent. Existing MIL and vision-language methods aggregate a large pool of patch features into a single global slide representation. Under few-shot supervision, limited slide-level labels make it difficult to learn a reliable aggregation mechanism that organizes sparse local cues into compact and coherent diagnostic evidence. Moreover, a shared slide representation compresses evidence supporting a candidate class and its alternatives into the same feature, limiting class-specific reasoning and interpretability. To address these issues, we propose EviBall, a class-conditioned evidence retrieval framework for few-shot WSI classification. EviBall organizes local patches into Evidence Balls through semantic-spatial assignment and center refinement, yielding compact and spatially coherent evidence units under weak supervision. It then uses task-specific class queries, including language-guided queries for morphology-oriented tasks and molecular-guided queries for molecular endpoint prediction, to retrieve supporting evidence balls and produce class-conditioned evidence representations for direct class-wise prediction. By introducing structured evidence units and task-relevant semantic guidance, EviBall reduces the reliance on learning an unconstrained global aggregation mechanism from scarce slide-level labels. It therefore reformulates few-shot WSI classification as structured evidence retrieval and competition among candidate classes. Extensive experiments across four morphology-oriented and molecular endpoint WSI tasks demonstrate that EviBall consistently outperforms conventional and vision-language MIL baselines under diverse few-shot settings, while providing spatially localized and class-specific evidence for each prediction.",
+      "authors": [
+        "Di Zhang",
+        "Li Zhang",
+        "Jiashuai Liu",
+        "Junbo Lu",
+        "Zhi Zeng",
+        "Jiusong Ge",
+        "Chunze Yang",
+        "Yi Niu",
+        "Jian Chen",
+        "Kai He",
+        "Zeyu Gao",
+        "Chen Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-02T09:06:22+00:00",
+      "link": "https://arxiv.org/pdf/2608.01104v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "class-conditioned evidence retrieval from patch features for few-shot WSI classification, relevant to fine-grained local-cue classification",
+      "llm_evidence_cn": "面向少样本全切片分类的类别条件证据检索，可迁移至依赖局部线索的细粒度分类",
+      "llm_evidence": "面向少样本全切片分类的类别条件证据检索，可迁移至依赖局部线索的细粒度分类",
+      "canonical_evidence": "面向少样本全切片分类的类别条件证据检索，可迁移至依赖局部线索的细粒度分类",
+      "llm_tldr_en": "Proposes EviBall, a class-conditioned evidence retrieval framework for few-shot whole slide image classification that organizes sparse local patch cues into compact class-specific evidence, improving classification and interpretability under limited labels.",
+      "llm_tldr_cn": "全切片图像分类中诊断线索稀疏且类别相关，少样本标签下难以学习可靠的聚合机制，且共享的全局表示会压缩各类别证据。本文提出EviBall，通过类别条件证据检索把稀疏图块组织成紧凑且可解释的类别证据。在少样本全切片数据集上的实验表明，该方法能更好地利用有限标签，并保持类别层面的推理能力。该框架亦可迁移到需要局部判别证据的细粒度视觉分类任务。",
+      "llm_tldr": "全切片图像分类中诊断线索稀疏且类别相关，少样本标签下难以学习可靠的聚合机制，且共享的全局表示会压缩各类别证据。本文提出EviBall，通过类别条件证据检索把稀疏图块组织成紧凑且可解释的类别证据。在少样本全切片数据集上的实验表明，该方法能更好地利用有限标签，并保持类别层面的推理能力。该框架亦可迁移到需要局部判别证据的细粒度视觉分类任务。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.01142v1",
+      "source": "arxiv",
+      "title": "EulerLoRA: Rank-Driven Jump Dynamics for Calibrated Parameter-Efficient Fine-Tuning",
+      "abstract": "Low-Rank Adaptation (LoRA) enables parameter-efficient fine-tuning, but standard LoRA produces a single deterministic model and does not directly support predictive uncertainty estimation. We introduce EulerLoRA, a stochastic extension of LoRA that generates multiple predictive trajectories by sampling structured variations along the rank-one components of shared low-rank adapters, while preserving the deterministic LoRA transformation in expectation. We evaluate EulerLoRA with vision transformers on CIFAR-10, CIFAR-100, and HAM10000, together with out-of-distribution detection on SVHN. Across these benchmarks, EulerLoRA achieves comparable or improved performance relative to strong LoRA-Ensemble baselines. Using two rank-20 adapters, EulerLoRA requires approximately 3 million trainable adapter parameters, compared with about 10 million for a rank-8, 16-adapter LoRA-Ensemble, corresponding to roughly 69% fewer trainable parameters. These results show that useful predictive diversity can be obtained from a small number of shared adapters.",
+      "authors": [
+        "Srinivas Anumasa",
+        "Dianbo Liu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-02T10:41:39+00:00",
+      "link": "https://arxiv.org/pdf/2608.01142v1",
+      "tags": [
+        "keyword:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses vision transformers on image classification benchmarks (CIFAR, HAM10000)",
+      "llm_evidence_cn": "使用视觉Transformer在图像分类基准上进行参数高效微调",
+      "llm_evidence": "使用视觉Transformer在图像分类基准上进行参数高效微调",
+      "canonical_evidence": "使用视觉Transformer在图像分类基准上进行参数高效微调",
+      "llm_tldr_en": "Introduces EulerLoRA, a stochastic LoRA extension for ViT that yields calibrated uncertainty while maintaining competitive accuracy on classification benchmarks.",
+      "llm_tldr_cn": "针对标准LoRA只能得到单一确定性模型且无法支持不确定性估计的问题，提出EulerLoRA方法，通过在共享低秩适配器的秩一分量上采样结构化变化生成多条预测轨迹，并在期望上保持确定性LoRA变换。在CIFAR-10、CIFAR-100和HAM10000等视觉Transformer分类任务上，EulerLoRA取得与强LoRA集成相当或更优的性能，同时提供校准的不确定性估计，为可靠图像分类提供参数高效微调新方案。",
+      "llm_tldr": "针对标准LoRA只能得到单一确定性模型且无法支持不确定性估计的问题，提出EulerLoRA方法，通过在共享低秩适配器的秩一分量上采样结构化变化生成多条预测轨迹，并在期望上保持确定性LoRA变换。在CIFAR-10、CIFAR-100和HAM10000等视觉Transformer分类任务上，EulerLoRA取得与强LoRA集成相当或更优的性能，同时提供校准的不确定性估计，为可靠图像分类提供参数高效微调新方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.01876v1",
+      "source": "arxiv",
+      "title": "Transformer Geometry Observatory TGO-III: Semantic Geometry Observatory",
+      "abstract": "With the widespread adoption of Vision Transformers in modern AI, the need to analyze their inherent representational behavior has become increasingly important. While most existing studies emphasize token geometries and training dynamics, the evolution of representational covariance structures and class-level geometric organization remains comparatively underexplored. In this work, we investigate semantic geometry and class separability as representations evolve across the layers of ViT-Small/16 through TGO-III: Semantic Geometry Observatory. It is a framework designed to analyze the emergence of semantic organization, feature evolution, and class-wise representation geometry throughout training. The framework employs multiple complementary observatories, including Linear Probe Accuracy, Fisher Ratio, Class Centroid Distances, Local Intrinsic Dimension, and Local PCA Rank, to quantify the progressive evolution of discriminative representations. Our analysis reveals that class representations become progressively more linearly separable, Fisher discriminability increases, class centroids move farther apart, and local representation manifolds exhibit structured class-dependent geometric complexity. These observations provide empirical evidence supporting the Semantic Expansion Hypothesis, suggesting that the manifold expansion observed in previous observatories is accompanied by the progressive organization of representations into increasingly discriminative semantic structures. Collectively, TGO-III extends the Transformer Geometry Observatory framework by establishing a direct connection between manifold geometry, covariance evolution, and semantic organization during Transformer training.",
+      "authors": [
+        "Kaustubh Kapil",
+        "Kishor P. Upla"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-03T08:21:16+00:00",
+      "link": "https://arxiv.org/pdf/2608.01876v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Analyzes class separability and semantic geometry in ViT-Small/16 across layers, relevant to vision transformer architecture for classification.",
+      "llm_evidence_cn": "分析ViT-Small/16逐层的类别可分性与语义几何，与用于分类的视觉Transformer架构相关。",
+      "llm_evidence": "分析ViT-Small/16逐层的类别可分性与语义几何，与用于分类的视觉Transformer架构相关。",
+      "canonical_evidence": "分析ViT-Small/16逐层的类别可分性与语义几何，与用于分类的视觉Transformer架构相关。",
+      "llm_tldr_en": "TGO-III is a framework analyzing semantic geometry and class separability in ViT-Small/16 layers, revealing how class-level organization evolves during training for vision classification.",
+      "llm_tldr_cn": "现有研究主要关注ViT的token几何与训练动态，对表征协方差结构和类别级几何组织关注不足，难以理解类别可分性的形成机制。为此提出TGO-III框架，系统分析ViT-Small/16各层语义几何与类别可分性的演化，采用多种互补观测手段。实验揭示了训练过程中语义组织和类别表征几何的涌现规律，并展示类别可分性随网络深度变化的特点。该工作为理解视觉Transformer的分类表示提供了系统性分析工具，有助于指导模型设计与调优。",
+      "llm_tldr": "现有研究主要关注ViT的token几何与训练动态，对表征协方差结构和类别级几何组织关注不足，难以理解类别可分性的形成机制。为此提出TGO-III框架，系统分析ViT-Small/16各层语义几何与类别可分性的演化，采用多种互补观测手段。实验揭示了训练过程中语义组织和类别表征几何的涌现规律，并展示类别可分性随网络深度变化的特点。该工作为理解视觉Transformer的分类表示提供了系统性分析工具，有助于指导模型设计与调优。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -1,0 +1,294 @@
+Title: Transformer Geometry Observatory TGO-III: Semantic Geometry Observatory
+
+URL Source: https://arxiv.org/pdf/2608.01876v1
+
+Published Time: Tue, 04 Aug 2026 02:01:52 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# TGO-III: Semantic Geometry Observatory 
+
+Kaustubh Kapil and Kishor P. Upla 
+
+Department of Electronics Engineering Sardar Vallabhai National Institute of Technology (SVNIT), Surat, India u24ec049@eced.svnit.ac.in, kishorupla@gmail.com 
+
+Abstract —With the widespread adoption of Vision Transform-ers in modern AI, the need to analyze their inherent repre-sentational behavior has become increasingly important. While most existing studies emphasize token geometries and training dynamics, the evolution of representational covariance structures and class-level geometric organization remains comparatively un-derexplored. In this work, we investigate semantic geometry and class separability as representations evolve across the layers of ViT-Small/16 through TGO-III: Semantic Geometry Observatory. It is a framework designed to analyze the emergence of semantic organization, feature evolution, and class-wise representation geometry throughout training. The framework employs multiple complementary observatories, including Linear Probe Accuracy, Fisher Ratio, Class Centroid Distances, Local Intrinsic Dimen-sion, and Local PCA Rank, to quantify the progressive evolution of discriminative representations. Our analysis reveals that class representations become progressively more linearly separable, Fisher discriminability increases, class centroids move farther apart, and local representation manifolds exhibit structured class-dependent geometric complexity. These observations provide em-pirical evidence supporting the Semantic Expansion Hypothesis, suggesting that the manifold expansion observed in previous observatories is accompanied by the progressive organization of representations into increasingly discriminative semantic struc-tures. Collectively, TGO-III extends the Transformer Geometry Observatory framework by establishing a direct connection between manifold geometry, covariance evolution, and semantic organization during Transformer training. 
+
+I. I NTRODUCTION 
+
+The remarkable success of Vision Transformers (ViTs) has fundamentally reshaped modern computer vision, achieving state-of-the-art performance across image classification, object detection, semantic segmentation, and numerous downstream visual understanding tasks. Despite their empirical success, the internal representational dynamics governing how Transform-ers progressively organize visual information during training remain only partially understood. Existing studies have largely concentrated on attention mechanisms, token interactions, op-timization dynamics, and representational similarity, provid-ing valuable insights into how information propagates across Transformer layers. However, comparatively less attention has been devoted to understanding how semantic structure emerges within the learned representation space itself. With recent improvements in analyzing representation space, it has been shown that there is significant geometrical change in Trans-former representations during the training process. Methods like spectral analysis, eigenspectrum changes, covariance anal-ysis, representational similarity, and intrinsic dimensionality have been found to show that the feature space is being regularly changed due to optimization. Though these methods succeed in explaining the geometrical evolution of represen-tations, they are mostly able to describe global properties of representation space. The Transformer Geometry Observatory (TGO) framework was introduced to systematically investigate these represen-tational dynamics from complementary geometric perspec-tives. TGO-I: Spectral Geometry Observatory [1] demon-strated that the covariance spectrum progressively expands during training, accompanied by increasing Effective Rank, Stable Rank, and Spectral Entropy, suggesting that the net-work continuously explores additional representational di-rections. Subsequently, TGO-II: Representation Geometry Observatory [2] revealed that the intrinsic dimensionality of Transformer representations increases throughout optimization while representational similarity between layers progressively decreases. These observations motivated the Manifold Ex-pansion Hypothesis, proposing that the observed covariance expansion arises from the progressive expansion of the under-lying representation manifold rather than token diversification alone. In order to solidify these claims and hypotheses, we introduce TGO-III: Semantic Geometry Observatory . a framework designed to investigate the emergence of semantic organization during Transformer training. Rather than studying global covariance or manifold properties alone, TGO-III ana-lyzes how class representations evolve throughout optimization using complementary measurements including Linear Probe Accuracy, Fisher Ratio, Class Centroid Distances, Local Intrin-sic Dimensionality, and Local PCA Rank. Collectively, these observatories quantify the evolution of class separability, local manifold complexity, and discriminative organization within the learned representation space. The key contributions of TGO-III can be summarized as follows:  
+
+> •
+
+This study performs a detailed analysis on class sepa-rability and the geometric evolution of representational covariances; with a major focus on class-level geometric organization  
+
+> •
+
+Providing important insights on semantic hypotheses 
+
+mentioned through previous TGOs [1], [2]  
+
+> •
+
+Discussing fundamental semantic properties such as in-creasing inter-class distances, improving Fisher discrim-inability, and structured class-dependent complexity in local representation geometry. arXiv:2608.01876v1 [cs.CV] 3 Aug 2026 Fig. 1: The final Local PCA Rank by class showing how many explorable dimensions each class needs 
+
+A. Research Questions 
+
+1) RQ1: Does semantic organization progressively emerge throughout Transformer training? 
+
+If the manifold expansion observed in previous observa-tories reflects the acquisition of increasingly meaning-ful representations, one would expect class separability to improve continuously throughout optimization. This question is investigated through Linear Probe Accuracy, Fisher Ratio, Class Centroid Distances, Local Intrinsic Dimension and Local PCA Rank. 2) RQ2: Can the semantic organization of class rep-resentations explain the covariance expansion previ-ously observed in TGO-I? 
+
+TGO-I demonstrated a continuous increase in covariance rank and spectral complexity without identifying the representational origin of these additional covariance directions. This question investigates whether the pro-gressive organization and separation of semantic classes provides a plausible geometric explanation for the ob-served covariance expansion. 3) RQ3: How does local class geometry evolve during Transformer training? 
+
+While previous observatories primarily characterized global properties of the representation manifold, little is known about the evolution of individual semantic classes. This question investigates how the intrinsic dimensionality and local geometric complexity of indi-vidual class manifolds evolve throughout optimization. 4) RQ4: Is discriminative representation learning uni-formly distributed across Transformer depth? 
+
+Previous observatories suggested the existence of atransition zone separating qualitatively different stages of representation processing. This question investigates whether semantic discrimination emerges uniformly across all Transformer blocks or whether specific lay-ers exhibit significantly stronger class specialization, thereby providing additional evidence regarding the Transition Zone Hypothesis. The complete implementation of TGO-III, trained checkpoints, observatory pipelines, and generated artifacts are publicly available at: GitHub Repository. II. M ETHODOLOGY AND SEMANTIC METRICS 
+
+The Semantic Geometry Observatory is designed to inves-tigate how Transformer representations progressively evolve into semantically organized representations throughout train-ing. The central concept underlying this framework is Seman-tic Expansion , defined as the progressive geometric organiza-
+
+Fig. 2: Evolution of the mean Local PCA Rank throughout Transformer training. The average Local PCA Rank initially increases during the early stages of optimization before pro-gressively decreasing as training converges, indicating that semantic class manifolds become increasingly concentrated within lower-dimensional local subspaces. tion of the representation manifold, whereby newly explored representational directions are increasingly allocated toward encoding discriminative semantic concepts, resulting in im-proved class separability and richer class-level representation geometry throughout training. Unlike previous observatories, which primarily examined global spectral and representational properties, TGO-III focuses on the geometric organization of individual semantic classes. Specifically, the framework in-vestigates how ImageNet-100 [3] class representations evolve across the layers of a Vision Transformer, how their local man-ifolds change throughout optimization, and how progressively concentrated and discriminative these class representations be-come during training. With the help of the following analyses tools TGO-III can make concrete conclusions. 
+
+A. Linear Probe Accuracy 
+
+Linear probing is a standard technique for quantifying the linear separability of learned representations. Given the feature representation 
+
+X = {x1, x2, . . . , xN }, xi ∈ RD , (1) together with the corresponding class labels 
+
+y = {y1, y 2, . . . , y N }, (2) a linear classifier is trained while keeping the Transformer weights fixed. Specifically, a linear decision function 
+
+f (x) = Wx + b (3) is optimized using the extracted representations. The performance of the probe is evaluated on a held-out validation set using classification accuracy 
+
+Accuracy = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+1 (ˆ yi = yi) , (4) where ˆyi denotes the predicted label. Unlike end-to-end classification accuracy, Linear Probe Ac-curacy measures the amount of class-discriminative informa-tion already encoded within the representation itself. Conse-quently, improvements in probe accuracy indicate increasing linear separability of the learned feature space without further optimization of the backbone network. 
+
+B. Fisher Ratio 
+
+To quantify class separability from a statistical perspective, TGO-III employs the Fisher Ratio, which measures the ratio between inter-class variance and intra-class variance. Let the global feature mean be 
+
+μ = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+xi, (5) and the centroid of class c
+
+μc = 1
+
+Nc
+
+X
+
+> i:yi=c
+
+xi. (6) The within-class scatter is defined as 
+
+SW = X
+
+> c
+
+X
+
+> i:yi=c
+
+∥xi − μc∥2, (7) while the between-class scatter is 
+
+SB = X
+
+> c
+
+Nc∥μc − μ∥2. (8) The Fisher Ratio is therefore 
+
+F = SB
+
+SW + ε , (9) where ε is a small numerical constant for stability. The Fisher Ratio jointly captures increasing inter-class separation and decreasing intra-class variability, making it an effective measure of discriminative representation quality. 
+
+C. Class Centroid Distance 
+
+The geometric organization of semantic classes is analyzed through pairwise distances between class centroids. For each semantic class c, the centroid is computed as 
+
+μc = 1
+
+Nc
+
+X
+
+> i:yi=c
+
+xi. (10) The pairwise Euclidean distance between two classes is 
+
+Dij = ∥μi − μj ∥2. (11) The complete centroid distance matrix 
+
+D = [ Dij ] (12) characterizes the global geometric arrangement of semantic classes within the representation space. For quantitative analysis, the mean centroid distance is computed as 
+
+¯D = 2
+
+C(C − 1) 
+
+X
+
+> i<j
+
+Dij , (13) where C denotes the total number of semantic classes. 
+
+D. Local PCA Rank 
+
+While centroid distances characterize global semantic orga-nization, Local PCA Rank measures the intrinsic geometric complexity of individual semantic classes. For each class c, let 
+
+Xc = {xi | yi = c} (14) denote all feature vectors belonging to that class. Principal Component Analysis is performed on the centered class representation 
+
+˜Xc = Xc − μc. (15) The covariance matrix is 
+
+Σc = 1
+
+Nc − 1 ˜XTc ˜Xc. (16) Let 
+
+λ1 ≥ λ2 ≥ · · · ≥ λD (17) be the eigenvalues of Σc.The cumulative explained variance is 
+
+E(k) = 
+
+Pki=1 λi
+
+PDi=1 λi
+
+. (18) The Local PCA Rank is defined as the minimum number of principal components satisfying 
+
+E(k) ≥ τ, (19) where τ = 0 .95 throughout this work. Consequently, Local PCA Rank estimates the effective dimensionality required to represent the local geometry of an individual semantic class. (a) Fisher Ratio throughout training. (b) Layer-wise Fisher Ratio at Epoch 100. 
+
+Fig. 3: Evolution of Fisher Ratio throughout Transformer training. The left figure illustrates the evolution of the mean Fisher Ratio across training epochs, while the right figure summarizes the Fisher Ratio of each Transformer layer at convergence (Epoch 100). Although the mean Fisher Ratio exhibits a two-stage evolution, decreasing during the initial stages of optimization before steadily increasing toward convergence, layer-wise analysis reveals that the strongest discriminative specialization is concentrated within the final Transformer blocks, with Block 12 exhibiting the highest Fisher Ratio. III. E XPERIMENTS 
+
+This section dives into how the analyses were per-formed, describing hardware, presets and backbone details. A ViT-Small/16 model [4] was trained on the ImageNet-100 [3]dataset for 100 epochs using a NVIDIA Quadro RTX 6000 GPU. To ensure consistent observability, all representa-tional measurements were performed on a fixed analysis subset of 1000 validation images throughout training. TGO-III starts with considering input embedding matrix represented by Xl.
+
+Xl ∈ R(B×T )×D , (20) Since we analyze feature matrices and token matrices, the covariance matrix is considered, computed as 
+
+Cf eat l = 1
+
+N − 1
+
+ Xl − 1μTl
+
+T  Xl − 1μTl
+
+ , (21) where 
+
+N = B × T (22) and 
+
+μl = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+X(i) 
+
+> l
+
+(23) where μl denotes the sample mean vector computed across all representation vectors at layer l. The normalization factor 
+
+N −1 corresponds to Bessel’s correction, yielding an unbiased estimate of the sample covariance matrix. Similarly TGO-III computes the token covariance matrix as 
+
+Ctoken l = 1
+
+D − 1
+
+ Xl − ¯Xl
+
+   Xl − ¯Xl
+
+T , (24) where 
+
+¯Xl = 1
+
+D
+
+> D
+
+X
+
+> j=1
+
+X(: ,j ) 
+
+> l
+
+(25) denotes the token-wise mean representation. The token covari-ance matrix captures pairwise relationships between tokens and provides insight into token coupling and interaction struc-ture throughout training. It is important to note that the feature covariance matrix and token covariance matrix are related through the same underlying representation matrix. Both the covariance matrices have the same non-zero singular values and eigenvalues, but the eigenvectors differ. The above relation makes it possible for us to consider feature space and token space analysis as two perspectives on the same geometrical representation. IV. F INDINGS 
+
+In this section, we investigate the semantic evolution of Transformer representations using the proposed observatories. Unlike previous TGOs, which primarily focused on global covariance structure and representational geometry, TGO-III analyzes the discriminative organization of semantic classes as training progresses. The following observations are presented independently of the hypotheses discussed in Section V. 
+
+A. Linear Probe Accuracy 
+
+Linear probes are employed to measure the linear separabil-ity of semantic classes throughout training. Figures 4a and 4b present the layer-wise probe accuracies during training and at the final epoch, respectively, while Figure 4c illustrates the evolution of the average probe accuracy. As training progresses, the average probe accuracy increases consistently, indicating that the learned representations become progressively easier to classify using a simple linear classifier. This suggests that semantic information becomes increasingly organized within the representation space throughout optimiza-tion. Layer-wise analysis reveals a clear hierarchical trend. Early Transformer blocks exhibit relatively poor probe accu-racies, whereas the later Transformer blocks achieve substan-tially higher accuracies. The final classification representation produces the highest probe accuracy among all extracted rep-resentations, demonstrating that semantic information accumu-lates progressively across the Transformer depth. A noticeable acceleration in probe accuracy is observed after approximately the tenth Transformer block, indicating that the majority of semantic discrimination is developed within the later stages of the encoder. 
+
+B. Fisher Ratio 
+
+The Fisher Ratio evaluates the ratio between inter-class scat-ter and intra-class scatter, thereby quantifying the discrimina-tive quality of the learned representations. Figure 3a illustrates the evolution of the average Fisher Ratio during training, while Figure 3b present the corresponding layer-wise evolution. The average Fisher Ratio exhibits two distinct phases throughout optimization. During the initial half of training, the Fisher Ratio gradually decreases before reaching a minimum around the middle of optimization. Subsequently, the Fisher Ratio increases steadily until convergence, ultimately exceeding its initial value. This behaviour suggests that the early stages of optimization primarily reorganize the representation manifold before progressively increasing class discrimination during later training. Layer-wise Fisher analysis reveals a highly non-uniform distribution across the Transformer. Most intermediate blocks exhibit relatively similar Fisher Ratios, whereas the fi-nal Transformer blocks display a dramatic increase in discrim-inative power. In particular, the last encoder block achieves the highest Fisher Ratio by a considerable margin, followed by the penultimate block, indicating that semantic class separation becomes highly concentrated near the output of the network rather than being uniformly distributed throughout the encoder. 
+
+C. Class Centroid Distances 
+
+To investigate the global organization of semantic classes, pairwise Euclidean distances between class centroids are com-puted throughout training. Figure 5 illustrates the evolution of the mean centroid distance. The mean centroid distance initially decreases during the first few epochs before increasing rapidly throughout optimization. After approximately twenty epochs, the centroid distances stabilize at substantially larger values than those observed during initialization and remain rel-atively constant for the remainder of training. The progressive increase in centroid separation indicates that semantic classes occupy increasingly distant regions within the learned rep-resentation space as optimization proceeds. This observation demonstrates a continuous expansion of the global semantic geometry throughout training. 
+
+D. Local PCA Rank 
+
+To quantify the local geometric complexity of semantic classes, Principal Component Analysis is performed indepen-dently for every ImageNet-100 class. Figure 2 illustrates the evolution of the mean Local PCA Rank throughout optimiza-tion, while Figure 1 presents the class-wise Local PCA Rank at convergence. Unlike the global semantic metrics, the Local PCA Rank exhibits a markedly different behaviour. During the early stages of optimization, the average Local PCA Rank increases rapidly, indicating that local semantic manifolds initially ex-pand into higher-dimensional subspaces. After reaching a max-imum during the first quarter of training, the Local PCA Rank decreases steadily until convergence. This gradual reduction suggests that the initially expanded local manifolds become progressively more compact and concentrated as optimization proceeds. The class-wise analysis further reveals substantial variability across semantic categories. Different ImageNet-100 classes require different intrinsic numbers of principal components to explain their local variance, indicating that semantic categories possess inherently different geometric complexities. Some classes remain highly concentrated within relatively low-dimensional subspaces, whereas others occupy considerably richer local manifolds. 
+
+Fig. 5: Evolution of the mean pairwise class centroid dis-tance throughout Transformer training. The average Euclidean distance between all ImageNet-100 class centroids initially decreases during the early stages of optimization before in-creasing steadily as training progresses, indicating progres-sively improved global class separation within the learned representation space. 
+
+E. Summary of Observations 
+
+Collectively, the proposed observatories reveal a progres-sive evolution of semantic representation geometry throughout Transformer training. Linear Probe Accuracy consistently in-creases throughout optimization, indicating progressively im-proved linear separability of semantic classes. Class Centroid Distances similarly increase after an initial transient phase, demonstrating that semantic classes occupy increasingly sep-arated regions of the representation space. The Fisher Ratio exhibits a two-stage evolution, initially decreasing before increasing steadily during later optimization, while layer-wise analysis reveals that the strongest discriminative specialization emerges within the final Transformer blocks. In contrast, Local PCA Rank follows a non-monotonic trajectory, initially in-creasing as local semantic manifolds expand before gradually decreasing toward convergence, suggesting increasing local concentration of class representations. Furthermore, class-wise (a) Layer-wise Probe Accuracy throughout training.  
+
+> (b) Layer-wise Probe Accuracy at Epoch 100. (c) Mean Probe Accuracy throughout training.
+
+Fig. 4: Evolution of Linear Probe Accuracy throughout Transformer training. The top figure illustrates the layer-wise evolution of probe accuracy across all Transformer blocks throughout optimization. The bottom-right figure presents the evolution of the mean probe accuracy, while the bottom-left figure summarizes the probe accuracy of each Transformer layer at convergence (Epoch 100). Probe accuracy increases consistently throughout training, with the strongest linear separability emerging within the final Transformer blocks and reaching its maximum at the final CLS representation. Local PCA analysis reveals substantial variability in geomet-ric complexity across different semantic categories. Together, these observations provide complementary evidence describing the progressive organization, separation, and specialization of semantic representations within the Transformer feature space. V. H YPOTHESES 
+
+The above section IV discussed at length, the observations that came out of TGO-III. This section dives deep into the projected discussion which branch out of the empirical results. Previous TGOs [1] [2] dived deep into spectral and repre-sentational dynamics of the transformer and came up with a few hypotheses to explain certain observed phenomena. These phenomena included Effective Rank and Entropy explosion as the training progressed, sudden decrease in SVCCA [5] and CKA [6], increase in Intrinsic Dimensions, and so on. while this observatory does not add to the hypotheses, it does provide enough empirical evidence to validate or rule out the previous theories. 
+
+A. Hypothesis-I: Semantic Expansion Hypothesis 
+
+TGO-II concluded with invalidating one of the Hypotheses of token diversification as a reason behind rank explosion ,but solidified the claims over semantic expansion. This is where TGO-III picks up, section II discusses how seman-tic expansions points towards the central agenda that the dimensional and directional expansions can be attributed to the encoding of various semantic concepts. The observa-tions obtained throughout TGO-III provide consistent evidence supporting this hypothesis. Linear Probe Accuracy improves steadily throughout optimization, indicating that class identity becomes progressively easier to decode from the learned representations. Similarly, the Fisher Ratio exhibits a sustained increase during later stages of training, demonstrating that between-class variance increasingly dominates within-class variance. The mean pairwise centroid distance also increases after the initial optimization phase, suggesting that semantic classes become progressively separated within the represen-tation manifold. Collectively, these observations indicate that the representational directions discovered during optimization are not allocated randomly, but instead organize the feature space according to semantic categories. Interestingly, this semantic organization occurs simultane-ously with the manifold expansion previously reported in TGO-II. As intrinsic dimensionality increases, the Transformer acquires additional representational degrees of freedom, while TGO-III demonstrates that these newly explored dimensions contribute to improved semantic discrimination rather than arbitrary geometric expansion. Consequently, the Effective Rank explosion observed in TGO-I can now be interpreted not merely as covariance expansion, but as covariance expansion driven by progressively richer semantic organization of the representation manifold. The class-wise Local PCA Rank further complements this interpretation. Although different ImageNet-100 categories occupy manifolds of varying intrin-sic complexity, every class develops a stable low-dimensional local structure by the end of optimization. This suggests that semantic expansion is accompanied by local semantic concen-tration, where globally the representation manifold expands to accommodate increasing semantic diversity while locally each semantic category becomes increasingly compact and geometrically organized. Taken together, TGO-I demonstrated that the covariance spectrum expands throughout optimization, TGO-II showed that the underlying representation manifold simultaneously expands into higher intrinsic dimensions, and TGO-III establishes that these newly explored dimensions are increasingly utilized for semantic discrimination. Therefore, the collective evidence across all three observatories pro-vides strong empirical support for the Semantic Expansion Hypothesis : the Effective Rank explosion observed during Transformer training is primarily driven by the progressive organization of the representation manifold into increasingly discriminative semantic directions rather than by token diver-sification or purely statistical covariance growth. 
+
+B. Hypothesis II: Manifold Expansion Hypothesis 
+
+TGO-II proposed the Manifold Expansion Hypothesis after observing the remarkable agreement between the evolution of TwoNN [7] intrinsic dimensionality and the covariance ex-pansion previously reported in TGO-I. While this observation suggested that the increasing Effective Rank originated from the progressive expansion of the underlying representation manifold, TGO-II was unable to determine how these addi-tional representational degrees of freedom were utilized. In particular, it remained unclear whether the expanding manifold simply increased representational capacity or whether it was organized toward a meaningful semantic objective. The obser-vations obtained through TGO-III provide important evidence addressing this limitation. As demonstrated in Section IV, the progressive increase in Linear Probe Accuracy, Fisher Ratio, and Class Centroid Distances indicates that the additional rep-resentational capacity produced through manifold expansion is accompanied by increasingly discriminative semantic organi-zation. Rather than exhibiting arbitrary geometric complex-ity, the expanded manifold becomes progressively structured according to semantic class identity. Simultaneously, Local PCA analysis reveals that although the global representation manifold continues to expand, individual semantic classes gradually become more locally concentrated during the latter stages of optimization. This indicates that manifold expansion and local semantic concentration occur simultaneously rather than representing contradictory phenomena. Taken together, the observations from TGO-I, TGO-II, and TGO-III suggest a coherent geometric interpretation of Transformer training. TGO-I established that the covariance spectrum progressively explores additional directions, TGO-II demonstrated that these directions emerge through the expansion of the underlying representation manifold, while TGO-III shows that the newly available representational degrees of freedom are increas-ingly utilized to organize semantic classes into discriminative structures. Consequently, TGO-III significantly strengthens the Manifold Expansion Hypothesis by demonstrating that man-ifold expansion serves not only to increase representational capacity but also to facilitate progressively richer semantic organization throughout training. 
+
+C. Hypothesis III: Transition Zone Hypothesis 
+
+The Transition Zone Hypothesis was originally proposed in TGO-II after observing a consistent change in representational behaviour around the fourth and fifth Transformer blocks. Spectral observables measured in TGO-I exhibited remarkably similar dynamics within the middle Transformer layers, while TGO-II further demonstrated that representational similarity decreased and intrinsic dimensionality continued to increase beyond this region. These observations suggested the existence of a transition separating two qualitatively different stages of representation processing. TGO-III introduces complementary semantic observatories capable of further examining this hypothesis. Layer-wise Lin-ear Probe Accuracy demonstrates that semantic discrimination is not uniformly distributed throughout the Transformer depth. Instead, representations become progressively more linearly separable as depth increases, with the strongest discrimina-tive capability emerging within the final Transformer blocks. Similarly, the layer-wise Fisher Ratio exhibits a highly non-uniform distribution, remaining relatively stable throughout most intermediate layers before increasing sharply within the final encoder blocks immediately preceding the classification head. These observations suggest that semantic specialization develops progressively throughout the network rather than ap-pearing uniformly across all layers. While the representational transition originally identified in TGO-II remains evident from the perspective of geometry and intrinsic dimensionality, TGO-III indicates that the strongest semantic discrimination emerges substantially later within the network. Consequently, the Transition Zone should not necessarily be interpreted as the location where semantic representations become fully es-tablished. Instead, it is more appropriately viewed as the onset of geometric specialization, after which semantic organization continues to accumulate and mature throughout the remaining Transformer layers. Therefore, TGO-III refines rather than replaces the original Transition Zone Hypothesis. The collec-tive observations suggest that Transformer training consists of multiple stages of representational evolution, beginning with geometric reorganization in the intermediate layers and culminating in highly discriminative semantic representations within the final encoder blocks. VI. C ONCLUSION 
+
+This work introduced TGO-III: Semantic Geometry Ob-servatory , the third observatory within the Transformer Ge-ometry Observatory framework, with the objective of in-vestigating how semantic organization emerges throughout Transformer training. Unlike the previous observatories, which primarily characterized global covariance evolution and rep-resentational geometry, TGO-III focused on the evolution of semantic class organization using Linear Probe Accu-racy, Fisher Ratio, Class Centroid Distances, and Local PCA analysis. Collectively, these observatories enabled the direct investigation of class separability, local manifold geometry, and semantic representation throughout optimization. The ob-servations obtained from TGO-III consistently demonstrate that semantic representations become progressively more dis-criminative as training proceeds. Linear Probe Accuracy in-creases steadily throughout optimization, indicating that class information becomes increasingly accessible through linear decision boundaries. Fisher Ratio analysis further reveals pro-gressively stronger discrimination between semantic classes, while Class Centroid Distances demonstrate that semantic categories occupy increasingly separated regions within the representation manifold. Simultaneously, Local PCA analysis shows that although semantic classes exhibit varying geomet-ric complexities, their local manifolds become progressively more concentrated during the latter stages of optimization. These observations provide substantial empirical support for the Semantic Expansion Hypothesis . The covariance directions discovered during optimization are not merely ad-ditional statistical degrees of freedom but are increasingly allocated toward organizing semantic concepts. Consequently, the covariance rank expansion first observed in TGO-I can be interpreted as the geometric manifestation of progressively richer semantic organization rather than arbitrary covariance growth or token diversification. The present observatory also significantly strengthens the Manifold Expansion Hypothe-sis . TGO-I demonstrated that the covariance spectrum progres-sively expands throughout training, while TGO-II established that this expansion is accompanied by increasing intrinsic di-mensionality of the underlying representation manifold. TGO-III completes this interpretation by demonstrating that the newly explored representational dimensions are increasingly utilized for semantic discrimination and class organization. Collectively, the three observatories suggest that manifold expansion provides the geometric substrate through which in-creasingly discriminative semantic representations emerge. Fi-nally, TGO-III refines the Transition Zone Hypothesis . While previous observatories identified a geometric transition occur-ring within the middle Transformer layers through spectral and intrinsic-dimensional analyses, the present work demonstrates that semantic specialization continues to develop well beyond this region. Layer-wise Linear Probe Accuracy and Fisher Ratio reveal that the strongest discriminative representations emerge within the final Transformer blocks, suggesting that the intermediate transition corresponds to the onset of geometric specialization, whereas semantic discrimination progressively matures throughout the remaining depth of the network. Taken together, the three Transformer Geometry Observatories provide a unified geometric interpretation of Transformer learning. TGO-I established that the representation covariance progressively explores increasingly diverse directions, TGO-II demonstrated that these directions arise through the expansion of the underlying representation manifold, and TGO-III shows that this expanded manifold is progressively organized into in-creasingly discriminative semantic structures. This progression establishes a coherent picture of Transformer representation learning, connecting covariance evolution, manifold expan-sion, and semantic organization within a single geometric framework. VII. F UTURE WORKS 
+
+TGO-II originally proposed six iterations of the Transformer Geometry Observatory , where the remaining observatories were intended to investigate complementary aspects of Trans-former representations. However, the observations presented throughout TGO-III substantially strengthen the semantic hy-potheses proposed by the earlier observatories and provide a natural conclusion to the initial geometric investigation. This also brings us to a another point, that we have made clear progress in order to determine how a transformer may be learning. There are a further theories that need to be analyzed and tested. Consequently, the future trajectory of the Trans-former Geometry Observatory has been slightly modified. Rather than extending semantic analysis further, the remaining observatories will investigate the computational and optimiza-tion mechanisms responsible for the spectral, representational, and semantic behaviours established throughout TGO-I, TGO-II, and TGO-III. Tracking Trajectories, understanding com-putational geometry and analyzing loss landscapes and how learning prog‘resses. 
+
+A. TGO-IV: Developmental Topology Observatory 
+
+While TGO-III demonstrates the emergence of progres-sively richer semantic organization, it does not directly explain how Transformer computations produce these representations. Future work will therefore investigate the joint evolution of token dynamics and attention geometry through token trajec-tories, token interactions, attention routing, information flow, and head specialization. These experiments aim to determine how the underlying computational dynamics progressively construct the semantic manifolds observed throughout training. 
+
+B. TGO-V: Gradient Geometry Observatory 
+
+Having established the computational evolution of Trans-former representations, future work will investigate the geom-etry of gradient propagation throughout optimization. TGO-V will analyze gradient covariance, gradient similarity, Fisher In-formation, gradient phase transitions, and layer-wise learning dynamics. These experiments aim to determine how gradient evolution governs the progressive emergence of structured Transformer representations. 
+
+C. TGO-VI: Optimization Dynamics Observatory 
+
+Future work will investigate the optimization landscape governing Transformer learning through Hessian spectra, cur-vature evolution, loss landscape topology, optimization trajec-tories, sharpness, and optimization phase transitions. These ex-periments seek to establish the optimization principles respon-sible for the geometric and semantic evolution consistently observed throughout the previous Transformer Geometry Ob-servatories. 
+
+D. Long-Term Objective 
+
+The long-term objective of the Transformer Geometry Ob-servatory is to establish a unified mechanistic theory describ-ing how Transformers learn. By integrating spectral geometry, representation geometry, semantic geometry, computational dynamics, gradient geometry, and optimization dynamics, the complete framework aims to transform empirical geometric observations into fundamental learning principles. Ultimately, these principles may provide the theoretical foundation re-quired for the development of future neuromorphic learning systems and biologically inspired Transformer architectures. REFERENCES [1] K. Kapil and K. P. Upla, “Transformer geometry observatory tgo-i: Spectral geometry observatory,” 2026. [Online]. Available: https://arxiv.org/abs/2606.19249 [2] ——, “Transformer geometry observatory tgo-ii: Representational similarity observatory,” 2026. [Online]. Available: https://arxiv.org/abs/ 2607.02386 [3] J. Deng, W. Dong, R. Socher, L.-J. Li, K. Li, and L. Fei-Fei, “Imagenet: A large-scale hierarchical image database,” in IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 2009, pp. 248–255. [4] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly, J. Uszkoreit, and N. Houlsby, “An image is worth 16x16 words: Transformers for image recognition at scale,” 2021. [Online]. Available: https://arxiv.org/abs/2010.11929 [5] M. Raghu, J. Gilmer, J. Yosinski, and J. Sohl-Dickstein, “Svcca: Singular vector canonical correlation analysis for deep learning dynamics and interpretability,” 2017. [Online]. Available: https://arxiv.org/abs/1706. 05806 [6] S. Kornblith, M. Norouzi, H. Lee, and G. Hinton, “Similarity of neural network representations revisited,” 2019. [Online]. Available: https://arxiv.org/abs/1905.00414 [7] S. Guan and M. Loew, “The training accuracy of two-layer neural networks: its estimation and understanding using random datasets,” 2023. [Online]. Available: https://arxiv.org/abs/2010.13380
