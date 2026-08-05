@@ -1,0 +1,306 @@
+Title: Standalone DINOv3 for Training-Free Open-Vocabulary Semantic Segmentation in Remote Sensing
+
+URL Source: https://arxiv.org/pdf/2608.03023v1
+
+Published Time: Wed, 05 Aug 2026 00:23:19 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Standalone DINOv3 for Remote Sensing Training-Free Open-Vocabulary Semantic Segmentation 
+
+# Changhao Zhao 1, Haoxiang Li 1, Yuke Li 2, Hai Liu 1, LingLin Zeng 1,†
+
+> 1
+
+College of Resources and Environment, Huazhong Agricultural University, Wuhan 430070, China {132, hailiu, l_h_x}@webmail.hzau.edu.cn, zenglinglin@mail.hzau.edu.cn 
+
+Abstract 
+
+Remote sensing semantic segmentation is hindered by costly pixel-level annotations, motivating training-free open-vocabulary methods. Recently, The recent release of DINOv3 brings DINO.txt, which equips the standalone DINO back-bone with image-text contrastive learning and thus opens up the possibility of open-vocabulary segmentation.We propose DinoSplat-OV, a training-free framework that adapts DINOv3 to remote sensing without fine-tuning or additional pretrain-ing. Targeting the dense distribution, multi-scale nature, and large size of remote sensing imagery, we design two core mod-ules. Its Text-aware Laplacian Propagation module(TLP) de-noises patch-level predictions by combining textual semantic affinities with local visual similarity, improving regional con-sistency while preserving boundaries. Its Gaussian Splatting Upsampling module(GSUP) reconstructs pixel-level features through RGB-guided anisotropic aggregation and test-time optimization. A global-anchor sliding-window strategy fur-ther supports large-scale imagery. Experiments on UDD5, DOTA, LoveDA and Vaihingen demonstrate competitive or superior performance over existing training-free methods, ef-fectively filling the gap of DINO-series models in training-free open-vocabulary segmentation and providing a viable new path for further advances in this direction. 
+
+# Introduction 
+
+Remote sensing imagery plays a critical role in precision agriculture, disaster response, and environmental monitor-ing. However, the acquisition of remote sensing data and pixel-level annotation are extremely costly, and the images are characterized by dense objects, varying scales, and huge sizes, making vision foundation models (VFMs) pre-trained on natural images difficult to apply directly. Extensive prior work has attempted fine-tuning-based adaptation, yet still faces generalization bottlenecks. Open-vocabulary semantic segmentation, which can rec-ognize categories defined by arbitrary text, has emerged as the most promising direction for remote sensing interpreta-tion. Existing methods mostly adopt CLIP as the backbone and post-process its logits to eliminate global biases, among which training-free schemes have achieved notable progress. Nevertheless, such optimization heavily relies on CLIP’s dual-encoder architecture and modifiable internal modules, and cannot be directly transferred to other VFMs. The release of DINOv3 and its accompanying text encoder (DINO.txt) opens up the possibility of using DINO alone for open-vocabulary segmentation. Although DINOv3’s visual features are superior to those of CLIP, its visual backbone is completely frozen under the LiT training paradigm, and we are unable to modify its internal attention or feed-forward layers as we do with CLIP. This leads to severe noise and blurred boundaries when directly applied to remote sensing imagery. To address this, we systematically transfer the train-ing free experience from CLIP to DINOv3 and propose 
+
+DinoSplat-OV . This model is designed for the large-scale and high-density characteristics of remote sensing, with a purely inference-oriented optimization pipeline: synonym aggregation alleviates text-image matching fragmentation, Text-aware Laplacian Propagation (TLP) guides feature alignment, 2D Gaussian Splatting Upsampling (GSUP) reconstructs low-resolution features to pixel-level preci-sion, and global-anchor sliding window supports arbitrary large-image inference. The contributions of this paper are threefold: 
+
+• We systematically analyze the differences between DINO and CLIP, and propose the first training-free open-vocabulary segmentation framework for remote sensing based on DINOv3. 
+
+• We develop two core algorithms tailored to DINO.txt: the Text-aware graph Laplacian Propagation (TLP) for coarse-grained feature optimization, and the 2D Gaussian Splatting-inspired upsampling (GSUP) for accurate pixel-level feature reconstruction. 
+
+• We validate competitive or even superior performance to the state-of-the-art on UDD5, DOTA, LoveDA, Vaihin-gen and other datasets, without requiring a pre-trained upsampler. 
+
+# Related Work 
+
+Training-Free Open-Vocabulary Segmentation Paradigms. 
+
+Open-vocabulary segmentation has progressed with vision foundation models (VFMs). CLIP, with its dual-encoder joint training, has become the dominant backbone. Re-cent training-free efforts, such as SCLIP (Wang, Mei, and Yuille 2023) (modifying self-attention to Query-Query) and arXiv:2608.03023v1 [cs.CV] 4 Aug 2026 Figure 1: DinoSplat-OV employs a sliding-window strategy to process large remote sensing images; after feature extraction by DINOv3, the features are sequentially refined via Text-aware Laplacian Propagation (TLP), upsampled through 2D Gaussian Splatting Upsampling (GSUP), and fused with global-anchor window attention, ultimately producing pixel-level segmentation predictions. ClearCLIP (Lan et al. 2024a) (removing FFN and residuals), focus on mitigating CLIP’s inherent global bias for dense prediction. However, these architectural modifications are intrinsically tied to CLIP’s modifiable internal modules. In parallel, while DINO offers superior visual features, ex-isting works (e.g., clip-dinosier (Wysoczańska et al. 2024), proxyCLIP (Lan et al. 2024b), LPOSS (Stojnić et al. 2025)) merely treat it as an auxiliary denoising tool for CLIP, rather than an independent segmenter. The recent release of DI-NOv3 with its text encoder (DINO.txt) enables DINO-only segmentation for the first time. Critically, unlike CLIP, DI-NOv3 employs a Locked-image Tuning (LiT) paradigm that fully freezes the visual backbone, making the successful CLIP-style internal modifications inapplicable. This frozen constraint constitutes the core challenge our inference-time optimizations must address. 
+
+Remote Sensing Adaptations and Domain Gaps. 
+
+Remote sensing imagery presents unique hurdles: dense object distribution, multi-scale targets, and gigapixel res-olutions. While OVRS(Cao et al. 2025) employs a cost-aggregation training scheme adapted from Cat-Seg(Cho et al. 2024) to remote sensing data., and SegEarth-OV/SatOV (Li et al. 2025a) incorporate pre-trained upsamplers (e.g. Fea-tUp (Fu et al. 2024)) to recover resolution, these methods still rely on dataset-specific pre-training. Consequently, they suffer from degraded generalization when facing unseen geo-graphic regions. Moreover, GLACLIP(Lee et al. 2026) intro-duces a sliding-window strategy tailored for remote sensing, which differs from the standard one. These domain-specific bottlenecks—high-resolution recovery and seamless large-image inference—are exacerbated when using a frozen DINO backbone, as we cannot fine-tune the features to adapt to RS distributions. 
+
+# Our Method 
+
+Preliminaries 
+
+DINOv3 Text Encoder (DINO.txt) DINO.txt(Jose et al. 2024) is the text encoder paired with DINOv3, enabling open-vocabulary segmentation using DINO alone. Its train-ing paradigm differs fundamentally from CLIP’s joint train-ing: DINO.txt adopts a Locked-image Tuning (LiT) strat-egy, where the visual backbone is fully frozen and only the text encoder is optimized for cross-modal alignment. This design preserves the strong discriminative features learned during self-supervised pre-training, but consequently pro-hibits modifying internal attention or feed-forward layers at inference time. In contrast, CLIP’s dual-encoder architecture allows flexible adjustments to its visual branch, highlighting a core architectural distinction between the two models. 
+
+3D Gaussian Splatting 3D Gaussian Splatting (3DGS) (Kerbl et al. 2023) represents continuous visual fields us-ing explicit Gaussian primitives, where each primitive is pa-rameterized by position, covariance, opacity, and appearance attributes. Through differentiable projection and alpha blend-ing, 3DGS reconstructs dense signals from sparse primitives without relying on complex neural decoders. Recent work such as Feat2GS (Chen et al. 2025) further demonstrates that visual foundation model features can be effectively rep-resented by Gaussian primitives. Inspired by this idea, we extend Gaussian splatting from visual rendering to seman-tic feature reconstruction, treating DINO tokens as semantic Gaussian primitives for high-resolution feature upsampling through adaptive weighted aggregation. 
+
+Overall Architecture 
+
+The inference pipeline of DinoSplat-OV (Figure 1) proceeds through four sequential modules. We first apply synonym aggregation on the text side, fusing embeddings from multiple synonymous descriptions to com-pensate for DINO.txt’s relatively weak cross-modal align-ment. For the frozen visual features, Text-aware Laplacian Prop-agation (TLP) performs anisotropic diffusion on the ini-tial logits under the guidance of text priors: it aggres-sively smooths semantically homogeneous regions to sup-press noise and fill holes, while preserving discontinuities at land-cover boundaries. The resulting coarse logits are then fed into Gaussian Splatting Upsampling (GSUP), which treats each low-resolution pixel as a 2D Gaussian primitive and reconstructs pixel-level feature maps via RGB-guided anisotropic weighting—all through test-time optimization without any pre-trained upsampler. Finally, to handle gigapixel remote sensing inputs, a global-anchor sliding window strategy externally simulates global attention by using the CLS token as contextual refer-ence across windows, coupled with Hann window weighting to eliminate stitching artifacts. This purely inference-oriented design requires neither fine-tuning nor retraining. 
+
+Synonym Aggregation for Text Embeddings 
+
+To compensate for the weak cross-modal alignment of DINO.txt, we aggregate multiple synonymous descriptions per category. For each class c, let {tc,i }Nc 
+
+> i=1
+
+be the text embed-dings of its Nc synonymous phrases. We compute a unified class embedding via weighted averaging: 
+
+Tc =
+
+PNc 
+
+> i=1
+
+wc,i tc,i 
+
+PNc 
+
+> i=1
+
+wc,i 
+
+, (1) where wc,i are set uniformly in our main experiments, but can be adjusted based on phrase frequency or importance. This aggregation reduces the variance caused by single-word expression biases, providing more stable text priors for sub-sequent modules. 
+
+Text-aware Laplacian Propagation (TLP) 
+
+Figure 2: Cost Aggregation vs Laplacian Propagation Dia-gram To mitigate noise and cross-window inconsistency in seg-mentation predictions on low-resolution feature maps, ex-isting post-processing approaches—such as Cost Aggrega-tion ( ?)—require training on annotated data. To address this limitation, we propose a training-free graph Laplacian propa-gation algorithm, termed Text-aware Laplacian Propagation (TLP). This method is essentially a variant of label prop-agation and can be viewed as a closed-form simplification of graph convolutional networks (GCNs) when applied to a single image. Its core idea is to leverage text-embedding priors to construct global semantic relationships among cat-egories and to couple these with local visual features of the image. This coupling guides the classification logits via anisotropic diffusion—smoothing sufficiently within seman-tically homogeneous regions to eliminate noise, while sup-pressing cross-region propagation at semantic boundaries to preserve land-cover contours. Given the aggregated class embeddings T ∈ RC×D ob-tained from Eq. (1), we first construct a semantic correlation matrix S ∈ RC×C via cosine similarity with temperature scaling: 
+
+Sij = exp  T⊤ 
+
+> i
+
+Tj /τ S
+
+PCk=1 exp  T⊤ 
+
+> i
+
+Tk/τ S
+
+ , (2) where τS is a temperature parameter.In practice, we further enhance the diagonal entries and perform row-wise renor-malization. In our implementation, we enforce symmetry via 
+
+S ← (S + S⊤)/2 to maintain a balanced propagation prior. This matrix serves as a global prior to modulate the subse-quent local diffusion intensity. Let P ∈ RB×C×H×W be the probability map after soft-max normalization, and let pc(u) denote the probability that position u belongs to category c. We define the prediction confidence at position u as γ(u) = max c pc(u), and the semantic self-consistency as 
+
+α(u) = X
+
+> c
+
+pc(u) X
+
+> j
+
+Scj pj (u), (3) which measures how well the pixel’s probability distribution agrees with the text semantic matrix S—if the predicted cate-gory exhibits consistent responses with semantically similar categories, α(u) will be high. The diffusion gating coefficient is then defined as: 
+
+λ(u) = max {γ(u), γ min }2 ·  1 + α(u), (4) where γmin is a small constant (set to 0.05 in experiments) to prevent numerical instability. λ(u) controls the diffusion strength: regions with high confidence and strong semantic self-consistency are sufficiently smoothed to eliminate noise, while regions with low confidence or semantic ambiguity suppress diffusion to preserve fine details. For adjacent pixel positions u and v, we define the anisotropic edge weight ωu,v ∈ [0 , 1] , which integrates both image- and semantic-guided terms: 
+
+ωu,v = ωim  
+
+> u,v
+
+· ωsem  
+
+> u,v
+
+, ˆωu,v = ωu,v + ωv,u 
+
+2 , (5) where 
+
+ωimg  
+
+> u,v
+
+= exp 
+
+
+
+−kI · |I(u) − I(v)|
+
+μI
+
+
+
+,
+
+with μI = mean( |∇ I|) being the mean absolute grayscale gradient over the local map and kI a constant (set to 5.0 in experiments), and the semantic term is modulated as 
+
+ωsem  
+
+> u,v
+
+= 1 + X
+
+> c
+
+pc(u) X
+
+> j
+
+Scj pj (v).In practice, we apply a lightweight numerical projection 
+
+ˆωu,v ← min(1 , ˆωu,v ) to strictly confine the symmetric edge weights within [0 , 1] as a stabilizer. Let X ∈ RB×C×H×W denote the classification logits to be optimized (initialized as the input logits). Define the graph Laplacian operator L acting on a feature map Z as: 
+
+L(Z)( u) = X 
+
+> v∈N (u)
+
+ˆωu,v (Z(u) − Z(v)) (6) where N (u) denotes the four-neighborhood. The final smoothing process is accomplished by solving the follow-ing sparse linear system: 
+
+λ(u)X(u) + τ · L X(u) = λ(u) · Xin (u), ∀u, (7) where Xin is the original input logits and τ > 0 is a smooth-ing strength parameter. This formulation is equivalent to performing anisotropic smoothing on low-frequency regions while preserving high-frequency boundaries. The raw edge weight ωu,v defined in Eq. (5) is generally asymmetric due to the semantic term. To enable a symmetric graph Laplacian and safely apply the Conjugate Gradient (CG) method, we symmetrize it as ˆωu,v = ( ωu,v +ωv,u )/2 (Eq. (5a)). With this symmetrization, the coefficient matrix in Eq. (7) becomes symmetric positive definite (since λ(u) > 0 and the graph Laplacian is positive semidefinite), thus guaranteeing the convergence of CG. We therefore employ the CG method for efficient iterative solution, which converges robustly within a fixed number of steps without requiring backpropagation or training. In practice, to accelerate inference on high-resolution im-ages while maintaining global receptive fields, we downsam-ple the input logits and image to a coarse grid (determined by a target size, e.g., 72 × 72 ), solve the linear system in Eq. (7) on this downsampled space, and upsample the solution back to the original resolution with GSUP. This downsampling strategy is also consistent with our implementation, where the TLP module operates on the patch tokens’ spatial grid before upsampling. 
+
+GSUP: Gaussian Splatting Inspired Upsampling 
+
+Figure 3: 3D Gaussian Splatting vs 2D Gaussian Splatting Upsampling Diagram For dense segmentation scenarios in remote sensing im-agery, recovering low-resolution features to pixel-level ac-curacy is of critical importance. Existing methods such as FeatUp and AnyUp(Wimmer et al. 2026) rely on pre-trained upsampling models. However, since their backbones are pre-dominantly trained on natural image datasets like ImageNet, remote sensing data constitutes only a small proportion of their training distribution, leading to notable cross-domain generalization bottlenecks. Recently, NAF(Chambon et al. 2025) has improved JBU by replacing its fixed kernel with neighborhood attention, while 3DGS has demonstrated pow-erful explicit scene representation via anisotropic covariance without pretraining, achieving high-quality reconstruction through test-time optimization (TTO). Inspired by both, we propose a feature reconstruction upsampling module based on 2D Gaussian Splatting, termed Gaussian Splatting Up-sampling (GSUP) , which similarly replaces JBU’s fixed ker-nel with a Gaussian splatting kernel. 
+
+Formal Definition. Let the low-resolution feature map be 
+
+Flr ∈ RB×C×Hl×Wl , and the target high-resolution feature map be Fhr ∈ RB×C×Hh×Wh , where Hh/H l = Wh/W l =
+
+r is the upsampling factor. We define each pixel q ∈ G l on the low-resolution feature map (where Gl denotes the Hl × Wl
+
+grid) as a 2D Gaussian splatting primitive, with its coordinate 
+
+xq ∈ R2 serving as the spatial center, the corresponding feature vector fq ∈ RC as the propagable attribute, and the anisotropic covariance matrix Σq ∈ R2×2 characterizing its spatial morphology. The reconstructed feature at a high-resolution target position p ∈ G h (where Gh denotes the 
+
+Hh × Wh grid) is obtained by weighted aggregation of all low-resolution Gaussian primitives: 
+
+Fhr (p) = X 
+
+> q∈N (p)
+
+wp,q · Flr (q), (8) where N (p) is the set of spatially proximate low-resolution pixels to p (implemented via k-nearest neighbor truncation), and wp,q ∈ [0 , 1] are the normalized splatting weights satis-fying P  
+
+> q∈N (p)
+
+wp,q = 1 .
+
+Anisotropic Adaptive Weights. Unlike JBU and similar methods that adopt fixed isotropic kernels, we leverage the current RGB image as guidance to generalize the weights 
+
+wp,q to an adaptive anisotropic Gaussian splatting kernel, composed of a spatial term and a color term: 
+
+wp,q = Softmax q∈N (p)
+
+ ϕs(p, q ) + ϕc(p, q ), (9) where the spatial term employs Mahalanobis distance to mea-sure geometric deformation: 
+
+ϕs(p, q ) = − 12 ∆x⊤ 
+
+> p,q
+
+Σ−1 
+
+> q
+
+∆xp,q , ∆xp,q = xp − xq ,
+
+(10) with Σq being a learnable Gaussian covariance matrix, pa-rameterized by its scale parameters sq = ( sx, s y ) and ro-tation angle θq : Σq = R(θq ) · diag( s2
+
+> x
+
+, s 2 
+
+> y
+
+) · R(θq )⊤. The color term measures semantic similarity based on RGB pixel differences: 
+
+ϕc(p, q ) = − ∥I(p) − I(q)∥22
+
+2σ2
+
+> r,q
+
+, (11) where I(p) ∈ R3 is the RGB color value, and σr,q is a learnable color bandwidth parameter. 
+
+Test-Time Optimization (TTO). In contrast to the feed-forward sampling of traditional JBU, our method treats the Gaussian parameters {sq , θ q , σ r,q } as optimizable variables, takes the low-resolution RGB image Ilr as input and the Model Backbone UDD5 DOTA LoveDA Vaihingen Average 
+
+MaskCLIP ECCV baseline CLIP 28.1 12.4 22.6 30.0 23.3 DINO.txt CVPR DINOv3 32.4 17.0 27.8 35.7 28.2 ClearCLIP ECCV CLIP 38.2 18.5 31.6 39.4 31.9 LPOSS CVPR CLIP + DINO 38.8 20.2 32.4 32.0 30.8 SegEarth-OV CVPR ClearCLIP 45.3 22.3 36.9 40.9 36.3 
+
+DinoSplat-OV Ours DINO.txt 42.9 28.6 36.3 42.3 37.5 
+
+Table 1: Comparison of backbones and mIoU for different training free methods. 
+
+Figure 4: Visualization of segmentation results for different methods on different datasets. original high-resolution RGB image Ihr as supervisory sig-nal, and performs test-time optimization by minimizing the L1 reconstruction loss: 
+
+LTTO = FGSUP (Ilr ; Θ) − Ihr 1, (12) where FGSUP (·; Θ) denotes the forward splatting projection that takes the low-resolution RGB values as the "values", and 
+
+Θ = {sq , θ q , σ r,q }q∈G l . This optimization involves only the Gaussian parameters and does not update any visual back-bone or feature encoder. It requires only a few dozen SGD iterations (e.g., 10 steps) and a sparse neighbor set (K=16), which incurs <3 GB GPU memory and 1200 ms latency per image, incurring minimal inference overhead. After opti-mization, with Θ fixed, the low-resolution semantic features 
+
+Flr are fed as the "values" into the same forward pass, yield-ing the pixel-level high-resolution semantic feature map Fhr .The entire pipeline requires no pre-training and relies entirely on test-time adaptation, providing a lightweight and gener-alizable alternative for high-resolution recovery from frozen backbone features. 
+
+Global-Anchor Window Attention 
+
+Vision foundation models such as CLIP and DINO are trained on images of fixed resolution (e.g., 224 × 224 pixels) and are highly sensitive to input sizes. Remote sensing images, how-ever, typically exceed 1000 × 1000 pixels, making sliding window strategies essential for processing large-scale im-agery. Nevertheless, conventional independent window inference introduces severe stitching artifacts, often resulting in dis-continuities at window boundaries and disrupting the spatial consistency of segmentation predictions. To address this, we propose a global-anchor guided sliding window attention mechanism that simulates global self-attention externally, enabling each window to perceive global semantic context during decision-making. Specifically, we adopt the CLS to-ken from ViT as the global anchor Fglobal ∈ RD , which ag-gregates the global representation of the current window dur-ing the window encoding process. For the feature Fi ∈ RD
+
+of the i-th window, the global-aware weight is computed as: The global-aware weight for the i-th window is computed as: 
+
+wi = exp (sim( Fi, F global )/τ )
+
+P 
+
+> j
+
+exp (sim( Fj , F global )/τ ) · Gσ (i), (13) where sim( ·, ·) denotes cosine similarity, τ is a temperature coefficient, and Gσ (i) is a Gaussian window weight defined as Gσ (i) = exp( −d2 
+
+> i
+
+/2σ2), with di being the normalized distance from the i-th window center to the image center. This Gaussian weighting smoothly decays the contribution of windows near the image boundary, effectively suppress-ing stitching artifacts while preserving the semantic fidelity of central regions. The bandwidth σ is set to 0.5 in our experiments to balance boundary smoothness and content preservation. This mechanism establishes implicit correlations among windows through the global anchor, ensuring that the out-put of each window is constrained not only by local visual information but also by the global contextual distribution. Meanwhile, the Gaussian weighting Gσ (i) effectively elimi-nates prediction jumps at window seams, enabling seamless end-to-end inference on remote sensing images of arbitrary sizes and generalizing VFMs trained at limited resolutions to large-scale remote sensing scenarios. 
+
+# Experiments 
+
+As a training-free framework, DinoSplat-OV requires no pre-training or parameter updates and performs end-to-end inference directly at test time. Consequently, our experiments focus on performance evaluation and mainly compare against existing training-free open-vocabulary segmentation meth-ods. 
+
+Datasets 
+
+To comprehensively assess the generalisation capability of DinoSplat-OV across diverse remote sensing scenarios, we select four representative multi-category segmentation datasets: DOTA (Xia et al. 2018) (dense remote sensing objects), LoveDA (Wang et al. 2021)(rural-urban mixed agricultural scenes), UDD5 (Chen et al. 2018) (drone-style natural imagery), and ISPRS Vaihingen (Niemeyer, Rotten-steiner, and Soergel 2012)(urban scene without blue band). These datasets exhibit significant variations in spatial reso-lution, object density, and scene complexity, enabling a thor-ough evaluation of the model’s adaptability to various remote sensing image types. Following SAMRS(Wang et al. 2023) , we transform the original DOTA dataset into a semantic segmentation dataset with pixel-level annotations. 
+
+Comparison with SOTA Methods 
+
+Given that DinoSplat-OV is designed for training-free in-ference, we select the most representative training-free open-vocabulary segmentation models as our baselines. To ensure fair comparison, all competing methods are uniformly adapted with a sliding-window strategy to handle the large in-put sizes of remote sensing images, with window parameters kept consistent with those of DinoSplat-OV. Experimental results demonstrate that DinoSplat-OV achieves overall per-formance on par with the current state-of-the-art (SOTA), and exhibits particularly pronounced advantages in dense object scenarios (e.g., the DOTA dataset), validating the ef-fectiveness of our approach in remote-sensing-specific seg-mentation tasks. The experimental results are presented in the figure above. DinoSplat-OV is built upon DINO.txt, while SegEarth-OV is based on ClearCLIP. It can be observed that ClearCLIP, by optimizing the CLIP architecture, achieves stronger image-text matching capability compared to DINO.txt, whereas DINO exhibits superior semantic clustering perfor-mance in the visual domain. Building upon this foundation, SegEarth-OV further introduces a pre-trained FeatUp upsam-pling module to attain state-of-the-art performance. In par-allel, our approach incorporates Laplacian propagation and a Gaussian-splatting-inspired test-time optimization (TTO) upsampling module. Following a similar optimization tra-jectory, our method achieves performance on par with the SOTA. 
+
+GSUP vs Other Feature Reconstruction Models 
+
+To validate the effectiveness of GSUP, we compare it against two representative general-purpose upsampling mod-els: AnyUp , a generic upsampler that supports DINO fea-tures, and SatUp , a dedicated upsampler trained on a remote sensing subset that is also compatible with DINO features. Experimental results demonstrate that GSUP , without any pre-training, achieves feature reconstruction quality compa-rable to pre-trained upsamplers through test-time optimiza-tion (TTO) alone, showing strong competitiveness across multiple remote sensing scenarios. In our experiments, They reconstruct 72 ×72 DINOv3 patch features into 224 ×224 dense feature maps, where each patch token is modeled as an adaptive Gaussian primitive for pixel-level semantic feature recovery. 
+
+Method Pre Trained mIoU Infer Time 
+
+Bilinear baseline No 35.6 0.02s UPLiFT CVPR ✓ 40.6 0.1s AnyUp ICLR ✓ 43.8 0.3s SatUp ✓(RS) 43.2 0.1s GSUP Ours TTO 42.9 1.2s Table 2: Performance of different feature upsampling meth-ods on the ImageNet dataset subset. 
+
+Figure 5: Visualization of feature reconstruction across dif-ferent upsampling methods. Table 2 show that GSUP achieves slightly lower accuracy than the pre-trained optimal model, yet the gap is accept-able—reflecting a trade-off between performance and effi-ciency. Its core strength lies in being dataset-agnostic and pre-training-free: unlike AnyUp or SatUp, which learn pa-rameters on large datasets, GSUP optimizes only Gaussian splatting parameters per test image (10 SGD iterations). This yields a good balance among deployment flexibility, the-oretically maximal cross-domain generalization, and cost, suitable for remote sensing with scarce annotations and high variability. Also note that FeatUp needs local CUDA com-pilation, AnyUp requires NATTEN, while GSUP needs no pre-training, offering better portability with minimal modi-fications. Ablations 
+
+To validate the effectiveness of each of the four proposed modules in adapting DINO.txt for training-free remote sens-ing open-vocabulary segmentation, we conduct ablation studies on the UDD5 dataset. 
+
+Figure 6: The features extracted by DINO.txt are first en-hanced and denoised through Text-aware Laplacian Prop-agation (TLP), and then reconstructed into pixel-level high-resolution representations via RGB-guided Gaussian Splatting Upsampling (GSUP), ultimately yielding the fi-nal semantic segmentation predictions. 
+
+Method Base mIoU ∆
+
+w/o all (baseline) 32.4 0w/ Sliding Window 36.1 +3.7 w/ Synonym Aggregation 37.7 +1.6 w/ Laplacian Propagation (TLP) 40.7 +3.0 w/ Gaussian Splatting (GSUP) 42.9 +2.2 Table 3: Ablation study of the proposed modules on the UDD5 dataset. Table 3 shows that sliding window and synonym aggre-gation provide foundational improvements, increasing the mIoU from 32.4% to 36.1% and 37.7%, respectively. These gains demonstrate their effectiveness in handling large-scale remote sensing images and alleviating the text-image match-ing ambiguity of DINO.txt. The proposed core modules, TLP and GSUP, further improve the performance to 40.7% and 42.9%, corresponding to absolute gains of +8.3% and +10.5% over the baseline, respectively. TLP performs text-guided diffusion to enhance semantic consistency, suppress-ing noisy predictions while preserving category boundaries. GSUP addresses the spatial resolution limitation of DINOv3 patch features by reconstructing high-resolution semantic representations through RGB-guided anisotropic Gaussian aggregation with test-time optimization. The complemen-tary effects of semantic refinement and resolution recovery lead to the best performance when all modules are combined. 
+
+Generalizability of different backbones 
+
+Backbone Base mIoU ∆
+
+DINO.txt 37.7 -+ TLP 40.7 +3.0 + GSUP 42.9 +2.2 
+
+ClearCLIP 38.2 -+ TLP 40.8 +2.6 + GSUP 42.8 +2.0 Table 4: Replace different backbones on the UDD5 dataset. As shown in Table 4, we further investigate the general-izability of TLP and GSUP. While SegEarth-OV incorpo-rates a featUp upsampling module pretrained on Million-AID(Long et al. 2021) dataset, which theoretically endows it with appreciable generalization capability, both TLP and GSUP require no dataset-specific pretraining at all. This al-lows them to achieve maximal generalization, effectively en-abling Segment-Anything performance, particularly on less commonly used datasets. 
+
+# Conclusion 
+
+DinoSplat-OV is the first training-free remote sensing open-vocabulary segmentation framework built on the DI-NOv3 text encoder (DINO.txt). It requires no training or fine-tuning, relying on two core inference-time modules: Text-aware Graph Laplacian Propagation (TLP) to align coarse features with semantic priors, and 2D Gaussian Splat-ting Upsampling (GSUP) to reconstruct low-resolution fea-tures into high-precision pixel-level predictions. Extensive experiments on UDD5, DOTA, LoveDA, Vaihingen and other benchmarks show that DinoSplat-OV achieves com-petitive or even superior performance over state-of-the-art training-free methods, filling the gap of DINO-series mod-els in this task. Moreover, by transferring the explicit scene representation of 3D Gaussian splatting to 2D feature recov-ery for dense segmentation, this work offers a lightweight, pre-training-free alternative for high-resolution feature re-construction from frozen backbones, with generality extend-able to other architectures like CLIP or SigLIP. 
+
+# References 
+
+Cao, Q.; Chen, Y.; Ma, C.; and Yang, X. 2025. Open-Vocabulary High-Resolution Remote Sensing Image Seman-tic Segmentation. IEEE Transactions on Geoscience and Remote Sensing .Chambon, L.; Couairon, P.; Zablocki, E.; Boulch, A.; Thome, N.; and Cord, M. 2025. NAF: Zero-Shot Feature Upsampling via Neighborhood Attention Filtering. Chen, Y.; Chen, X.; Chen, A.; Pons-Moll, G.; and Xiu, Y. 2025. Feat2gs: Probing visual foundation models with gaus-sian splatting. In Proceedings of the Computer Vision and Pattern Recognition Conference , 6348–6361. Chen, Y.; Wang, Y.; Lu, P.; Chen, Y.; and Wang, G. 2018. Large-scale structure from motion with semantic constraints of aerial images. In Chinese Conference on Pattern Recog-nition and Computer Vision (PRCV) . Springer. Cho, S.; Shin, H.; Hong, S.; Arnab, A.; Seo, P. H.; and Kim, S. 2024. CAT-Seg: Cost Aggregation for Open-Vocabulary Semantic Segmentation. arXiv:2303.11797. Fu, S.; Hamilton, M.; Brandt, L. E.; Feldmann, A.; Zhang, Z.; and Freeman, W. T. 2024. FeatUp: A Model-Agnostic Framework for Features at Any Resolution. In The Twelfth International Conference on Learning Representations .Hajimiri, S.; Ben Ayed, I.; and Dolz, J. 2025. Pay Attention to Your Neighbours: Training-Free Open-Vocabulary Semantic Segmentation. In Proceedings of the IEEE/CVF Winter Con-ference on Applications of Computer Vision .Jose, C.; Moutakanni, T.; Kang, D.; Baldassarre, F.; Darcet, T.; Xu, H.; Li, D.; Szafraniec, M.; Ramamonjisoa, M.; Oquab, M.; Siméoni, O.; Vo, H. V.; Labatut, P.; and Bo-janowski, P. 2024. DINOv2 Meets Text: A Unified Frame-work for Image- and Pixel-Level Vision-Language Align-ment. arXiv preprint arXiv:2412.16334 .Kerbl, B.; Kopanas, G.; Leimkühler, T.; and Drettakis, G. 2023. 3D Gaussian Splatting for Real-Time Radiance Field Rendering. ACM Transactions on Graphics , 42(4). Lan, M.; Chen, C.; Ke, Y.; Wang, X.; Feng, L.; and Zhang, W. 2024a. Clearclip: Decomposing clip representations for dense vision-language inference. In European Conference on Computer Vision , 143–160. Springer. Lan, M.; Chen, C.; Ke, Y.; Wang, X.; Feng, L.; and Zhang, W. 2024b. Proxyclip: Proxy attention improves clip for open-vocabulary segmentation. In European Conference on Com-puter Vision , 70–88. Springer. Lee, B.; Seong, H. S.; Hyun, S.; Park, G.; Moon, W.; and Heo, J.-P. 2026. Looking Beyond the Window: Global-Local Aligned CLIP for Training-free Open-Vocabulary Semantic Segmentation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Li, K.; Liu, R.; Cao, X.; Bai, X.; Zhou, F.; Meng, D.; and Wang, Z. 2025a. Segearth-ov: Towards training-free open-vocabulary segmentation for remote sensing images. In Pro-ceedings of the Computer Vision and Pattern Recognition Conference , 10545–10556. Li, K.; Zhang, S.; Wang, Y.; Deng, Y.; Wang, Z.; Meng, D.; and Cao, X. 2025b. SegEarth-OV3: Exploring SAM 3 for Open-Vocabulary Semantic Segmentation in Remote Sensing Images. arXiv preprint arXiv:2512.08730 .Long, Y.; Xia, G.-S.; Li, S.; Yang, W.; Yang, M. Y.; Zhu, X. X.; Zhang, L.; and Li, D. 2021. On Creating Benchmark Dataset for Aerial Image Interpretation: Reviews, Guidances and Million-AID. IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing , 14: 4205–4230. Niemeyer, J.; Rottensteiner, F.; and Soergel, U. 2012. ISPRS 2D Semantic Labeling Contest. ISPRS Annals of Photogram-metry, Remote Sensing and Spatial Information Sciences , I-3: 293–298. Pei, G.; Jiang, X.; Cai, X.; Chen, T.; Yao, Y.; and Jeon, B. 2026. PEARL: Geometry Aligns Semantics for Training-Free Open-Vocabulary Semantic Segmentation. arXiv preprint arXiv:2603.21528 .Siméoni, O.; Vo, H. V.; Seitzer, M.; Baldassarre, F.; Oquab, M.; Jose, C.; Khalidov, V.; Szafraniec, M.; Yi, S.; Rama-monjisoa, M.; Massa, F.; Haziza, D.; Wehrstedt, L.; Wang, J.; Darcet, T.; Moutakanni, T.; Sentana, L.; Roberts, C.; Vedaldi, A.; Tolan, J.; Brandt, J.; Couprie, C.; Mairal, J.; Jégou, H.; Labatut, P.; and Bojanowski, P. 2025. DINOv3. arXiv:2508.10104. Stojnić, V.; Kalantidis, Y.; Matas, J.; and Tolias, G. 2025. LPOSS: Label Propagation Over Patches and Pixels for Open-vocabulary Semantic Segmentation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pat-tern Recognition (CVPR) .Walmer, M.; Suri, S.; Aggarwal, A.; and Shrivastava, A. 2026. UPLiFT: Efficient Pixel-Dense Feature Upsampling with Local Attenders. arXiv preprint arXiv:2601.17950 .Wang, D.; Zhang, J.; Du, B.; Xu, M.; Liu, L.; Tao, D.; and Zhang, L. 2023. SAMRS: Scaling-up Remote Sens-ing Segmentation Dataset with Segment Anything Model. In Advances in Neural Information Processing Systems , vol-ume 36, 8815–8827. Wang, F.; Mei, J.; and Yuille, A. 2023. SCLIP: Rethinking Self-Attention for Dense Vision-Language Inference. arXiv preprint arXiv:2312.01597 .Wang, J.; Zheng, Z.; Ma, A.; Lu, X.; and Zhong, Y. 2021. LoveDA: A Remote Sensing Land-Cover Dataset for Do-main Adaptive Semantic Segmentation. In Vanschoren, J.; and Yeung, S., eds., Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks , vol-ume 1. Curran Associates, Inc. Wimmer, T.; Truong, P.; Rakotosaona, M.-J.; Oechsle, M.; Tombari, F.; Schiele, B.; and Lenssen, J. E. 2026. AnyUp: Universal Feature Upsampling. In Proceedings of the Inter-national Conference on Learning Representations (ICLR) .Wysoczańska, M.; Siméoni, O.; Ramamonjisoa, M.; Bursuc, A.; Trzciński, T.; and Pérez, P. 2024. CLIP-DINOiser: Teach-ing CLIP a few DINO tricks for open-vocabulary semantic segmentation. ECCV .Xia, G.-S.; Bai, X.; Ding, J.; Zhu, Z.; Belongie, S.; Luo, J.; Datcu, M.; Pelillo, M.; and Zhang, L. 2018. DOTA: A Large-Scale Dataset for Object Detection in Aerial Images. In The IEEE Conference on Computer Vision and Pattern Recognition (CVPR) .Ye, C.; Zhuge, Y.; and Zhang, P. 2025. Towards Open-Vocabulary Remote Sensing Image Semantic Segmentation. In Proceedings of the AAAI Conference on Artificial Intelli-gence .

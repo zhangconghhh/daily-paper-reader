@@ -1,0 +1,146 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-05T20:28:16.920577+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2608.02792v1",
+      "source": "arxiv",
+      "title": "PixelUp: Zero-Shot Semantic Feature Upsampling for Fine-Grained Vision Tasks",
+      "abstract": "Self-supervised Vision Foundation Models (VFMs) have become essential backbones for downstream tasks due to their strong and transferable visual representations. However, their patch-token-level features are often too coarse for dense prediction tasks such as semantic segmentation and depth estimation when accurate fine-grained predictions are required. Feature upsampling methods have been developed to recover pixel-level detail but still face limitations. Learnable upsamplers are often designed for a specific encoders and must be retrained for different encoders. Image-guided methods that use shallow pixel encoders often introduce textural artifacts and lack the semantic guidance needed for accurate downstream predictions. We introduce PixelUp, a zero-shot VFM-agnostic upsampler achieving semantic awareness through a coarse-to-fine chain of windowed cross-attention architecture guided by multi-scale semantic features. We demonstrate that PixelUp outperforms both VFM-specific and VFM-agnostic upsamplers, achieving state-of-the-art performance on dense prediction tasks with an average improvement of +1.2 mIoU on semantic segmentation and +0.25 $δ_1$, on NYUv2 depth estimation across VFMs. PixelUp further improves training-free open-vocabulary and unsupervised semantic segmentation by an average of +1.3 mIoU and +0.5 mIoU, respectively. Code available at https://pixelup-project.vercel.app/",
+      "authors": [
+        "Deepank Singh",
+        "Anurag Nihal",
+        "Vedhus Hoskere"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-03T18:42:22+00:00",
+      "link": "https://arxiv.org/pdf/2608.02792v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "zero-shot semantic feature upsampling for fine-grained vision tasks from self-supervised vision foundation models",
+      "llm_evidence_cn": "面向细粒度视觉任务的自监督视觉基础模型零样本语义特征上采样",
+      "llm_evidence": "面向细粒度视觉任务的自监督视觉基础模型零样本语义特征上采样",
+      "canonical_evidence": "面向细粒度视觉任务的自监督视觉基础模型零样本语义特征上采样",
+      "llm_tldr_en": "PixelUp is a zero-shot semantic feature upsampler that sharpens patch-token features of self-supervised vision foundation models for fine-grained dense prediction tasks; useful for fine-grained visual tasks across encoders.",
+      "llm_tldr_cn": "自监督视觉基础模型的patch令牌特征对分割、深度估计等需要细粒度像素级预测的任务而言过于粗糙，而现有可学习上采样器通常依赖特定编码器。该文提出PixelUp零样本语义特征上采样方法，无需针对不同编码器重新训练，即可恢复像素级细节并避免纹理伪影。在语义分割和深度估计等任务上验证了其提升细粒度预测精度的能力。该方法可作为自监督ViT基础模型的通用增强模块，为细粒度视觉分类等下游任务提供更精细的特征表示。",
+      "llm_tldr": "自监督视觉基础模型的patch令牌特征对分割、深度估计等需要细粒度像素级预测的任务而言过于粗糙，而现有可学习上采样器通常依赖特定编码器。该文提出PixelUp零样本语义特征上采样方法，无需针对不同编码器重新训练，即可恢复像素级细节并避免纹理伪影。在语义分割和深度估计等任务上验证了其提升细粒度预测精度的能力。该方法可作为自监督ViT基础模型的通用增强模块，为细粒度视觉分类等下游任务提供更精细的特征表示。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.03023v1",
+      "source": "arxiv",
+      "title": "Standalone DINOv3 for Training-Free Open-Vocabulary Semantic Segmentation in Remote Sensing",
+      "abstract": "Remote sensing semantic segmentation is hindered by costly pixel-level annotations, motivating training-free open-vocabulary methods. Recently, the recent release of DINOv3 brings DINO.txt, which equips the standalone DINO backbone with image-text contrastive learning and thus opens up the possibility of open-vocabulary segmentation. We propose DinoSplat-OV, a training-free framework that adapts DINOv3 to remote sensing without fine-tuning or additional pretraining. Targeting the dense distribution, multi-scale nature, and large size of remote sensing imagery, we design two core modules. Its Text-aware Laplacian Propagation module de-noises patch-level predictions by combining textual semantic affinities with local visual similarity, improving regional consistency while preserving boundaries. Its Gaussian Splatting Upsampling module reconstructs pixel-level features through RGB-guided anisotropic aggregation and test-time optimization. A global-anchor sliding-window strategy further supports large-scale imagery. Experiments on UDD5, DOTA, and LoveDA demonstrate competitive or superior performance over existing training-free methods, effectively filling the gap of DINO-series models in training-free open-vocabulary segmentation and providing a viable new path for further advances in this direction.",
+      "authors": [
+        "Changhao Zhao",
+        "Haoxiang Li",
+        "Yuke Li",
+        "Hai Liu",
+        "LingLin Zeng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-04T02:12:39+00:00",
+      "link": "https://arxiv.org/pdf/2608.03023v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "DINOv3 backbone with DINO.txt for open-vocabulary segmentation; DINO model but dense classification not fine-grained image classification",
+      "llm_evidence_cn": "使用DINOv3主干与DINO.txt做开放词汇分割，是DINO模型但为密集分类而非细粒度图像分类",
+      "llm_evidence": "使用DINOv3主干与DINO.txt做开放词汇分割，是DINO模型但为密集分类而非细粒度图像分类",
+      "canonical_evidence": "使用DINOv3主干与DINO.txt做开放词汇分割，是DINO模型但为密集分类而非细粒度图像分类",
+      "llm_tldr_en": "This work adapts DINOv3 with text-aligned embeddings to training-free open-vocabulary remote sensing segmentation, proposing DinoSplat-OV with text-aware Laplacian propagation; strongly DINO-related but task is dense classification.",
+      "llm_tldr_cn": "遥感影像分割缺乏像素级标注，推动训练自由开放词汇方法。作者利用新发布的DINOv3及其DINO.txt，使独立DINO骨干具备图像-文本对比学习能力。提出DinoSplat-OV框架，针对遥感影像密集、多尺度和大尺寸设计文本感知拉普拉斯传播模块，无需微调即可进行分割。实验显示其在开放词汇遥感分割上有效。该研究属于DINO系列基础模型在密集分类上的应用，虽非图像级细粒度分类，但可作为细粒度分类的特征参考。",
+      "llm_tldr": "遥感影像分割缺乏像素级标注，推动训练自由开放词汇方法。作者利用新发布的DINOv3及其DINO.txt，使独立DINO骨干具备图像-文本对比学习能力。提出DinoSplat-OV框架，针对遥感影像密集、多尺度和大尺寸设计文本感知拉普拉斯传播模块，无需微调即可进行分割。实验显示其在开放词汇遥感分割上有效。该研究属于DINO系列基础模型在密集分类上的应用，虽非图像级细粒度分类，但可作为细粒度分类的特征参考。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "DINO model for fine-grained classification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.03304v1",
+      "source": "arxiv",
+      "title": "Recurrent Contrastive Learning for Imbalanced Medical Image Classification",
+      "abstract": "Medical image classification often suffers from class imbalance due to the inherent disparities in disease incidence. Existing approaches, such as class resampling and loss reweighting, mainly improve learning within the observed feature distribution, but do not explicitly enlarge the latent support region of tail classes. As a result, tail-class representations remain overly compact and are easily encroached upon by head classes, leading to biased decision boundaries. In this work, we propose Recurrent Contrastive Learning (RCL) for imbalanced medical image classification. RCL progressively expands the support region of tail classes by recurrently reusing historical feature states across training phases. Specifically, we adopt DINOv3 with LoRA adapters as the backbone to provide robust feature embeddings. We then devise a Temporal Memory Queue (TMQ) to preserve corpus-level features across training phases and provide diversified global references for contrastive learning. Based on TMQ, we construct Temporal Anchors (TARs) to form an anchor field around tail classes. This field enlarges the support region of tail classes, suppresses head-class encroachment, and improves inter-class separation. Extensive experiments on three imbalanced medical datasets demonstrate that RCL achieves consistent improvements over strong baselines. The code is available at https://github.com/dndins/RCL.",
+      "authors": [
+        "Zhiyuan Zhu",
+        "Xinling Meng",
+        "Junxuan Yu",
+        "Jiongquan Chen",
+        "Qiongying Ni",
+        "Tuhang Shao",
+        "Yuhao Huang",
+        "Luping Zhou",
+        "Ruiyang Huang",
+        "Yuxue Wang",
+        "Rongliang Zhang",
+        "Xue Wang",
+        "Tianhong Tang",
+        "Likun Wang",
+        "Junbo Chen",
+        "Yong Jiang",
+        "Yongping Lu",
+        "Xin Yang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-04T08:14:33+00:00",
+      "link": "https://arxiv.org/pdf/2608.03304v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses DINOv3 with LoRA for medical image classification",
+      "llm_evidence_cn": "使用DINOv3加LoRA进行医学图像分类",
+      "llm_evidence": "使用DINOv3加LoRA进行医学图像分类",
+      "canonical_evidence": "使用DINOv3加LoRA进行医学图像分类",
+      "llm_tldr_en": "Proposes Recurrent Contrastive Learning to tackle class imbalance in medical image classification by reusing historical feature states and expanding tail-class support regions, built on DINOv3 with LoRA.",
+      "llm_tldr_cn": "针对医学图像分类中类别不平衡导致尾部类表示过于紧凑、易被头部类侵占的问题，提出循环对比学习（RCL）方法，通过跨训练阶段循环复用历史特征状态逐步扩大尾部类支持区域，并采用DINOv3与LoRA适配训练。实验表明该方法能有效缓解决策边界偏差，在多个不平衡医学图像基准上取得更优性能，为利用基础模型处理长尾医学识别提供了新思路。",
+      "llm_tldr": "针对医学图像分类中类别不平衡导致尾部类表示过于紧凑、易被头部类侵占的问题，提出循环对比学习（RCL）方法，通过跨训练阶段循环复用历史特征状态逐步扩大尾部类支持区域，并采用DINOv3与LoRA适配训练。实验表明该方法能有效缓解决策边界偏差，在多个不平衡医学图像基准上取得更优性能，为利用基础模型处理长尾医学识别提供了新思路。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

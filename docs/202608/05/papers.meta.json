@@ -1,0 +1,54 @@
+{
+  "label": "2026-08-05",
+  "date": "2026-08-05",
+  "generated_at": "2026-08-05T20:30:20",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202608/05/2608.02792v1-pixelup-zero-shot-semantic-feature-upsampling-for-fine-grained-vision-tasks",
+      "section": "quick",
+      "title_en": "PixelUp: Zero-Shot Semantic Feature Upsampling for Fine-Grained Vision Tasks",
+      "authors": "Deepank Singh, Anurag Nihal, Vedhus Hoskere",
+      "date": "2026-08-03",
+      "pdf": "https://arxiv.org/pdf/2608.02792v1",
+      "score": "7.0",
+      "evidence": "面向细粒度视觉任务的自监督视觉基础模型零样本语义特征上采样",
+      "tldr": "自监督视觉基础模型的patch级特征较粗，难以支撑精细密集预测。现有上采样方法或需针对特定编码器重训，或引入纹理伪影。本文提出PixelUp，一种零样本、VFM无关的语义感知上采样器，通过多尺度语义特征引导的窗口交叉注意力粗到细链实现。在语义分割和深度估计上取得SOTA，平均提升+1.2 mIoU和+0.25 δ1，并提升开放词汇与无监督分割性能。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Self-supervised Vision Foundation Models (VFMs) have become essential backbones for downstream tasks due to their strong and transferable visual representations. However, their patch-token-level features are often too coarse for dense prediction tasks such as semantic segmentation and depth estimation when accurate fine-grained predictions are required. Feature upsampling methods have been developed to recover pixel-level detail but still face limitations. Learnable upsamplers are often designed for a specific encoders and must be retrained for different encoders. Image-guided methods that use shallow pixel encoders often introduce textural artifacts and lack the semantic guidance needed for accurate downstream predictions. We introduce PixelUp, a zero-shot VFM-agnostic upsampler achieving semantic awareness through a coarse-to-fine chain of windowed cross-attention architecture guided by multi-scale semantic features. We demonstrate that PixelUp outperforms both VFM-specific and VFM-agnostic upsamplers, achieving state-of-the-art performance on dense prediction tasks with an average improvement of +1.2 mIoU on semantic segmentation and +0.25 $δ_1$, on NYUv2 depth estimation across VFMs. PixelUp further improves training-free open-vocabulary and unsupervised semantic segmentation by an average of +1.3 mIoU and +0.5 mIoU, respectively. Code available at https://pixelup-project.vercel.app/",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/05/2608.03023v1-standalone-dinov3-for-training-free-open-vocabulary-semantic-segmentation-in-remote-sensing",
+      "section": "quick",
+      "title_en": "Standalone DINOv3 for Training-Free Open-Vocabulary Semantic Segmentation in Remote Sensing",
+      "authors": "Changhao Zhao, Haoxiang Li, Yuke Li, Hai Liu, LingLin Zeng",
+      "date": "2026-08-04",
+      "pdf": "https://arxiv.org/pdf/2608.03023v1",
+      "score": "6.0",
+      "evidence": "使用DINOv3主干与DINO.txt做开放词汇分割，是DINO模型但为密集分类而非细粒度图像分类",
+      "tldr": "遥感语义分割因像素级标注成本高而受限，训练无关开放词汇方法成为趋势。最新DINOv3引入DINO.txt，使独立DINO骨干具备图像-文本对比学习能力。本文提出DinoSplat-OV，无需微调或预训练，通过文本感知拉普拉斯传播和高斯溅射上采样模块，结合全局锚点滑窗策略，在UDD5、DOTA、LoveDA上达到优越性能，填补DINO系列在该方向的空白。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Remote sensing semantic segmentation is hindered by costly pixel-level annotations, motivating training-free open-vocabulary methods. Recently, the recent release of DINOv3 brings DINO.txt, which equips the standalone DINO backbone with image-text contrastive learning and thus opens up the possibility of open-vocabulary segmentation. We propose DinoSplat-OV, a training-free framework that adapts DINOv3 to remote sensing without fine-tuning or additional pretraining. Targeting the dense distribution, multi-scale nature, and large size of remote sensing imagery, we design two core modules. Its Text-aware Laplacian Propagation module de-noises patch-level predictions by combining textual semantic affinities with local visual similarity, improving regional consistency while preserving boundaries. Its Gaussian Splatting Upsampling module reconstructs pixel-level features through RGB-guided anisotropic aggregation and test-time optimization. A global-anchor sliding-window strategy further supports large-scale imagery. Experiments on UDD5, DOTA, and LoveDA demonstrate competitive or superior performance over existing training-free methods, effectively filling the gap of DINO-series models in training-free open-vocabulary segmentation and providing a viable new path for further advances in this direction.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/05/2608.03304v1-recurrent-contrastive-learning-for-imbalanced-medical-image-classification",
+      "section": "quick",
+      "title_en": "Recurrent Contrastive Learning for Imbalanced Medical Image Classification",
+      "authors": "Zhiyuan Zhu, Xinling Meng, Junxuan Yu, Jiongquan Chen, Qiongying Ni, Tuhang Shao, Yuhao Huang, Luping Zhou, Ruiyang Huang, Yuxue Wang, Rongliang Zhang, Xue Wang, Tianhong Tang, Likun Wang, Junbo Chen, Yong Jiang, Yongping Lu, Xin Yang",
+      "date": "2026-08-04",
+      "pdf": "https://arxiv.org/pdf/2608.03304v1",
+      "score": "6.0",
+      "evidence": "使用DINOv3加LoRA进行医学图像分类",
+      "tldr": "医学图像分类常因疾病发生率差异而面临严重的类别不平衡，现有重采样和损失重加权方法仅改善观测分布内的学习，无法扩大尾部类别的潜在支持区域，使其表示紧凑且易被头部类侵占。本文提出循环对比学习（RCL），利用DINOv3与LoRA提取鲁棒特征，设计时序记忆队列保留跨阶段历史特征，并构造时序锚点逐步扩展尾部类支持区域。在三个不平衡医学图像数据集上，RCL较现有强基线取得一致且显著的性能提升。该方法有效抑制头部类侵占、增强类间分离，为不平衡医学图像分类提供了新思路。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Medical image classification often suffers from class imbalance due to the inherent disparities in disease incidence. Existing approaches, such as class resampling and loss reweighting, mainly improve learning within the observed feature distribution, but do not explicitly enlarge the latent support region of tail classes. As a result, tail-class representations remain overly compact and are easily encroached upon by head classes, leading to biased decision boundaries. In this work, we propose Recurrent Contrastive Learning (RCL) for imbalanced medical image classification. RCL progressively expands the support region of tail classes by recurrently reusing historical feature states across training phases. Specifically, we adopt DINOv3 with LoRA adapters as the backbone to provide robust feature embeddings. We then devise a Temporal Memory Queue (TMQ) to preserve corpus-level features across training phases and provide diversified global references for contrastive learning. Based on TMQ, we construct Temporal Anchors (TARs) to form an anchor field around tail classes. This field enlarges the support region of tail classes, suppresses head-class encroachment, and improves inter-class separation. Extensive experiments on three imbalanced medical datasets demonstrate that RCL achieves consistent improvements over strong baselines. The code is available at https://github.com/dndins/RCL.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
