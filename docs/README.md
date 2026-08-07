@@ -6,30 +6,32 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-05
-- 运行时间：2026-08-05 20:30:15 UTC
+- 最新运行日期：2026-08-07
+- 运行时间：2026-08-07 01:20:27 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：0
+- 本次总论文数：4
+- 精读区：1
 - 速读区：3
 
 ### 今日简报（AI）
-今日速读3篇论文，无精读；其中《PixelUp》评分最高（7.0），聚焦细粒度视觉任务的零样本语义特征上采样。建议优先精读该文，并关注其与遥感分割、医学影像分类方法的对比适用性。
-- 详情：[/202608/05/README](/202608/05/README)
+今日精读肺癌生长模式空间映射，另速读车辆损伤评估、视觉基础模型与递归Transformer共4篇。最值得关注的是Bag-of-Visual-Words用于肺腺癌生长模式制图（8/10），以及专用分割的智能体VLM车辆损伤评估（7/10）。建议优先精读肺癌病理图像分析方向，普通读者可略读车辆评估以了解细粒度视觉应用。
+- 详情：[/202608/07/README](/202608/07/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [Bag-of-Visual-Words for Spatial Mapping of Lung Adenocarcinoma Growth Patterns](/202608/07/2608.05074v1-bag-of-visual-words-for-spatial-mapping-of-lung-adenocarcinoma-growth-patterns)  
+   标签：评分：8.0/10、query:dino-fg
+   evidence：用冻结基础模型嵌入和词袋方法分类细粒度生长模式
 
 ### 速读区论文标签
-1. [PixelUp: Zero-Shot Semantic Feature Upsampling for Fine-Grained Vision Tasks](/202608/05/2608.02792v1-pixelup-zero-shot-semantic-feature-upsampling-for-fine-grained-vision-tasks)  
+1. [Grounding Agentic VLMs with Dedicated Segmentation for Fine-Grained Vehicle Damage Assessment](/202608/07/2608.02470v1-grounding-agentic-vlms-with-dedicated-segmentation-for-fine-grained-vehicle-damage-assessment)  
    标签：评分：7.0/10、query:dino-fg
-   evidence：面向细粒度视觉任务的自监督视觉基础模型零样本语义特征上采样
-2. [Standalone DINOv3 for Training-Free Open-Vocabulary Semantic Segmentation in Remote Sensing](/202608/05/2608.03023v1-standalone-dinov3-for-training-free-open-vocabulary-semantic-segmentation-in-remote-sensing)  
+   evidence：使用基础视觉语言模型与空间接地进行细粒度车辆损伤评估
+2. [Foveated Probes Recover Localized Binding Information in Vision Foundation Models](/202608/07/2608.00726v1-foveated-probes-recover-localized-binding-information-in-vision-foundation-models)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：使用DINOv3主干与DINO.txt做开放词汇分割，是DINO模型但为密集分类而非细粒度图像分类
-3. [Recurrent Contrastive Learning for Imbalanced Medical Image Classification](/202608/05/2608.03304v1-recurrent-contrastive-learning-for-imbalanced-medical-image-classification)  
+   evidence：中央凹读出从预训练视觉变换器恢复局部信息，与分类相关
+3. [Training Crossroads for Recurrent Vision Transformers: Recurrence, Neural ODEs, and Deep Supervision](/202608/07/2608.04879v1-training-crossroads-for-recurrent-vision-transformers-recurrence-neural-odes-and-deep-supervision)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：使用DINOv3加LoRA进行医学图像分类
+   evidence：面向图像识别的视觉Transformer架构训练研究
 
 
 <div class="dpr-home-promo-card">

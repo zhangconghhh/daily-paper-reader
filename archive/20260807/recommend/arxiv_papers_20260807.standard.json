@@ -1,0 +1,169 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-07T01:17:59.660218+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2608.05074v1",
+      "source": "arxiv",
+      "title": "Bag-of-Visual-Words for Spatial Mapping of Lung Adenocarcinoma Growth Patterns",
+      "abstract": "Spatial mapping of lung adenocarcinoma (LUAD) growth patterns across whole slide images (WSIs) requires resolving architectural context at the region level, yet existing methods operate at the individual tile level and produce generic morphological clusters rather than clinically defined pattern maps. We propose a weakly supervised Bag-of-Visual-Words (BoVW) pipeline that learns a visual vocabulary from frozen foundation model embeddings extracted from a small set of annotated regions of interest (ROIs). Pattern prototypes are constructed as mean BoVW histograms of same-label ROIs and used for nearest-prototype classification of sliding-window regions under Jensen--Shannon divergence. The resulting predictions are projected onto the WSI tile grid to produce interpretable spatial pattern maps. We evaluate the method on 87 CPTAC-LUAD patients using three foundation model encoders and multiple vocabulary sizes on two clinically motivated tasks. For tumour/healthy classification, the best configuration achieves a balanced accuracy of $0.974$ with H-Optimus-1, approaching the $0.987$ obtained by a supervised SVM trained on mean-pooled WSI embeddings. For binary histologic grade classification, the BoVW pipeline achieves higher balanced accuracy than the supervised baseline for all encoders, suggesting that ROI-level pattern decomposition preserves grade-relevant heterogeneity that is attenuated by global mean pooling.",
+      "authors": [
+        "Darya Ardan",
+        "Valentin Oreiller",
+        "Henning Müller"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-05T17:17:36+00:00",
+      "link": "https://arxiv.org/pdf/2608.05074v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Frozen foundation model embeddings classified with bag-of-visual-words for fine-grained growth patterns",
+      "llm_evidence_cn": "用冻结基础模型嵌入和词袋方法分类细粒度生长模式",
+      "llm_evidence": "用冻结基础模型嵌入和词袋方法分类细粒度生长模式",
+      "canonical_evidence": "用冻结基础模型嵌入和词袋方法分类细粒度生长模式",
+      "llm_tldr_en": "This paper presents a weakly supervised Bag-of-Visual-Words pipeline using frozen foundation model embeddings for spatial mapping of lung adenocarcinoma growth patterns. Pattern prototypes enable nearest-prototype classification, showing that foundation model features can support fine-grained pathological classification without full supervision.",
+      "llm_tldr_cn": "针对肺腺癌全切片图像生长模式的空间映射，提出弱监督视觉词袋流程。利用冻结的基础模型嵌入构建视觉词汇，以平均词袋直方图作为模式原型，并通过最近原型分类识别区域。该方法在滑动窗口区域分类上有效，证明了基础模型特征可支持医学图像中的细粒度模式分类，为缺乏像素标注的场景提供可行方案。",
+      "llm_tldr": "针对肺腺癌全切片图像生长模式的空间映射，提出弱监督视觉词袋流程。利用冻结的基础模型嵌入构建视觉词汇，以平均词袋直方图作为模式原型，并通过最近原型分类识别区域。该方法在滑动窗口区域分类上有效，证明了基础模型特征可支持医学图像中的细粒度模式分类，为缺乏像素标注的场景提供可行方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Foundation models for fine grained visual classification",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.02470v1",
+      "source": "arxiv",
+      "title": "Grounding Agentic VLMs with Dedicated Segmentation for Fine-Grained Vehicle Damage Assessment",
+      "abstract": "Vision-language models (VLMs) are increasingly deployed as reasoning agents in real-world visual assessment pipelines, yet their spatial grounding remains unreliable for fine-grained, visually ambiguous targets. We study this gap in the context of automated vehicle damage assessment, where fine-grained defects such as scratches and hairline cracks occupy few pixels, produce weak gradient signal, and are easily confused with reflections and surface texture. We show that a state-of-the-art VLM (Qwen-VL) achieves strong semantic classification accuracy (87.3%) on this task but is systematically ungrounded at the spatial level: it hallucinates damage in reflective regions, misses elongated scratches entirely, and produces spatially inconsistent outputs when prompted for localization. We propose TinyDamage, a hybrid architecture that delegates spatial grounding to a dedicated multi-task segmentation model while reserving the VLM for semantic reasoning and report generation. On the segmentation side, we find that the choice of loss function has an outsized and underexplored effect on tiny-object grounding: focal loss, widely used for class imbalance, collapses tiny-damage detection to zero, while a supervised contrastive objective measurably improves damage/background separability. We integrate the segmentation model into a 7-node LangGraph agent pipeline that grounds every VLM generation step in the segmentation output, and show that this grounding reduces the report hallucination rate from 92% (text-only) and 78% (image-only) to 31% in a controlled evaluation on 100 human-verified reports. We introduce DET_l, a permissive per-category detection metric for evaluating tiny-object grounding under class imbalance, and report latency and reliability characteristics of the deployed pipeline.",
+      "authors": [
+        "Vishwajeet Shivaji Hogale",
+        "Anjali Pai",
+        "Nitya Ravi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-03T16:37:49+00:00",
+      "link": "https://arxiv.org/pdf/2608.02470v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Fine-grained vehicle damage assessment with a foundation vision-language model and spatial grounding",
+      "llm_evidence_cn": "使用基础视觉语言模型与空间接地进行细粒度车辆损伤评估",
+      "llm_evidence": "使用基础视觉语言模型与空间接地进行细粒度车辆损伤评估",
+      "canonical_evidence": "使用基础视觉语言模型与空间接地进行细粒度车辆损伤评估",
+      "llm_tldr_en": "Addresses unreliable spatial grounding of VLMs in fine-grained vehicle damage assessment by adding dedicated segmentation, improving spatial localization while retaining strong semantic classification accuracy.",
+      "llm_tldr_cn": "视觉语言模型在细粒度车辆损伤评估中虽能达到较高语义分类准确率，但对细小划痕和裂缝的空间定位不可靠，容易在反光区域产生幻觉。作者发现Qwen-VL在细粒度缺陷上存在系统性空间失准，提出引入专用分割来接地VLM的空间预测。实验表明该方法在保持强语义分类性能的同时，明显改善了对易混淆缺陷的定位能力，为推动细粒度视觉评估落地提供了可靠方案。",
+      "llm_tldr": "视觉语言模型在细粒度车辆损伤评估中虽能达到较高语义分类准确率，但对细小划痕和裂缝的空间定位不可靠，容易在反光区域产生幻觉。作者发现Qwen-VL在细粒度缺陷上存在系统性空间失准，提出引入专用分割来接地VLM的空间预测。实验表明该方法在保持强语义分类性能的同时，明显改善了对易混淆缺陷的定位能力，为推动细粒度视觉评估落地提供了可靠方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Foundation models for fine grained visual classification",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.00726v1",
+      "source": "arxiv",
+      "title": "Foveated Probes Recover Localized Binding Information in Vision Foundation Models",
+      "abstract": "Frozen vision foundation models are commonly evaluated through a single global image embedding, but this interface can conflate missing information with information lost at readout time. We study this distinction by keeping a pretrained vision encoder frozen and varying only the readout applied to its final patch tokens. We compare standard global readouts against a lightweight foveated readout, which attention-pools patch tokens using a learned or question-conditioned query, and against an oracle readout with access to the annotated target region. We evaluate these interfaces on three localized binding problems: a controlled synthetic color--shape binding task under clutter, a color-free crowded shape-detection variant, and a GQA-derived natural-image task where paired questions ask for the colors of different same-category objects in the same image. Global readouts perform near perfectly when the synthetic target appears alone, but collapse under clutter and counterfactual target edits, whereas the foveated readout recovers most of the oracle-accessible signal. On the GQA-derived task, question-independent global image vectors improve only modestly over question-only priors, while question-conditioned foveation substantially improves paired localized color accuracy. A counterfactual nuisance-to-signal ratio explains the synthetic failures: global pooling dilutes localized label-changing evidence while exposing the probe to nuisance variation from irrelevant objects. These results indicate that apparent spatial blindness in frozen vision models can arise from the global embedding interface rather than from an absence of spatial information in the frozen patch tokens.",
+      "authors": [
+        "Mateusz Michalkiewicz",
+        "Mahsa Baktashmotlagh",
+        "Guha Balakrishnan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-01T15:47:52+00:00",
+      "link": "https://arxiv.org/pdf/2608.00726v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Foveated readout recovers patch-level localized information from pretrained vision transformers, relevant to classification",
+      "llm_evidence_cn": "中央凹读出从预训练视觉变换器恢复局部信息，与分类相关",
+      "llm_evidence": "中央凹读出从预训练视觉变换器恢复局部信息，与分类相关",
+      "canonical_evidence": "中央凹读出从预训练视觉变换器恢复局部信息，与分类相关",
+      "llm_tldr_en": "This paper studies readouts for frozen vision foundation models, comparing global, foveated, and oracle interfaces. A lightweight foveated readout on patch tokens recovers localized binding information better than global pooling, offering insights for fine-grained classification with vision transformers.",
+      "llm_tldr_cn": "视觉基础模型通常以全局嵌入评估，容易丢失局部信息。本文冻结预训练编码器，仅改变最终补丁标记的读出方式，对比全局池化、中央凹注意力池化和目标区域感知的预言机读出。实验显示中央凹读出能更好地恢复局部绑定信息，为细粒度分类利用视觉变换器提供了读取判别信息的启示。",
+      "llm_tldr": "视觉基础模型通常以全局嵌入评估，容易丢失局部信息。本文冻结预训练编码器，仅改变最终补丁标记的读出方式，对比全局池化、中央凹注意力池化和目标区域感知的预言机读出。实验显示中央凹读出能更好地恢复局部绑定信息，为细粒度分类利用视觉变换器提供了读取判别信息的启示。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.04879v1",
+      "source": "arxiv",
+      "title": "Training Crossroads for Recurrent Vision Transformers: Recurrence, Neural ODEs, and Deep Supervision",
+      "abstract": "Vision Transformers (ViTs) achieve strong image-recognition performance, but their parameter count grows linearly with depth when each block is independently parameterized. Single-block recurrent ViTs (bViT) remove this growth by repeatedly applying one shared block. Rather than proposing a new architecture, we fix a bViT and provide a controlled empirical characterization of three training and inference regimes under a common CIFAR-100 protocol, asking: (i)~when does recurrence beat independently parameterized depth---at matched FLOPs or at matched parameter memory? (ii)~when a residual recurrent block is trained through an ODE solver, does solver order act as numerical refinement or as an architectural bias? and (iii)~what does robustness beyond the training horizon cost in nominal accuracy? We find that standard ViTs remain preferable when FLOPs are the primary constraint, whereas recurrent ViTs offer a better accuracy--parameter trade-off under memory constraints. Consistent with the standard view of residual networks as Euler discretizations of ODEs, the continuous-time analogue of a residual recurrent block is the state-subtracted vector field $\\dot{z}=F_θ(z)-z$; although known in principle, this distinction is easy to violate when the block is wrapped as a black-box vector field, and we qualify the cost at few accuracy points. Because the vector field is learned jointly with the solver, higher-order solvers act as a solver-induced architectural bias rather than a numerical-accuracy improvement, and their gains are not uniform. Finally, stage-wise deep supervision traces an accuracy--robustness frontier: it does not improve nominal accuracy, but degrades gracefully far beyond the training horizon, where naive recurrence collapses to near-random performance.",
+      "authors": [
+        "Grzegorz Gruszczynski",
+        "Pawel Olszowiec",
+        "Michal Byra",
+        "Grzegorz Stefanski",
+        "Alberto Presta"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-08-05T14:06:50+00:00",
+      "link": "https://arxiv.org/pdf/2608.04879v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "vision transformer architecture training study for image recognition",
+      "llm_evidence_cn": "面向图像识别的视觉Transformer架构训练研究",
+      "llm_evidence": "面向图像识别的视觉Transformer架构训练研究",
+      "canonical_evidence": "面向图像识别的视觉Transformer架构训练研究",
+      "llm_tldr_en": "Controlled empirical study of recurrent Vision Transformers, comparing recurrence to parameterized depth, training through ODE solvers, and deep supervision under a common CIFAR-100 protocol, clarifying when shared-block recurrence wins.",
+      "llm_tldr_cn": "视觉Transformer的参数量随深度线性增长，而单块循环ViT通过共享参数避免这一开销。本文不做新架构，而是在CIFAR-100统一协议下系统比较循环训练、通过神经ODE求解器训练以及深度监督三种机制，分析循环何时在计算量或参数量上优于独立参数深度的ViT。实验结果为循环ViT的训练与推断选择提供了经验指导，有助于设计更高效的视觉Transformer架构。",
+      "llm_tldr": "视觉Transformer的参数量随深度线性增长，而单块循环ViT通过共享参数避免这一开销。本文不做新架构，而是在CIFAR-100统一协议下系统比较循环训练、通过神经ODE求解器训练以及深度监督三种机制，分析循环何时在计算量或参数量上优于独立参数深度的ViT。实验结果为循环ViT的训练与推断选择提供了经验指导，有助于设计更高效的视觉Transformer架构。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

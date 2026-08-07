@@ -1,0 +1,117 @@
+Title: Training Crossroads for Recurrent Vision Transformers: Recurrence, Neural ODEs, and Deep Supervision
+
+URL Source: https://arxiv.org/pdf/2608.04879v1
+
+Published Time: Thu, 06 Aug 2026 01:01:50 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# TRAINING CROSSROADS FOR RECURRENT VISION TRANSFORMERS: RECURRENCE, NEURAL ODES, AND DEEP SUPERVISION 
+
+# Grzegorz Gruszczynski 1∗ Pawel Olszowiec 1 Michal Byra 1,2 Grzegorz Stefanski 1 Alberto Presta 11Samsung AI Center, Warsaw, Poland 
+
+> 2
+
+# Institute of Fundamental Technological Research, Polish Academy of Sciences, Warsaw, Poland 
+
+ABSTRACT 
+
+Vision Transformers (ViTs) achieve strong image-recognition performance, but their parameter count grows linearly with depth when each block is independently parameterized. Single-block recurrent ViTs (bViT) remove this growth by repeatedly applying one shared block. Rather than proposing a new ar-chitecture, we fix a bViT and provide a controlled empirical characterization of three training and inference regimes under a common CIFAR-100 protocol, asking: (i) when does recur-rence beat independently parameterized depth—at matched FLOPs or at matched parameter memory? (ii) when a residual recurrent block is trained through an ODE solver, does solver order act as numerical refinement or as an architectural bias? and (iii) what does robustness beyond the training horizon cost in nominal accuracy? We find that standard ViTs remain preferable when FLOPs are the primary constraint, whereas recurrent ViTs offer a better accuracy–parameter trade-off un-der memory constraints. Consistent with the standard view of residual networks as Euler discretizations of ODEs, the continuous-time analogue of a residual recurrent block is the state-subtracted vector field ˙z = Fθ (z) − z; although known in principle, this distinction is easy to violate when the block is wrapped as a black-box vector field, and we qualify the cost at few accuracy points. Because the vector field is learned jointly with the solver, higher-order solvers act as a solver-induced architectural bias rather than a numerical-accuracy improve-ment, and their gains are not uniform. Finally, stage-wise deep supervision traces an accuracy–robustness frontier: it does not improve nominal accuracy, but degrades gracefully far beyond the training horizon, where naive recurrence collapses to near-random performance. 
+
+Index Terms — vision transformer, recurrence, parameter sharing, neural ODE, deep supervision, image classification 
+
+1. INTRODUCTION AND RELATED WORK 
+
+Vision Transformers (ViTs) have established state-of-the-art 
+
+performance in image recognition but incur high memory costs due to their deep, independently parameterized block 
+
+> *Corresponding author. e-mail: g.gruszczyns@samsung.com
+
+structures [ 1 , 2, 3, 4 ]. While empirical evidence suggests that transformer layers often perform highly related compu-tations and can be compressed or merged [ 5, 6, 7 ], standard architectures still scale their parameter footprint linearly with depth. Recurrence and parameter sharing offer a mechanism to decouple computational depth from parameter count, pre-dominantly in language modeling, synthetic reasoning, or through partial sharing, channel slicing and distillation in vision [ 8 , 9, 10 , 11 , 12 , 13 ]. In contrast to these designs, the single-block Vision Transformer (bViT) investigates the extreme limit of full parameter sharing, replacing the entire sequence of unique layers with a single, recurrently applied operator trained from scratch [14]. 
+
+2. ARCHITECTURE AND TRAINING PROCEDURE 
+
+We fix the recurrent ViT architecture and dataset, and com-pare alternative training/inference paradigms. The purpose of this study is not to establish a new SOTA architecture for image recognition task, but to identify how different compu-tational training regimes affect accuracy, compute, parameter efficiency, solver behavior, and extrapolation stability. We follow the standard Vision Transformer image-classification pipeline: an input image is split into non-overlapping patches, projected into token embeddings, pre-pended with a learn-able CLS token, and augmented with positional embeddings. The resulting sequence is processed by pre-norm transformer blocks with multi-head self-attention and feed-forward sub-layers, and the final normalized CLS token is passed to a linear classification head, see Fig. 1. We adopt the single-block recurrent topology of Byra et al. [ 14 ]: the stack of independently parameterized blocks 
+
+F1, . . . , F L of a standard ViT is replaced by a single shared transformer block F applied recurrently: zt+1 = Fθ (zt) where 
+
+t = 0 , . . . , T − 1. Figure 1 shows that the bViT can be inter-preted as an unrolled ViT with full parameter sharing across depth. By reusing the same multi-head self-attention and feed-forward components at every step, bViT substantially reduces the model’s overall parameter count and memory footprint while preserving the standard computational budget. arXiv:2608.04879v1 [cs.LG] 5 Aug 2026 Standard ViT         
+
+> Img Embed Block 1Block 2· · · Block NClassifier
+
+Recurrent bViT    
+
+> Img Embed
+> Shared Block
+> Shared Block · · · Shared Block Classifier
+
+Fig. 1 : Standard ViT (upper) vs. bViT (lower) architecture. 
+
+2.1. Evaluations 
+
+We evaluate the models on an image classification task. We use CIFAR-100 [ 15 ] dataset, which contains 100 distinct classes of RGB images, each corresponding to 600 images, 500 and 100 for training and testing, respectively. Models are trained for 200 epochs over three independent runs. We report the mean best test accuracy across runs, with per-configuration standard deviations ranging from ±0.001 to ±0.004 .Training is performed using the AdamW optimizer [ 16 ]with a learning rate of 1 × 10 −3 and a weight decay coeffi-cient of 0.05 to minimize the standard cross-entropy loss. The default network and training hyperparameters are configured as follows [ 14 ]: an embedding dimension of 256, a patch size of 4, and a dropout rate of 0.1. An Exponential Moving Av-erage (EMA) is maintained for model weights with a decay rate of 0.999. All models are trained using a standard batch size of 128. The model utilizes a SwiGLU activation function and the final layer normalization is applied. The bViT archi-tecture consists of single parameter-sharing block evaluated recurrently 12 times. On the other hand, the classical ViT has 12 independently parameterized blocks. 
+
+3. EXPERIMENTS 
+
+Unless stated otherwise, we keep the architecture fixed and evaluate different training recipes. In the following subsections we investigate the tradeoff between computations and model parameters, continuous time Neural ODE integration, and deep-supervised recurrent training. 
+
+3.1. Architecture comparison 
+
+The comparison in Fig. 2 indicates that recurrent weight shar-ing in bViT induces a clear resource-dependent trade-off rather than a uniformly superior architecture. Under matched com-putational budgets, the classical ViT remains preferable, as its independently parameterized blocks provide higher accuracy for a given FLOPs budget. In contrast, when the dominant constraint is parameter storage or deployment memory, bViT becomes advantageous: by reusing a single transformer block across recurrent steps, it substantially reduces the parameter footprint while retaining competitive accuracy. Thus, standard ViTs are better suited to compute-limited regimes, whereas bViT offers a more favorable accuracy–parameter trade-off for memory-constrained deployment. Next, we performed a detailed grid search experiment (see Fig. 3) to show how the transformer depth, D, (governed by the number of unique blocks) and steps, S, (recurrent repetition of the set of block) interacts with the effective representational power. Below a critical depth or steps threshold, the shared representational space lacks the capacity to encode the required functional di-versity. Recurrence can unroll representation space just as effectively as structural depth assuming that the number of network parameters is sufficient. However, when the overall virtual length (steps multiplied by depth) becomes to long the model looses accuracy due to numerical discrepancies in gradient propagation. 
+
+3.2. bViT as a Neural ODE (bViT-node) 
+
+The bViT update zn+1 = Fθ (zn) is a discrete-time dynami-cal system and can be reinterpreted in continuous time [ 17 ]. Since a transformer block is residual, we may write Fθ (z) = 
+
+z + Rθ (z), where Rθ denotes the non-identity transformation induced by attention, normalization, and feed-forward sublay-ers. Consistent with the standard view of residual networks as Euler discretizations of ODEs [ 18 , 19 , 20 ], the continuous-time analogue of the residual recurrence is the state-subtracted 
+
+vector field ˙z = Fθ (z) − z = Rθ (z): explicit Euler integration with ∆t = 1 gives zn+1 = zn + ( Fθ (zn) − zn) = Fθ (zn),exactly recovering the discrete bViT recurrence. Although this correspondence is well known in principle, it is easy to violate in practice when the block is wrapped as a black-box vector field, as in standard Neural ODE toolkits: setting ˙z = Fθ (z)
+
+yields, under Euler with ∆t = 1 , zn+1 = zn + Fθ (zn) = 2zn + Rθ (zn), which accumulates the identity component at every step. We therefore include ˙z = Fθ (z) as a control condi-tion and quantify the cost of this mis-specification for recurrent ViTs. We evaluate explicit Euler, Heun2, and RK4 solvers ap-plied to both vector fields. Table 1 shows that the state-subtracted formulation consistently outperforms the control by roughly 3–6 accuracy points—a nontrivial penalty for an error that is invisible at the API level of common ODE libraries. At matched or comparable numbers of function evaluations (NFEs), higher-order solvers do not uniformly improve perfor-mance despite their higher formal order. Because the vector field is learned jointly with the solver, higher-order methods alter the optimization landscape by compounding multi-stage gradient dependencies within each step; the resulting gains should therefore be read as a solver-induced architectural bias rather than a numerical-accuracy improvement. Overall, ex-plicit Euler remains a highly competitive and robust baseline, and the optimal solver choice depends on both the block depth and the target discretization horizon. (a) Accuracy grows as the FLOPs budget is increased. The ViT outperforms the bViT. Fi-nally, both models reach common plateau. 
+
+> (b) When the number of total network param-eters is reduced, then accuracy of the bViT is better compared to ViT.
+> (c) As the bViT shares the parameters between blocks, the computational cost strictly corre-lates with embedding dimension.
+
+Fig. 2 : The trade-off between the classical ViT and the recurrent bViT, evaluated across compute and scale constraints. 
+
+Fig. 3 : Heat map of max accuracy. Sharp decline is visible when the network lacks capacity on either depth, D, or steps, S,axis. Notice that the setup with D = 1 and S = 12 represent the bViT, while D = 12 and S = 1 is the classical ViT. Other combinations of D, S corresponds to multi-block recursive variants. For example model with D = 12 and S = 12 would have 12 independent blocks in a stack, and the stack would be evaluated recursively 12 times. Such a long sequence (144 evaluations) suffers from degraded accuracy due to vanishing gradient problems. 
+
+3.3. Deep Supervision and Extrapolation (bViT-ds) 
+
+Standard bViT is trained for a fixed recurrent horizon (T), and it learns a finite-horizon computation rather than necessarily learning a contractive map with a stable fixed point [ 14 ]. When evaluated for more recurrent steps than seen during training, the latent trajectory may drift away from the region in which the classifier was trained, causing extrapolation failure. Deep Equilibrium (DEQ) models [ 21 , 22 ] attempt to re-solve this by framing the forward pass as an implicit root-finding problem, seeking z⋆ = Fθ (z⋆). However, in our ex-periments both the DEQ root-finding solvers (e.g., Anderson acceleration) and TRM-style supervision [ 23 ] applied directly to bViT turned out to be divergent. Related supervision strate-gies are studied in [ 23 , 24 , 25 ]. In this work, we introduce bViT-ds to bridge the gap between finite-horizon reasoning and asymptotic stability. This bViT variant partitions the un-rolled computational graph into K discrete supervision stages. Within each supervision stage k ∈ { 1, 2, 4, 8} of bViT-ds, the parameter sharing transformer block is evaluated for S steps using a simple fixed point iteration, zt = Fθ (zt−1). At the end of each stage, k, the intermediate logits ˆyk are computed and a cross-entropy penalty is applied, Ltotal = 1
+
+> K
+
+PKk=1 LCE (ˆ yk, y ).The O(1) memory scaling with respect to unrolled depth is achieved by applying state detachment after each group of S
+
+steps. Minimizing the loss from detached intermediate states explicitly penalizes trajectory divergence and constrain the phase space required for stability. Table 2 shows that simply increasing the recurrent horizon does not monotonically improve performance. Accuracy ini-tially improves with additional recurrent steps, but eventually saturates and slowly degrades. When the same model is extrap-olated beyond its training horizon, accuracy can collapse to near-random level. Stage-wise deep supervision substantially Table 1 : Comparison of integration schemes. The best and sec-ond best results for each of the integrators (Euler, Heun2, RK4) are highlighted with green and light green colors, respectively. Here, D and S denotes the number of unique transformer blocks and the number of solver steps respectively. NFE is the total number of transformer-block evaluations. “NaN” denotes a diverged training run. Euler Heun2 RK4 
+
+D S NFE Acc ↑ NFE Acc ↑ NFE Acc ↑
+
+NODE: dz dt = Fθ (z) − z (state-subtracted) 1 3 3 0.630 6 0.654 12 0.655 1 6 6 0.656 12 0.657 24 0.660 1 12 12 0.658 24 0.663 48 0.665 1 24 24 0.667 48 0.670 96 0.671 2 3 6 0.658 12 0.663 24 0.665 2 6 12 0.664 24 0.670 48 0.668 2 12 24 0.668 48 0.675 96 0.674 2 24 48 0.682 96 0.689 192 0.692 4 3 12 0.659 24 0.673 48 0.673 4 6 24 0.669 48 0.676 96 0.675 4 12 48 0.677 96 0.701 192 0.677 4 24 96 0.669 192 0.633 384 NaN NODE: dz dt = Fθ (z) (control) 1 3 3 0.591 6 0.618 12 0.637 1 6 6 0.611 12 0.621 24 0.635 1 12 12 0.608 24 0.619 48 0.631 1 24 24 0.606 48 0.622 96 0.631 2 3 6 0.640 12 0.646 24 0.651 2 6 12 0.642 24 0.650 48 0.652 2 12 24 0.642 48 0.648 96 0.654 2 24 48 0.641 96 0.648 192 0.653 4 3 12 0.658 24 0.658 48 0.664 4 6 24 0.657 48 0.660 96 0.668 4 12 48 0.661 96 0.663 192 0.666 4 24 96 0.659 192 0.664 384 NaN improves extrapolation robustness—but it does not improve nominal accuracy: whenever the horizon is known at training time, naive extension is strictly better assuming sufficient GPU memory is available. 
+
+4. CONCLUSION 
+
+This work characterizes recurrent ViT training through the lens of deployment trade-offs, continuous-time modeling, and extrapolation stability, answering the three research questions. (i) Recurrence is not a universally superior replacement for architectural depth: standard ViTs remain stronger at matched FLOPs, while bViTs provide a better accuracy–parameter trade-off when the model-memory footprint is the binding con-
+
+Table 2 : Nominal accuracy vs. extrapolation robustness. In-creasing the number of steps within a single stage improves accuracy, which then plateaus and slowly degrades, whereas naive extrapolation beyond the training horizon collapses. Deep supervision (bViT-ds) helps constrain trajectory diver-gence and improves extrapolation robustness at the price of nominal accuracy. In bViT-ds we set each stage to consist of 
+
+12 steps. During training, the computational graph is detached after each stage to maintain O(1) memory depth. During in-ference, we add additional extrapolation stages beyond the training stages. The number of function evaluations (overall) is denoted as NFE. The best and second best results are high-lighted with green and light green colors, respectively. Steps Supervision Extrapolation Acc ↑ per stage stages stages NFE bViT baseline and naive extrapolation. 0.658 12 1 0 12 0.029 12 1 4 60 0.017 12 1 8 108 Naive increase of the bViT loop horizon. 0.667 24 1 0 24 0.681 48 1 0 48 0.682 60 1 0 60 0.680 72 1 0 72 0.679 84 1 0 84 0.676 96 1 0 96 bViT-ds variants. 0.650 12 2 0 24 0.639 12 4 0 48 0.599 12 2 4 72 0.620 12 4 4 96 0.635 12 8 0 96 0.467 12 2 8 120 0.588 12 4 8 144 0.630 12 8 4 144 0.613 12 8 8 192 straint. (ii) The continuous-time analogue of a residual recur-rent block is the state-subtracted vector field ˙z = Fθ (z)−z—a known correspondence whose violation we show costs 3–6 accuracy points. Higher-order solver gains are NFE-dependent and best interpreted as solver-induced architectural bias rather than numerical-accuracy improvement. (iii) Stage-wise deep supervision buys long-horizon robustness at the price of nomi-nal accuracy and additional computation. Funding acknowledgements 
+
+This work was supported by Samsung AI Center, Warsaw. 
+
+# Compliance with ethical standards 
+
+The authors have no relevant conflicts of interest to disclose. 
+
+5. REFERENCES 
+
+[1] Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bojanowski, and Armand Joulin, “Emerging properties in self-supervised vision transformers,” in Proceed-ings of the IEEE/CVF international conference on computer vision , 2021, pp. 9650–9660. [2] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa De-hghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, et al., “An image is worth 16x16 words: Transformers for image recog-nition at scale,” Proceedings of the International Conference on Learning Representations (ICLR) , 2020. [3] Kaiming He, Xinlei Chen, Saining Xie, Yanghao Li, Piotr Dol-lár, and Ross Girshick, “Masked autoencoders are scalable vision learners,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2022, pp. 16000– 16009. [4] Hugo Touvron, Matthieu Cord, Matthijs Douze, Francisco Massa, Alexandre Sablayrolles, and Hervé Jégou, “Training data-efficient image transformers & distillation through atten-tion,” in International conference on machine learning . PMLR, 2021, pp. 10347–10357. [5] Takuya Akiba, Makoto Shing, Yujin Tang, Qi Sun, and David Ha, “Evolutionary optimization of model merging recipes,” 
+
+Nature Machine Intelligence , vol. 7, no. 2, pp. 195–204, 2025. [6] Isha Garg, Christian Koguchi, Eshan Verma, and Daniel Ul-bricht, “Revealing the utilized rank of subspaces of learning in neural networks,” in Proceedings of the AAAI Symposium Series , 2025, vol. 5, pp. 151–158. [7] Qi Sun, Marc Pickett, Aakash Kumar Nain, and Llion Jones, “Transformer layers as painters,” in Proceedings of the AAAI Conference on Artificial Intelligence , 2025, vol. 39, pp. 25219– 25227. [8] Mostafa Dehghani, Stephan Gouws, Oriol Vinyals, Jakob Uszkoreit, and Lukasz Kaiser, “Universal transformers,” Pro-ceedings of the International Conference on Learning Repre-sentations (ICLR) , 2019. [9] Mozes Jacobs, Thomas Fel, Richard Hakim, Alessandra Bron-detta, Demba Ba, and T Andy Keller, “Block-recurrent dynam-ics in vision transformers,” arXiv preprint arXiv:2512.19941 ,2025. [10] Zhenzhong Lan, Mingda Chen, Sebastian Goodman, Kevin Gimpel, Piyush Sharma, and Radu Soricut, “Albert: A lite bert for self-supervised learning of language representations,” 
+
+Proceedings of the International Conference on Learning Rep-resentations (ICLR) , 2020. [11] Nikunj Saunshi, Nishanth Dikkala, Zhiyuan Li, Sanjiv Kumar, and Sashank J Reddi, “Reasoning with latent thoughts: On the power of looped transformers,” Proceedings of the International Conference on Learning Representations (ICLR) , 2025. [12] Jinnian Zhang, Houwen Peng, Kan Wu, Mengchen Liu, Bin Xiao, Jianlong Fu, and Lu Yuan, “Minivit: Compressing vi-sion transformers with weight multiplexing,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2022, pp. 12145–12154. [13] Zhiqiang Shen, Zechun Liu, and Eric Xing, “Sliced recursive transformer,” in European Conference on Computer Vision .Springer, 2022, pp. 727–744. [14] Michal Byra, Pawel Olszowiec, Grzegorz Stefanski, Grzegorz Gruszczynski, and Alberto Presta, “bvit: Investigating single-block recurrence in vision transformers for image recognition,” 2026. [15] Alex Krizhevsky, Geoffrey Hinton, et al., “Learning multiple layers of features from tiny images,” 2009. [16] Ilya Loshchilov and Frank Hutter, “Decoupled weight decay regularization,” Proceedings of the International Conference on Learning Representations (ICLR) , 2019. [17] Ricky TQ Chen, Yulia Rubanova, Jesse Bettencourt, and David K Duvenaud, “Neural ordinary differential equations,” 
+
+Advances in neural information processing systems , vol. 31, 2018. [18] Weinan E, “A proposal on machine learning via dynamical systems,” Communications in Mathematics and Statistics , vol. 5, no. 1, pp. 1–11, 2017. [19] Eldad Haber and Lars Ruthotto, “Stable architectures for deep neural networks,” Inverse Problems , vol. 34, no. 1, pp. 014004, 2017. [20] Yiping Lu, Aoxiao Zhong, Quanzheng Li, and Bin Dong, “Be-yond finite layer neural networks: Bridging deep architectures and numerical differential equations,” in Proceedings of the International Conference on Machine Learning (ICML) , 2018, pp. 3276–3285. [21] Shaojie Bai, J Zico Kolter, and Vladlen Koltun, “Deep equi-librium models,” Advances in Neural Information Processing Systems (NeurIPS) , vol. 32, 2019. [22] Shaojie Bai, Vladlen Koltun, and J Zico Kolter, “Multiscale deep equilibrium models,” Advances in neural information processing systems , vol. 33, pp. 5238–5250, 2020. [23] Alexia Jolicoeur-Martineau, “Less is more: Recursive reasoning with tiny networks,” arXiv preprint arXiv:2510.04871 , 2025. [24] Guan Wang, Jin Li, Yuhao Sun, Xing Chen, Changling Liu, Yue Wu, Meng Lu, Sen Song, and Yasin Abbasi Yadkori, “Hier-archical reasoning model,” arXiv preprint arXiv:2506.21734 ,2025. [25] Qianli Liao and Tomaso Poggio, “Simple recursive model: Sim-plified, single-state reasoning with skip connections,” Preprint ,2026.

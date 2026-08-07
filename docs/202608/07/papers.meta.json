@@ -1,0 +1,69 @@
+{
+  "label": "2026-08-07",
+  "date": "2026-08-07",
+  "generated_at": "2026-08-07T01:20:34",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202608/07/2608.05074v1-bag-of-visual-words-for-spatial-mapping-of-lung-adenocarcinoma-growth-patterns",
+      "section": "deep",
+      "title_en": "Bag-of-Visual-Words for Spatial Mapping of Lung Adenocarcinoma Growth Patterns",
+      "authors": "Darya Ardan, Valentin Oreiller, Henning Müller",
+      "date": "2026-08-05",
+      "pdf": "https://arxiv.org/pdf/2608.05074v1",
+      "score": "8.0",
+      "evidence": "用冻结基础模型嵌入和词袋方法分类细粒度生长模式",
+      "tldr": "肺腺癌生长模式的空间映射需在区域级解析结构，现有方法仅操作于瓦片级并产生通用聚类，难以生成临床定义的模式图。提出弱监督BoVW管道，从注释ROI提取冻结基础模型嵌入，构建模式原型，以JS散度最近原型分类滑动窗口区域，投影到WSI网格生成可解释图谱。在CPTAC-LUAD上肿瘤/健康分类达0.974，组织学分级优于监督基线，提供更可解释的区域级方案。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Spatial mapping of lung adenocarcinoma (LUAD) growth patterns across whole slide images (WSIs) requires resolving architectural context at the region level, yet existing methods operate at the individual tile level and produce generic morphological clusters rather than clinically defined pattern maps. We propose a weakly supervised Bag-of-Visual-Words (BoVW) pipeline that learns a visual vocabulary from frozen foundation model embeddings extracted from a small set of annotated regions of interest (ROIs). Pattern prototypes are constructed as mean BoVW histograms of same-label ROIs and used for nearest-prototype classification of sliding-window regions under Jensen--Shannon divergence. The resulting predictions are projected onto the WSI tile grid to produce interpretable spatial pattern maps. We evaluate the method on 87 CPTAC-LUAD patients using three foundation model encoders and multiple vocabulary sizes on two clinically motivated tasks. For tumour/healthy classification, the best configuration achieves a balanced accuracy of $0.974$ with H-Optimus-1, approaching the $0.987$ obtained by a supervised SVM trained on mean-pooled WSI embeddings. For binary histologic grade classification, the BoVW pipeline achieves higher balanced accuracy than the supervised baseline for all encoders, suggesting that ROI-level pattern decomposition preserves grade-relevant heterogeneity that is attenuated by global mean pooling.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/07/2608.02470v1-grounding-agentic-vlms-with-dedicated-segmentation-for-fine-grained-vehicle-damage-assessment",
+      "section": "quick",
+      "title_en": "Grounding Agentic VLMs with Dedicated Segmentation for Fine-Grained Vehicle Damage Assessment",
+      "authors": "Vishwajeet Shivaji Hogale, Anjali Pai, Nitya Ravi",
+      "date": "2026-08-03",
+      "pdf": "https://arxiv.org/pdf/2608.02470v1",
+      "score": "7.0",
+      "evidence": "使用基础视觉语言模型与空间接地进行细粒度车辆损伤评估",
+      "tldr": "视觉语言模型(VLM)在细粒度车辆损伤评估中语义分类准确但其空间接地不可靠，细小划痕与反射常被混淆或漏检。为此提出TinyDamage混合架构，将空间接地交给专用多任务分割模型，VLM仅做语义理解与报告生成，并集成入7节点LangGraph代理流程。分割训练采用监督对比损失，比广泛使用的focal loss更能保留微小损伤，使幻觉率从仅文本92%和仅图像78%显著降至31%。同时提出DET_l逐类别检测指标以评估不平衡场景下的微小目标定位，相关延迟与可靠性验证支持实际部署。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Vision-language models (VLMs) are increasingly deployed as reasoning agents in real-world visual assessment pipelines, yet their spatial grounding remains unreliable for fine-grained, visually ambiguous targets. We study this gap in the context of automated vehicle damage assessment, where fine-grained defects such as scratches and hairline cracks occupy few pixels, produce weak gradient signal, and are easily confused with reflections and surface texture. We show that a state-of-the-art VLM (Qwen-VL) achieves strong semantic classification accuracy (87.3%) on this task but is systematically ungrounded at the spatial level: it hallucinates damage in reflective regions, misses elongated scratches entirely, and produces spatially inconsistent outputs when prompted for localization. We propose TinyDamage, a hybrid architecture that delegates spatial grounding to a dedicated multi-task segmentation model while reserving the VLM for semantic reasoning and report generation. On the segmentation side, we find that the choice of loss function has an outsized and underexplored effect on tiny-object grounding: focal loss, widely used for class imbalance, collapses tiny-damage detection to zero, while a supervised contrastive objective measurably improves damage/background separability. We integrate the segmentation model into a 7-node LangGraph agent pipeline that grounds every VLM generation step in the segmentation output, and show that this grounding reduces the report hallucination rate from 92% (text-only) and 78% (image-only) to 31% in a controlled evaluation on 100 human-verified reports. We introduce DET_l, a permissive per-category detection metric for evaluating tiny-object grounding under class imbalance, and report latency and reliability characteristics of the deployed pipeline.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/07/2608.00726v1-foveated-probes-recover-localized-binding-information-in-vision-foundation-models",
+      "section": "quick",
+      "title_en": "Foveated Probes Recover Localized Binding Information in Vision Foundation Models",
+      "authors": "Mateusz Michalkiewicz, Mahsa Baktashmotlagh, Guha Balakrishnan",
+      "date": "2026-08-01",
+      "pdf": "https://arxiv.org/pdf/2608.00726v1",
+      "score": "6.0",
+      "evidence": "中央凹读出从预训练视觉变换器恢复局部信息，与分类相关",
+      "tldr": "视觉基础模型常用全局嵌入评估，但全局池化可能将局部绑定信息丢失与读出时信息损失混为一谈。本文保持编码器冻结，仅改变读出方式，引入轻量级中央凹读出，通过注意力池化聚焦目标区域。在合成杂波和自然图像任务中，全局读出性能显著下降，而中央凹读出恢复大部分oracle信号，问题条件中央凹显著提升局部颜色准确率。结果表明，冻结模型的空间盲区主要源于全局接口，而非patch tokens缺少空间信息。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Frozen vision foundation models are commonly evaluated through a single global image embedding, but this interface can conflate missing information with information lost at readout time. We study this distinction by keeping a pretrained vision encoder frozen and varying only the readout applied to its final patch tokens. We compare standard global readouts against a lightweight foveated readout, which attention-pools patch tokens using a learned or question-conditioned query, and against an oracle readout with access to the annotated target region. We evaluate these interfaces on three localized binding problems: a controlled synthetic color--shape binding task under clutter, a color-free crowded shape-detection variant, and a GQA-derived natural-image task where paired questions ask for the colors of different same-category objects in the same image. Global readouts perform near perfectly when the synthetic target appears alone, but collapse under clutter and counterfactual target edits, whereas the foveated readout recovers most of the oracle-accessible signal. On the GQA-derived task, question-independent global image vectors improve only modestly over question-only priors, while question-conditioned foveation substantially improves paired localized color accuracy. A counterfactual nuisance-to-signal ratio explains the synthetic failures: global pooling dilutes localized label-changing evidence while exposing the probe to nuisance variation from irrelevant objects. These results indicate that apparent spatial blindness in frozen vision models can arise from the global embedding interface rather than from an absence of spatial information in the frozen patch tokens.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/07/2608.04879v1-training-crossroads-for-recurrent-vision-transformers-recurrence-neural-odes-and-deep-supervision",
+      "section": "quick",
+      "title_en": "Training Crossroads for Recurrent Vision Transformers: Recurrence, Neural ODEs, and Deep Supervision",
+      "authors": "Grzegorz Gruszczynski, Pawel Olszowiec, Michal Byra, Grzegorz Stefanski, Alberto Presta",
+      "date": "2026-08-05",
+      "pdf": "https://arxiv.org/pdf/2608.04879v1",
+      "score": "6.0",
+      "evidence": "面向图像识别的视觉Transformer架构训练研究",
+      "tldr": "视觉Transformer( ViT )参数随深度线性增长，单块循环ViT( bViT )通过共享权重消除该增长。本文在统一CIFAR-100协议下，固定bViT并对比三种训练/推理模式：FLOPs匹配时标准ViT占优，参数匹配时循环ViT占优；经ODE求解器训练时，高阶求解器并非改善数值精度，而是引入架构偏置，增益不统一；分段深度监督不提升名义精度，但在远超训练时域时依然优雅退化，而朴素循环崩塌至随机。该研究为循环架构和连续时间训练提供了经验权衡。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Vision Transformers (ViTs) achieve strong image-recognition performance, but their parameter count grows linearly with depth when each block is independently parameterized. Single-block recurrent ViTs (bViT) remove this growth by repeatedly applying one shared block. Rather than proposing a new architecture, we fix a bViT and provide a controlled empirical characterization of three training and inference regimes under a common CIFAR-100 protocol, asking: (i)~when does recurrence beat independently parameterized depth---at matched FLOPs or at matched parameter memory? (ii)~when a residual recurrent block is trained through an ODE solver, does solver order act as numerical refinement or as an architectural bias? and (iii)~what does robustness beyond the training horizon cost in nominal accuracy? We find that standard ViTs remain preferable when FLOPs are the primary constraint, whereas recurrent ViTs offer a better accuracy--parameter trade-off under memory constraints. Consistent with the standard view of residual networks as Euler discretizations of ODEs, the continuous-time analogue of a residual recurrent block is the state-subtracted vector field $\\dot{z}=F_θ(z)-z$; although known in principle, this distinction is easy to violate when the block is wrapped as a black-box vector field, and we qualify the cost at few accuracy points. Because the vector field is learned jointly with the solver, higher-order solvers act as a solver-induced architectural bias rather than a numerical-accuracy improvement, and their gains are not uniform. Finally, stage-wise deep supervision traces an accuracy--robustness frontier: it does not improve nominal accuracy, but degrades gracefully far beyond the training horizon, where naive recurrence collapses to near-random performance.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

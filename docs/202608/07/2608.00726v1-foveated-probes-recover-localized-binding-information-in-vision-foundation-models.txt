@@ -1,0 +1,570 @@
+Title: Foveated Probes Recover Localized Binding Information in Vision Foundation Models
+
+URL Source: https://arxiv.org/pdf/2608.00726v1
+
+Published Time: Tue, 04 Aug 2026 00:45:36 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# Foveated Probes Recover Localized Binding Information in Vision Foundation Models 
+
+# Mateusz Michalkiewicz 1, Mahsa Baktashmotlagh 2, Guha Balakrishnan 1
+
+> 1
+
+Rice University, Houston, TX, USA 
+
+> 2
+
+The University of Queensland, Brisbane, QLD, Australia 
+
+Abstract 
+
+Frozen vision foundation models are commonly evaluated through a single global image embedding, but this interface can conflate missing information with information lost at read-out time. We study this distinction by keeping a pretrained vision encoder frozen and varying only the readout applied to its final patch tokens. We compare standard global readouts against a lightweight foveated readout, which attention-pools patch tokens using a learned or question-conditioned query, and against an oracle readout with access to the annotated target region. We evaluate these interfaces on three localized binding problems: a controlled synthetic color–shape bind-ing task under clutter, a color-free crowded shape-detection variant, and a GQA-derived natural-image task where paired questions ask for the colors of different same-category objects in the same image. Global readouts perform near perfectly when the synthetic target appears alone, but collapse under clutter and counterfactual target edits, whereas the foveated readout recovers most of the oracle-accessible signal. On the GQA-derived task, question-independent global image vec-tors improve only modestly over question-only priors, while question-conditioned foveation substantially improves paired localized color accuracy. A counterfactual nuisance-to-signal ratio explains the synthetic failures: global pooling dilutes localized label-changing evidence while exposing the probe to nuisance variation from irrelevant objects. These results indicate that apparent spatial blindness in frozen vision models can arise from the global embedding interface rather than from an absence of spatial information in the frozen patch tokens. 
+
+# Introduction 
+
+Probing is the standard tool for evaluating what vision foun-dation models encode: a lightweight probe is fit on frozen features for a downstream classification task, and the probe’s accuracy is read as evidence about the encoder. The predom-inant interface is a single global vector per image—a class token, a pooled output, or a global average over patch tokens— a natural default for contrastive vision–language encoders such as CLIP and SigLIP (Radford et al. 2021; Zhai et al. 2023), which are trained around global image–text alignment. This protocol is convenient, but it introduces a critical ambi-guity: when such a probe yields low accuracy on a spatial, relational, or binding task, is the relevant information absent from the frozen encoder, or was it simply discarded by the readout? A large body of work documents these failures: vision– language models evaluated through global image–text align-ment struggle with compositional matching, attribute–object binding, word order, and localized spatial relations (Thrush et al. 2022; Yuksekgonul et al. 2022; Liu, Emerson, and Collier 2023; Kamath, Hessel, and Chang 2023; Subrama-nian et al. 2022). Targeted studies directly examine concept binding and multi-object interference (Lewis et al. 2024; Campbell et al. 2024). At the same time, dense-prediction methods demonstrate that CLIP-like patch tokens carry useful local information despite image-level training (Zhou, Loy, and Dai 2022; Rao et al. 2022; Wang, Mei, and Yuille 2024), and recent analyses suggest binding information can survive within a single modality even when global cross-modal align-ment ignores it (Koishigarina, Uselis, and Oh 2025). Together, these findings suggest that a global embedding may appear spatially blind even when the underlying patch tokens are not. We call this possibility readout-level spatial blindness :localized information is present in the frozen patch tokens but becomes inaccessible once they are pooled into a global vector, as opposed to a genuine representation failure, in which the information is absent altogether. The distinction is sharpest for binding: in a cluttered scene, the correct label may depend on the color–shape conjunction of one small object, or a question may ask for the color of one of several same-category instances. A question-independent global readout collapses the scene before any task-specific selection occurs, attenuating the label-relevant signal while mixing in nuisance variation from irrelevant objects. We separate the two cases by holding the encoder fixed and varying only the readout; no gradients update the vision or text towers. We compare global average pooling (GAP) and the encoder’s pretrained summary embedding against a minimal foveated readout, which attention-pools the patch tokens using a single query—learned in the vision-only tasks, derived from the frozen question embedding in the vision– language task—so that evidence is selected before spatial collapse. We also include a non-deployable oracle readout that pools tokens within the annotated target region. If the oracle succeeds where the global readout fails, the information was present in the tokens; if the learned fovea also succeeds, a lightweight selector can recover it without fine-tuning the encoder or any location supervision during training. We evaluate these interfaces on three localized binding arXiv:2608.00726v1 [cs.CV] 1 Aug 2026 tasks: a controlled synthetic color–shape binding task under clutter, motivated by feature-integration theory (Treisman and Gelade 1980; Treisman and Schmidt 1982); a color-free crowded shape-detection variant; and a GQA-derived natural-image task (Hudson and Manning 2019; Krishna et al. 2017) in which paired questions ask for the colors of different same-category objects in the same image. On paired-counterfactual accuracy in the color–shape task, the global readouts reach at most 3.5% (near the 2.8% chance level), while the fovea reaches 93.5%, approaching the 99.3% oracle. Global embeddings shift 7 to 15 times more under label-preserving nuisance edits than under label-changing target edits—a counterfactual nuisance-to-signal ratio (NSR) of 7–15, where values above 1.0 mean nuisance outweighs signal—whereas the foveated readout, like the oracle, keeps its NSR near 0.3. On the color-free variant, the global readouts clear the 25% chance level but remain about 35 points below the fovea. On the GQA-derived task, question-conditioned foveation reaches 17% paired accuracy, whereas the global readouts reach about 4%, only modestly above a 2.3% question-only prior; an oracle given the target box reaches 33%. Ultimately, our results indicate that the question “Are frozen vision models spatially blind?” is under-specified: the answer depends on the interface used to access their patch tokens. Our contributions are threefold: 1. We formulate readout-level spatial blindness and introduce a frozen-encoder diagnostic that distinguishes it from representation failure, including a counterfactual NSR computed directly on the embeddings. 2. We introduce the foveated probing protocol, alongside controlled and natural-image evaluations with paired, lo-calized tests. 3. We demonstrate that global collapse can make available information appear absent, while a lightweight learned selector recovers most of the oracle-accessible signal. The remainder of the paper presents the readout protocols and the NSR diagnostic, the construction of the three evalua-tion tasks, the experimental results, and a brief conclusion. To keep the main text focused on the diagnostic and its evi-dence, we defer an extensive discussion of related work to the appendix. 
+
+# Method 
+
+Notation and Problem Setup 
+
+We study image classification via downstream readouts built on top of a frozen vision encoder. An example is a pair (I, y )
+
+in the vision-only setting, where y ∈ { 0, . . . , C − 1}, or a triple (I, Q, y ) in the vision–language setting, where Q is a text question. From image I, the frozen vision encoder yields final-layer patch tokens X(I) = [ x1(I), . . . , x N (I)] ⊤ ∈ RN ×d and, optionally, a global summary token xsum (I) ∈ Rdsum . For vision–language tasks, a frozen text encoder embeds Q into 
+
+t(Q) ∈ Rdt . A visual readout r maps these representations to 
+
+zr (I, Q ) ∈ Rdr (omitting Q for vision-only readouts). Each readout is paired with a separately trained classifier probe hϕr
+
+producing class logits ℓr . We denote vector concatenation as 
+
+[a; b].
+
+Frozen-Encoder Readout Protocols 
+
+All visual readouts operate on patch tokens X(I), except the pretrained summary baseline which uses xsum (I). Vision and text encoders remain frozen throughout; we only train the readout parameters and probe parameters ϕr .
+
+Baseline Readouts. The global average pooling (GAP) read-out collapses patch tokens via uniform averaging, zgap (I) = 
+
+> 1
+> N
+
+PNi=1 xi(I) ∈ Rd, while the summary readout uses 
+
+zsum (I) = xsum (I) ∈ Rdsum . For vision–language tasks, a question-only baseline sees only t(Q), measuring task performance achievable purely from text priors. 
+
+Foveated Readout. Our primary diagnostic readout is a single-query attention pool over frozen patch tokens, de-rived from attention-based set pooling (Lee et al. 2019) but deliberately minimal. A query q(Q) ∈ Rd assigns each token a score si(I, Q ) = LN ( xi(I)) ⊤ q(Q) / T ,where LN is feature-wise layer normalization and T >
+
+0 is a softmax temperature. Scores are normalized via 
+
+α(I, Q ) = softmax ( s(I, Q )) , yielding the weighted token vector zfov (I, Q ) = PNi=1 αi(I, Q ) xi(I) ∈ Rd.Layer normalization affects token selection but not the returned output space, which remains a weighted sum of raw tokens (matching the space of GAP). For vision-only tasks, q
+
+is a single learned parameter vector shared across all images and T is fixed at the standard dot-product scale √d. For vision–language tasks, q(Q) = Wq LN ( t(Q)) with learned linear map Wq ∈ Rd×dt , and T is itself learned, initialized at √d. In both settings, the foveated parameters ( q or Wq , and 
+
+T where learned) are trained jointly with the classifier probe from the task loss alone; the attention receives no location supervision. 
+
+Oracle Target-Token Readout. The oracle readout uses an annotation-defined target region to select patch tokens before pooling; it is included only as a diagnostic upper bound and is not a deployable readout. Let mi(I, Q ) ∈ { 0, 1} indicate whether patch token i overlaps the target region. The oracle representation is the mean of the selected patch tokens, 
+
+zoracle (I, Q ) = 
+
+PNi=1 mi(I, Q )xi(I)
+
+PNi=1 mi(I, Q ) + ϵ ∈ Rd, (1) where ϵ > 0 is a small numerical-stability constant. 
+
+Probes 
+
+Each readout r is paired with a separately trained classifier probe hϕr , a small one-hidden-layer MLP; within each ex-periment, all readouts share the same probe architecture and training protocol, and results for linear probes are reported in the appendix. For vision-only tasks, the probe receives the readout vector alone, ℓr (I) = hϕr (zr (I)) ∈ RC . For vision–language tasks, every readout uses the same late-fusion interface, ℓr (I, Q ) = hϕr ([ zr (I, Q ); t(Q)]) : question-independent readouts supply the same visual vector for every A) Counterfactual diagnostic B) Representation change  
+
+> Global readout NSR >> 1
+> Foveated readout NSR < 1
+> signal
+> nuisance
+> embedding
+> base target edit
+> nuisance edit
+> signal
+> nuisance
+> embedding
+> base
+> nuisance edit
+> target edit
+> target edit
+> base
+> nuisance edit
+
+Figure 1: NSR construction. (A) The counterfactual changes the target (dashed box) while holding the background fixed, whereas the nuisance edit changes the background while holding the target fixed. (B) A good readout exhibits a large representation change under the label-changing counterfactual (high signal) but only a small change under the nuisance edit (low nuisance), yielding NSR < 1, as for the foveated readout. Global readouts show the opposite pattern—small signal and large nuisance—yielding NSR ≫ 1.question about image I, so the question enters only through the classifier, whereas the foveated and oracle readouts select patch tokens using the question or its annotation-defined target before pooling. The question-only baseline receives 
+
+t(Q) alone. 
+
+Counterfactual Nuisance-to-Signal Ratio for Synthetic Tasks 
+
+A useful readout should change when the content that deter-mines the label changes, and remain stable under irrelevant scene variation. We measure these two properties—signal and nuisance—directly on the readout representations. Because readouts differ in dimension and scale, all NSR quantities use the standardized vector ezr (I) ∈ Rdr , obtained by z-scoring each coordinate of zr (I) on the base training split. 
+
+Signal and nuisance variation. Both quantities are com-puted on held-out diagnostic collections, indexed by a nui-sance regime b ∈ B . The first collection, Psyn  
+
+> b
+
+, contains counterfactual pairs (I, I cf ) in which the label-defining factor is edited while the nuisance variables of regime b are held fixed; we define the label-changing signal preserved by read-out r as the mean squared per-coordinate change across such pairs, 
+
+Ssyn  
+
+> r
+
+(b) = E(I,I cf )∼P syn 
+
+> b
+
+ 1
+
+dr
+
+ezr (Icf ) − ezr (I) 22
+
+
+
+. (2) The second collection, Gsyn  
+
+> b
+
+, contains label-preserving nui-sance groups G = {I(1) , . . . , I (|G|)} whose images share the label-defining factor but differ in nuisance content; we define nuisance variation as the mean per-coordinate variance within a group, 
+
+N syn  
+
+> r
+
+(b) = EG∼G syn 
+
+> b
+
+ 1
+
+drdrX
+
+> j=1
+
+Var I∈G [ezr,j (I)] 
+
+ . (3) The counterfactual nuisance-to-signal ratio is 
+
+NSR syn  
+
+> r
+
+(b) = N syn  
+
+> r
+
+(b)
+
+Ssyn  
+
+> r
+
+(b) + εNSR 
+
+, (4) where εNSR > 0 is a small numerical-stability constant. A low NSR is desirable: the representation then varies mainly with the label rather than with irrelevant scene content (Figure 1). 
+
+Signal-dilution interpretation. To illustrate why global pooling can produce a high NSR, consider one counterfactual pair (I, I cf ) in the original, unstandardized token space. Let 
+
+Itar ⊆ { 1, . . . , N } be the set of patch-token indices affected by the target edit, and let M = |I tar | be the number of affected tokens. For each patch token, define its counterfactual displacement as ∆xi = xi(Icf ) − xi(I), and define the mean displacement over the target-token set as ∆xtar =
+
+> 1
+> M
+
+P 
+
+> i∈I tar
+
+∆xi. If token displacements outside the target region are negligible, the change in the GAP representation satisfies 
+
+∆zgap := zgap (Icf ) − zgap (I) (5) 
+
+= 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+∆xi ≈ MN ∆xtar . (6) Thus, before coordinate standardization, global averaging attenuates the localized representation shift in proportion to the fraction M/N of affected tokens. Because Ssyn  
+
+> r
+
+(b) is based on squared distances, the corresponding signal contribution can be attenuated approximately in proportion to (M/N )2.For the foveated readout, suppose that its attention weights are approximately stable across the counterfactual pair. The representation change is approximately 
+
+∆zfov := zfov (Icf ) − zfov (I) ≈ X
+
+> i∈I tar
+
+αi(I) ∆ xi. (7) Define the attention mass assigned to the affected target tokens as ωtar (I) = P 
+
+> i∈I tar
+
+αi(I). When the target-token displacements are similarly oriented, the foveated shift scales with ωtar (I) rather than M/N : concentrating attention on the target preserves the localized label-changing signal that uniform pooling dilutes, and excludes the irrelevant distractor variation that uniform pooling passes into N syn  
+
+> r
+
+(b); the two effects compound into a larger NSR for the global readouts. 
+
+# Tasks and Datasets 
+
+We evaluate the frozen-encoder readouts on three localized binding tasks. The first is a controlled vision-only task in which the label is the color–shape conjunction of one tar-get object embedded among adversarial distractors; its syn-thetic construction permits label-changing counterfactuals and label-preserving nuisance groups. The second is a color-free crowded shape-detection variant of the first. The third is a vision–language task constructed from natural images, Figure 2: Example scenes from the two synthetic tasks at increasing distractor count K, one per distractor-count bin. 
+
+Top : color–shape binding (CSB); each scene contains a single target object whose color–shape conjunction defines the six-way label, among distractors that separately match its color or shape. Bottom : crowded shape detection (CSD), a color-free variant; all objects are black and the label is the shape of the scene’s unique target-shape object. in which two questions about the same image select different same-category object instances with different colors. Together, the tasks test whether localized binding information is absent from the frozen representation or merely poorly exposed by a global readout. Additional construction details for the datasets are given in the appendix. 
+
+Synthetic Binding Tasks under Clutter 
+
+Classical accounts of visual binding motivate this task: feature-integration theory proposes that conjunctions of separable attributes, such as color and shape, require focused attention, while object-file theory emphasizes the integration of fea-tures within object-specific representations (Treisman and Gelade 1980; Kahneman, Treisman, and Gibbs 1992). We therefore construct the color–shape binding task (CSB), a six-way vision-only classification task in which each image is a 384 × 384 white canvas containing one target object, rendered at 14 px, and K ∼ Uniform {10 , . . . , 50 } distrac-tors (Figure 2, top). The target’s color and shape are sam-pled uniformly from c ∈ { red , yellow , purple } and 
+
+s ∈ { circle , triangle }, and the label is the conjunc-tion (c, s ), giving C = 6 classes. The target triangle is upright; rotated triangles occur only as distractor shapes. The remaining palette colors orange , green , and blue are distractor-only, and non-target distractor shapes are sampled from an 18 -shape vocabulary. We generate 10 ,000 base im-ages, divided 6,000 /2,000 /2,000 into training, validation, and test splits with the six conjunctions sampled uniformly in every split, plus a clean evaluation-only split of 500 images in which the target appears alone ( K = 0 ). 
+
+Adversarial lures. Each scene contains one to three lures of each of three types. A target-shape lure has the target shape but a distractor-only color; a counterpart-shape lure 
+
+has the other target shape, also with a distractor-only color; and a color lure has the target color but a non-target shape. We collect the three per-type counts into the lure-count tuple Q1: What color is the 
+
+above animal 
+
+Q2: What color is the 
+
+below animal 
+
+Figure 3: Example pair from the GQA-derived localized color binding task. Both questions are asked about the same image and name the same category, but select different instances: “What color is the above animal?” ( brown ) and “What color is the below animal?” ( white ). A readout that assigns one global color to the image cannot answer both questions correctly. 
+
+λ. The remaining distractors are noise objects whose shapes are sampled from the non-target shape vocabulary and whose colors are sampled from the complete six-color palette. Every scene therefore contains irrelevant objects that match the target color or the target shape, while only the target object contains the label-defining conjunction. 
+
+Counterfactual pairs and nuisance groups. From the base test scenes, we construct evaluation-only diagnostic images of two kinds: 9,366 label-changing counterfactual pairs, in which the target color and/or shape is swapped with a matched non-target object while preserving object centers, count, scale, and the marginal color and shape histograms; and 16 label-preserving nuisance variants per scene ( 32 ,000 
+
+images), which resample non-target objects while fixing the target, K, and λ. Assigned to nuisance regimes b ∈ B by the distractor-count bins {10 –19 , 20 –29 , 30 –39 , 40+ }, these form the collections Psyn  
+
+> b
+
+and Gsyn  
+
+> b
+
+.
+
+Crowded shape detection (CSD). To test shape binding in the absence of color cues, we additionally construct a color-free variant of the synthetic task (Figure 2, bottom). Scenes are generated as in CSB except that all objects are rendered in black, no adversarial lures are used, and distractor sizes are sampled from 1× to 11 .5× the target size, with the target rendered at 7 px, half its CSB size. The target is the scene’s unique object with a target shape; its shape is the label, 
+
+s ∈ { circle , triangle } (C = 2 ). Distractor shapes are drawn from the same non-target vocabulary as in CSB. We use the same split sizes as CSB, and each base test image is paired with one label-changing counterfactual in which the target shape is flipped in place. On CSD we report only paired-counterfactual accuracy; it serves as a color-free control for the accuracy comparison, and the representation-level NSR analysis is conducted on CSB. 
+
+GQA-Derived Localized Color Binding 
+
+To test localized color binding in natural images, we construct a paired vision–language task from GQA scene graphs and Visual Genome images (Hudson and Manning 2019; Krishna et al. 2017), generating questions directly from scene-graph object annotations rather than using the original GQA ques-tions. We refer to the resulting task as GQA ∗. Each pair contains two examples derived from the same image: the two questions name the same object category but select different object instances with different annotated colors, following the template “What color is the {relation} {name}?” with a frame-relative relation in { left , right , above , below }(Figure 3). Because the two target instances have different color labels, answering both questions requires selecting the object specified by the question rather than assigning one global color label to the image. Restricting the answer vocab-ulary to the ten most frequent colors gives a classification task with C = 10 and naturally imbalanced labels; the dataset contains 22 ,502 question examples ( 11 ,251 same-image pairs over 9,950 images, spanning 542 target object categories), divided into image-disjoint training, validation, and test splits. 
+
+# Experiments 
+
+We evaluate the readout interfaces on two settings: controlled synthetic tasks and a GQA-derived task on natural images. In both, a frozen SigLIP vision encoder is held fixed and only the readout and its probe are trained, so differences in performance reflect how each interface exposes the in-formation already present in the patch tokens rather than differences in the encoder. We compare question-independent global readouts, the pretrained summary representation and global average pooling (GAP), against a question-conditioned foveated readout and an oracle readout that pools the ground-truth target region. Beyond ordinary classification accuracy, we use matched counterfactuals that isolate sensitivity to the label-defining target conjunction, allowing us to separate clas-sification performance from sensitivity to the target binding. We first evaluate the readouts on the controlled synthetic task, where nuisance content can be increased in a controlled way and its effect measured through a counterfactual nuisance-to-signal analysis, and then test whether the readout-level distinction extends to natural images. 
+
+Experimental Protocol 
+
+All experiments use the same frozen SigLIP vision encoder (Zhai et al. 2023), siglip-so400m-patch14-384 , at its native 384 × 384 resolution, from which we extract the final-layer N = 729 patch tokens of dimension d = 1152 ,plus the pretrained summary representation when a readout requires it; no gradients flow through the encoder. Every readout is paired with a separately trained classifier probe, and only the trainable readout (where applicable) and the probe are optimized. Each readout–probe configuration is trained with five seeds, and metrics are reported as mean ±
+
+standard deviation. Results for additional frozen encoders, CLIP (Radford et al. 2021) and SigLIP 2 (Tschannen et al. 2025), are reported in the appendix and show the same trends. Task-specific training protocols are provided in the appendix. 
+
+Synthetic Evaluation Measures For a trained readout r,let ˆyr (I) denote its predicted class. The base test set has 
+
+ntest examples (Ii, y i). For each base test image Ii, let Ji
+
+index its label-changing counterfactuals. We write Icf  
+
+> ij
+
+for counterfactual j ∈ J i and ycf 
+
+> ij
+
+̸ = yi for its new label. The set of evaluated counterfactual pairs is Csyn test = {(i, j ) : 1 ≤ i ≤
+
+ntest , j ∈ J i}. For brevity, we write cr (i) = 1[ˆ yr (Ii) = yi]
+
+and ccf  
+
+> r
+
+(i, j ) = 1[ˆ yr (Icf  
+
+> ij
+
+) = ycf  
+
+> ij
+
+] for correct predictions on base images and counterfactuals. Base test accuracy is 
+
+Acc test (r) = 1
+
+ntest 
+
+> ntest
+
+X
+
+> i=1
+
+cr (i). (8) Paired-counterfactual accuracy requires both the base image and its counterfactual to be classified correctly: 
+
+Acc paired -cf (r) = 1
+
+|C syn test |
+
+X
+
+> (i,j )∈C syn test
+
+cr (i) ccf  
+
+> r
+
+(i, j ). (9) If a base image has multiple counterfactuals, it contributes once for each pair. Under independent uniform guessing, the expected paired-counterfactual accuracy is E[Acc paired -cf ] = 1/C 2: approximately 2.8% for CSB ( C = 6 ) and 25% for CSD ( C = 2 ). 
+
+Nuisance-to-signal analysis. We compute the counterfac-tual nuisance-to-signal ratio of Equation (4) using the pre-probe representations. Each readout coordinate is standardized using its mean and standard deviation on the base training split. Within each distractor-count bin b, Ssyn  
+
+> r
+
+(b) is computed from the label-changing counterfactual pairs, and N syn  
+
+> r
+
+(b) is computed from the label-preserving nuisance groups. We set 
+
+εNSR = 10 −8.
+
+GQA ∗ Evaluation Measures For a trained readout r, let 
+
+ˆyr (I, Q ) denote its predicted color for image–question pair 
+
+(I, Q ). The test split contains npair same-image pairs, for a total of 2npair question examples. Pair p ∈ { 1, . . . , n pair }
+
+consists of an image Ip together with two question–label pairs (Qp, 1, y p, 1) and (Qp, 2, y p, 2) that refer to different object instances of the same category with different colors, so yp, 1̸ =
+
+yp, 2. Distinct pairs can share the same image. Analogously to the synthetic task, we write cr (p, j ) = 1[ˆ yr (Ip, Q p,j ) = 
+
+yp,j ] for a correct prediction. Our primary localized-binding measure is paired accuracy, 
+
+Acc paired (r) = 1
+
+npair 
+
+> npair
+
+X
+
+> p=1
+
+cr (p, 1) cr (p, 2) , (10) which credits a pair only when both localized selections on the shared image are correct. Under independent uniform guessing over the C = 10 color labels, the expected paired accuracy is E[Acc paired ] = 1 /C 2 = 0 .01 .
+
+Global Readout Failure under Synthetic Clutter 
+
+We first evaluate the readout interfaces on the controlled synthetic tasks. The synthetic construction allows us to dis-tinguish ordinary classification performance from sensitivity to the label-defining target conjunction, and to measure how both change as nuisance content increases. QO 
+
+> Summary
+> GAP
+> Foveated
+> Oracle
+> n/a
+> CSB
+> 3.2
+> 3.5
+> 93.5
+> 99.3
+> n/a
+> CSD
+> 53.6
+> 58.9
+> 93.7
+> 97.9
+> chance
+> GQA*
+> 2.3
+> 3.8
+> 4.3
+> 17.0
+> 33.0
+
+## Paired accuracy (%) Figure 4: Paired accuracy (%, mean ± std over seeds) on color–shape binding (CSB), crowded shape detection (CSD), and the GQA-derived localized color-binding task (GQA ∗). QO (question only) is a language-only baseline, Summary and GAP are pooled visual readouts, Foveated is the learned attention-pooling readout, and the hatched Oracle pools frozen patch tokens inside the target region as an upper bound. Red bands mark the per-task chance levels ( 2.8% , 25% , and 1% ); “n/a” marks conditions that do not apply. 
+
+Main Readout Comparison and Counterfactual Sensitiv-ity All readouts are near ceiling ( ≥ 99 .6% ) on the clean no-distractor split, so the frozen encoder represents the isolated colors and shapes needed for the task; the full per-readout table is provided in the appendix. Under clutter, the matched coun-terfactual evaluation separates the readouts sharply (Figure 4): the global readouts obtain paired-counterfactual accuracies of 3.2 ± 0.1% (Summary) and 3.5 ± 0.2% (GAP) against the 2.8% chance level, whereas the foveated readout reaches 
+
+93 .5 ± 0.6% , within 5.8 points of the 99 .3% oracle upper bound versus a roughly 96 -point gap for the global readouts. On the color-free CSD variant, which removes color cues and adversarial lures, the global readouts clear the 25% chance level (Summary 53 .6 ± 0.4% , GAP 58 .9 ± 0.4% ) but remain about 35 points below the foveated readout ( 93 .7 ± 1.0% ), which again approaches the oracle ( 97 .9 ± 0.1% ). Most of the target-binding signal is thus present in the frozen patch tokens but is poorly exposed by global spatial collapse. 
+
+Clutter Scaling and Nuisance-to-Signal Analysis Fig-ure 5 relates base-test accuracy to the counterfactual NSR by distractor-count bin. Although all readouts are near ceiling on the clean split, the global readouts deteriorate steadily with clutter: from the K = 10 –19 bin to the K = 40+ bin, GAP loses 20 .9 points of accuracy while its NSR grows from 
+
+6.97 to 15 .40 , and the pretrained summary readout behaves similarly. The foveated readout instead loses only 3.1 points and keeps its NSR near 0.30 across all bins, comparable to the oracle (NSR 0.29 –0.40 ). This matches the signal-dilution account behind the counterfactual NSR: global pooling atten-uates the localized representation change induced by the target edit while continuing to expose the probe to nuisance varia-tion, whereas selective pooling preserves the label-changing signal. 10 0 10 1
+
+NSR (log scale) 
+
+40 
+
+60 
+
+80 
+
+100 
+
+> Test accuracy (%)
+
+Accuracy vs. counterfactual NSR 
+
+Readout 
+
+GAP 
+
+Summary 
+
+Foveated 
+
+Oracle 
+
+log-linear fit 
+
+Figure 5: Base test accuracy versus counterfactual nuisance-to-signal ratio (NSR) by distractor-count bin K, MLP probe. Each point is one readout evaluated in one bin (the K = 0 bin is omitted, as with no distractors there is no nuisance); marker size grows with K. The pooled readouts (GAP, Summary) occupy the high-NSR, low-accuracy region, and their accuracy falls monotonically as clutter—and NSR—increase. The spatially selective readouts (Foveated, Oracle) remain in the low-NSR, high-accuracy corner across all bins. The dashed line is a log-linear fit across all points, indicating that higher NSR is associated with lower accuracy. 
+
+Adversarial-Lure Analysis Figure 6 examines sensitivity to the composition of the adversarial lures. The global readouts depend strongly on it: going from one to three lures raises GAP accuracy by 28 .4 points for target-shape lures, lowers it by 24 .9 points for counterpart-shape lures, and raises it by 15 .3 points for color lures, with the pretrained summary readout behaving similarly. This is consistent with the global probes counting scene-level features: color and target-shape lures help, counterpart-shape lures hurt. The foveated readout is almost invariant to these manipulations ( 97 .2–98 .6% ), as is the oracle ( 99 .3–99 .9% ). 
+
+Question-Conditioned Foveation on Natural Images 
+
+We next test whether the readout-level distinction observed in the controlled synthetic tasks extends to natural images. In the GQA-derived task, the two examples in each pair share the same image and object-category name but ask about different same-category object instances with different colors. 
+
+Main Readout Comparison Figure 4 reports the main results. The question-only baseline reaches 2.3 ± 0.4% paired accuracy: above the 1% chance level, so the generated ques-tions and object-category names carry some color prior, but one far too weak to answer both localized questions about the same image correctly. Adding a question-independent global visual representation improves paired accuracy only modestly (Summary 3.8 ± 0.6% , GAP 4.3 ± 0.3% ); although the late-fusion classifier receives a different question for each example, both examples in a pair receive the same visual vector after question-independent spatial collapse. Question-conditioned foveation is substantially stronger, 1 2 3 1 2 3 1 2 3
+
+## 40 
+
+## 60 
+
+## 80 
+
+## 100 
+
+> Test accuracy (%)
+
+## TS CS CL 
+
+## Accuracy vs. adversarial lures 
+
+GAP 
+
+Foveated 
+
+Summary 
+
+Oracle Figure 6: Accuracy under adversarial lures (MLP probe). Blocks show target-shape (TS), counterpart-shape (CS), and color (CL) lures; within each block the x-axis is the lure count ( 1–3). The global readouts (GAP, Summary) swing strongly with lure composition—rising with target-shape and color lures, falling with counterpart-shape lures—while the foveated and oracle readouts stay near ceiling throughout. reaching 17 .0 ± 0.7% paired accuracy—about 4× the global readouts—because the question constructs the attention query, allowing the two questions in a same-image pair to select different visual evidence before the patch tokens are collapsed into a single vector. The oracle readout reaches 33 .0 ± 0.7% 
+
+paired accuracy; because it uses the target box only to pool frozen patch tokens and is not given the color label, the frozen spatial representation contains additional object-specific color information that the learned fovea does not yet recover. The or-acle’s absolute level largely reflects the benchmark rather than the representation: scene-graph bounding boxes and color labels are noisy, color naming is often genuinely ambiguous (many objects are multi-colored), and paired accuracy com-pounds the errors of two questions. Still, foveation closes roughly 45% of the summary-to-oracle gap in paired accu-racy. The resulting ordering (question only < summary/GAP 
+
+< foveated < oracle) supports the same interface-level in-terpretation as the synthetic experiment: substantially more localized information is available in the frozen patch tokens than is exposed by a question-independent global image representation. 
+
+Attention Concentration Diagnostics We report atten-tion statistics for the learned-temperature foveated readout on the validation split at the validation-selected checkpoint. Let αij be the attention weight assigned to patch j for val-idation example i, and let Hi(α) = − PNj=1 αij log αij 
+
+be its attention entropy. We report the effective number of attended patches, EffPatches = 1
+
+> nval
+
+Pnval  
+
+> i=1
+
+exp( Hi(α)) ,and the mean maximum attention weight, MaxAttn =
+
+> 1
+> nval
+
+Pnval  
+
+> i=1
+
+max 1≤j≤N αij . EffPatches equals 1 for one-hot attention and N = 729 for uniform attention. The reported diagnostics are averaged first over validation examples and then over seeds. The attention temperature is initialized at the standard dot-product scale, T0 = √d ≈ 33 .9, but the selected models converge to a temperature of 14 .2 ± 3.3. Because the attention logits are divided by the temperature before the softmax, the lower learned value produces a sharper attention distribution than the initialization. The learned attention remains soft rather than collapsing to a hard single-patch selection. Its effective number of attended patches is 5.2 ± 1.2, and its mean maximum patch weight is 0.621 ± 0.035 . Thus, the foveated readout concentrates most of its attention on a small subset of the 729 patch tokens rather than approaching uniform global pooling. 
+
+# Conclusion 
+
+Failures on spatial and compositional tasks are often taken as evidence that vision foundation models do not represent the required information. Our results show that this conclusion can depend critically on the interface used to inspect the model. Holding a vision encoder fixed and varying only its readout, we find that localized binding information can remain available in the final patch tokens while becoming difficult to recover after those tokens are compressed into a question-independent global image vector. Poor performance from a global embedding therefore does not, by itself, establish a representational absence. The controlled experiments make this distinction explicit. On color–shape binding, global readouts deteriorate steadily as clutter grows and are largely insensitive to matched edits that change the target label while preserving global color and shape statistics, whereas a single-query foveated readout, trained without any location supervision, reaches near-oracle accuracy and remains nearly invariant to clutter and lure composition; the crowded shape-detection variant shows that the gap persists even without color cues. The counterfac-tual nuisance-to-signal ratio supplies the mechanism: global pooling attenuates the localized change that determines the label while continuing to expose the probe to variation from irrelevant objects. The natural-image experiment shows that the same issue is not confined to synthetic scenes: letting the question construct the attention query before spatial collapse yields roughly four times the paired accuracy of the global readouts. Our experiments span three frozen vision–language en-coders and focus on localized attribute binding; extending the diagnostic to other architectures, layers, pretraining objec-tives, and more complex relational tasks is future work. The foveated probe is likewise not a replacement for architectures with richer cross-modal interaction: its value is that it changes the readout while leaving the underlying representation fixed, directly testing where task information becomes inaccessible. These findings suggest a broader evaluation principle: before attributing a localized failure to the representation learned by a foundation model, one should test whether the conclusion survives a readout that preserves or selectively accesses its spatial tokens. Global embeddings are useful summaries, but they should not be mistaken for complete accounts of what a frozen vision model knows. Acknowledgement. Supported by the Intelligence Advanced Research Projects Activity (IARPA) via Department of In-terior/ Interior Business Center (DOI/IBC) contract number 140D0423C0076. The U.S. Government is authorized to re-produce and distribute reprints for Governmental purposes notwithstanding any copyright annotation thereon. Disclaimer: The views and conclusions contained herein are those of the authors and should not be interpreted as necessarily repre-senting the official policies or endorsements, either expressed or implied, of IARPA, DOI/IBC, or the U.S. Government. 
+
+# References 
+
+Alayrac, J.-B.; Donahue, J.; Luc, P.; Miech, A.; Barr, I.; Hasson, Y.; Lenc, K.; Mensch, A.; Millican, K.; Reynolds, M.; et al. 2022. Flamingo: a visual language model for few-shot learning. Advances in neural information processing systems , 35: 23716–23736. Anderson, P.; He, X.; Buehler, C.; Teney, D.; Johnson, M.; Gould, S.; and Zhang, L. 2018. Bottom-up and top-down attention for image captioning and visual question answering. In Proceedings of the IEEE conference on computer vision and pattern recognition , 6077–6086. Campbell, D.; Rane, S.; Giallanza, T.; De Sabbata, N.; Ghods, K.; Joshi, A.; Ku, A.; Frankland, S. M.; Griffiths, T. L.; Cohen, J. D.; et al. 2024. Understanding the limits of vision language models through the lens of the binding problem. Advances in Neural Information Processing Systems , 37: 113436–113460. Hudson, D. A.; and Manning, C. D. 2019. Gqa: A new dataset for real-world visual reasoning and compositional question answering. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 6700–6709. Izadi, A.; Banayeeanzade, M.; Askari, F.; Rahimiakbar, A.; Vahedi, M.; Hasani, H.; and Baghshah, M. 2026. Visual structures help visual reasoning: Addressing the binding prob-lem in LVLMs. Advances in Neural Information Processing Systems , 38: 162930–162968. Kahneman, D.; Treisman, A.; and Gibbs, B. J. 1992. The reviewing of object files: Object-specific integration of infor-mation. Cognitive psychology , 24(2): 175–219. Kamath, A.; Hessel, J.; and Chang, K.-W. 2023. What’s “up” with vision-language models? Investigating their struggle with spatial reasoning. In EMNLP .Kamath, A.; Hsieh, C.-Y.; Chang, K.-W.; and Krishna, R. 2024. The hard positive truth about vision-language com-positionality. In European Conference on Computer Vision ,37–54. Springer. Kingma, D. P.; and Ba, J. 2015. Adam: A Method for Stochastic Optimization. In International Conference on Learning Representations (ICLR) .Koishigarina, D.; Uselis, A.; and Oh, S. J. 2025. Clip behaves like a bag-of-words model cross-modally but not uni-modally. 
+
+arXiv preprint arXiv:2502.03566 .Krishna, R.; Zhu, Y.; Groth, O.; Johnson, J.; Hata, K.; Kravitz, J.; Chen, S.; Kalantidis, Y.; Li, L.-J.; Shamma, D. A.; et al. 2017. Visual genome: Connecting language and vision using crowdsourced dense image annotations. International journal of computer vision , 123(1): 32–73. Lee, J.; Lee, Y.; Kim, J.; Kosiorek, A.; Choi, S.; and Teh, Y. W. 2019. Set transformer: A framework for attention-based permutation-invariant neural networks. In International conference on machine learning , 3744–3753. PMLR. Lewis, M.; Nayak, N.; Yu, P.; Merullo, J.; Yu, Q.; Bach, S.; and Pavlick, E. 2024. Does clip bind concepts? probing compositionality in large image models. In Findings of the Association for Computational Linguistics: EACL 2024 ,1487–1500. Li, J.; Li, D.; Savarese, S.; and Hoi, S. 2023. Blip-2: Bootstrap-ping language-image pre-training with frozen image encoders and large language models. In International conference on machine learning , 19730–19742. PMLR. Liu, F.; Emerson, G.; and Collier, N. 2023. Visual spatial reasoning. Transactions of the Association for Computational Linguistics , 11: 635–651. Liu, H.; Li, C.; Wu, Q.; and Lee, Y. J. 2023. Visual instruction tuning. Advances in neural information processing systems ,36: 34892–34916. Qiu, C.; Wu, Y.; Ke, W.; Bai, X.; and Zhang, T. 2025. Refining CLIP’s Spatial Awareness: A Visual-Centric Perspective. 
+
+arXiv preprint arXiv:2504.02328 .Radford, A.; Kim, J. W.; Hallacy, C.; Ramesh, A.; Goh, G.; Agarwal, S.; Sastry, G.; Askell, A.; Mishkin, P.; Clark, J.; et al. 2021. Learning transferable visual models from natural language supervision. In International conference on machine learning , 8748–8763. PmLR. Rahmanzadehgervi, P.; Bolton, L.; Taesiri, M. R.; and Nguyen, A. T. 2024. Vision language models are blind. In Proceedings of the Asian Conference on Computer Vision , 18–34. Rao, Y.; Zhao, W.; Chen, G.; Tang, Y.; Zhu, Z.; Huang, G.; Zhou, J.; and Lu, J. 2022. Denseclip: Language-guided dense prediction with context-aware prompting. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 18082–18091. Stogiannidis, I.; McDonagh, S.; and Tsaftaris, S. A. 2025. Mind the gap: Benchmarking spatial reasoning in vision-language models. arXiv preprint arXiv:2503.19707 .Subramanian, S.; Merrill, W.; Darrell, T.; Gardner, M.; Singh, S.; and Rohrbach, A. 2022. Reclip: A strong zero-shot base-line for referring expression comprehension. arXiv preprint arXiv:2204.05991 .Thrush, T.; Jiang, R.; Bartolo, M.; Singh, A.; Williams, A.; Kiela, D.; and Ross, C. 2022. Winoground: Probing vision and language models for visio-linguistic compositionality. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 5238–5248. Tong, S.; Liu, Z.; Zhai, Y.; Ma, Y.; LeCun, Y.; and Xie, S. 2024. Eyes wide shut? exploring the visual shortcomings of multimodal llms. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 9568–9578. Treisman, A.; and Schmidt, H. 1982. Illusory conjunctions in the perception of objects. Cognitive psychology , 14(1): 107–141. Treisman, A. M.; and Gelade, G. 1980. A feature-integration theory of attention. Cognitive psychology , 12(1): 97–136. Tschannen, M.; Gritsenko, A.; Wang, X.; Naeem, M. F.; Alabdulmohsin, I.; Parthasarathy, N.; Evans, T.; Beyer, L.; Xia, Y.; Mustafa, B.; Hénaff, O.; Harmsen, J.; Steiner, A.; and Zhai, X. 2025. SigLIP 2: Multilingual Vision-Language Encoders with Improved Semantic Understanding, Localization, and Dense Features. arXiv preprint arXiv:2502.14786 .Uselis, A.; Dittadi, A.; and Oh, S. J. 2025. Does Data Scaling Lead to Visual Compositional Generalization? arXiv preprint arXiv:2507.07102 .Wang, F.; Mei, J.; and Yuille, A. 2024. Sclip: Rethinking self-attention for dense vision-language inference. In European conference on computer vision , 315–332. Springer. Xu, K.; Ba, J.; Kiros, R.; Cho, K.; Courville, A.; Salakhudinov, R.; Zemel, R.; and Bengio, Y. 2015. Show, attend and tell: Neural image caption generation with visual attention. In 
+
+International conference on machine learning , 2048–2057. PMLR. Yuksekgonul, M.; Bianchi, F.; Kalluri, P.; Jurafsky, D.; and Zou, J. 2022. When and why vision-language models behave like bags-of-words, and what to do about it? arXiv preprint arXiv:2210.01936 .Zhai, X.; Mustafa, B.; Kolesnikov, A.; and Beyer, L. 2023. Sigmoid loss for language image pre-training. In Proceedings of the IEEE/CVF international conference on computer vision ,11975–11986. Zhao, T.; Zhang, T.; Zhu, M.; Shen, H.; Lee, K.; Lu, X.; and Yin, J. 2022. Vl-checklist: Evaluating pre-trained vision-language models with objects, attributes and relations. arXiv preprint arXiv:2207.00221 .Zhou, C.; Loy, C. C.; and Dai, B. 2022. Extract free dense labels from clip. In European conference on computer vision ,696–712. Springer. Technical Appendix & Supp. Material 
+
+In this appendix we provide the material deferred from the main paper. We begin with an extended discussion of related work, then report the full result tables promised in the main text: the complete readout comparison, the accuracy-versus-NSR analysis, and the per-lure accuracy breakdown, each extended from the main paper’s SigLIP-with-MLP-probe configuration to the CLIP and SigLIP 2 encoders and to linear probes. We then document the task-specific training protocols, the construction of the three evaluation datasets—the color– shape binding task (CSB), the crowded shape-detection task (CSD), and the GQA-derived localized color-binding task (GQA ∗)—and the computing infrastructure. 
+
+Related Work 
+
+This subsection expands the discussion of related work de-ferred from the main paper. We first review evidence that vision–language models fail on compositional and spatially localized queries, and connect these failures to classical ac-counts of the binding problem. We then relate our diagnostic to work on dense patch-token representations, attribute binding, question-conditioned localization in VQA, and counterfactual evaluation protocols. 
+
+Spatial and compositional failures in VLMs. Large-scale vision–language models are often evaluated through image– text matching, retrieval, or visual question answering, where a global visual representation is compared with or fused into language (Radford et al. 2021; Zhai et al. 2023). A substantial body of work shows that these models can recognize objects and attributes while failing on compositional queries that require binding them to the correct referents. Winoground tests whether models distinguish captions that swap object– relation structure (Thrush et al. 2022); VL-Checklist and related benchmarks probe object, attribute, and relation sensi-tivity (Zhao et al. 2022); and bag-of-words analyses show that contrastive models often behave as if captions and images were unordered collections of concepts (Yuksekgonul et al. 2022). Spatial reasoning benchmarks reach similar conclu-sions: models that perform well on broad image–text tasks often struggle with left/right, above/below, containment, and other localized relations (Liu, Emerson, and Collier 2023; Kamath, Hessel, and Chang 2023; Subramanian et al. 2022). More recent work sharpens this diagnosis. Lewis et al. directly ask whether CLIP binds concepts, finding that per-formance drops when multiple objects or relations require structure-sensitive binding (Lewis et al. 2024). Tong et al. construct CLIP-blind pairs and the MMVP benchmark, show-ing that visually distinct images can be close in CLIP space and that these failures transfer to multimodal LLMs (Tong et al. 2024). Rahmanzadehgervi et al. similarly argue that modern VLMs remain brittle on simple visual tasks despite strong benchmark performance (Rahmanzadehgervi et al. 2024). Campbell et al. connect such failures to the classical binding problem, arguing that multi-object reasoning can in-duce representational interference when distinct entities share common representational resources (Campbell et al. 2024). In 2025, new spatial benchmarks such as SRBench continue to find that current VLMs perform near chance on carefully isolated spatial-reasoning tasks (Stogiannidis, McDonagh, and Tsaftaris 2025). Our work agrees that localized binding is a persistent failure mode, but asks a different mechanistic question: whether the failure reflects missing information in the frozen encoder, or information lost when patch tokens are collapsed into a global interface. 
+
+The binding problem and selective visual attention. The motivation for our synthetic task follows classical accounts of visual binding. Feature-integration theory argues that conjunc-tions of separable features, such as color and shape, require attention to bind features to the same object (Treisman and Gelade 1980; Treisman and Schmidt 1982). Object-file theory likewise proposes temporary, object-specific episodic repre-sentations in which successive states of a perceived object are linked and integrated (Kahneman, Treisman, and Gibbs 1992). Recent VLM work has revisited the binding problem through the lens of serial and spatially organized processing. Campbell et al. interpret failures on multi-object tasks as consequences of the binding problem and compare these failure modes to limitations of rapid feedforward processing in human vision (Campbell et al. 2024). Izadi et al. propose VISER, which combines simple visual scaffolds, such as hor-izontal or grid lines, with prompts that encourage sequential, spatially grounded parsing (Izadi et al. 2026). Their results show that such input structuring can mitigate binding-related failures across several visual-reasoning tasks. Our foveated readout is related in spirit but differs in pur-pose. We do not modify the input image, prompt a generative model, or train a new vision tower. Instead, we keep the encoder fixed and train a single-query attention readout over final patch tokens. The readout is therefore a diagnostic in-tervention: if a small selector recovers the target conjunction while GAP and summary readouts fail, then the relevant binding signal was present in the frozen spatial tokens but suppressed by the global embedding interface. 
+
+Global embeddings v.s. dense patch-token representations. 
+
+Contrastive image–text encoders are commonly optimized for global alignment: an image is compressed into a class token, pooled output, or global average before being compared with a text embedding. This makes the standard interface well suited to image-level recognition and retrieval, but potentially lossy for tasks whose label depends on a small region or on selecting one object among many. Dense prediction work has long exploited the fact that CLIP-like models retain useful patch-level information despite their image-level training. MaskCLIP extracts dense labels from CLIP features without fully supervised segmentation training (Zhou, Loy, and Dai 2022); DenseCLIP and related methods adapt CLIP to pixel-or region-level prediction (Rao et al. 2022); and SCLIP modifies self-attention to improve dense vision–language inference (Wang, Mei, and Yuille 2024). Qiu et al. argue that CLIP contains useful spatial correlations and propose distillation methods to preserve and refine spatial awareness for open-vocabulary dense prediction (Qiu et al. 2025). This line of work is closely related to our claim that patch tokens contain information not exposed by global embeddings. However, dense-prediction methods typically aim to improve segmentation, detection, or open-vocabulary grounding, often by changing attention, fine-tuning, distilling, or adding region-level training objectives. Our goal is instead to isolate the evaluation interface. We compare GAP, pretrained summary tokens, learned foveation, and oracle target-token pooling on the same frozen encoder and the same downstream task. The oracle readout estimates what is available in the frozen patch tokens when location is supplied, while the learned fovea tests whether a lightweight selector can recover that signal without masks at training time. 
+
+Attribute binding and the role of the interface. Recent compositionality work increasingly suggests that apparent global failures may coexist with more structured information in parts of the model. Koishigarina et al. find that CLIP behaves like a bag-of-words model cross-modally but not necessarily unimodally: attribute–object binding information can be present within individual image and text modalities, while cosine alignment between global embeddings fails to use it correctly (Koishigarina, Uselis, and Oh 2025).Uselis et al. similarly distinguish concept decodability from composi-tional organization: individual concepts can be recoverable from learned features even when models fail on unseen com-binations, while stronger generalization emerges alongside a more linearly factored feature geometry (Uselis, Dittadi, and Oh 2025). Kamath et al. show that improvements on compositional hard negatives can be overstated if evalua-tions do not also test hard positives, motivating more careful minimal-pair protocols (Kamath et al. 2024). These findings are complementary to ours: rather than asking only whether a model has a compositional representation, we ask which readout exposes the relevant compositional signal. 
+
+Question-conditioned localization in VQA. Spatial atten-tion has been central to image captioning and VQA since early attention-based models, which use language or decoder state to weight image regions before producing an answer or caption (Xu et al. 2015; Anderson et al. 2018). Mod-ern multimodal architectures likewise provide language with access to multiple visual features, but through different in-terfaces. Flamingo uses a Perceiver Resampler followed by gated cross-attention in the language model (Alayrac et al. 2022); BLIP-2 uses a Q-Former whose learned queries cross-attend to frozen image features (Li et al. 2023); and LLaVA projects visual grid features into the language embedding space and processes the resulting visual tokens together with text tokens in the language model (Liu et al. 2023). Our foveated readout is not proposed as an alternative to these full multimodal architectures. Rather, it is a diagnostic in-tervention that holds the vision encoder fixed and isolates the value of question-conditioned visual selection before spatial collapse. Our GQA-derived evaluation instantiates a minimal localized binding problem in natural images: two paired questions share the same pixels and object category but refer to different same-category instances with different colors. In this setting, a question-independent global image vector provides the same visual summary for both questions, whereas a question-conditioned foveated readout can select different visual evidence before pooling. The GQA experi-ment therefore serves as a natural-image counterpart to the synthetic color–shape binding task. 
+
+Counterfactual diagnostics and nuisance variation. Sev-eral compositional benchmarks use hard negatives or minimal pairs to prevent models from succeeding through single-concept recognition (Thrush et al. 2022; Yuksekgonul et al. 2022; Kamath et al. 2024). Our synthetic setting extends this idea with matched label-changing counterfactuals and label-preserving nuisance groups. The counterfactuals alter the target conjunction while preserving nuisance statistics whenever possible; the nuisance groups vary irrelevant scene content while keeping the label fixed. This lets us mea-sure not only accuracy, but also the nuisance-to-signal ratio of a readout. The resulting analysis connects a qualitative failure—global readouts ignore target edits under clutter—to a representation-level mechanism: global pooling attenu-ates localized label-changing signal while retaining variation from irrelevant objects. Thus, our contribution is not a new benchmark alone, but a diagnostic framework for separating representation failure from readout failure. 
+
+Additional Results 
+
+This subsection reports the full result tables promised in the main paper. Each table extends one main-paper analysis—the readout comparison, the accuracy-versus-NSR analysis, and the per-lure accuracy breakdown—from the SigLIP encoder with an MLP probe to all three encoders and both probe heads. We briefly discuss each table in turn. 
+
+Full Readout Comparison Table 1 reports clean and paired accuracy for every combination of encoder (SigLIP, CLIP, SigLIP 2), probe (linear, MLP), and readout. The ordering established in the main paper replicates in every configuration: on CSB, the global readouts (Summary, GAP) reach at most 
+
+8.7% paired-counterfactual accuracy—near the 2.8% chance level—despite near-perfect clean accuracy in most configura-tions, while the foveated readout reaches 93 .5–99 .2% , close to the oracle. The separation persists on the color-free CSD task and on GQA ∗, where foveation improves paired accuracy approximately 4× or more over the global readouts for every encoder. The gap is not a matter of probe capacity: linear probes show the same pattern as MLPs. 
+
+Accuracy versus NSR under Clutter Table 2 extends the accuracy-versus-NSR analysis of the main paper to all encoders and probes. For every configuration, the global readouts pair falling accuracy with an NSR that grows from approximately 5–8 in the K=10 –19 bin to 9–17 at K=40+ :nuisance edits move the embedding far more than label-changing ones, and increasingly so under clutter. The foveated and oracle readouts instead hold NSR approximately constant (0.16 –0.40 ) with accuracy of 96% or higher in every bin. 
+
+Accuracy by Lure Type and Count Table 3 breaks base CSB accuracy down by lure type and per-type lure count. The global readouts are systematically lure-dependent: accuracy rises with additional target-shape and color lures but drops as counterpart-shape lures are added, the signature of a decision driven by scene-level color and shape statistics rather than by the target conjunction. The foveated and oracle readouts are essentially flat across all nine cells, staying above 97% for every encoder and probe. Training Protocols 
+
+Encoder features are precomputed once and cached, so the encoder is never part of the training graph. Only the readout (where applicable) and the probe are trained, with five seeds (0–4) per configuration and no data augmentation beyond each checkpoint’s default preprocessing. 
+
+Synthetic binding tasks (CSB and CSD). Both synthetic tasks use an identical recipe across all three encoders and differ only in the number of classes ( C=6 vs. C=2 ). The MLP probe is Linear( D → 128) –GELU– Linear(128 → C), and the linear probe is a single Linear( D → C), where D is the encoder’s feature dimension ( 1152 for SigLIP and SigLIP 2, 
+
+1024 for CLIP). The foveated readout trains a single query vector q ∈ RD (initialized N (0 , 0.02 2)) with the patch tokens acting as their own keys and values and no temperature scaling. Training uses the Adam optimizer (Kingma and Ba 2015) with default hyperparameters and no weight decay, learning rate 10 −3, batch size 512, 30 epochs, a constant schedule, and unweighted softmax cross-entropy on the 6,000 /2,000 /2,000 
+
+train/val/test splits. The checkpoint with the best validation top-1 accuracy is restored for evaluation. 
+
+GQA ∗ color binding. The MLP probe is Linear( d → 512) –ReLU–Dropout– Linear(512 → 10) , with the dropout rate selected per seed on validation from {0.1, 0.2, 0.3, 0.5}. The linear probe is a single layer without dropout. The foveated readout trains a query map Wq ∈ Rdtext ×dpatch , layer nor-malizations of the text embedding and of the patch tokens (a per-token standardization of the features, applied only when computing the attention scores, while pooling uses the un-normalized patches), and a scalar temperature parameterized as log T , initialized at pdpatch . The text embedding t(Q)
+
+comes from the text tower of the same frozen checkpoint as the vision features (for CLIP, dtext =768 ̸ = dpatch =1024 ). Training uses Adam with weight decay 10 −4, learning rate 
+
+10 −3 (identical across encoders), batch size 256, 50 epochs, constant schedule, and cross-entropy with inverse-frequency class weights over the 10 color classes ( ≈6:1 imbalanced). Checkpoint of best validation paired accuracy used for testing. 
+
+Dataset Construction Details 
+
+Here, we explain how the three evaluation datasets are built. For CSB we specify the shape vocabulary, the color palette, the object placement process, and the generation of counterfactual pairs and nuisance groups. For CSD we describe the size sampling and placement changes of the color-free variant. For GQA ∗ we describe the filtering of scene-graph objects, the mining of same-category color pairs, and the split protocol. 
+
+Color–shape binding (CSB). The 18 distractor-only shapes are the inverted, left-, and right-rotated triangles, square, 4-, 5-, 6-, and 8-pointed stars, 4 semicircle orientations, plus, latin cross, chevron, parallelogram, diamond, and ellipse. The palette is red ( #E51919 ), orange ( #FF7F00 ), yellow (#E5CC00 ), green ( #00B200 ), blue ( #1919E5 ), and pur-ple ( #990099 ) on a white canvas. All objects share one fixed size (half-extent 0.037 of the image width, ≈14 px) and fixed canonical orientations, and no rotation is sampled. Object cen-ters are drawn uniformly with an edge margin, placed by rejec-tion sampling under a minimum center-to-center distance of twice the shape extent (200 attempts per object). An unplace-able distractor is dropped (metadata records realized counts), and the scene is regenerated if the target fails to place. Lure counts are sampled i.i.d. per type, ni ∼ Uniform {1, 2, 3}.For each base scene, up to 5 counterfactuals (one per other class) are built by histogram-preserving attribute swaps with a matched partner object: a noise object carrying the needed color for color swaps, or a counterpart-shape lure for shape swaps. A candidate is accepted if all required partners exist, yielding 5, 3, or 1 counterfactuals per base scene and 9,366 
+
+over the test split. Each of the 16 nuisance variants fixes the target, K, and λ, and resamples all non-target positions, shapes, and colors under the same role constraints. 
+
+Crowded shape detection (CSD). CSD inherits the canvas, distractor vocabulary, fixed orientations, and split sizes from CSB, including a 500-image clean K=0 split. The target half-extent is 0.02 of the image width ( ≈8 px), distractor sizes are 1–11 .5× the target’s, and all objects are solid black. Placement is analogous to CSB but spaces per-shape safety circles with a fixed 14 px margin. An unplaceable distractor is shrunk stepwise (never below 1×) rather than dropped, so every scene retains its sampled K. There are exactly 2,000 
+
+counterfactuals, one per test image, flipping the target shape in place while preserving everything else. 
+
+GQA-derived color binding (GQA ∗). We pool the images of the official GQA train and val scene-graph releases. All questions are generated from the scene graphs (GQA’s own questions are not used). An object is color-bearing if both bounding-box sides are ≥ 8 px and exactly one color from a 15-word vocabulary appears among its attributes (the match is literal, with no synonym normalization, and multi-color annotations are rejected). A category in an image yields a pair if it has exactly two color-bearing instances with different colors whose box centers are ≥ 20 px apart on the disam-biguating axis (the axis of larger center displacement). That axis determines the relation ( left /right /above /below ). Contributing images are split 80 /10 /10 image-disjointly with both members of a pair sharing a split ( 17 ,994 /2,266 /2,242 
+
+examples). The reported set keeps pairs whose two labels are both among the ten most frequent colors: white, black, blue, red, brown, green, gray, yellow, orange, and pink. Images are anisotropically resized to 384 × 384 with boxes scaled accordingly. The oracle input is the target’s ground-truth box cropped from the resized image and stretched to 384 × 384 .
+
+Computing Infrastructure 
+
+All experiments were run on a single Linux server (Ubuntu 24.04 LTS) with 8 × NVIDIA A40 GPUs (48 GB each), an AMD EPYC 7763 64-core CPU, and 2 TB of RAM. Each experiment uses a single GPU. All experiments use Python 3.11.15, PyTorch 2.6.0 (CUDA 12.4, cuDNN 9.2), and Hugging Face transformers 5.12.1. Frozen encoder checkpoints and their preprocessing are obtained from the Hugging Face Hub via transformers : SigLIP (google/siglip-so400m-patch14-384 ), SigLIP 2 (google/siglip2-so400m-patch14-384 ), and CLIP ( openai/clip-vit-large-patch14-336 ). CSB CSD GQA ∗
+
+Config Readout Clean Paired-CF Clean Paired-CF Paired SigLIP, Linear QO n/a n/a n/a n/a 2.8 ± 0.5 SigLIP, Linear Summary 100.0 ± 0.0 2.8 ± 0.0 96.4 ± 1.4 47.2 ± 0.2 1.8 ± 0.3 SigLIP, Linear GAP 99.8 ± 0.5 2.8 ± 0.1 86.8 ± 7.3 52.3 ± 0.3 1.8 ± 0.5 SigLIP, Linear Foveated 96.6 ± 3.1 94.1 ± 1.5 97.1 ± 0.3 94.2 ± 0.4 16.2 ± 0.4 SigLIP, Linear Oracle 100.0 ± 0.0 99.3 ± 0.1 98.4 ± 0.2 97.5 ± 0.1 31.5 ± 0.9 SigLIP, MLP QO n/a n/a n/a n/a 2.3 ± 0.4 SigLIP, MLP Summary 100.0 ± 0.0 3.2 ± 0.1 92.9 ± 9.4 53.6 ± 0.4 3.8 ± 0.6 SigLIP, MLP GAP 100.0 ± 0.0 3.5 ± 0.2 49.2 ± 0.2 58.9 ± 0.4 4.3 ± 0.3 SigLIP, MLP Foveated 99.6 ± 0.2 93.5 ± 0.6 97.7 ± 0.1 93.7 ± 1.0 17.0 ± 0.7 SigLIP, MLP Oracle 100.0 ± 0.0 99.3 ± 0.1 97.9 ± 0.1 97.9 ± 0.1 33.0 ± 0.7 CLIP, Linear QO n/a n/a n/a n/a 2.1 ± 0.6 CLIP, Linear Summary 99.4 ± 0.7 5.7 ± 0.2 49.0 ± 0.0 48.0 ± 0.6 0.9 ± 0.3 CLIP, Linear GAP 52.8 ± 2.0 2.2 ± 0.2 51.6 ± 2.0 31.1 ± 0.6 1.1 ± 0.2 CLIP, Linear Foveated 96.0 ± 2.0 99.1 ± 0.2 99.9 ± 0.2 97.8 ± 1.3 15.6 ± 0.8 CLIP, Linear Oracle 100.0 ± 0.0 99.8 ± 0.1 100.0 ± 0.0 99.8 ± 0.1 29.4 ± 0.8 CLIP, MLP QO n/a n/a n/a n/a 2.4 ± 0.2 CLIP, MLP Summary 96.9 ± 1.8 8.7 ± 0.3 49.0 ± 0.0 53.8 ± 0.5 4.2 ± 0.5 CLIP, MLP GAP 45.9 ± 1.8 2.6 ± 0.2 49.0 ± 0.0 35.8 ± 0.2 3.3 ± 0.3 CLIP, MLP Foveated 97.2 ± 2.9 99.2 ± 0.1 98.1 ± 3.2 97.4 ± 0.9 17.7 ± 0.7 CLIP, MLP Oracle 100.0 ± 0.0 99.8 ± 0.0 100.0 ± 0.0 99.8 ± 0.0 31.3 ± 0.9 SigLIP 2, Linear QO n/a n/a n/a n/a 2.3 ± 0.4 SigLIP 2, Linear Summary 100.0 ± 0.0 2.6 ± 0.1 99.0 ± 0.4 51.4 ± 1.1 1.4 ± 0.3 SigLIP 2, Linear GAP 99.2 ± 0.9 2.2 ± 0.1 96.8 ± 6.5 57.9 ± 0.1 1.0 ± 0.1 SigLIP 2, Linear Foveated 100.0 ± 0.0 97.5 ± 0.3 98.7 ± 0.1 97.3 ± 0.6 24.7 ± 1.1 SigLIP 2, Linear Oracle 99.9 ± 0.1 99.9 ± 0.1 99.8 ± 0.2 98.9 ± 0.1 36.5 ± 0.3 SigLIP 2, MLP QO n/a n/a n/a n/a 2.3 ± 0.4 SigLIP 2, MLP Summary 100.0 ± 0.0 3.2 ± 0.1 98.4 ± 2.2 64.3 ± 0.6 3.9 ± 0.4 SigLIP 2, MLP GAP 99.6 ± 0.6 2.9 ± 0.1 98.8 ± 0.2 70.9 ± 0.5 3.9 ± 0.2 SigLIP 2, MLP Foveated 100.0 ± 0.0 97.5 ± 0.3 99.4 ± 0.5 97.8 ± 0.3 25.4 ± 1.2 SigLIP 2, MLP Oracle 100.0 ± 0.1 99.9 ± 0.0 99.6 ± 0.2 99.0 ± 0.1 37.8 ± 1.0 Chance 16.7 2.8 50.0 25.0 1.0 
+
+Table 1: Full readout comparison: clean and paired accuracy (%) on the color–shape binding task (CSB), the crowded shape-detection task (CSD), and the GQA-derived localized color-binding task (GQA ∗), for the SigLIP, CLIP, and SigLIP 2 encoders with linear and MLP probes. Clean accuracy is measured on the no-distractor split. Paired accuracy is paired-counterfactual accuracy for CSB and CSD, and paired accuracy for GQA ∗. Each entry is the mean ± one standard deviation over five training seeds. The SigLIP, MLP rows correspond to the results reported in the main paper. K=10–19 K=20–29 K=30–39 K=40+ Config Readout Acc NSR Acc NSR Acc NSR Acc NSR SigLIP, Linear Summary 59.4 7.10 50.4 10.42 43.1 12.88 41.2 14.96 SigLIP, Linear GAP 62.8 6.97 52.3 10.40 44.5 13.35 40.4 15.40 SigLIP, Linear Foveated 99.0 0.31 98.7 0.30 98.2 0.29 97.1 0.30 SigLIP, Linear Oracle 99.8 0.29 99.8 0.34 99.5 0.37 99.2 0.40 SigLIP, MLP Summary 61.9 7.10 56.4 10.42 47.7 12.88 42.2 14.96 SigLIP, MLP GAP 65.7 6.97 58.4 10.40 50.4 13.35 44.8 15.40 SigLIP, MLP Foveated 99.1 0.32 98.7 0.30 97.9 0.29 96.0 0.30 SigLIP, MLP Oracle 99.8 0.29 99.8 0.34 99.6 0.37 99.1 0.40 CLIP, Linear Summary 68.9 6.27 58.0 9.38 51.2 12.33 48.3 13.29 CLIP, Linear GAP 50.7 4.90 42.9 6.80 34.3 8.02 33.9 8.68 CLIP, Linear Foveated 99.8 0.25 100.0 0.24 99.4 0.23 99.3 0.23 CLIP, Linear Oracle 100.0 0.31 100.0 0.34 100.0 0.36 99.6 0.39 CLIP, MLP Summary 72.8 6.27 64.3 9.38 53.7 12.33 52.2 13.29 CLIP, MLP GAP 57.6 4.90 50.8 6.80 41.9 8.02 37.7 8.68 CLIP, MLP Foveated 100.0 0.27 99.9 0.26 99.8 0.25 99.3 0.25 CLIP, MLP Oracle 100.0 0.31 100.0 0.34 100.0 0.36 99.6 0.39 SigLIP 2, Linear Summary 56.4 7.54 46.2 10.50 41.4 13.15 41.0 15.65 SigLIP 2, Linear GAP 58.7 7.75 50.1 11.19 44.7 14.15 43.2 16.86 SigLIP 2, Linear Foveated 100.0 0.17 99.6 0.16 98.8 0.17 98.4 0.18 SigLIP 2, Linear Oracle 100.0 0.16 100.0 0.18 100.0 0.21 99.8 0.23 SigLIP 2, MLP Summary 63.3 7.54 52.8 10.50 48.5 13.15 43.9 15.65 SigLIP 2, MLP GAP 65.3 7.75 56.1 11.19 49.3 14.15 46.4 16.86 SigLIP 2, MLP Foveated 99.8 0.17 99.6 0.16 99.0 0.16 98.5 0.18 SigLIP 2, MLP Oracle 100.0 0.16 100.0 0.18 100.0 0.21 99.9 0.23 
+
+Table 2: Base test accuracy (%) and counterfactual nuisance-to-signal ratio (NSR) on the color–shape binding task (CSB) by distractor-count bin K, for all encoders and probes. Each entry is a mean over five training seeds. The SigLIP, MLP values are those shown in the accuracy-versus-NSR figure of the main paper. TS CS CL Config Readout 1 2 3 1 2 3 1 2 3SigLIP, Linear Summary 36.0 49.7 59.4 59.5 47.6 38.7 39.4 47.7 58.5 SigLIP, Linear GAP 34.6 53.1 61.8 60.9 49.7 39.6 43.7 49.9 56.3 SigLIP, Linear Foveated 97.8 98.6 98.4 98.4 98.8 97.5 97.8 98.6 98.3 SigLIP, Linear Oracle 99.3 99.6 99.8 99.4 99.5 99.7 99.6 99.5 99.5 SigLIP, MLP Summary 38.1 53.8 63.6 63.1 52.5 40.7 43.5 49.7 62.8 SigLIP, MLP GAP 38.2 59.2 66.6 67.0 55.6 42.1 47.7 53.6 63.0 SigLIP, MLP Foveated 97.3 98.2 98.1 98.2 98.3 97.2 97.3 98.6 97.7 SigLIP, MLP Oracle 99.3 99.6 99.9 99.5 99.5 99.7 99.6 99.5 99.6 CLIP, Linear Summary 43.3 60.7 65.4 66.8 56.9 46.3 49.4 56.8 63.5 CLIP, Linear GAP 33.6 41.8 45.7 48.6 39.1 33.8 33.5 40.4 47.5 CLIP, Linear Foveated 99.5 99.8 99.6 99.7 99.5 99.7 99.3 99.7 100.0 CLIP, Linear Oracle 99.7 100.0 100.0 100.0 99.9 99.9 99.9 99.8 100.0 CLIP, MLP Summary 46.8 65.1 70.0 70.2 62.5 49.7 53.7 61.0 67.5 CLIP, MLP GAP 35.2 48.8 56.6 57.4 47.0 36.7 40.7 46.1 54.1 CLIP, MLP Foveated 99.6 99.9 99.7 99.7 99.7 99.7 99.4 99.8 99.9 CLIP, MLP Oracle 99.7 100.0 100.0 100.0 99.9 99.9 99.8 99.8 100.0 SigLIP 2, Linear Summary 35.6 46.8 56.1 56.5 46.7 35.9 39.4 46.7 52.7 SigLIP 2, Linear GAP 37.6 49.7 59.9 58.7 50.5 38.7 42.0 48.9 56.8 SigLIP 2, Linear Foveated 99.0 99.2 99.2 99.2 99.5 98.8 98.9 99.4 99.2 SigLIP 2, Linear Oracle 100.0 100.0 99.9 100.0 100.0 99.9 99.9 100.0 100.0 SigLIP 2, MLP Summary 37.6 54.2 64.0 64.0 54.8 37.8 46.3 50.9 59.0 SigLIP 2, MLP GAP 38.9 57.2 66.3 67.4 56.9 38.9 46.5 53.7 62.6 SigLIP 2, MLP Foveated 99.0 99.5 99.2 99.5 99.6 98.6 99.1 99.2 99.3 SigLIP 2, MLP Oracle 100.0 100.0 99.9 100.0 100.0 99.9 99.9 100.0 100.0 
+
+Table 3: Base test accuracy (%) on the color–shape binding task (CSB) under adversarial lures, by lure type—target-shape (TS), counterpart-shape (CS), and color (CL)—and per-type lure count (1–3), for all encoders and probes. Each entry is a mean over five training seeds. The SigLIP, MLP values are those shown in the accuracy-by-lure figure of the main paper.
