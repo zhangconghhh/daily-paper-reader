@@ -1,0 +1,938 @@
+Title: Attention-Only White-Box Transformer via LeJEPA-Based Self-Supervised Pretraining
+
+URL Source: https://arxiv.org/pdf/2608.04213v1
+
+Published Time: Thu, 06 Aug 2026 00:15:09 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Attention-Only White-Box Transformer via LeJEPA-Based Self-Supervised Pretraining 
+
+## Yang Bai 1, Linyuan Wang 1, Haoyang Jiang 1, Nuolin Sun 1, Libin Hou 1, Bin Yan ∗1
+
+> 1
+
+Information Engineering University, ZhengZhou,China yangbai_111111@163.com, ybspace@hotmail.com 
+
+Abstract 
+
+Existing studies on self-supervised learning for white-box networks typically decouple the derivation of white-box net-works via optimization algorithms from self-supervised learn-ing paradigms. In this work, we instead revisit the two com-ponents from a joint perspective. The LeJEPA-based self-supervised framework assumes an isotropic Gaussian distri-bution as the optimal embedding distribution for downstream tasks, which is conceptually equivalent to the expansion term 
+
+R(Z) in the sparse rate reduction objective guiding white-box Transformer optimization. Building on this observation, we use the LeJEPA self-supervised paradigm to optimize 
+
+R(Z), and derive the remaining terms Rc(Z | U[K])+ λ∥Z∥0
+
+via the alternating direction method of multipliers (ADMM) into an attention-only Transformer that dispenses with the ISTA structure or MLP layers of the original design. Experi-mental results demonstrate that our attention-only white-box Transformer achieves classification accuracies of 88 .88% on CIFAR-10 and 63 .54% on CIFAR-100 at the Base scale un-der the LeJEPA self-supervised paradigm, while the original white-box Transformer CRATE achieves classification accu-racies of 89 .18% on CIFAR-10 and 63 .56% on CIFAR-100. Our model achieves competitive performance while reducing the parameter count by roughly 31% . Beyond the white-box setting, we further investigate standard ViTs and find that re-placing all MLP blocks with ReLU activations under knowl-edge distillation removes approximately 66% of the parame-ters while preserving competitive accuracy, motivating further investigation into the potential redundancy of MLP modules in standard ViT architectures. 
+
+## Introduction 
+
+Transformers have become a foundational architecture in modern deep learning and have achieved remarkable perfor-mance in computer vision, natural language processing, and other fields (Vaswani et al. 2017; Dosovitskiy et al. 2021). However, the design of the Transformer architecture and its many variants remains largely empirical and lacks a rigorous mathematical interpretation (He and Hofmann 2024; Dong, Cordonnier, and Loukas 2021; Caron et al. 2021; Chen, Xie, and He 2021). This has largely hindered the development of 
+
+> ∗
+
+Corresponding author. Copyright © 2027, Association for the Advancement of Artificial Intelligence (www.aaai.org). All rights reserved. 
+
+new Transformer variants with improved efficiency or inter-pretability. In recent years, white-box Transformer architectures, ex-emplified by the Coding Rate Transformer (CRATE), have offered a promising new perspective on addressing the afore-mentioned problem. Grounded in the principle of sparse rate reduction, CRATE characterizes an ideal representation through the coordinated interplay among an expansion term 
+
+R(Z), a compression term Rc(Z | U[K]), and a sparsity-inducing term λ∥Z∥0 (Yu et al. 2023a). In the resulting un-rolled architecture, the compression term is approximated by a single gradient-descent step, giving rise to a Multi-Head Subspace Self-Attention (MSSA) module. Meanwhile, the expansion and sparsity terms are integrated through the in-troduction of an orthogonal sparse dictionary D and jointly optimized using an iterative shrinkage-thresholding algo-rithm (ISTA) module. This unrolling framework explicitly interprets the computations performed by the core network components as iterative steps for solving well-defined objec-tive subproblems, thereby providing the Transformer with a clear and unified mathematical interpretation. Building on this foundation, white-box Transformer archi-tectures have continued to evolve in recent years. CRATE-α
+
+improves both the sparse coding module and the training strategy, substantially enhancing the model’s scalability to large-scale vision tasks (Yang et al. 2024). The Token Statis-tics Transformer (ToST), meanwhile, derives an interpretable attention mechanism with linear time and memory complex-ity from a variational formulation of the maximal coding rate reduction objective (Wu et al. 2024). In parallel, this line of research has been extended to a diverse range of tasks, including unsupervised object segmentation, language mod-eling, and long-sequence modeling, highlighting the broad potential of white-box networks in terms of interpretability, computational efficiency, and cross-domain applicability (Yu et al. 2023b; Pai et al. 2024). White-box networks seek to uncover the low-dimensional subspace structure underlying token representations directly from data. Because coding-rate objectives can be formulated without semantic labels, they provide a possible route to self-supervised representation learning (Yu et al. 2020). Several recent studies have attempted to bridge this gap. For in-stance, CRATE-MAE incorporates white-box encoders and decoders into a masked autoencoding framework (Pai et al. arXiv:2608.04213v1 [cs.LG] 4 Aug 2026 2024; He et al. 2022), while EMP-SSL introduces the total coding rate R(Z) into a self-supervised objective to promote representation expansion (Tong et al. 2023). However, these approaches remain subject to notable limitations: the former relies on a reconstruction loss that lacks a clear theoreti-cal interpretation, whereas the latter retains a black-box net-work architecture. These limitations motivate a fundamental question: how can models be trained under a self-supervised paradigm while preserving theoretical self-consistency be-tween the white-box architecture and its learning objective? To address this question, we revisit the three components of the white-box objective: the expansion term is transferred to and optimized through the LeJEPA self-supervised ob-jective, while the compression and sparsity terms are opti-mized using the alternating direction method of multipliers (ADMM) (Boyd et al. 2011; Yang and Zhang 2011) and un-rolled into an attention-only Transformer architecture. Our approach builds on the close correspondence, in represen-tation space, between the expansion term in the white-box objective and the isotropy constraint imposed by LeJEPA (Balestriero and LeCun 2025; Assran et al. 2023). Based on this correspondence, we formulate a new optimization objec-tive by replacing the expansion term R(Z) with the LeJEPA objective, while retaining the subspace compression term 
+
+Rc(Z | U[K]) and the sparsity term λ∥Z∥0. We then opti-mize the resulting objective using ADMM. Unrolling the re-sulting ADMM iterations yields a white-box self-supervised architecture consisting solely of attention modules. We re-fer to the resulting Attention-Only Transformer derived from ADMM as AoT-ADMM. The overall self-supervised training framework of AoT-ADMM is illustrated in Figure 1. Our main contributions are summarized as follows: 
+
+• We propose an attention-only white-box Transformer based on the LeJEPA self-supervised objective. The model uses the LeJEPA self-supervised learning paradigm to optimize the expansion term R(Z) in maxi-mal sparse rate reduction, while the remaining compres-sion and sparsity terms follow the white-box Transformer derivation paradigm, thereby combining self-supervised learning with a white-box optimization objective. 
+
+• We optimize the expansion term R(Z) with the LeJEPA self-supervised learning paradigm and optimize the re-maining white-box objective terms using ADMM. The compression term corresponds to the attention structure of the Transformer, while the sparsity term admits a closed-form solution through a ReLU operator, ultimately yielding an attention-only white-box Transformer. 
+
+• Experimental results show that AoT-ADMM achieves per-formance comparable to CRATE while reducing parame-ters by approximately 31% . At the Base scale, our model reaches 88 .88% on CIFAR-10 and 63 .54% on CIFAR-100, compared with CRATE’s 89 .18% and 63 .56% . It also consistently outperforms AoT at similar parameter counts. On standard ViTs, replacing all MLP blocks with ReLU activations under knowledge distillation removes approximately 66% of the parameters while preserving competitive accuracy, further demonstrating the potential redundancy of MLP modules. 
+
+## Related Work 
+
+White-Box Self-Supervised Learning 
+
+Conventional Transformer modules are typically selected through empirical trial and error (He and Hofmann 2024; Dong, Cordonnier, and Loukas 2021), without a strict math-ematical correspondence between the architecture and its learning objective. CRATE provides an alternative by deriv-ing its basic operators from sparse rate reduction, such that each network operation has an explicit optimization inter-pretation (Yu et al. 2023a). This theoretical property makes white-box models naturally suited to self-supervised repre-sentation learning. Nevertheless, previous attempts have not established a consistent theoretical source for both the train-ing objective and the network architecture. CRATE-MAE adopts a white-box encoder but still relies on an uninter-pretable reconstruction loss (Pai et al. 2024), whereas EMP-SSL introduces the total coding rate R(Z) but continues to employ a black-box architecture (Tong et al. 2023). In con-trast, we first establish the theoretical connection between an isotropic Gaussian prior and the coding-rate expansion term 
+
+R(Z) and use it as the training objective, and then derive the complete network architecture by solving the remain-ing white-box objective terms. To our knowledge, this is the first self-supervised formulation in which both the training loss and the forward computation originate from a unified white-box theoretical framework. 
+
+Attention-Only Transformers 
+
+Transformer simplification studies have shown that some block components can be removed or rearranged (He and Hofmann 2024). However, naively removing the feed-forward branch can weaken representation diversity, and theoretical analysis has identified rank-collapse behavior in pure-attention stacks (Dong, Cordonnier, and Loukas 2021). An interesting study by Wang et al. provides such a deriva-tion: they model tokens as a noisy mixture of low-rank Gaus-sians, treat representation learning as compressing noisy to-kens back onto their subspaces, read multi-head subspace self-attention as an iterative denoising operator, and unroll that operator into a white-box Attention-Only Transformer (AoT) built from attention and residual connections alone (Wang et al. 2025). Their target is subspace denoising, so the attention-only form follows from recovering clean repre-sentations rather than from optimizing a full representation-learning objective. In contrast, our layer is derived from a different optimization problem: both its attention-only archi-tecture and its training procedure emerge naturally from the white-box objective. Specifically, we preserve the sparse rate reduction objective, move its expansion term into the training loss, and obtain the attention-only architecture by unrolling the solution to the remaining compression and sparsity terms. 
+
+## Method 
+
+This section presents the complete derivation of an attention-only white-box Transformer under LeJEPA-based self-supervised pretraining. As illustrated in Figure 1, the pro-posed framework derives both the training objective and the network architecture from the sparse rate reduction principle. White-Box Objective (Sparse Rate Reduction) 
+
+min f EZ=f(X) [ R c(Z | U [K] ) − R(Z) + λ||Z|| 0 ] 
+
+> Unified theoretical source of both loss and architecture
+> Global expansion term: (−R(Z))
+> aligned with isotropic Gaussian optimum
+> LeJEPA loss-level optimization
+
+L = L pred + αL SIGReg 
+
+> SIGReg realizes the expansion function of (R(Z))
+> Compression term:
+
+(R c(Z | U [K] )) 
+
+> Sparsity term:
+
+(λ||Z|| 0)   
+
+> ADMM-based architecture-level derivation
+> AOT-ADMM encoder (attention-only white-box Transformer)
+> MSSA
+> compression update
+> ReLU
+> proximal shrinkage
+> Dual-state
+> recursion
+> Loss-level: optimize expansion |Architecture-level: derive compression + sparsity updates
+> Input image
+> Multi-crop augmentation
+> Global view 1
+> Global view 2
+
+···
+
+> Local views
+> AOT-ADMM
+> (attention-only white-box Transformer)
+> Projection head
+> Predictive consistency
+> align local / global views to the mean global representation
+
++
+
+> Batch embedding distribution
+> SIGReg toward standard isotropic Gaussian
+> LeJEPA self-supervised objective
+
+Figure 1: Overview of the proposed white-box self-supervised framework. LeJEPA optimizes the global expansion term, while ADMM unrolls the compression and sparsity terms into the attention-only AoT-ADMM encoder, deriving both the training objective and architecture from a unified white-box objective. We first establish the connection between Sketched Isotropic Gaussian Regularization (SIGReg) in LeJEPA and the global expansion term R(Z), which enables the original objective to be separated into loss-level and architecture-level compo-nents. We then apply ADMM to the remaining compression and sparsity terms, yielding a three-state recursion. Finally, these ADMM iterations are unrolled along network depth to construct the attention-only forward architecture. 
+
+Optimizing the Global Expansion Term 
+
+Following maximal coding-rate reduction and its sparse white-box Transformer formulation (Yu et al. 2020, 2023a), sparse rate reduction characterizes a desirable representation as globally expanded, compact within low-dimensional sub-spaces, and sparse. Let Z = f (X) ∈ Rd×N denote N token representations and let U[K] = ( Uk)Kk=1 denote a collec-tion of low-dimensional subspace bases. The corresponding objective is 
+
+min 
+
+f ∈F EZ=f (X)
+
+Rc(Z | U[K]) − R(Z) + λ∥Z∥0
+
+ , (1) where the global coding rate is defined as 
+
+R(Z) = 12 log det 
+
+
+
+Id + dN ϵ 2 ZZ ⊤
+
+
+
+. (2) By maximizing the log-determinant of the representation covariance, R(Z) encourages the representations to occupy a large volume in the ambient space and thereby prevents global collapse. Equivalently, under a fixed representation energy, maximizing R(Z) favors a balanced covariance spec-trum and discourages the representations from concentrating along only a few directions. Total coding-rate maximization has accordingly been interpreted as a soft covariance regular-ization mechanism closely related to covariance-based self-supervised objectives such as VICReg (Tong et al. 2023). SIGReg similarly encourages the embedding distribution to remain globally expanded by driving it toward a stan-dard isotropic Gaussian. In practice, SIGReg is evaluated on the embeddings used by the LeJEPA objective, which we denote by Z′ to distinguish them from the token ma-trix Z in Eq. (1). The two variables are produced within the same representation-learning pipeline, but need not denote the same finite-sample matrix. Our correspondence concerns the expansion effect that the two objectives impose on the learned representation distribution. SIGReg measures the discrepancy between random one-dimensional projections of the embedding distribution and a standard Gaussian using an Epps–Pulley characteristic-function statistic (Balestriero and LeCun 2025). Around the isotropic Gaussian optimum, the discrepancy for centered embeddings can be decomposed as 
+
+LSIGReg (Z′) = Cw Ea∼Unif( Sd−1)
+
+h a⊤(Σ − Id)a2i
+
++L>2,
+
+(3) where Cw > 0, Σ denotes the covariance of Z′, and 
+
+L>2 collects deviations in skewness, kurtosis, and higher-order statistics. We denote the covariance-level component in Eq. (3) by L(2) SIGReg .Theorem 1 (Consistency of the expansion objectives). 
+
+For centered embeddings with fixed normalized energy 
+
+tr(Σ) = d, the coding-rate objective and the covariance component of SIGReg share the same isotropic optimum: 
+
+arg max 
+
+> Σ⪰0tr(Σ)= d
+
+R(Σ) = arg min 
+
+> Σ⪰0tr(Σ)= d
+
+L(2) SIGReg (Σ) = {Id}. (4) Moreover, around Σ = Id, the coding-rate gap R(Id)−R(Σ) 
+
+and L(2) SIGReg (Σ) are both proportional, to leading order, to 
+
+∥Σ − Id∥2 
+
+> F
+
+. The complete derivation is provided in Ap-pendix A. Theorem 1 establishes that coding-rate maximization and SIGReg implement a consistent expansion principle at the covariance level: both favor an isotropic representation co-variance and penalize directional concentration around the optimum. They are nevertheless not globally identical ob-jectives. The coding rate depends only on second-order statistics, whereas SIGReg additionally constrains higher-order deviations through L>2. Thus, SIGReg preserves the covariance-expansion effect of R(Z) while strengthening it toward a full-distribution isotropic Gaussian constraint. This correspondence allows the global expansion effect in Eq. (1) to be incorporated into the LeJEPA training objec-tive. The compression and sparsity terms can then be retained explicitly for the subsequent derivation of the network archi-tecture. 
+
+Optimizing the Compression and Sparsity Terms 
+
+With the global expansion term handled by the training loss, the remaining optimization problem is 
+
+min  
+
+> Z
+
+Rc(Z | U[K]) + λ∥Z∥0. (5) For Uk ∈ Rd×p with U ⊤ 
+
+> k
+
+Uk = Ip, the coding rate of the representations projected onto the k-th subspace is defined as 
+
+R(U ⊤ 
+
+> k
+
+Z) = 12 log det 
+
+
+
+Ip + pN ϵ 2 U ⊤ 
+
+> k
+
+ZZ ⊤Uk
+
+
+
+, (6) and the corresponding compression rate is 
+
+Rc(Z | U[K]) = 
+
+> K
+
+X
+
+> k=1
+
+R(U ⊤ 
+
+> k
+
+Z). (7) To obtain a tractable sparsity surrogate, we replace the 
+
+ℓ0 penalty by an ℓ1 penalty, as commonly done in sparse recovery (Chen, Donoho, and Saunders 1998), and introduce an auxiliary variable V :
+
+min  
+
+> Z,V
+
+Rc(Z | U[K]) + λ∥V ∥1, s.t. Z = V. (8) Using the scaled-form ADMM with dual variable W and penalty parameter ρ > 0 (Boyd et al. 2011; Eckstein and Bertsekas 1992), the augmented Lagrangian, up to a term independent of Z and V , is 
+
+Lρ(Z, V, W ) = Rc(Z | U[K])+ λ∥V ∥1 + ρ
+
+2 ∥Z −V +W ∥2 
+
+> F
+
+.
+
+(9) The update of Z-step is given by 
+
+Zt+1 = arg min  
+
+> Z
+
+Rc(Z | U[K])+ ρ
+
+2 ∥Z −V t +W t∥2 
+
+> F
+
+. (10) Following CRATE, we approximate this subproblem with a single linearized gradient step (Yu et al. 2023a; Ouyang et al. 2015). In particular, the gradient of the compression rate is approximated as 
+
+∇Z Rc(Z | U[K]) ≈ γ Z − MSSA( Z | U[K]) , (11) where γ > 0 is determined by the coding precision, and multi-head subspace self-attention is defined as 
+
+MSSA( Z | U[K]) = 
+
+> K
+
+X
+
+> k=1
+
+UkU ⊤ 
+
+> k
+
+Z softmax  Z⊤UkU ⊤ 
+
+> k
+
+Z ,
+
+(12) Combining Eq. (11) with the quadratic penalty, the gradi-ent of the Z subproblem is approximated by 
+
+γ Z − MSSA( Z | U[K]) + ρ  Z − V t + W t . (13) A gradient step with step size η > 0 therefore yields 
+
+Zt+1 = (1 − ηγ − ηρ )Zt + ηγ MSSA( Zt | U t
+
+> [K]
+
+)+ ηρ (V t − W t). (14) The update of V -step is given by 
+
+V t+1 = arg min  
+
+> V
+
+λ∥V ∥1 + ρ
+
+2 ∥Zt+1 − V + W t∥2 
+
+> F
+
+, (15) whose solution is the proximal operator of the ℓ1 norm (Daubechies, Defrise, and De Mol 2004; Beck and Teboulle 2009; Parikh and Boyd 2014), 
+
+V t+1 = shrink λ/ρ (Zt+1 + W t). (16) Following CRATE, we further impose a non-negativity constraint on the intermediate representations. Under this constraint, the proximal mapping reduces to the one-sided soft-thresholding operator, yielding 
+
+V t+1 = ReLU( Zt+1 + W t − λ/ρ ). (17) This update preserves the sparse proximal interpretation while remaining compatible with the nonlinear activation commonly adopted in transformer architectures. 
+
+Attention-Only White-Box Transformer 
+
+Following the algorithm-unrolling paradigm exemplified by learned sparse-coding iterations (Gregor and LeCun 2010), mapping the ADMM iteration index t to the layer index ℓ
+
+converts the iterative updates into the forward computation of one network layer: 
+
+
+
+Zℓ+1 = (1 − ηγ − ηρ )Zℓ + ηγ MSSA( Zℓ | U ℓ
+
+> [K]
+
+)+ ηρ (V ℓ − W ℓ),V ℓ+1 = ReLU  Zℓ+1 + W ℓ − λ/ρ  ,W ℓ+1 = W ℓ + Zℓ+1 − V ℓ+1 .
+
+(18) State at iteration ℓ                                  
+
+> (Zℓ,Vℓ,Wℓ)
+> AOT-ADMM Proximal Step
+> State at iteration ℓ+1
+> (Zℓ+1,Vℓ+1,Wℓ+1)
+> 1234
+> MSSA Block
+> Zℓ
+> SSA (head 1) SSA (head K)
+> ···Aggregate MSSA (Zℓ|Uℓ[K])
+> Z-step Zℓ
+> ZℓLayerNorm MSSA
+> VℓWℓVℓ−Wℓ
+> +Zℓ+1
+> × α
+> × β
+> × γ
+> α+β+γ=1
+> V-step Zℓ+1
+> Wℓ
+> Zℓ+1+Wℓ−λρReLU Vℓ+1
+> W-step
+> Wℓ
+> Zℓ+1−Vℓ+1
+> +Wℓ+1
+
+Figure 2: One AoT-ADMM layer as an unrolled ADMM iteration. MSSA realizes the compression update, the ReLU proximal operator implements nonnegative shrinkage, and the scaled multiplier state tracks the consistency between Z and V . The three branch coefficients are initialized from the ADMM-derived update and adapt dynamically during training. The resulting network propagates the state triplet 
+
+(Zℓ, V ℓ, W ℓ) through depth, with each layer correspond-ing to one unrolled ADMM iteration. As illustrated in Fig-ure 2, the Z-step performs MSSA-based compression with an ADMM consistency correction, the V -step applies nonneg-ative shrinkage through a ReLU proximal operator, and the 
+
+W -step updates the dual state to promote agreement between 
+
+Zℓ+1 and V ℓ+1 . All layers share the same ADMM-derived update form, while using independently parameterized sub-space bases U ℓ 
+
+> [K]
+
+to adapt the compression model to the representation distribution at each depth. Stacking L such iterations yields the complete attention-only encoder. In implementation, the three branch coefficients in Eq. (18) are initialized from the ADMM-derived update and subse-quently learned under a nonnegative unit-sum constraint. Fig-ure 2 therefore summarizes both the optimization interpre-tation and the forward computation of a single AoT-ADMM layer. We embed the resulting encoder in LeJEPA. Multi-crop augmentations (Caron et al. 2021) generate global and local views of each image, which are mapped by the shared encoder and projection head to their corresponding embeddings. A predictive consistency loss aligns the local and global em-beddings with the mean global representation, while SIGReg regularizes the batch embedding distribution toward a stan-dard isotropic Gaussian. The total training objective is 
+
+L = Lpred + α LSIGReg , (19) where α balances semantic invariance and distributional ex-pansion. The encoder, projection head, and layerwise sub-space bases are optimized jointly end to end. 
+
+## Experiments 
+
+Experimental Setup 
+
+We conduct experiments on CIFAR-10, CIFAR-100 (Krizhevsky 2009), and ImageNet-1K (Deng et al. 2009). For in-domain self-supervised learning, CRATE and AoT-ADMM are pretrained on CIFAR-10 and CIFAR-100 us-ing the same LeJEPA objective and evaluated by linear probing with frozen backbones, following the standard self-supervised evaluation protocol (Chen et al. 2020; Grill et al. 2020). We report the top-1 accuracy, parameters and flops as indicators of representation quality and model complexity. We further pretrain AoT-ADMM on ImageNet-1K and fully fine-tune the resulting backbone on CIFAR-10 and CIFAR-100 to evaluate large-scale pretraining and transfer. All ex-periments are conducted on a single NVIDIA A100 (80GB) GPU; detailed software and hardware configurations are pro-vided in the supplementary material. For the direct comparison with existing attention-only ar-chitectures, AoT-ADMM and Wang et al.’s AoT are evaluated at comparable model scales under the same LeJEPA training protocol. To further examine MLP redundancy beyond the white-box CRATE architecture, we construct a standard ViT control by retaining its patch embedding, self-attention, normaliza-tion layers, and classification head, while replacing the MLP in every Transformer block with a ReLU activation. The resulting model is trained with knowledge distillation and compared with the original ViT in terms of Top-1 accuracy and parameter count. For CIFAR pretraining, global and local views are 32 × 32 
+
+and 16 × 16 , the patch size is 8, and each image produces two global and six local views. We train for 800 epochs Scale Model FLOPs Params Acc. (%) 
+
+CIFAR-10 
+
+Tiny CRATE 0.31G 5.41M 85.61 AoT-ADMM 0.13G 3.64M 84.22 Small CRATE 0.69G 12.10M 87.89 AoT-ADMM 0.28G 8.11M 87.23 Base CRATE 1.22G 21.44M 89.18 AoT-ADMM 0.50G 14.36M 88.88 
+
+CIFAR-100 
+
+Tiny CRATE 0.31G 5.41M 57.48 AoT-ADMM 0.13G 3.64M 57.38 Small CRATE 0.69G 12.10M 61.64 AoT-ADMM 0.28G 8.11M 62.41 Base CRATE 1.22G 21.44M 63.56 AoT-ADMM 0.50G 14.36M 63.54 Table 1: Linear-probe Top-1 accuracy, FLOPs, and parame-ters under LeJEPA self-supervised pretraining. with AdamW (Loshchilov and Hutter 2019), a learning rate of 5 × 10 −4, weight decay 5 × 10 −2, batch size 256, and cosine decay. For ImageNet-1K, global and local views are 
+
+128 × 128 and 64 × 64 , patch size is 16, and each image produces two global and two local views. We train for 200 epochs with learning rate 5 × 10 −4 and batch size 1024; the resulting backbone is then fully fine-tuned on CIFAR. 
+
+Main Results 
+
+We first evaluate in-domain linear probing against CRATE under exactly the same LeJEPA pretraining settings, with results summarized in Table 1. Across Tiny, Small, and Base, AoT-ADMM reduces the parameter count by approximately 
+
+31% while maintaining competitive performance. At Tiny scale, the accuracy is only 0.10 points lower on CIFAR-100. At Small scale, AoT-ADMM improves CIFAR-100 accuracy from 61 .64% to 62 .41% , a gain of 0.77 points. At Base scale, the gaps narrow to 0.30 and 0.02 points on CIFAR-10 and CIFAR-100, respectively. Figure 3 further compares the LeJEPA pretraining dy-namics of CRATE and AoT-ADMM. Under identical training settings, the two models follow closely matched convergence trajectories and reach comparable final loss values after 800 epochs, indicating that removing the learnable ISTA dictio-nary does not adversely affect optimization or convergence. These results show that the ADMM-derived attention-only structure preserves the representation quality of CRATE while removing the learnable ISTA dictionary and sub-stantially reducing parameters. A consistent reduction in model parameters is observed across all scales: AoT-ADMM removes 1.77M (3.64M vs. 5.41M), 3.99M (8.11M vs. 12.10M), and 7.08M (14.36M vs. 21.44M) parameters from Tiny, Small, and Base, respectively, corresponding to re-ductions of 31 .1% , 31 .2% , and 31 .3% . Together with the near-identical Base-scale performance and closely matched pretraining dynamics, this indicates that the expansion func-0 100 200 300 400 500 600 700 800 
+
+> Epoch
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> LeJEPA Loss
+> CRATE
+> AOT-ADMM
+
+Figure 3: Comparison of LeJEPA pretraining loss between CRATE and AoT-ADMM. Under identical settings, the two models exhibit closely matched convergence trajectories and reach comparable final loss values after 800 epochs. Model Params Pretrain Acc. (%) 
+
+CIFAR-10 
+
+CRATE 21.92M IN-1K 96.01 AoT-ADMM 14.84M IN-1K 95.25 
+
+CIFAR-100 
+
+CRATE 21.92M IN-1K 81.04 AoT-ADMM 14.84M IN-1K 80.26 Table 2: ImageNet-1K self-supervised pretraining (200 epochs) followed by full CIFAR fine-tuning. tion can be transferred to the self-supervised loss without requiring the original ISTA dictionary in every layer. We further assess the transferability of AoT-ADMM un-der large-scale self-supervised pretraining by pretraining on ImageNet-1K and subsequently fine-tuning on CIFAR-10 and CIFAR-100. As shown in Table 2, AoT-ADMM achieves 
+
+95 .25% accuracy on CIFAR-10 and 80 .26% on CIFAR-100 with 14.84M parameters, compared with 96 .01% and 
+
+81 .04% for CRATE with 21.92M parameters. These results demonstrate that AoT-ADMM maintains competitive transfer performance while using approximately 32% fewer param-eters, highlighting its improved parameter efficiency under large-scale self-supervised pretraining. 
+
+Comparison with AoT 
+
+Wang et al.’s AoT derives an attention-only architecture by interpreting representation learning as iterative denoising to-ward a mixture of low-dimensional subspaces (Wang et al. 2025). In contrast, AoT-ADMM is derived by combining LeJEPA-based global expansion with ADMM optimization of the remaining compression and sparsity terms. To isolate the effect of the architectural formulation, we compare the two models at nearly identical parameter counts under the same LeJEPA training protocol. As shown in Table 3, AoT-ADMM consistently outper-forms Wang et al.’s AoT across Tiny, Small, and Base configurations on both CIFAR-10 and CIFAR-100, with nearly identical parameter counts. At the Tiny scale, our Scale Model Params Acc. (%) 
+
+CIFAR-10 
+
+Tiny AoT 3.63M 79.31 AoT-ADMM 3.64M 84.22 Small AoT 8.11M 83.36 AoT-ADMM 8.11M 87.23 Base AoT 14.35M 84.20 AoT-ADMM 14.36M 88.88 
+
+CIFAR-100 
+
+Tiny AoT 3.63M 50.83 AoT-ADMM 3.64M 57.38 Small AoT 8.11M 56.51 AoT-ADMM 8.11M 62.41 Base AoT 14.35M 57.48 AoT-ADMM 14.36M 63.54 Table 3: Comparison with Wang et al.’s AoT under the LeJEPA evaluation. model achieves accuracy improvements over AoT of 4.91 %
+
+(84.22 % vs. 79.31 %) on CIFAR-10 and 6.55 % (57.38 % vs. 50.83 %) on CIFAR-100. At the Small scale, the accuracy gains are 3.87 % (87.23 % vs. 83.36 %) on CIFAR-10 and 5.90 % (62.41 % vs. 56.51 %) on CIFAR-100. At the Base scale, our model outperforms AoT by 4.68 % (88.88 % vs. 84.20 %) in accuracy on CIFAR-10 and by 6.06 % (63.54 %
+
+vs. 57.48 %) on CIFAR-100. These results indicate that re-moving the MLP alone is not sufficient to obtain an effective attention-only Transformer; the optimization principle un-derlying the architectural derivation also plays an important role. 
+
+Black-Box Transformer Validation 
+
+We further test whether the proximal update can remove MLP blocks from a standard Vision Transformer (Dosovit-skiy et al. 2021). This control is not identical to the white-box CRATE architecture: it retains the standard ViT patch em-bedding, self-attention, normalization, and classifier, while replacing every MLP branch with a simple ReLU activa-tion. To compensate for the reduced capacity, we initialize from pretrained weights and use hard-label knowledge dis-tillation following DeiT (Touvron et al. 2021). A pretrained ViT-Tiny teacher provides its highest-confidence class as a pseudo-label. The student minimizes an equal-weighted sum of cross-entropy losses against the ground-truth label and the teacher pseudo-label. Table 4 shows that removing all MLP blocks reduces the parameter count by approximately 66% at both model scales. For the Tiny model, the parameter count decreases from 5.3M to 1.8M, while CIFAR-10 accuracy drops only slightly from 
+
+92 .19% to 91 .37% , corresponding to a gap of 0.82 percentage points. For the Small model, the parameter count is reduced from 21.4M to 7.2M, yet the accuracy increases marginally from 93 .58% to 93 .67% . Although these results do not estab-lish that MLP blocks are universally redundant, they indicate Scale Model Params CIFAR-10 Tiny VIT-T 5.3M 92.19 VIT-T-AoT 1.8M 91.37 Small VIT-S 21.4M 93.58 VIT-S-AoT 7.2M 93.67 Table 4: CIFAR-10 validation of standard ViTs and their MLP-free variants using hard-label knowledge distillation. that optimization-derived proximal updates can substantially improve parameter efficiency while preserving competitive performance, providing a principled route toward MLP-free black-box Transformers. 
+
+## Conclusion 
+
+We developed an attention-only white-box Transformer by jointly reconsidering self-supervised learning and optimization-based architecture derivation. Our key theoret-ical observation is that LeJEPA’s SIGReg and the global expansion term R(Z) share a consistent optimum under the isotropic covariance constraint. This connection allows the expansion term to be incorporated into the self-supervised training loss, while the remaining compression and sparsity terms are used to derive the network architecture. By apply-ing ADMM and unrolling the resulting updates, we obtain an attention-only architecture in which MSSA implements the compression step and ReLU realizes the sparsity update. The resulting AoT-ADMM requires neither the ISTA dictionary nor MLP layers, establishing a unified connection among the white-box objective, the self-supervised loss, and the forward architecture. Experiments under identical LeJEPA pretraining show that AoT-ADMM maintains performance comparable to CRATE on CIFAR-10 and CIFAR-100 while reducing the parame-ter count by approximately 31% . After ImageNet-1K self-supervised pretraining and full CIFAR fine-tuning, AoT-ADMM achieves 95 .25% on CIFAR-10 and 80 .26% on CIFAR-100, compared with CRATE’s 96 .01% and 81 .04% ,while reducing the parameter count from 21.92M to 14.84M. At nearly identical parameter counts, AoT-ADMM also con-sistently outperforms Wang et al.’s AoT across different model scales, demonstrating that the optimization princi-ple underlying an attention-only architecture is important for its effectiveness. Experiments on standard ViTs further show that the ReLU update can replace MLP blocks while preserving competitive performance, suggesting that the pro-posed formulation is not limited to white-box architectures. The theoretical analysis and empirical results both substan-tiate the partial redundancy of MLP modules in white-box Transformer architectures under self-supervised train-ing, while providing further motivation for the development of attention-only Transformer architectures. 
+
+## References 
+
+Assran, M.; Duval, Q.; Misra, I.; Bojanowski, P.; Vincent, P.; Rabbat, M.; and Ballas, N. 2023. Self-Supervised Learn-ing from Images with a Joint-Embedding Predictive Archi-tecture. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 15619–15629. Balestriero, R.; and LeCun, Y. 2025. LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics. 
+
+arXiv preprint arXiv:2511.08544 .Beck, A.; and Teboulle, M. 2009. A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems. SIAM Journal on Imaging Sciences , 2(1): 183–202. Boyd, S.; Parikh, N.; Chu, E.; Peleato, B.; and Eckstein, J. 2011. Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers. Founda-tions and Trends in Machine Learning , 3(1): 1–122. Caron, M.; Touvron, H.; Misra, I.; Jégou, H.; Mairal, J.; Bojanowski, P.; and Joulin, A. 2021. Emerging Properties in Self-Supervised Vision Transformers. In Proceedings of the IEEE/CVF International Conference on Computer Vision ,9650–9660. Chen, S. S.; Donoho, D. L.; and Saunders, M. A. 1998. Atomic Decomposition by Basis Pursuit. SIAM Journal on Scientific Computing , 20(1): 33–61. Chen, T.; Kornblith, S.; Norouzi, M.; and Hinton, G. 2020. A Simple Framework for Contrastive Learning of Visual Rep-resentations. In Proceedings of the 37th International Con-ference on Machine Learning , volume 119 of Proceedings of Machine Learning Research , 1597–1607. PMLR. Chen, X.; Xie, S.; and He, K. 2021. An Empirical Study of Training Self-Supervised Vision Transformers. In Proceed-ings of the IEEE/CVF International Conference on Computer Vision , 9640–9649. Daubechies, I.; Defrise, M.; and De Mol, C. 2004. An It-erative Thresholding Algorithm for Linear Inverse Problems with a Sparsity Constraint. Communications on Pure and Applied Mathematics , 57(11): 1413–1457. Deng, J.; Dong, W.; Socher, R.; Li, L.-J.; Li, K.; and Fei-Fei, L. 2009. ImageNet: A Large-Scale Hierarchical Image Database. In IEEE Conference on Computer Vision and Pattern Recognition , 248–255. Dong, Y.; Cordonnier, J.-B.; and Loukas, A. 2021. Attention Is Not All You Need: Pure Attention Loses Rank Doubly Exponentially with Depth. In Proceedings of the 38th In-ternational Conference on Machine Learning , volume 139 of Proceedings of Machine Learning Research , 2793–2803. PMLR. Dosovitskiy, A.; Beyer, L.; Kolesnikov, A.; Weissenborn, D.; Zhai, X.; Unterthiner, T.; Dehghani, M.; Minderer, M.; Heigold, G.; Gelly, S.; Uszkoreit, J.; and Houlsby, N. 2021. An Image Is Worth 16x16 Words: Transformers for Image Recognition at Scale. In International Conference on Learn-ing Representations .Eckstein, J.; and Bertsekas, D. P. 1992. On the Douglas– Rachford Splitting Method and the Proximal Point Algorithm for Maximal Monotone Operators. Mathematical Program-ming , 55(1–3): 293–318. Gregor, K.; and LeCun, Y. 2010. Learning Fast Approxima-tions of Sparse Coding. In Proceedings of the 27th Interna-tional Conference on Machine Learning , 399–406. Grill, J.-B.; Strub, F.; Altché, F.; Tallec, C.; Richemond, P. H.; Buchatskaya, E.; Doersch, C.; Avila Pires, B.; Guo, Z. D.; Azar, M. G.; Piot, B.; Kavukcuoglu, K.; Munos, R.; and Valko, M. 2020. Bootstrap Your Own Latent: A New Ap-proach to Self-Supervised Learning. In Advances in Neural Information Processing Systems , volume 33, 21271–21284. He, B.; and Hofmann, T. 2024. Simplifying Transformer Blocks. In International Conference on Learning Represen-tations .He, K.; Chen, X.; Xie, S.; Li, Y.; Dollár, P.; and Girshick, R. 2022. Masked Autoencoders Are Scalable Vision Learners. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 16000–16009. Krizhevsky, A. 2009. Learning Multiple Layers of Features from Tiny Images. Technical report, University of Toronto. Loshchilov, I.; and Hutter, F. 2019. Decoupled Weight Decay Regularization. In International Conference on Learning Representations .Ouyang, Y.; Chen, Y.; Lan, G.; and Pasiliao, J., Eduardo. 2015. An Accelerated Linearized Alternating Direction Method of Multipliers. SIAM Journal on Imaging Sciences ,8(1): 644–681. Pai, D.; Wu, Z.; Buchanan, S.; Yu, Y.; and Ma, Y. 2024. Masked Completion via Structured Diffusion with White-Box Transformers. In International Conference on Learning Representations .Parikh, N.; and Boyd, S. 2014. Proximal Algorithms. Foun-dations and Trends in Optimization , 1(3): 127–239. Tong, S.; Chen, Y.; Ma, Y.; and LeCun, Y. 2023. EMP-SSL: Towards Self-Supervised Learning in One Training Epoch. 
+
+arXiv preprint arXiv:2304.03977 .Touvron, H.; Cord, M.; Douze, M.; Massa, F.; Sablayrolles, A.; and Jégou, H. 2021. Training Data-Efficient Image Trans-formers and Distillation through Attention. In International Conference on Machine Learning , 10347–10357. Vaswani, A.; Shazeer, N.; Parmar, N.; Uszkoreit, J.; Jones, L.; Gomez, A. N.; Kaiser, L.; and Polosukhin, I. 2017. At-tention Is All You Need. In Advances in Neural Information Processing Systems , volume 30. Wang, P.; Lu, Y.; Yu, Y.; Pai, D.; Qu, Q.; and Ma, Y. 2025. Attention-Only Transformers via Unrolled Subspace Denois-ing. In Proceedings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , 63840–63859. Wu, Z.; Ding, T.; Lu, Y.; Pai, D.; Zhang, J.; Wang, W.; Yu, Y.; Ma, Y.; and Haeffele, B. D. 2024. Token Statistics Transformer: Linear-Time Attention via Variational Rate Re-duction. arXiv preprint arXiv:2412.17810 .Yang, J.; Li, X.; Pai, D.; Zhou, Y.; Ma, Y.; Yu, Y.; and Xie, C. 2024. Scaling White-Box Transformers for Vision. arXiv preprint arXiv:2405.20299 .Yang, J.; and Zhang, Y. 2011. Alternating Direction Al-gorithms for ℓ1-Problems in Compressive Sensing. SIAM Journal on Scientific Computing , 33(1): 250–278. Yu, Y.; Buchanan, S.; Pai, D.; Chu, T.; Wu, Z.; Tong, S.; Haeffele, B. D.; and Ma, Y. 2023a. White-Box Transformers via Sparse Rate Reduction. Advances in Neural Information Processing Systems , 36. Yu, Y.; Chan, K. H. R.; You, C.; Song, C.; and Ma, Y. 2020. Learning Diverse and Discriminative Representations via the Principle of Maximal Coding Rate Reduction. In Advances in Neural Information Processing Systems , volume 33, 9422– 9434. Yu, Y.; Pai, D.; Buchanan, S.; Wu, Z.; Tong, S.; Haeffele, B. D.; and Ma, Y. 2023b. Emergence of Segmentation with Minimalistic White-Box Transformers. arXiv preprint arXiv:2308.16271 .Appendix A Proof of Theorem 1 
+
+This appendix provides the complete proof of Theorem 1 stated in the main text, together with a global extension of the correspondence that it establishes between the two expansion objectives. To avoid collision with the notation of the main text ( γ:compression-gradient coefficient; η: unrolled step size; and 
+
+λ: sparsity weight), we define 
+
+c = dϵ2 > 0, θ = c
+
+1 + c ∈ (0 , 1) , A = Σ − Id.
+
+Let z ∈ Rd denote the population embedding on which SIGReg is evaluated, written as Z′ in the main text, with 
+
+μ = E[z] = 0 , Σ = Ezz ⊤.
+
+Centering and the fixed normalized-energy condition of The-orem 1 are imposed by the normalization preceding the reg-ularizer. Throughout this appendix the two objectives are compared on 
+
+S = Σ ∈ Sd 
+
+> +
+
+: tr(Σ) = d .
+
+Since A = Σ − Id, every Σ ∈ S satisfies tr( A) = 0 , a fact used repeatedly below. On the unconstrained cone Sd 
+
+> +
+
+one has R(αΣ) → ∞ as α → ∞ for every Σ̸ = 0 , so R attains no maximum there. Both optima exist on S, by Eqs. (A.13) and (A.18) below. The coding rate, expressed as a function of the population covariance, is 
+
+R(Σ) = 12 log det( Id + cΣ) , (A.1) which is the population form of the empirical objective: writing ˆΣ = 1 
+
+> n
+
+ZZ ⊤ for the sample covariance, one has  
+
+> 12
+
+log det  Id + dnϵ 2 ZZ ⊤ = 12 log det( Id + c ˆΣ) with the same constant c = d/ϵ 2.
+
+A.1 Covariance Component of SIGReg 
+
+For a ∼ Unif( Sd−1), let 
+
+ua = a⊤z, φa(t) = E[eitu a ], sa = a⊤(Σ − Id)a, 
+
+where the projections are taken unstandardized; for a⊤Σa > 
+
+0 one has 1+ sa = a⊤Σa, and a per-direction rescaling of ua
+
+replaces φa by the characteristic function of ua/√1 + sa, in which sa does not appear. The Epps–Pulley statistic used by SIGReg is 
+
+LSIGReg = Ea
+
+Z
+
+> R
+
+φa(t) − e−t2/2 2
+
+w(t) dt, (A.2) with weight function w ≥ 0 positive Lebesgue-almost every-where and satisfying R
+
+> R
+
+(1 + t8)w(t) dt < ∞. The moment condition gives Cw < ∞ in Eq. (A.6); positivity almost everywhere is used in the first part of the proof. Let κm(a) denote the m-th cumulant of ua and set 
+
+∆>2 = sup 
+
+> a
+
+sup 
+
+> m≥3
+
+|κm(a)|, ∆ = max sup a|sa|, ∆>2 .
+
+Around the standard isotropic Gaussian target, and assuming 
+
+∆>2 < ∞ so that the series may be integrated against w
+
+term by term, the projected characteristic function admits the local expansion 
+
+φa(t) − e−t2/2
+
+= e−t2/2
+
+− sat2
+
+2 + X
+
+> m≥3
+
+κm(a) (i t)m
+
+m! + O(∆ 2)
+
+ .
+
+(A.3) Squaring Eq. (A.3), the terms free of any cumulant of order three or higher reduce to 
+
+e−t2 s2
+
+> a
+
+t4
+
+4 , (A.4) while every remaining term carries at least one factor κm(a)
+
+with m ≥ 3. We take this cumulant order as the grouping criterion, collecting the former into L(2) SIGReg and the latter into the term L>2 used in the main text. The grouping is not an orthogonal decomposition: the cross terms saκm(a) enter 
+
+L>2 at the same order in ∆ as s2 
+
+> a
+
+enters L(2) SIGReg . On the Gaussian slice 
+
+G = N (0 , Σ) : Σ ∈ S , κm(a) ≡ 0 (m ≥ 3) ,
+
+(A.5) one has L>2 = 0 and the two components separate exactly; elsewhere they separate up to O(∆ >2). The qualifier “at the covariance level” in Theorem 1 refers to this restriction. Integrating Eq. (A.4) against w(t) and averaging over a
+
+gives 
+
+L(2) SIGReg (Σ) = Cw Ea∼Unif( Sd−1)
+
+(a⊤Aa )2 ,Cw = 14
+
+Z
+
+> R
+
+t4e−t2
+
+w(t) dt ∈ (0 , ∞). (A.6) 
+
+A.2 Proof of the Shared Optimum and Local Correspondence 
+
+Proof of Theorem 1. The integrand of Eq. (A.2) is nonneg-ative, so LSIGReg = 0 forces φa(t) = e−t2/2 for almost every t and almost every a ∈ Sd−1. Since w > 0 almost everywhere and both sides are continuous in t, the identity holds for every t; continuity of a 7 → φa(t) extends it to every 
+
+a. Every one-dimensional projection of z is then standard normal, and the Cramér–Wold device gives 
+
+LSIGReg = 0 ⇐⇒ z ∼ N (0 , I d) = ⇒ Σ = Id, (A.7) the minimum being attained on S because N (0 , I d) satisfies 
+
+tr(Σ) = d. Equation (A.7) characterizes the minimizer as a distribution; R depends on Σ alone. Restricted to the covariance level, the same conclusion follows in closed form. For a ∼ Unif( Sd−1), the fourth-order spherical moments satisfy 
+
+E[aiaj akal] = δij δkl + δik δjl + δil δjk 
+
+d(d + 2) . (A.8) Using Eq. (A.8), 
+
+Ea[( a⊤Aa )2] = X
+
+> i,j,k,l
+
+Aij Akl E[aiaj akal]= tr( A)2 + tr( A⊤A) + tr( A2)
+
+d(d + 2) . (A.9) Since A is symmetric, 
+
+tr( A⊤A) = tr( A2) = ∥A∥2 
+
+> F
+
+. (A.10) Together with tr( A) = 0 ,
+
+Ea[( a⊤Aa )2] = 2
+
+d(d + 2) ∥A∥2 
+
+> F
+
+. (A.11) Substituting Eq. (A.11) into Eq. (A.6), 
+
+L(2) SIGReg (Σ) = 2Cw
+
+d(d + 2) ∥Σ − Id∥2 
+
+> F
+
+. (A.12) Since Cw > 0, the right-hand side is nonnegative and vanishes if and only if Σ = Id, in agreement with Eq. (A.7). Hence 
+
+arg min  
+
+> Σ∈S
+
+L(2) SIGReg (Σ) = {Id}. (A.13) We next determine the maximizer of the coding rate. Let 
+
+ν1, . . . , ν d denote the eigenvalues of Σ. Since Σ ⪰ 0 and 
+
+tr(Σ) = d,
+
+νi ≥ 0,
+
+> d
+
+X
+
+> i=1
+
+νi = d, (A.14) and Eq. (A.1) becomes 
+
+R(Σ) = 12
+
+> d
+
+X
+
+> i=1
+
+log(1 + cν i). (A.15) The function g(x) = log(1 + cx ) is strictly concave on 
+
+[0 , ∞) since 
+
+g′′ (x) = − c2
+
+(1 + cx )2 < 0. (A.16) Jensen’s inequality applied to Eq. (A.15) gives 
+
+R(Σ) ≤ d
+
+2 log 1 + cd
+
+> d
+
+X
+
+> i=1
+
+νi
+
+!
+
+= d
+
+2 log(1 + c) = R(Id). (A.17) By strict concavity of g, equality holds if and only if ν1 =
+
+· · · = νd, and the trace constraint forces ν1 = · · · = νd = 1 ,i.e. Σ = Id. Hence 
+
+arg max  
+
+> Σ∈S
+
+R(Σ) = {Id}. (A.18) Equations (A.13) and (A.18) give the shared-optimum statement in Theorem 1. It remains to establish the local correspondence around 
+
+Σ = Id. Substituting Σ = Id + A into Eq. (A.1), 
+
+R(Id + A) = 12 log det ( Id + c(Id + A)) = 12 log det ((1 + c)Id + cA )= d
+
+2 log(1 + c) + 12 log det( Id + θA ).
+
+(A.19) On S one has ∥A∥2 ≤ d−1, so the condition ∥A∥2 < 1/θ 
+
+defines a proper subset of S containing Id. On that subset the log-determinant expansion gives 
+
+log det( Id + θA ) = θ tr( A) − θ2
+
+2 tr( A2) + O ∥A∥3
+
+> F
+
+.
+
+(A.20) Using tr( A) = 0 and tr( A2) = ∥A∥2 
+
+> F
+
+,
+
+log det( Id + θA ) = − θ2
+
+2 ∥A∥2 
+
+> F
+
++ O ∥A∥3
+
+> F
+
+. (A.21) With R(Id) = d 
+
+> 2
+
+log(1 + c), Eqs. (A.19) and (A.21) give 
+
+R(Id)−R(Σ) = θ2
+
+4 ∥Σ−Id∥2 
+
+> F
+
++O  ∥Σ − Id∥3
+
+> F
+
+ . (A.22) Equation (A.12) shows that L(2) SIGReg is a positive multiple of ∥Σ − Id∥2 
+
+> F
+
+, and Eq. (A.22) shows that the leading term of the coding-rate gap is likewise a positive multiple of it, so that 
+
+lim 
+
+> Σ→Id
+
+L(2) SIGReg (Σ) 
+
+R(Id) − R(Σ) = 8Cw
+
+θ2d(d + 2) ∈ (0 , ∞). (A.23) Equations (A.13), (A.18) and (A.23) prove both statements of Theorem 1. 
+
+A.3 Global Equivalence of the Two Expansion Terms 
+
+Theorem 1 gives a shared optimum and a leading-order cor-respondence at Σ = Id. The following proposition extends the correspondence to all of S.
+
+Proposition 1. There exist constants 0 < k 1 ≤ k2 < ∞,depending only on d, c and w, such that 
+
+k1
+
+ R(Id)−R(Σ)  ≤ L (2) SIGReg (Σ) ≤ k2
+
+ R(Id)−R(Σ) 
+
+(A.24) 
+
+for all Σ ∈ S .Consequently, for every τ > 0,
+
+L(2) SIGReg ≤ k1τ
+
+⊆ R(Id) − R ≤ τ
+
+⊆ L(2) SIGReg ≤ k2τ .
+
+(A.25) 
+
+Moreover, let P(X) = X − tr( X) 
+
+> d
+
+Id denote the orthogonal projection onto the traceless symmetric matrices. Then, with 
+
+A = Σ − Id as in Eq. (A) ,
+
+P∇ΣL(2) SIGReg 
+
+ = 4Cw
+
+d(d + 2) A, 
+
+P∇Σ
+
+ R(Id) − R(Σ)  = θ2
+
+2 A + O ∥A∥2
+
+> F
+
+,
+
+(A.26) so that their inner product equals 2Cw θ2 
+
+> d(d+2)
+
+∥A∥2 
+
+> F
+
++ O ∥A∥3
+
+> F
+
+.Proof. Define 
+
+ρ(Σ) = L(2) SIGReg (Σ) 
+
+R(Id) − R(Σ) , Σ ∈ S \ { Id}.
+
+The eigenvalues of any Σ ∈ S lie in [0 , d ], so S is compact. By Eqs. (A.13) and (A.18), the numerator and denominator of ρ are continuous and strictly positive on S \ { Id}. On the subset 
+
+∥A∥2 ≤ 1/2θ, 
+
+the eigenvalues of θA are bounded away from −1, so the remainder in Eq. (A.22) is bounded by C∥A∥3 
+
+> F
+
+with C de-pending only on θ, hence uniformly in the direction A/ ∥A∥F .Dividing Eq. (A.12) by Eq. (A.22) therefore gives Eq. (A.23) as a limit along every sequence Σ → Id in S, and 
+
+ρ extends continuously to S with value 8Cw/ θ2d(d + 2) 
+
+at Id.A positive continuous function on a compact set attains a positive minimum and a finite maximum; taking k1 =min S ρ and k2 = max S ρ gives Eq. (A.24). Equation (A.25) follows from the two inequalities in Eq. (A.24) separately: if L(2) SIGReg (Σ) ≤ k1τ , the left inequality gives k1
+
+ R(Id) −
+
+R(Σ)  ≤ k1τ and hence the first inclusion; if R(Id) −
+
+R(Σ) ≤ τ , the right inequality gives the second. For the gradients, Eq. (A.12) gives ∇ΣL(2) SIGReg = 
+
+> 4Cw
+> d(d+2)
+
+A, which is already traceless by tr( A) = 0 . From Eq. (A.19), ∇Σ
+
+R(Id) − R(Σ)  = − θ 
+
+> 2
+
+(Id + θA )−1; ex-panding (Id + θA )−1 = Id − θA + O(∥A∥2 
+
+> F
+
+) and applying 
+
+P, which annihilates the multiple of Id, gives the second identity in Eq. (A.26). The stated inner product follows from 
+
+⟨A, A ⟩ = ∥A∥2 
+
+> F
+
+.Equation (A.24) bounds each expansion objective by a fixed positive multiple of the other at every point of S, and Eq. (A.25) nests their sublevel sets: driving either quantity below a given threshold drives the other below a constant multiple of it, without restriction to a neighborhood of Id.Equation (A.26) gives the corresponding first-order state-ment: on the constraint tangent space the two projected gra-dients are positive multiples of the same matrix to leading order, so a descent step on either has positive inner product with a descent step on the other. SIGReg can thus be used in place of R(Z) as the expansion term in the LeJEPA objective. By Eq. (A.7), the full statistic retains the same optimum while characterizing it at the level of the entire distribution: R
+
+is the covariance-level projection of SIGReg. Assigning the expansion role to SIGReg thus retains the constraint imposed by R(Z) and adds the higher-order constraint carried by L>2,which no function of Σ alone can express. Equation (A.23) fixes the scale: the proportionality constant decays as O(d−2)
+
+while the coding-rate gap carries the dimension-free factor 
+
+θ2/4, so converting the weight of the expansion term by this ratio preserves its effective strength. Algorithm 1: LeJEPA Pretraining with the AoT-ADMM En-coder 
+
+Input : Mini-batch B; global and local augmentations; en-coder depth L
+
+Parameters : Subspace bases {U ℓ
+
+> [K]
+
+}L−1 
+
+> ℓ=0
+
+, branch coefficients 
+
+{aℓ, b ℓ, c ℓ}L−1 
+
+> ℓ=0
+
+, projection head g, and SIGReg weight αsig 
+
+Output : Updated encoder and projection-head parame-ters  
+
+> 1:
+
+Generate two global views and the prescribed local views for every image in B. 
+
+> 2:
+
+for each augmented view x(v) do  
+
+> 3:
+
+Z0,(v) ← PatchEmbed( x(v)) + PosEmbed  
+
+> 4:
+
+V 0,(v) ← Z0,(v); W 0,(v) ← 0 
+
+> 5:
+
+for ℓ = 0 to L − 1 do  
+
+> 6:
+
+Aℓ, (v) ← MSSA( Zℓ, (v) | U ℓ
+
+> [K]
+
+) 
+
+> 7:
+
+Zℓ+1 ,(v) ← aℓZℓ, (v) + bℓAℓ, (v) + cℓ(V ℓ, (v) −
+
+W ℓ, (v)) 
+
+> 8:
+
+V ℓ+1 ,(v) ← ReLU( Zℓ+1 ,(v) + W ℓ, (v) − τ ) 
+
+> 9:
+
+W ℓ+1 ,(v) ← W ℓ, (v) + Zℓ+1 ,(v) − V ℓ+1 ,(v) 
+
+> 10:
+
+end for  
+
+> 11:
+
+Y (v) ← g Pool( V L, (v)) 
+
+> 12:
+
+end for  
+
+> 13:
+
+Compute Lpred from the local and global embeddings and their mean global target.  
+
+> 14:
+
+Compute L ← L pred + αsig LSIGReg . 
+
+> 15:
+
+Update the encoder, layerwise subspace bases, branch coefficients, and projection head by backpropagation while maintaining the coefficient constraints.  
+
+> 16:
+
+return the updated parameters. 
+
+## B Pseudocode of the Proposed Algorithm 
+
+Algorithm 1 summarizes one end-to-end LeJEPA pretraining iteration with the proposed AoT-ADMM encoder. The three coefficients (aℓ, b ℓ, c ℓ) of the Z-update are parameterized as a softmax over trainable logits, so that they remain positive and sum to one throughout training; the logits are initialized so that the softmax outputs (1 − ηγ − ηρ, ηγ, ηρ ), recovering the unrolled ADMM step at initialization. To stabilize the magnitudes of the recurrent states, both Zℓ+1 and the updated dual state W ℓ+1 are subjected to feature-wise RMS rescaling at each layer. The threshold τ = λ/ρ retains the proximal interpretation of the sparsity update. The inner loop is exactly one unrolled ADMM iteration per network layer: MSSA performs the compression update, ReLU implements the nonnegative soft-thresholding step, and the dual state W tracks the consistency residual. The outer part of the algorithm places this encoder inside the same multi-crop LeJEPA objective used for all reported self-supervised experiments.
