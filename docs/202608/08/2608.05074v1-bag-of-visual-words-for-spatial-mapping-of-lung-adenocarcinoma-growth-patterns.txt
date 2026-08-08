@@ -1,0 +1,241 @@
+Title: Bag-of-Visual-Words for Spatial Mapping of Lung Adenocarcinoma Growth Patterns
+
+URL Source: https://arxiv.org/pdf/2608.05074v1
+
+Published Time: Thu, 06 Aug 2026 01:17:14 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Bag-of-Visual-Words for Spatial Mapping of Lung Adenocarcinoma Growth Patterns ⋆
+
+Darya Ardan 1,2, Valentin Oreiller 2, and Henning Müller 1,3 
+
+> 1
+
+Department of Computer Science, University of Geneva, Geneva, Switzerland  
+
+> 2
+
+Informatics Institute, University of Applied Sciences Western Switzerland (HES-SO Valais), Sierre, Switzerland  
+
+> 3
+
+Radiology Service, Medical Faculty, University of Geneva, Geneva, Switzerland 
+
+Abstract. Spatial mapping of lung adenocarcinoma (LUAD) growth patterns across whole slide images (WSIs) requires resolving architec-tural context at the region level, yet existing methods operate at the individual tile level and produce generic morphological clusters rather than clinically defined pattern maps. We propose a weakly supervised Bag-of-Visual-Words (BoVW) pipeline that learns a visual vocabulary from frozen foundation model embeddings extracted from a small set of annotated regions of interest (ROIs). Pattern prototypes are constructed as mean BoVW histograms of same-label ROIs and used for nearest-prototype classification of sliding-window regions under Jensen–Shannon divergence. The resulting predictions are projected onto the WSI tile grid to produce interpretable spatial pattern maps. We evaluate the method on 87 CPTAC-LUAD patients using three foundation model encoders and multiple vocabulary sizes on two clinically motivated tasks. For tu-mour/healthy classification, the best configuration achieves a balanced accuracy of 0.974 with H-Optimus-1, approaching the 0.987 obtained by a supervised SVM trained on mean-pooled WSI embeddings. For binary histologic grade classification, the BoVW pipeline achieves higher bal-anced accuracy than the supervised baseline for all encoders, suggesting that ROI-level pattern decomposition preserves grade-relevant hetero-geneity that is attenuated by global mean pooling. 
+
+Keywords: Lung adenocarcinoma · Whole slide images · Bag-of-Visual-Words · Foundation models · Weakly supervised learning · Spatial pat-tern mapping 
+
+## 1 Introduction 
+
+Lung adenocarcinoma (LUAD) is characterised by a diverse set of histologi-cal growth patterns, namely lepidic, acinar, papillary, micropapillary, and solid, whose spatial distribution within a tumour carries significant prognostic infor-mation [1]. In clinical practice, pathologists report the dominant growth pattern  
+
+> ⋆
+
+Supported by the Swiss National Science Foundation (SNSF) under Grant No. 220761 arXiv:2608.05074v1 [cs.CV] 5 Aug 2026 2 D. Ardan, V. Oreiller et al. 
+
+per whole slide image (WSI), a convention that obscures the intratumoural het-erogeneity that is increasingly recognised as a determinant of disease progression and treatment response. Spatial maps showing the distribution of growth pat-terns across a WSI would provide clinicians with richer information than a single dominant label, enabling quantitative characterisation of pattern composition and heterogeneity at the slide level. Yet the computational tools to generate such maps remain limited. The challenge concerns both supervision and spatial scale. Prior supervised approaches have used pixel-wise semantic segmentation [2] or patch-level classi-fication across WSIs [3,4]. However, dense pixel annotations are costly and ar-guably finer than required for regionally defined LUAD growth patterns, while independent patch predictions capture only limited architectural context. Exist-ing datasets such as ANORAK [2] instead annotate selected ROIs, whereas larger weakly labelled cohorts typically provide only a dominant slide label. These lim-itations motivate ROI-level spatial mapping from limited regional supervision. Unsupervised methods have emerged as a promising alternative. Histomor-phological Phenotype Learning (HPL) [5] and PANTHER [6] demonstrate that self-supervised tile embeddings can be clustered into morphologically coherent phenotype groups, producing spatial maps of tissue composition without any annotation. However, these methods operate at the individual tile level, typi-cally 224 ×224 pixels, and discover generic morphological concepts rather than the specific WHO-defined LUAD growth patterns. This is a fundamental limita-tion: LUAD growth patterns are architectural phenomena defined by the spatial arrangement of cells across multiple tile widths. A lepidic pattern is recognisable from the preservation of alveolar architecture across a region, not from any single tile in isolation. Tile-level clustering conflates locally similar tiles that belong to architecturally distinct patterns, reducing discriminability for the clinically rel-evant pattern taxonomy. We adopt the region of interest (ROI) as the unit of analysis for LUAD growth pattern mapping. This is motivated by how pathologists annotate these patterns in practice: annotation protocols instruct experts to delineate regions as large as possible that are relatively pure, containing a single pattern [7,2]. Furthermore, growth patterns are defined by the spatial arrangement of cells across a tissue region rather than by local pixel features [7], and empirical studies show that pattern recognition benefits from a field of view spanning several hundred microns [7]. An ROI spanning multiple tile widths therefore captures the architectural context required to identify each pattern, while remaining far coarser than pixel-level segmentation and computationally tractable at the WSI scale. In this paper we propose a weakly supervised pipeline for spatial LUAD growth pattern mapping that operates at the ROI level. A visual vocabulary is learned by clustering tile embeddings from 168 annotated ROIs using a frozen foundation model encoder, and per-pattern prototypes are constructed as mean BoVW histograms of same-label ROIs. Pattern assignment on unseen WSIs is performed by nearest-prototype retrieval under Jensen–Shannon Divergence, and BoVW Spatial Mapping of LUAD Patterns 3   
+
+> Fig. 1. Overview of the proposed pipeline. (I, II) : Visual vocabulary learning from an-notated ROIs via a frozen foundation model encoder, and BoVW histogram encoding.
+> (III) : Sliding-window BoVW encoding of WSIs and nearest-prototype classification un-der JSD. (IV) : Downstream outputs: tumour/healthy classification, histologic grade classification, and spatial LUAD pattern maps.
+
+predictions are assembled into spatial pattern maps on the WSI tile grid. Evalu-ated on CPTAC-LUAD WSIs on tumour/healthy classification and binary histo-logic grade classification, our method achieves balanced accuracies of 0.974 and 
+
+0.729 respectively, with the latter outperforming a directly supervised baseline (0.678 ). 
+
+## 2 Method 
+
+We propose a weakly supervised pipeline for spatially mapping LUAD growth patterns across WSIs. Given a small set of pattern-labelled regions of interest (ROIs) and a collection of unannotated whole slide images (WSIs), the goal is to assign a growth pattern label to every spatial position of each WSI without tile-level or pixel-level supervision. The pipeline proceeds in four stages: ( i) visual vocabulary learning from annotated ROI tiles, ( ii ) ROI histogram encoding, (iii ) per-pattern prototype construction, and ( iv ) WSI pattern assignment and spatial mapping, as illustrated in Figure 1. 
+
+2.1 Visual Vocabulary Learning 
+
+Let {xi}Ni=1 ⊂ Rd denote the set of ℓ2-normalised tile embeddings extracted from all annotated ROIs using a frozen foundation model encoder fθ . Although 4 D. Ardan, V. Oreiller et al. 
+
+individual tiles carry no label, they are drawn exclusively from tissue regions whose enclosing ROI has been assigned a pattern label. A visual vocabulary of k visual words is learned by applying K-Means to the embeddings of tiles extracted from the annotated ROIs (stages I and II in Figure 1): 
+
+min 
+
+> C
+> N
+
+X
+
+> i=1
+
+min  
+
+> c∈C
+
+∥xi − c∥22, C = {c1, . . . , ck}, (1) yielding k centroids C that constitute the vocabulary. The algorithm operates without access to pattern labels, making vocabulary construction entirely unsu-pervised. 
+
+2.2 ROI Histogram Encoding 
+
+Given the vocabulary C of k centroids, each annotated ROI is encoded as a normalised histogram over visual words, the Bag-of-Visual-Words (BoVW) rep-resentation [8,9]. For the n tile embeddings {xj }nj=1 belonging to ROI r, each tile is assigned to its nearest centroid: 
+
+zj = arg min 
+
+> z∈{ 1,...,k }
+
+∥xj − cz ∥22. (2) Because all embeddings and centroids are ℓ2-normalised and therefore lie on the unit hypersphere, minimising squared Euclidean distance is equivalent to maximising cosine similarity: ∥x − c∥22 = 2(1 − x⊤c). The assignment in Eq. (2) thus selects the visually most similar visual word for each tile. The ROI histogram is formed as the mean of one-hot assignment vectors: 
+
+hr = 1
+
+n
+
+> n
+
+X
+
+> j=1
+
+ezj ∈ Rk, (3) where ezj ∈ { 0, 1}k is the one-hot indicator of word zj . By construction hr is 
+
+ℓ1-normalised and constitutes a valid discrete probability distribution over the 
+
+k visual words. 
+
+2.3 Per-Pattern Prototype Construction 
+
+Let Rg denote the set of BoVW histograms of all annotated ROIs carrying label 
+
+g, where g ∈ G = {Lepidic, Acinar, Papillary, Micropapillary, Solid, Normal }.The prototype of pattern g is the mean BoVW histogram over all ROIs of that pattern: 
+
+μg = 1
+
+|R g |
+
+X
+
+> h∈R g
+
+h, (4) Because each histogram is already ℓ1-normalised, μg is itself a valid probability distribution. BoVW Spatial Mapping of LUAD Patterns 5
+
+Vocabulary quality criterion. The separability of the learned prototypes is as-sessed by computing the full |G| × |G| matrix of pairwise Jensen–Shannon Diver-gences (JSD) between all prototype pairs. For two distributions P, Q ∈ Rk:
+
+JSD( P ∥Q) = 12 DKL 
+
+
+
+P M
+
+
+
++ 12 DKL 
+
+
+
+Q M
+
+
+
+, M = 12 (P + Q), (5) where DKL (P ∥Q) = Pkl=1 P [l] log P [l] 
+
+> Q[l]
+
+is the KL divergence. JSD is symmetric, bounded in [0 , 1] , and well-defined even when histograms contain zero-count bins (a small smoothing constant ε is applied). A vocabulary passes quality control if min g̸ =g′ JSD( μg , μg′ ) > δ , where δ = 0 .05 is the threshold below which two prototypes are considered effectively indistinguishable. 
+
+2.4 WSI Pattern Assignment and Spatial Mapping 
+
+Sliding-window ROI extraction. Each WSI is tessellated into overlapping sliding-window ROIs (stage III in Figure 1). A window of W × W tiles is slid with stride 
+
+s tiles across the tile grid; windows with fewer than θmin valid (non-background) tiles are discarded. Each surviving window is encoded into a BoVW histogram 
+
+hr using Eqs. (2)–(3). 
+
+Pattern assignment. Each WSI-ROI is assigned the pattern whose prototype is closest under JSD (Eq. (5)): 
+
+ˆgr = arg min 
+
+> g∈G
+
+JSD( hr ∥ μg ) . (6) 
+
+Spatial mapping. ROI predictions are projected back onto the WSI tile grid (stage IV in Figure 1). Classification confidence for each ROI is defined as the normalised margin between the JSD distances to the closest and second-closest prototypes, κr = 1 −d1/d 2, where d1 and d2 denote the closest and second-closest prototype distances respectively. ROIs whose confidence falls below threshold τ
+
+are labelled Unknown ; each Unknown ROI is then relabelled by majority vote over its immediate grid neighbours, exploiting the spatial contiguity of LUAD growth patterns. 
+
+WSI-level classification tasks. Two downstream tasks are evaluated. 
+
+Task 1: tumour/healthy classification. A WSI is classified as tumour if at least one ROI prediction belongs to a cancer pattern ( G \ { Normal }); otherwise it is classified as healthy. 
+
+Task 2: binary histologic grade classification. High-grade patterns (Solid, Mi-cropapillary) are associated with worse survival and higher recurrence risk than low-grade patterns (Lepidic, Acinar, Papillary) [1,10,11]. Each patient is assigned a binary grade from their ROI-level predictions using a highest-grade-wins rule, consistent with IASLC recommendations [1]: 
+
+ˆgpatient =
+
+(
+
+high-grade if ∃ r : ˆ gr ∈ { Solid, Micropapillary },
+
+low-grade otherwise. (7) 6 D. Ardan, V. Oreiller et al. 
+
+## 3 Experiments and Results 
+
+We evaluate the pipeline on 87 CPTAC-LUAD [12] patients comprising 453 WSI entries, using H-Optimus-1 [13], H0-Mini [14], and UNI2-h [15], with vocabulary sizes k ∈ 6, 8, 12 , 16 , 18 . All analyses use 224 ×224 -pixel tiles at 20 × magnifica-tion, matching the native input configuration of the encoders. The reference pool contains 168 pattern-enriched ROIs of 1344 ×1344 pixels, corresponding to 6,048 tiles. ROIs were selected from CPTAC-LUAD slides with dominant-pattern metadata. A pretrained tumour-localisation model was used only to identify tumour tissue, after which ROIs were manually selected by a computational pathology researcher without formal pathology training using the slide metadata and published morphological criteria. These ROIs are used exclu-sively for vocabulary learning and prototype construction. Evaluation patients are disjoint from those contributing reference ROIs. Sliding-window regions extracted during WSI inference use the same size 
+
+1344 ×1344 pixel field of view. Results are reported for WSI-level tumour/healthy classification and patient-level binary histologic grade classification. The super-vised baseline mean-pools tile embeddings within each region and region embed-dings within each WSI, followed by an SVM evaluated using leave-one-patient-out cross-validation. In contrast, the BoVW prototypes are learned from the disjoint reference ROI pool and applied without fitting to labels from the evalu-ation cohort. Attention-based multiple instance learning [16] was not evaluated because the labelled cohort was considered insufficient for reliable training. 
+
+3.1 Vocabulary Evaluation 
+
+Inter-prototype separability. Table 1 reports the inter-prototype JSD matrix for H-Optimus-1 at k=8 . The lowest separation is between Acinar and Papillary, reflecting their known architectural similarity as glandular patterns [17]. The highest separation is between Micropapillary and Lepidic, consistent with these patterns representing opposite ends of the LUAD architectural spectrum. Table 2 shows that H-Optimus-1 achieves consistently higher minimum JSD than H0-Mini, while UNI2-h attains the highest absolute minimum yet underperforms on downstream classification (Tables 3 and 4), suggesting prototype separability is necessary but not sufficient for WSI-level pattern mapping. At k=6 , vocabulary size equals the number of pattern classes, yielding JSD = 1 .000 by construction due to trivially disjoint prototypes; these values are excluded from the trend analysis. For all encoders, minimum JSD increases monotonically with k, yet the vocabulary size that maximises separability differs from the one that maximises classification accuracy. Every (encoder, k) configuration evaluated satisfies the quality criterion of Section 2.3 ( min g̸ =g′ JSD( μg , μg′ ) > δ = 0 .05 , excluding the degenerate k=6 case), so no vocabulary was excluded from the downstream evaluation on this basis. BoVW Spatial Mapping of LUAD Patterns 7                                                                 
+
+> Table 1. Inter-prototype JSD matrix for H-Optimus-1, k=8 . All off-diagonal values exceed 0.74 , confirming strong prototype separability across all pattern pairs.
+> Acin. Lepi. Microp. Pap. Solid Norm. Acinar —0.994 0.940 0.741 0.746 0.976
+> Lepidic 0.994 —0.996 0.855 0.993 0.967
+> Micropap. 0.940 0.996 —0.924 0.940 0.945
+> Papillary 0.741 0.855 0.924 —0.955 0.991
+> Solid 0.746 0.993 0.940 0.955 —0.929
+> Normal 0.976 0.967 0.945 0.991 0.929 —
+> Table 2. Minimum off-diagonal inter-prototype JSD. Higher values indicate more sep-arable prototype pairs.
+> Encoder k=6 k=8 k=12 k=16 k=18
+> H-Optimus-1 1.000 †0.741 0.752 0.785 0.825 H0-Mini 1.000 †0.469 0.516 0.506 0.545 UNI2-h 1.000 †0.824 0.844 0.830 0.910
+> †Degenerate case: disjoint support by construction.
+
+3.2 Spatial Pattern Maps 
+
+Each sliding-window ROI is coloured by ˆgr and placed at its centre coordinates in tile units, with the confidence threshold set to τ = 0 .5 and confidence κr encoded in a complementary heatmap. Representative maps for two CPTAC-LUAD slides are shown in Figure 2 (H-Optimus-1, k=8 ). Both slides show spatially coherent pattern regions consistent with expected tissue architecture, and uncertainty concentrates at pattern boundaries rather than being randomly distributed. This qualitative visual inspection suggests that the pipeline recovers plausible pattern organisation; a formal assessment by pathologists is left to future work (see Section 4). 
+
+3.3 Downstream Classification 
+
+Task 1: tumour/healthy classification. The BoVW pipeline using H-Optimus-1 and H0-Mini both peak at k=16 , while UNI2-h improves monotonically with 
+
+k, peaking at k=18 , substantially below the other two encoders (Table 3). The small gap between the supervised baseline and the best BoVW configurations (≤0.013 for H-Optimus-1) indicates that the training-free prototype pipeline achieves near-parity with a directly supervised method for tumour detection, a task for which the embedding signal is strong across all encoders. 
+
+Task 2: binary histologic grade classification. The BoVW pipeline achieves higher balanced accuracy than the supervised SVM baseline for all three encoders (Ta-ble 4), with H-Optimus-1 at k=8 yielding the highest BoVW performance. This 8 D. Ardan, V. Oreiller et al. 
+
+Fig. 2. Spatial pattern maps for two CPTAC-LUAD WSIs (H-Optimus-1, k=8 ). Pat-tern overlay (left) shows per-ROI assignments superimposed on the tissue thumbnail. Confidence heatmap (right) encodes classification confidence, with yellow indicating high confidence and dark purple indicating low confidence or Unknown regions. 
+
+consistent advantage across encoders demonstrates that distributing WSI repre-sentation over pattern-relevant visual words preserves grade-discriminative spa-tial heterogeneity that is lost when embeddings are mean-pooled to a single vec-tor. Notably, the optimal k for Task 2 ( k=8 ) is coarser than for Task 1 ( k=16 ), indicating that grade discrimination and tumour detection impose different re-quirements on vocabulary granularity. Task 2 results should be interpreted with caution given the cohort imbalance (68 low-grade, 19 high-grade), and validated on larger, balanced datasets. 
+
+Table 3. Task 1 (tumor vs healthy). k is vocabulary size. Baseline: SVM on mean-pooled ROI embeddings without vocabulary.                                                                                                                                        
+
+> Healthy Tumour Encoder kBal.Acc PRF1 PRF1 H-Optimus-1 60.738 1.00 0.48 0.64 0.77 1.00 0.87 80.955 0.99 0.91 0.95 0.95 1.00 0.97 12 0.765 1.00 0.53 0.69 0.79 1.00 0.88
+> 16 0.974 0.99 0.95 0.97 0.97 1.00 0.98 18 0.795 0.99 0.59 0.74 0.81 1.00 0.90 Baseline 0.987 0.99 0.98 0.98 0.99 0.99 0.99 H0-Mini 60.818 1.00 0.64 0.78 0.83 1.00 0.91 80.827 1.00 0.65 0.79 0.84 1.00 0.91 12 0.858 0.98 0.72 0.83 0.87 0.99 0.92
+> 16 0.955 0.99 0.91 0.95 0.95 1.00 0.97 18 0.921 0.99 0.85 0.91 0.92 1.00 0.96 Baseline 0.981 0.98 0.98 0.98 0.99 0.99 0.99 UNI2-h 60.698 1.00 0.40 0.57 0.75 1.00 0.86 80.694 1.00 0.39 0.56 0.75 1.00 0.85 12 0.775 1.00 0.55 0.71 0.80 1.00 0.89 16 0.788 0.99 0.58 0.73 0.81 1.00 0.89
+> 18 0.810 0.99 0.62 0.77 0.83 1.00 0.90 Baseline 0.984 0.99 0.98 0.98 0.99 0.99 0.99
+
+BoVW Spatial Mapping of LUAD Patterns 9
+
+Table 4. Task 2 (low vs high grade). k is vocabulary size. Baseline: SVM on mean-pooled ROI embeddings without vocabulary.                                                                                                                                                           
+
+> Low-grade High-grade Encoder kBal.Acc Mac.F1 PRF1 PRF1 H-Optimus-1 60.707 0.641 0.90 0.68 0.77 0.39 0.74 0.51
+> 80.729 0.671 0.91 0.72 0.80 0.42 0.74 0.54
+> 12 0.714 0.651 0.90 0.69 0.78 0.40 0.74 0.52 16 0.714 0.651 0.90 0.69 0.78 0.40 0.74 0.52 18 0.714 0.651 0.90 0.69 0.78 0.40 0.74 0.52 Baseline 0.678 0.685 0.86 0.88 0.87 0.53 0.47 0.50 H0-Mini 60.685 0.612 0.90 0.63 0.74 0.36 0.74 0.48
+> 80.692 0.622 0.90 0.65 0.75 0.37 0.74 0.49 12 0.673 0.615 0.88 0.66 0.76 0.36 0.68 0.47 16 0.651 0.586 0.88 0.62 0.72 0.33 0.68 0.45 18 0.666 0.605 0.88 0.65 0.75 0.35 0.68 0.46 Baseline 0.644 0.650 0.84 0.87 0.86 0.47 0.42 0.44 UNI2-h 60.699 0.631 0.90 0.66 0.76 0.38 0.74 0.50 80.692 0.622 0.90 0.65 0.75 0.37 0.74 0.49 12 0.699 0.631 0.90 0.66 0.76 0.38 0.74 0.50
+> 16 0.707 0.641 0.90 0.68 0.77 0.39 0.74 0.51 18 0.707 0.641 0.90 0.68 0.77 0.39 0.74 0.51 Baseline 0.693 0.708 0.86 0.91 0.89 0.60 0.47 0.53
+
+## 4 Discussion 
+
+Our results show that a training-free BoVW pipeline anchored to a small set of reference ROIs can produce spatially coherent LUAD growth-pattern maps and competitive downstream classification. For binary grade classification, the BoVW pipeline achieves higher balanced accuracy than the supervised SVM baseline across all three encoders. This comparison should nevertheless be inter-preted with care, since the SVM is trained through leave-one-patient-out cross-validation on the evaluation cohort, whereas the BoVW prototypes are learned from a disjoint reference set. The results suggest that decomposing each WSI into pattern-relevant visual words may preserve the contribution of spatially limited high-grade regions that can be attenuated by global mean pooling. The two tasks benefit from different levels of vocabulary granularity, reflect-ing the different nature of the discriminative signal: separating tumour from healthy tissue relies on coarser tissue-type differences, while grade discrimina-tion requires the vocabulary to resolve finer architectural distinctions between pattern groups. 
+
+Limitations. Two data constraints limit the current study. The annotated ROI pool is small and class-imbalanced (14 to 44 ROIs per pattern), which may limit prototype quality for rare patterns. The evaluation dataset carries weak patient-level grade labels with no WSI-level ground truth and pronounced class imbalance (68 low-grade, 19 high-grade), which motivated the choice of binary rather than per-class evaluation and limits the conclusions that can be drawn from high-grade F1 values. Despite these constraints, the consistent advantage 10 D. Ardan, V. Oreiller et al. 
+
+of the BoVW pipeline over the supervised baseline across all encoders and the qualitative coherence of the spatial maps suggest that the method is promising. Future work will leverage higher-quality hospital data to enable a more rigorous evaluation of per-class spatial mapping accuracy. 
+
+## References 
+
+1. Moreira, A.L., et al.: A grading system for invasive pulmonary adenocarcinoma: a proposal from the International Association for the Study of Lung Cancer Pathol-ogy Committee. J. Thorac. Oncol. 15 (10), 1599–1610 (2020). 2. Pan, X., AbdulJabbar, K., Coelho-Lima, J., et al.: The artificial intelligence-based model ANORAK improves histopathological grading of lung adenocarcinoma. Na-ture Cancer 5(2), 347–363 (2024). 3. Wei, J.W., Tafe, L.J., Linnik, Y.A., Vaickus, L.J., Tomita, N., Hassanpour, S.: Pathologist-level classification of histologic patterns on resected lung adenocarci-noma slides with deep neural networks. Sci. Rep. 9, 3358 (2019). 4. Lami, K., et al.: Standardized classification of lung adenocarcinoma subtypes and improvement of grading assessment through deep learning. Am. J. Pathol. 193 (12), 2066–2079 (2023). 5. Quiros, A.C., Coudray, N., Yeaton, A., et al.: Mapping the landscape of histo-morphological cancer phenotypes using self-supervised learning on unannotated pathology slides. Nature Commun. 15 , 4596 (2024). 6. Song, A.H., Chen, R.J., Ding, T., et al.: Morphological Prototyping for Unsupervised Slide Representation Learning in Computational Pathology. arXiv:2405.11643 (2024). 7. Reisenbüchler, D., et al.: CellOMaps: A Compact Representation for Robust Clas-sification of Lung Adenocarcinoma Growth Patterns. arXiv:2501.08094 (2025). 8. Sivic, J., Zisserman, A.: Video Google: A text retrieval approach to object matching in videos. In: ICCV, pp. 1470–1477 (2003). 9. Caicedo, J.C., Cruz, A., Gonzalez, F.A.: Histopathology image classification using bag of features and kernel functions. In: AIME, pp. 126–135 (2009). 10. Travis, W.D., et al.: The 2015 World Health Organization Classification of Lung Tumors. J. Thorac. Oncol. 10 (9), 1243–1260 (2015). 11. Sica, G., et al.: A grading system of lung adenocarcinomas based on histologic pattern is predictive of disease recurrence in stage I tumors. Am. J. Surg. Pathol. 
+
+34 (8), 1155–1162 (2010). 12. Edwards, N.J., et al.: The CPTAC Data Portal: A Resource for Cancer Proteomics Research. J. Proteome Res. 14 (6), 2707–2713 (2015). 13. Scalbert, M., Saillard, C., Peeters, T., et al.: H-optimus-1: A foundation model for computational histopathology. In: Proc. AACR Annual Meeting, Cancer Research 
+
+86 (8_Suppl), LB174 (2026). 14. Filiot, A., Dop, N., Tchita, O., et al.: Distilling foundation models for robust and efficient models in digital pathology. arXiv:2501.16239 (2025). 15. Chen, R.J., Ding, T., Lu, M.Y., et al.: Towards a general-purpose foundation model for computational pathology. Nature Medicine (2024). 16. Ilse, M., Tomczak, J., Welling, M.: Attention-based deep multiple instance learning. In: ICML, pp. 2127–2136 (2018). 17. Thunnissen, E., et al.: Reproducibility of histopathological subtypes and invasion in pulmonary adenocarcinoma. Mod. Pathol. 25 (12), 1574–1583 (2012).

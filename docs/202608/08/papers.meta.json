@@ -1,0 +1,39 @@
+{
+  "label": "2026-08-08",
+  "date": "2026-08-08",
+  "generated_at": "2026-08-08T20:36:49",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202608/08/2608.02470v1-grounding-agentic-vlms-with-dedicated-segmentation-for-fine-grained-vehicle-damage-assessment",
+      "section": "deep",
+      "title_en": "Grounding Agentic VLMs with Dedicated Segmentation for Fine-Grained Vehicle Damage Assessment",
+      "authors": "Vishwajeet Shivaji Hogale, Anjali Pai, Nitya Ravi",
+      "date": "2026-08-03",
+      "pdf": "https://arxiv.org/pdf/2608.02470v1",
+      "score": "8.0",
+      "evidence": "使用视觉-语言基础模型进行细粒度车辆损伤分类",
+      "tldr": "针对VLM在细粒度车辆损伤评估中空间定位不可靠的问题，本文提出TinyDamage混合架构，将空间定位交给专用分割模型，VLM负责语义推理。实验显示，该方法将报告幻觉率从92%降至31%，并引入DET_l指标评估小目标定位。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Vision-language models (VLMs) are increasingly deployed as reasoning agents in real-world visual assessment pipelines, yet their spatial grounding remains unreliable for fine-grained, visually ambiguous targets. We study this gap in the context of automated vehicle damage assessment, where fine-grained defects such as scratches and hairline cracks occupy few pixels, produce weak gradient signal, and are easily confused with reflections and surface texture. We show that a state-of-the-art VLM (Qwen-VL) achieves strong semantic classification accuracy (87.3%) on this task but is systematically ungrounded at the spatial level: it hallucinates damage in reflective regions, misses elongated scratches entirely, and produces spatially inconsistent outputs when prompted for localization. We propose TinyDamage, a hybrid architecture that delegates spatial grounding to a dedicated multi-task segmentation model while reserving the VLM for semantic reasoning and report generation. On the segmentation side, we find that the choice of loss function has an outsized and underexplored effect on tiny-object grounding: focal loss, widely used for class imbalance, collapses tiny-damage detection to zero, while a supervised contrastive objective measurably improves damage/background separability. We integrate the segmentation model into a 7-node LangGraph agent pipeline that grounds every VLM generation step in the segmentation output, and show that this grounding reduces the report hallucination rate from 92% (text-only) and 78% (image-only) to 31% in a controlled evaluation on 100 human-verified reports. We introduce DET_l, a permissive per-category detection metric for evaluating tiny-object grounding under class imbalance, and report latency and reliability characteristics of the deployed pipeline.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/08/2608.05074v1-bag-of-visual-words-for-spatial-mapping-of-lung-adenocarcinoma-growth-patterns",
+      "section": "quick",
+      "title_en": "Bag-of-Visual-Words for Spatial Mapping of Lung Adenocarcinoma Growth Patterns",
+      "authors": "Darya Ardan, Valentin Oreiller, Henning Müller",
+      "date": "2026-08-05",
+      "pdf": "https://arxiv.org/pdf/2608.05074v1",
+      "score": "6.0",
+      "evidence": "利用冻结基础模型嵌入和原型分类进行区域级细粒度分类",
+      "tldr": "针对肺腺癌全切片图像中生长模式的空间映射，现有方法在单 tile 级别操作并产生通用形态聚类，缺乏临床定义的模式图。本文提出弱监督 Bag-of-Visual-Words 流程，从少量标注 ROI 的冻结基础模型嵌入中学习视觉词汇，以平均 BoVW 直方图构建模式原型，并在 Jensen-Shannon 散度下进行最近原型分类，将结果投影到 tile 网格形成可解释空间模式图。在 87 例 CPTAC-LUAD 上，肿瘤/正常分类最佳平衡准确率 0.974，接近监督基线；组织学分级任务中 BoVW 优于所有编码器的监督基线，表明 ROI 级模式分解保留了被全局平均池化削弱的级别相关异质性。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Spatial mapping of lung adenocarcinoma (LUAD) growth patterns across whole slide images (WSIs) requires resolving architectural context at the region level, yet existing methods operate at the individual tile level and produce generic morphological clusters rather than clinically defined pattern maps. We propose a weakly supervised Bag-of-Visual-Words (BoVW) pipeline that learns a visual vocabulary from frozen foundation model embeddings extracted from a small set of annotated regions of interest (ROIs). Pattern prototypes are constructed as mean BoVW histograms of same-label ROIs and used for nearest-prototype classification of sliding-window regions under Jensen--Shannon divergence. The resulting predictions are projected onto the WSI tile grid to produce interpretable spatial pattern maps. We evaluate the method on 87 CPTAC-LUAD patients using three foundation model encoders and multiple vocabulary sizes on two clinically motivated tasks. For tumour/healthy classification, the best configuration achieves a balanced accuracy of $0.974$ with H-Optimus-1, approaching the $0.987$ obtained by a supervised SVM trained on mean-pooled WSI embeddings. For binary histologic grade classification, the BoVW pipeline achieves higher balanced accuracy than the supervised baseline for all encoders, suggesting that ROI-level pattern decomposition preserves grade-relevant heterogeneity that is attenuated by global mean pooling.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

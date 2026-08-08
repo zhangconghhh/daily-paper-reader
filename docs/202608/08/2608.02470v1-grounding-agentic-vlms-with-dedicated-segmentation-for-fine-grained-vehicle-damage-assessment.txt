@@ -1,0 +1,172 @@
+Title: Grounding Agentic VLMs with Dedicated Segmentation for Fine-Grained Vehicle Damage Assessment
+
+URL Source: https://arxiv.org/pdf/2608.02470v1
+
+Published Time: Tue, 04 Aug 2026 02:43:45 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Grounding Agentic VLMs with Dedicated Segmentation for Fine-Grained Vehicle Damage Assessment 
+
+## Vishwajeet Shivaji Hogale Anjali Pai Nitya Ravi Northeastern University 
+
+## {hogale.v, pai.anji, ravi.nity }@northeastern.edu 
+
+## August 4, 2026 
+
+Abstract 
+
+Vision-language models (VLMs) are increasingly deployed as reasoning agents in real-world visual assessment pipelines, yet their spatial grounding remains unreliable for fine-grained, visually ambiguous targets. We study this gap in the context of automated vehicle damage assessment, where fine-grained defects such as scratches and hairline cracks occupy few pixels, produce weak gradient signal, and are easily confused with reflections and surface texture. We show that a state-of-the-art VLM (Qwen-VL) achieves strong semantic classification accuracy (87.3%) on this task but is systematically ungrounded at the spatial level: it hallucinates damage in reflective regions, misses elongated scratches entirely, and produces spatially inconsistent outputs when prompted for localization. We characterize this failure and propose a hybrid architecture, TinyDamage, that addresses it by delegating spatial grounding to a dedicated multi-task segmentation model while reserving the VLM for semantic reasoning and report generation. On the segmentation side, we find that the choice of loss function has an outsized and previously underexplored effect on tiny-object grounding: focal loss, widely used for class imbalance, collapses tiny-damage detection to zero, while a supervised contrastive objective measurably improves damage/background separability. We integrate the resulting segmentation model into a 7-node LangGraph agent pipeline that grounds every VLM generation step in the segmentation output (image + text), and quantify the effect: in a controlled evaluation on 100 human-verified reports, segmentation-grounded prompting reduces the report hallucination rate from 92% (text-only) and 78% (image-only) to 31%, where a report is counted as hallucinating if it asserts damage unsupported by the human-labeled ground-truth masks. We introduce DET l, a permissive per-category detection metric for evaluating tiny-object grounding under class imbalance, and report full latency/reliability characteristics of the deployed pipeline. 
+
+# 1 Introduction 
+
+Vision-language models are increasingly used not just to describe images but to act on them: to localize, assess, and reason about specific real-world entities in deployed pipelines. This creates a grounding requirement that goes well beyond fluent description: the model’s claims about where something is and how severe it is must be evidenced by the actual pixels, not merely plausible given the overall scene. We study this problem in a setting where grounding failure is both consequential and easy to measure: automated vehicle damage assessment for insurance claims. Fine-grained vehicle damages, such as scratches, hairline cracks, and shallow dents, are a natural stress test for VLM grounding. They occupy a small fraction of image pixels, produce weak training signal, and share visual characteristics with benign surface features such as reflections and paint texture gradients. On the CarDD benchmark (Wang et al., 1arXiv:2608.02470v1 [cs.CV] 3 Aug 2026 2023), this manifests concretely: while an instance segmentation baseline (DCN+) achieves 57.0% mask AP overall, crack AP is only 16.6% and scratch AP only 34.3%. We first characterize how a strong open VLM (Qwen-VL) fails at this task. It classifies damage type with high accuracy (87.3%) when asked semantic questions, but when prompted for spatial localization it hallucinates damage in reflective regions, misses thin elongated damages entirely, and produces inconsistent outputs across near-identical crops. This is a grounding failure, not a capability failure: the model has clearly learned what a scratch 
+
+looks like in aggregate, but cannot reliably tie that concept to specific pixels under visual ambiguity. Rather than treating this as something to prompt around, we propose a hybrid architecture that assigns spatial grounding to a dedicated segmentation model ( TinyDamage ) and reserves the VLM for what it is good at: semantic reasoning and language generation, now conditioned on the segmentation model’s grounded output. We integrate both into a 7-node LangGraph agent pipeline where every VLM generation step receives the segmentation mask and structured damage summary as grounding context, and we show via ablation that removing this grounding (image-only or text-only prompting) measurably degrades output specificity and increases generic, ungrounded claims. On the segmentation side, we find that the choice of optimization objective is an under-explored but critical determinant of whether a model can ground tiny, visually ambiguous targets at all: focal loss, the standard tool for class-imbalanced detection, collapses tiny-damage grounding to zero, while a supervised contrastive objective explicitly improves damage/background separability in the embedding space. We frame our contributions around two questions: 
+
+RQ1 (Spatial grounding): Why does VLM-based spatial grounding fail for tiny, visu-ally ambiguous objects, and can dedicated segmentation recover reliable localization where prompting cannot? 
+
+RQ2 (Grounded generation): Does conditioning VLM generation on dedicated segmenta-tion output (rather than raw images) reduce hallucination and improve the faithfulness of generated claim reports? 
+
+Contributions: (1) a systematic characterization of VLM spatial-grounding failure on fine-grained visual damage, and a controlled comparison of image-only, text-only, and segmentation-grounded prompting showing that grounding is necessary for faithful report generation; (2) TinyDamage, a segmentation framework combining an FPN encoder, a Tiny-Object Contrastive Module, and a Gradient-Aware Boundary Module, with a systematic ablation showing that focal-dominant losses collapse tiny-object detection while contrastive learning improves it; (3) a 7-node LangGraph pipeline that operationalizes segmentation-grounded VLM generation with full production observability (LangFuse), including reliability and latency characterization relevant to real-world deployment; (4) DET l, a per-category detection metric for evaluating tiny-object grounding under permissive-to-strict overlap thresholds. 
+
+# 2 Related Work 
+
+Grounding and hallucination in VLMs. VLMs such as Qwen-VL (Bai et al., 2023) demonstrate strong general visual reasoning, but spatial grounding for fine-grained targets remains unreliable, particularly under visual ambiguity (reflections, texture) where the model has weak evidence to anchor a claim. PerSAM (Zhang et al., 2023) explores training-free personalization of SAM for one-shot localization but does not address hallucination under ambiguity. Our work provides a controlled, quantified account of this failure mode in a single domain and proposes delegating grounding to a dedicated model rather than attempting to prompt or fine-tune it away. 2Vehicle damage segmentation. CarDD (Wang et al., 2023) provides the standard benchmark; MARS (Panboonyuen et al., 2023), ALBERT (Panboonyuen, 2025a), and SLICK (Panboonyuen, 2025b) advance architecture design but evaluate on proprietary data and do not study optimization effects on tiny-object detection. A systematic review (Hasan et al., 2025) identifies fine-grained delineation as an open challenge. 
+
+Small-object segmentation and loss design. FPN (Lin et al., 2017a) provides multi-scale representations; focal loss (Lin et al., 2017b) reweights cross-entropy for hard examples; Dice loss (Milletari et al., 2016) optimizes region overlap. AFMA (Sang et al., 2023) and Scale-Aware Relay Learning (Li et al., 2025) address small objects architecturally, while we show optimization choices alone can cause larger swings in tiny-object grounding than architecture changes. 
+
+Contrastive learning and agentic pipelines. Contextrast (Sung et al., 2024) introduces boundary-aware negative sampling for segmentation; we adapt this to a regime where standard losses actively suppress tiny-object predictions. We use LangGraph (LangGraph, 2024) for stateful multi-node agent orchestration and LangFuse (LangFuse, 2024) for production observability, which to our knowledge has not previously been combined with dedicated segmentation grounding for a real-world visual assessment agent. 
+
+# 3 TinyDamage: A Grounding Module for Tiny, Ambigu-ous Objects 
+
+TinyDamage augments any segmentation backbone with three components: (1) multi-scale feature extraction via a Feature Pyramid Network (FPN) (Lin et al., 2017a), critical because tiny damages are often visible only at the highest spatial resolution; (2) a Tiny-Object Contrastive Module ; and (3) a Gradient-Aware Boundary Module . An auxiliary 6-class damage classification head shares the encoder. Figure 1 shows the full system, spanning both the segmentation model and the downstream agent pipeline (Section 4). 
+
+Tiny-Object Contrastive Module. Standard segmentation losses produce feature spaces where tiny-damage pixels are insufficiently separated from visually similar background (Section 5). Given decoder features F ∈ RH×W ×D , a lightweight MLP projects each pixel to an embedding zi = MLP( Fi) ∈ Rd, d ≪ D, trained with a pixel-level supervised contrastive loss: 
+
+Lcon = − 1
+
+|A|
+
+X
+
+> a∈A
+
+log exp( za · zp/τ )
+
+P 
+
+> n∈N
+
+exp( za · zn/τ ) (1) where A is the set of tiny-damage anchors, zp a positive, N the negative set, and τ atemperature. Following Sung et al. (2024), negatives are drawn preferentially (50%) from background within a spatial neighborhood δ of damage boundaries (hard negatives), and 50% uniformly from background elsewhere, to force the embedding space to distinguish damage from adjacent texture without mode collapse. 
+
+Gradient-Aware Boundary Module. We compute Sobel gradients of predicted and ground-truth masks and apply a weighted L1 penalty, Lgrad = P 
+
+> x,y
+
+w(x, y ) · |∇ ˆM − ∇ M |,with w(x, y ) = 1 + β · ⊮[( x, y ) within δ of a tiny-damage boundary], β=5 .0, δ=3px. Used as a dominant objective this collapses (Section 5); used as a small controlled auxiliary it improves boundary alignment. 3A . S E G M E N TAT I O N M O D E L Input Swappable backbone U-Net ResNet-34 YOLOv8 CSPNet Mask2F. Swin-T Feature pyramid network (P2 - P5) Seg. head Binary mask Contrastive head 128-d pixel embed. Boundary Sobel gradient Classifier 6-class damage 
+
+Training objective CE + 4*Dice + Focal + 0.1*Contrastive + 0.05*Grad + Cls AdamW + cosine annealing Output: damage masks + 6-class predictions + embeddings B . L A N G G R A P H C L A I M P I P E L I N E 1 Segmentation TinyDamage infer. 2 Damage analysis Area, severity, cost 3 Policy resolution Deductible, limits 4 Claim letter img + text 5 Damage rpt. img + text 6 Coverage text only 7 Action plan text only 
+
+ClaimState (TypedDict shared across all nodes) C . I N F R A S T R U C T U R E VLM providers Qwen-VL 2B (local) Gemini / OpenAI Observability LangFuse (local) LangSmith (cloud) Deployment 4-bit GPTQ quant. MPS / CUDA Interface Streamlit web app Upload / Report All providers swappable via environment variables Encoder Deterministic Contrastive VLM gen. Policy / Aux. Provider App Figure 1: System architecture. Top: multi-task segmentation model with swappable backbone (U-Net, YOLOv8, Mask2Former), FPN encoder, contrastive projection head, gradient-aware boundary module, and auxiliary classifier. Middle: 7-node LangGraph pipeline grounding VLM generation in segmentation output. Bottom: swappable VLM providers and observability infrastructure. 4Total objective and metric. L = CE + λdice Dice + λfocal Focal + λcon Lcon + λgrad Lgrad +
+
+λcls Lcls , with λdice =4 .0, λfocal =1 .0, λcon =0 .1, λgrad =0 .05, λcls =1 .0; AdamW (lr=5 ×10 −4)with cosine annealing. For evaluation, since mIoU is dominated by large categories, we introduce DET l: for each ground-truth tiny-damage instance, detected if max p IoU( g, p ) >t=0 .1 against any prediction, a permissive threshold appropriate for measuring detection capability rather than overlap precision (Section 6). 
+
+# 4 Grounding VLM Generation in Segmentation Output 
+
+Segmentation tells us where damage is; real deployment requires understanding what it is and producing faithful, human-readable claim documentation. We build an agent pipeline that grounds every VLM generation step in TinyDamage’s spatial output, and we treat this grounding as the central design decision rather than an implementation detail. 
+
+Pipeline architecture. We implement a LangGraph (LangGraph, 2024) StateGraph 
+
+with seven nodes over a shared ClaimState : (1) Segmentation (TinyDamage inference), (2) Damage Analysis (deterministic: area, components, cost heuristics), (3) Policy Resolution (deterministic: coverage lookup), (4) Claim Letter Generation (VLM, multimodal: image + segmentation overlay + damage summary), (5) Damage Report Generation (VLM, mul-timodal), (6) Coverage Assessment (VLM, text-only), (7) Action Plan Generation (VLM, text-only). We use LangGraph rather than a simple chain because claim assessment requires stateful multi-step reasoning with node-level retry. 
+
+Characterizing the VLM grounding failure. Qwen-VL 2B (Bai et al., 2023) (4-bit GPTQ, local deployment) achieves 87.3% accuracy on semantic damage classification, well above our trained auxiliary classifier (29.6%). However, when prompted to localize damage, via bounding boxes or pixel coordinates, it fails consistently: it hallucinates damage in reflective regions, misses elongated scratches entirely, and gives spatially inconsistent answers on near-identical crops. Zero-shot coordinate-output segmentation was similarly unusable. This is the central empirical motivation for the hybrid design: the VLM’s language-level understanding of damage concepts does not transfer to reliable spatial grounding under visual ambiguity. We note our observations are for a 2B-parameter model under 4-bit quantization; larger or full-precision VLMs may localize better, though the inference-cost argument for a dedicated segmentation model (Section 7) holds regardless of VLM scale. 
+
+Grounding ablation for generation quality. We compare three prompting strategies for the multimodal generation nodes: image-only (no text grounding), text-only (no image), and image+text (segmentation overlay + structured damage summary). Evaluation set. For a reliable evaluation this ablation uses a larger Qwen3.5-VL (9B) model, not the 2B model of the deployed pipeline (Section 4); the larger model is used only to construct and score this evaluation. We generate reports conditioned on the human-labeled, verified CarDD ground-truth masks overlaid on each image, sample 250 pairs, and select 100 balanced across the six damage types so no category dominates the estimate. Scoring. Each report (100 per prompting condition) is scored automatically for hallucination, with a human adjudicating cases the automatic scorer flagged as ambiguous or disagreed on; a report counts as hallucinating if it asserts damage of a type or location not supported by the human-verified ground-truth masks (Table 1). We stress that the reference for hallucination is the verified segmentation mask, not any model-generated text, so the metric measures agreement with human-labeled truth rather than similarity to a generation process. Text-only prompts, which see only the claimant’s free-text incident description, invent damage locations from that narrative alone and hallucinate in 92% of reports. Image-only prompts note that the vehicle is damaged but consistently fail to localize where : in zero-shot use the model never reliably identified the impact region, yielding a 78% hallucination rate. Only image+text grounding, 5Table 1: Grounding ablation: hallucination rate by prompting strategy ( n=100 reports per condition), evaluated on a Qwen3.5-VL (9B) model to ensure high report quality (the deployed pipeline uses a smaller 2B model; Section 4). A report is counted as hallucinating if it asserts damage of a type or location not supported by the human-verified ground-truth masks. Text-only prompting invents damage from the user’s incident description alone; image-only prompting notes that the vehicle is damaged but cannot localize where; only image+text grounding, which conditions generation on the segmentation output, substantially reduces hallucination.          
+
+> Prompting strategy Hallucination rate ↓n
+> Text-only (no image, description-driven) 92% 100 Image-only (no text grounding) 78% 100 Image+text (segmentation-grounded) 31% 100
+
+where the segmentation output directly conditions generation, substantially reduces this to 31%. The residual 31% indicates grounding mitigates but does not eliminate hallucination even for a capable 9B model; the effect of grounding is large and consistent, and we expect it to hold, though not necessarily at the same absolute rates, for the smaller deployed model. We also use a chain-of-thought prompt for coverage assessment (list detected damages, check each against policy terms, then compute cost); without this structure the model frequently skips damage categories or hallucinates coverage for uncovered items. 
+
+Reliability and deployment characteristics. We instrument the full pipeline with LangFuse (LangFuse, 2024). Per-node traces show segmentation latency of 244.6 ms (MPS) and VLM node latency of 2.1 s each (73% of total pipeline time); multimodal nodes use 
+
+∼1,200 input tokens per image, text-only nodes ∼400; LLM node success rate is 96%, with the 4% failures attributable to context-length overflow on images with many small damage instances. Manual evaluation of 50 generated claim letters (1–5 scale) yields 3.8 average quality; the primary failure mode is generic (non-hallucinated but non-specific) repair cost estimates rather than fabricated damage claims, consistent with grounding reducing but not eliminating specificity gaps. The system deploys as a Streamlit application with real-time segmentation and a four-section claim package (letter, report, coverage, action plan), and supports both LangFuse (self-hosted) and LangSmith (cloud) tracing via environment variables for dev/production transition. 
+
+# 5 Experiments 
+
+Setup. We use CarDD (Wang et al., 2023): 4,000+ images, 9,000+ annotated instances across 6 categories, standard 2,816/810/374 train/val/test split. Tiny damages (scratch, crack) make up the majority of small-object instances (over 90% of cracks, 45% of scratches under 128 2 px). Primary architecture: U-Net/ResNet-34 with the full TinyDamage framework; we additionally evaluate YOLOv8-Seg (Jocher et al., 2023) and Mask2Former (Cheng et al., 2022). Training: AdamW (lr=5 ×10 −4), cosine annealing, 40 epochs (validation loss still decreasing at the epoch-30 checkpoint we report, due to compute constraints on Apple M-series hardware, and we flag this as a limitation rather than a final result). All reported numbers are single-run results; in particular, DET l is computed over a small set of tiny-damage instances in the test split and should be read as indicative of detection capability rather than as a precise, low-variance estimate. We therefore emphasize the large, qualitative effects (e.g. the focal-loss collapse to zero) over small numerical differences between comparable configurations. 
+
+Focal loss collapses tiny-damage grounding to zero (Table 2): it concentrates gra-dient on the least-confident pixels, which for tiny damages are ambiguous boundary/texture 6Table 2: Optimization ablation on U-Net (CarDD). † marks configurations that collapse tiny-damage grounding entirely. CE+Dice with cosine annealing is the strongest simple baseline.                                 
+
+> Configuration Val mIoU Val DET lTest mIoU Test DET l
+> CE+Dice, Cosine 0.600 0.667 0.613 1.000
+> CE+Dice, Plateau 0.604 0.500 0.589 0.500 CE+Focal, Plateau 0.578 0.500 0.601 1.000 CE+Dice+Grad, Plat. 0.561 0.167 0.548 0.333 Focal only †0.312 0.000 0.298 0.000 Focal ( γ=5) †0.287 0.000 0.271 0.000 Grad only †0.189 0.000 0.172 0.000
+
+Table 3: Incremental TinyDamage ablation (U-Net, CarDD) and cross-architecture results (test set). TinyDamage improves mIoU consistently across architectures.                         
+
+> Component ablation Cross-architecture (test)
+> Config Val mIoU Test mIoU Arch. Base mIoU TD mIoU Baseline (CE+Dice) 0.600 0.613 U-Net 0.613 0.650 + FPN 0.627 0.636 YOLOv8-Seg 0.570 0.610 + Contrastive 0.635 0.640 Mask2Former 0.620 0.680
+> + Gradient-Aware 0.640 0.645 Full TinyDamage 0.641 0.650
+
+regions, training the model to suppress predictions precisely where damage is. Gradient loss fails standalone and degrades CE+Dice when added, dominated by high-contrast edges of large damages. Cosine annealing outperforms plateau scheduling (0.667 vs. 0.500 val DET l), suggesting smooth decay aids late-stage refinement of small-object features. FPN gives the largest single gain (+2.3% test mIoU), confirming multi-scale preser-vation as the key architectural lever; the contrastive and gradient modules add smaller, controlled gains (+0.4%, +0.5%) without collapsing detection, unlike when gradient loss dominates. TinyDamage improves all three architectures tested, most for Mask2Former (+6.0%), consistent with attention-based models exploiting improved feature separability. 
+
+# 6 Analysis 
+
+Why focal loss fails to ground tiny objects. Focal loss’s (1 −pt)γ modulation con-centrates gradient on the least-confident pixels, which for tiny damages are predominantly ambiguous texture, not the class-imbalance signal it was designed to address. The model learns to suppress predictions in uncertain regions, including the damage itself; increasing γ
+
+worsens this. This is a general risk for any tiny, visually ambiguous grounding target, not specific to vehicle damage. 
+
+Qualitative grounding results. Figure 2 shows TinyDamage inference across CarDD damage categories. The model localizes fine-grained damage, including thin scratches on dark, reflective paint and hairline cracks, that the VLM alone fails to ground spatially (Section 4), providing the precise localization the hybrid pipeline relies on. Quantitatively, the contrastive module’s contribution is reflected in the component ablation (Table 3): adding it on top of the FPN encoder improves test mIoU while preserving detection, consistent with its role of increasing damage/background feature separability rather than acting as a dominant objective. 7(a) Scratch (b) Crack (c) Dent (d) Glass (e) Crush 
+
+Figure 2: TinyDamage inference (red overlays) across CarDD damage categories. The model grounds fine-grained damage, including thin scratches on reflective paint (a) and hairline cracks (b), that VLM-only localization misses. 
+
+Boundary vs. region errors (Appendix A). Error analysis shows false positives concentrated at damage boundaries while false negatives are distributed throughout the damage region, indicating the core bottleneck is feature ambiguity within the damage region, not boundary imprecision. DET l degrades smoothly as the IoU threshold tightens (0.35 at t=0 .05 to 0.04 at t=0 .5), confirming the model typically finds the correct region with imprecise overlap, motivating our permissive-threshold detection metric over strict-overlap metrics like mIoU alone. 
+
+Segmentation-VLM complementarity. Across all experiments, the pattern is consis-tent: the VLM provides strong semantic grounding (87.3% classification accuracy, fluent language) but weak spatial grounding, while TinyDamage provides strong spatial ground-ing (244.6 ms latency, near-real-time) but no semantic or generative capability. Neither component substitutes for the other; the hybrid design is necessary rather than incidental. 
+
+# 7 Discussion and Conclusion 
+
+Our results suggest a general pattern for deploying VLMs as agents over visually ambiguous, fine-grained targets: (1) do not rely on VLM prompting or fine-tuning to solve spatial grounding when a dedicated perception model can do it more reliably and far more cheaply at inference time (244.6 ms vs. 2.1 s); (2) when the VLM is conditioned on grounded segmentation output rather than raw images, hallucination drops substantially (from 78–92% to 31% in our 9B-model evaluation), and generation quality becomes limited primarily by report specificity rather than misplaced claims; (3) for segmentation itself, optimization choices dominate architecture choices in determining whether tiny, ambiguous targets can be grounded at all: switching from focal loss to CE+Dice moves DET l from 0.000 to 0.667, a larger effect than any architectural change we tested. We believe this optimization finding generalizes beyond vehicle damage to other domains with small, visually ambiguous foreground regions (e.g. medical imaging, industrial inspection, aerial remote sensing), and that the broader grounding pattern, namely VLMs for semantic reasoning, dedicated perception for spatial grounding, and explicit conditioning between them, is a practical recipe for deploying agentic VLM pipelines reliably in other real-world visual assessment settings. 
+
+Limitations. Results use binary (not multi-class) segmentation trained for 30 epochs on consumer hardware, with validation loss still decreasing; longer training would likely improve all metrics. Localization precision, not detection, is the main bottleneck (only 4% of instances exceed 0.5 IoU). The hallucination ablation was run on a 9B model for evaluation quality and not re-run at 2B scale, so establishing the grounding effect on the deployed model, along with VLM fine-tuning, retrieval-augmented grounding, and using the pipeline’s verified (image, mask, report) triples as grounding supervision for larger VLMs, is left to future work. 8Code availability. Our implementation, prompt templates, and interactive application are available at https://github.com/99anjalipai/Segment-Damage .
+
+# References 
+
+X. Wang, W. Li, Z. Wu. CarDD: A new dataset for vision-based car damage detection. IEEE Trans. Intelligent Transportation Systems , 24(7):7202–7214, 2023. T. Panboonyuen, N. Nithisopa, P. Pienroj, L. Jirachuphun, C. Watthanasirikrit, N. Pornwiriyakul. MARS: Mask attention refinement with sequential quadtree nodes for car damage instance segmentation. In Proc. ICIAP , Springer, 2023. T. Panboonyuen. ALBERT: Advanced localization and bidirectional encoder representations from transformers for automotive damage evaluation. arXiv:2506.10524 , 2025. T. Panboonyuen. SLICK: Selective localization and instance calibration for knowledge-enhanced car damage segmentation. arXiv:2506.10528 , 2025. R. Zhang, Z. Jiang, Z. Guo, S. Yan, J. Pan, H. Dong, P. Gao, H. Li. Personalize segment anything model with one shot. In Proc. ICLR , 2024. T.-Y. Lin, P. Doll´ ar, R. Girshick, K. He, B. Hariharan, S. Belongie. Feature pyramid networks for object detection. In Proc. CVPR , 2017. T.-Y. Lin, P. Goyal, R. Girshick, K. He, P. Doll´ ar. Focal loss for dense object detection. In Proc. ICCV , 2017. F. Milletari, N. Navab, S.-A. Ahmadi. V-Net: Fully convolutional neural networks for volumetric medical image segmentation. In Proc. 3DV , 2016. O. Ronneberger, P. Fischer, T. Brox. U-Net: Convolutional networks for biomedical image segmen-tation. In Proc. MICCAI , 2015. I. Loshchilov, F. Hutter. SGDR: Stochastic gradient descent with warm restarts. In Proc. ICLR ,2017. I. Loshchilov, F. Hutter. Decoupled weight decay regularization. In Proc. ICLR , 2019. M. Hasan et al. Vehicle damage detection using artificial intelligence: A systematic literature review. 
+
+WIREs Data Mining and Knowledge Discovery , 2025. B. Cheng, I. Misra, A.G. Schwing, A. Kirillov, R. Girshick. Masked-attention mask transformer for universal image segmentation. In Proc. CVPR , 2022. G. Jocher, A. Chaurasia, J. Qiu. Ultralytics YOLOv8, 2023. https://github.com/ultralytics/ ultralytics .K. He, G. Gkioxari, P. Doll´ ar, R. Girshick. Mask R-CNN. In Proc. ICCV , 2017. H. Sang et al. Across feature map attention for efficient small object segmentation. IEEE Trans. PAMI , 2023. J. Li et al. Scale-aware relay learning for tiny object segmentation. arXiv:2511.09891 , 2025. Y. Sung et al. Contextrast: Contextual contrastive learning for semantic segmentation. In Proc. CVPR , 2024. T. Pissas et al. Multi-scale and cross-scale contrastive learning for semantic segmentation. In Proc. ECCV , 2022. J. Bai et al. Qwen-VL: A versatile vision-language model for understanding, localization, text reading, and beyond. arXiv:2308.12966 , 2023. 
+
+9LangChain. LangGraph: Build stateful, multi-actor applications with LLMs. https://github.com/ langchain-ai/langgraph , 2024. LangFuse. LangFuse: Open source LLM engineering platform. https://github.com/langfuse/ langfuse , 2024. 
+
+10 A Appendix 
+
+This appendix provides supplementary detail not required to follow the main results, per the workshop’s page policy (main text up to 8 pages, excluding references and appendices). 
+
+## A.1 Additional Analysis Figures   
+
+> (a) Boundary confusion (b) DET lat multiple thresholds
+
+Figure 3: (a) Boundary false-positive rate decreases with wider analysis windows (0.34 at 1px to 0.29 at 10px) while damage false-negative rate stays flat at 0.41, confirming feature ambiguity (not boundary imprecision) as the core failure mode. (b) DET l drops from 0.35 (t=0 .05) to 0.04 ( t=0 .50), showing the model finds the correct region with imprecise overlap. 
+
+## A.2 Additional Qualitative Segmentation Results 
+
+Figure 4 shows further TinyDamage inference examples beyond those in the main text (Figure 2), spanning multiple instances per category.       
+
+> (a) Scratch (b) Scratch (c) Dent (d) Glass (e) Crush
+> (f) Scratch (g) Scratch (h) Glass
+
+Figure 4: Additional TinyDamage inference results (red overlays) across CarDD damage categories, complementing Figure 2. 11 A.3 Auxiliary Damage Classification 
+
+The auxiliary 6-class classification head (shared FPN encoder, ∼50K additional parameters, zero inference cost when unused) reaches 29.6% accuracy / 0.355 macro F1 / 0.587 micro F1 at 30 epochs (random baseline: 16.7%). The macro/micro F1 gap reflects CarDD’s class imbalance: strong performance on frequent categories (scratch, dent), weaker on rare ones (crack, tire flat), mirroring the same imbalance challenge addressed by the segmentation model. 
+
+## A.4 Summary of All Approaches Explored 
+
+Table 4: Summary of all techniques explored, including unsuccessful directions, spanning perception (top), generation (middle), and infrastructure (bottom). 
+
+Approach Category Result Key Takeaway 
+
+Focal loss (standalone) Perception Failed Collapses tiny-damage detection to zero (DET l=0.0) Gradient boundary loss Perception Failed Overwhelmed by large-damage edges; useless for tiny objects CE+Dice+Cosine Perception Works Strong baseline; cosine annealing criti-cal for small objects FPN multi-scale en-coder Perception Works Largest single improvement (+2.3% mIoU) Contrastive pixel em-beddings Perception Works Improves damage-background separabil-ity; small mIoU gain over FPN 6-class auxiliary classi-fier Perception Partial 29.6% acc (1.77 × random); under-trained at 30 epochs Qwen-VL zero-shot classification Grounding/Gen. Works 87.3% accuracy without fine-tuning Qwen-VL spatial local-ization Grounding/Gen. Failed Hallucinates damage in reflections; misses thin scratches Image-only prompting Grounding/Gen. Weak VLM describes entire vehicle instead of damage regions Text-only prompting Grounding/Gen. Weak Correct but generic; lacks visual ground-ing Image+text grounded prompting Grounding/Gen. Works Best report quality (4.1/5 for damage reports) Chain-of-thought (cov-erage) Grounding/Gen. Works Prevents skipping damage categories in assessment RAG for historical claims Grounding/Gen. Not done No paired (image, claim text) data in CarDD LoRA fine-tuning of Qwen-VL Grounding/Gen. Not done No domain-specific training corpus; strong zero-shot baseline LangGraph 7-node StateGraph Infrastructure Works Clean state management; node-level retry and debugging LangFuse tracing Infrastructure Works Full latency/token/error observability per node Streamlit application Infrastructure Works End-to-end interactive demo for claim generation 
+
+12
