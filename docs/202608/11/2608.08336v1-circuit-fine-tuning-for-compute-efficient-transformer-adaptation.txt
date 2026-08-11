@@ -1,0 +1,330 @@
+Title: Circuit Fine-Tuning for Compute-Efficient Transformer Adaptation
+
+URL Source: https://arxiv.org/pdf/2608.08336v1
+
+Published Time: Tue, 11 Aug 2026 00:56:17 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Circuit Fine-Tuning for Compute-Efficient Transformer Adaptation 
+
+## Uri Z. Kialy, Gil Ben-Artzi 
+
+School of Computer Science, Ariel University, Israel uri.kialy@msmail.ariel.ac.il, gilba@ariel.ac.il 
+
+Abstract 
+
+Parameter-Efficient Fine-Tuning (PEFT) has become the de facto standard for adapting Vision Transformers (ViTs) to downstream tasks. While parameter count has been the dom-inant efficiency metric in PEFT, it does not imply com-pute efficiency : parameter-sparse methods can still incur full-model training cost per step, and typically need long sched-ules to reach peak accuracy. We introduce Circuit Fine-Tuning (CFT), a compute-efficient framework that uses circuit discovery—conventionally used to explain trained models— to select modules for fine-tuning before training. Whereas attribution is conventionally formulated against a trained task head, we formulate it against a near-zero-initialized probe head, which isolates the response of the backbone to the tar-get distribution rather than the preferences of a particular classifier. CFT then fine-tunes only the recovered subgraph. CFT needs no learning-rate warmup and reaches peak ac-curacy in ∼20 epochs on average—versus 44 –96 for strong PEFT baselines—yielding 2.3–6.6× fewer training FLOPs and up to 16 × less wall-clock time, while adding zero pa-rameters and no inference operations. Experiments across a standard visual transfer benchmark (VTAB-1k), hierarchical backbones (Swin), domain-shifted medical imaging (CBIS-DDSM), and a vision-language model (Gemma-3 on CUB-200) demonstrate the effectiveness of CFT. Code is available at https://github.com/UriKialy/CFT. 
+
+## 1 Introduction 
+
+The emergence of large-scale Vision Transformers (ViTs) (Dosovitskiy et al. 2021) has shifted the central chal-lenge in computer vision from architecture design to effi-cient adaptation. Full Fine-Tuning (FFT), updating all pa-rameters on a downstream task, remains the conceptual gold standard but becomes computationally expensive as models scale. This has driven the rapid growth of Parameter-Efficient Fine-Tuning (PEFT), where the goal is to adapt a frozen back-bone by updating as few parameters as possible. The PEFT literature has converged on two dominant strategies. Additive and modulation methods ( e.g. , Houlsby et al. 2019; Jia et al. 2022; Hu et al. 2022; Lian et al. 2022) insert new learnable modules into the frozen backbone and apply adaptations uni-formly across all layers. Sensitivity-based methods ( e.g. , He et al. 2023; Zhang et al. 2024) instead select specific param-eters or modules to update. Both strategies target the same axis—parameter count. 
+
+Parameter efficiency ̸ = compute efficiency. Parameter count is not a good proxy for training effort: it says nothing about how many epochs are needed, or how many FLOPs and how much wall-clock time a method needs to converge. Tun-ing 3% vs. 15% of parameters—a 5× difference—changes per-iteration cost by only ∼6% . The reason is that the cost of a training iteration is dominated by terms independent of the number of updated parameters. To first order, a sin-gle iteration costs ≈ (2+ α)/3 of full-training cost, where α
+
+is the fraction of updated parameters: one forward and one activation-gradient pass are incurred regardless of α, and only the weight-gradient term scales with it (see Sec. 3.3). Consequently, the dominant factor in compute-efficient fine-tuning is not parameter count but convergence speed: the number of epochs required to reach peak accuracy. 
+
+From PEFT to CEFT. We present a Compute-Efficient Fine-Tuning (CEFT) approach, whose objective is to im-prove the compute-to-accuracy trade-off. We define this trade-off as the relationship between downstream accuracy and the total compute needed to reach this accuracy, where total compute is cumulative training FLOPs and wall-clock time. 
+
+Circuit Adaptation. What makes a pretrained model eas-ier to adapt? A model pretrained on a distribution Dpre should adapt more readily to a target distribution Dtgt that is close to Dpre than to an arbitrary one. Yet, given a fixed checkpoint 
+
+fθ0 , we have no control over Dpre , so this observation is not directly actionable at the level of the whole model. Research in mechanistic interpretability (Olah et al. 2020; Elhage et al. 2021) has shown that Transformers implement sparse sub-graphs, or circuits, but these are typically identified in a frozen model to explain existing behavior. Given G, the com-putational graph of a Transformer, we instead hypothesize that efficient adaptation can be achieved by updating only an existing subgraph C ⊆ G important for processing Dtgt ;Hereafter, we use “circuit” to denote the subgraph recovered by attribution patching and selected for adaptation. 
+
+Circuit Fine-Tuning (CFT). We operationalize our hy-pothesis in two phases. (1) A distribution-aware circuit dis-covery phase identifies an adaptation circuit with respect to 
+
+Dtgt , selecting the pretrained subgraph whose weights will be updated while all other modules stay frozen. Unlike sensi-tivity methods, which ask which parameters most influence arXiv:2608.08336v1 [cs.CV] 8 Aug 2026 the loss through their gradients, CFT asks which subgraph is most important for processing the target distribution under attribution. (2) A sparse adaptation phase then fine-tunes only the modules in the discovered subgraph, updating pre-trained weights already selected as important for the target distribution while all other modules stay frozen. 
+
+Contributions. 
+
+1. Compute-Efficient Fine-Tuning (CEFT). We show that parameter count, the dominant PEFT efficiency metric, is decoupled from training compute—both analytically (Sec. 3.3), and empirically (Fig. 2). We advocate compute-to-accuracy —cumulative training FLOPs and wall-clock time to reach a target accuracy—as an additional primary efficiency metric for transformer adaptation. 2. Circuit Fine-Tuning (CFT). We introduce Circuit Fine-Tuning (CFT), a compute-efficient method that converges in far fewer epochs than PEFT baselines, without added parameters or architectural change. Whereas circuit dis-covery is conventionally applied to a trained model to explain existing behavior, we formulate it against a near-zero-initialized probe head to select modules before train-ing, isolating the response of the backbone to the tar-get distribution rather than the preferences of a partic-ular classifier (Sec. 3.1). Fine-tuning the recovered cir-cuit alone yields a strong compute–accuracy trade-off (Sec. 4.2). 3. Evaluation across diverse backbones and domains. 
+
+Across four backbones (ViT-B/16, Swin-v2-B, DINOv2, Gemma-3-4B-IT), two benchmarks (VTAB-1k, CBIS-DDSM), and a vision-language study (Gemma-3 on CUB-200), CFT converges in ∼20 epochs vs. 44 –96 for 
+
+2.3–6.6× fewer training FLOPs and up to 16 × less wall-clock time. On VTAB-1k it stays with the top PEFT meth-ods and reaches within 0.7 points of the strongest base-line, and under a fixed short budget it is the most accurate method on CBIS-DDSM and on the VLM study—while retaining its compute advantage. 
+
+## 2 Related Work 
+
+Parameter-efficient fine-tuning. As foundation models scale, PEFT methods aim to match FFT performance while updating minimal parameters. Additive methods insert new learnable modules: Adapters (Houlsby et al. 2019) add bot-tleneck MLPs, VPT (Jia et al. 2022) prepends learnable to-kens, and AdaptFormer (Chen et al. 2022) introduces par-allel adapter branches. Modulation methods avoid architec-tural changes: LoRA (Hu et al. 2022) learns low-rank weight updates, BitFit (Ben Zaken, Goldberg, and Ravfogel 2022) tunes only bias terms, SSF (Lian et al. 2022) learns per-feature scale-and-shift factors, and FacT (Jie and Deng 2023) tensorizes adapter weights. All apply adaptation uniformly 
+
+across the model. The most closely related prior work is SPT (He et al. 2023), which uses gradient-squared sensitivity to identify important parameters, then inserts LoRA/Adapter modules at selected positions. GPS (Zhang et al. 2024) simi-larly selects via parameter-gradient signals; in contrast, CFT relies on an activation-level corrupted-vs-clean attribution that measures module responsiveness on target distribution. Prompt-evolution methods such as Pro-VPT (Shang et al. 2025) refine VPT-style prompts but remain additive and re-quire ∼100 -epoch schedules. More recent methods continue to push parameter efficiency: SNELL (Shen et al. 2024) expands sparse tuning under a low training-memory foot-print, token-coordinated prompt attention (Liu et al. 2025) strengthens visual prompting, selective tuning can even sur-pass full fine-tuning (Yin et al. 2025), and correlated low-rank adaptation extends LoRA to ConvNets (Ran et al. 2025). These works optimize parameter budgets. Closest in motiva-tion are Ladder Side-Tuning (Sung, Cho, and Bansal 2022), which targets training memory and time rather than parame-ter count, and Surgical Fine-Tuning (Lee et al. 2023), which selects which blocks to tune according to the type of dis-tribution shift. Both share our premise that parameter count is not the operative cost; we differ in selecting modules by causal attribution before training, and in measuring compute-to-accuracy directly. 
+
+Mechanistic interpretability and circuits. Mechanis-tic interpretability seeks to understand how neural net-works arrive at their decisions. Olah et al. (2020) identi-fied “circuits”—sparse subgraphs that implement specific functions. Elhage et al. (2021) formalized Transformer atten-tion heads as information-routing primitives. Early discovery methods like ACDC (Conmy et al. 2023) used expensive ac-tivation patching. Edge Attribution Patching (EAP) (Syed, Rager, and Conmy 2024) approximates patching via first-order gradients, and EAP-IG (Hanna, Pezzelle, and Belinkov 2024) incorporates integrated gradients (Sundararajan, Taly, and Yan 2017) to address gradient saturation. These tools have primarily been used for explanation ; we operationalize circuit-discovery attribution as a pre-fine-tuning selector for compute-efficient fine-tuning. 
+
+## 3 Method 
+
+Circuit Fine-Tuning (CFT) consists of two phases: (1) 
+
+distribution-aware circuit discovery (Sec. 3.1), which iden-tifies and selects a target-distribution responsive circuit, and (2) sparse circuit adaptation (Sec. 3.2), which fine-tunes only the discovered modules. 
+
+Preliminaries: EAP-IG. The goal of Edge Attribution Patching with Integrated Gradients (EAP-IG) (Hanna, Pezzelle, and Belinkov 2024) is to approximate the effect of activation patching of module m via path-integrated gra-dients (Sundararajan, Taly, and Yan 2017): 
+
+ϕm(x) ≈  am(x′) − am(x) · 1
+
+S
+
+> S
+
+X
+
+> s=1
+
+∂F  x′ + sS (x − x′)
+
+∂a m
+
+,
+
+(1) where x′ is a baseline image, F is a scalar output ( e.g. , cross-entropy), and each of the S steps costs one forward-backward pass ( 2S passes total). 
+
+Module granularity. We define the computational graph at the level of functional units within each Transformer block 
+
+ℓ ∈ { 1, . . . , L }. Rather than individual weight matrices, each node in the graph represents either an individual attention head or the complete MLP unit. Specifically, each block ℓ
+
+contains H attention head nodes {hℓ
+
+> 1
+
+, . . . , h ℓH } and one MLP node mℓ. For ViT-B/16 ( L = 12 , H = 12 ), this configuration yields 156 candidate nodes ( 13 nodes per layer). 
+
+Circuit discovery algorithm. We evaluate several circuit discovery methods, and select EAP-IG (See Supp.). 
+
+3.1 Phase 1: Distribution-Aware Circuit Discovery 
+
+The goal is to identify which circuits are most responsive to the target input distribution before any training occurs. 
+
+Variance decomposition: why a single near-zero probe suffices. We replace the pretrained classification head with a probe head Wprobe ∈ Rd×C initialized from N (0 , σ 2) with 
+
+σ = 10 −5. The purpose is to reduce the influence of arbitrary class preferences induced by a randomly initialized head, so that the attribution scores more reliably reflect the backbone’s response to the target distribution. The total variance of the importance score ϕm can be decomposed by the law of total variance: 
+
+Var[ ϕm] = Var Wprobe [EB[ϕm | Wprobe ]] 
+
+| {z }
+
+> (i) probe-initialization variance
+
++ EWprobe [Var B[ϕm | Wprobe ]] 
+
+| {z }
+
+> (ii) calibration-sample variance
+
+. (2) Term (i) measures how much the importance scores vary across random probe heads, while term (ii) measures vari-ance induced by the finite calibration batch. With a standard-scale head ( e.g. , Kaiming initialization, 
+
+σ ≈ 0.05 ), and assuming approximately unit-variance fea-tures, each logit zc = W ⊤
+
+> probe ,c
+
+h has standard deviation 
+
+σ√d ≈ 1.4 for ViT-B/16 ( d = 768 ). Consequently, the soft-max can exhibit strong random class preferences, causing different probe draws to produce different gradients and im-portance rankings. With near-zero initialization ( σ = 10 −5), the logit standard deviation drops to approximately 3 × 10 −4
+
+and the softmax remains close to uniform, ˆpc ≈ 1/C . The output-gradient term therefore approaches (1 /C − y). Near-zero initialization suppresses arbitrary high-confidence pre-dictions and substantially reduces dependence on the particu-lar probe draw and its influence on EAP-IG circuit discovery and improves the selection (Table 1). A natural question is whether ensembling multiple ran-dom probe heads—running discovery R times with indepen-dent draws of Wprobe and averaging the resulting importance scores—would improve the recovered subgraph. As shown in Table 2, increasing the ensemble size from R = 1 to 
+
+R = 10 with near-zero initialization changes downstream accuracy by at most 0.1 percentage points and we therefore use R = 1 .
+
+Calibration batch ( N =32 ). We construct a small calibra-tion set B = {x1, . . . , x N } by sampling N examples from the training set with stratified class coverage. For each mod-Table 1: Probe initialization ablation (subset of CIFAR-100).       
+
+> Selection Probe Init Top-1 (%)
+> EAP-IG Kaiming 86.1 ±0.5
+> EAP-IG (CFT) Near-Zero 90.4 ±0.3
+
+Table 2: Effect of probe-head ensembling on subset of CIFAR-100. With near-zero initialization ( σ = 10 −5), in-dependently initialized probes produce highly consistent masks, and ensembling yields at most a 0.1-point accu-racy improvement. With Kaiming initialization, masks are substantially less stable and ensembling improves accuracy. Even at R = 10 , the Kaiming ensemble does not match a single near-zero probe.                          
+
+> RTop-1 Acc. (%) ∆vs. R=1 Top-1 Acc. (%) ∆vs. R=1
+> Near-Zero ( σ=10 −5)Kaiming 190.4 ±0.3—86.1 ±0.5—390.4 ±0.2+0.0 87.8 ±0.4+1.7 590.5 ±0.2+0.1 88.5 ±0.3+2.4 10 90.5 ±0.2+0.1 89.1 ±0.3+3.0
+
+ule m, we compute the aggregated importance: 
+
+Φm = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+|ϕm(xi)| . (3) We validate this empirically: on ViT/EuroSAT, accuracy sat-urates at N =32 (92.3%), with negligible gain ( +0.1%) from doubling to N =64 .
+
+Circuit selection (parameter-budgeted node set). Let M
+
+be the set of candidate nodes (attention heads and MLP blocks) and let Φm denote the aggregated EAP-IG impor-tance of node m computed over the calibration set (Eq. 3). In our implementation, we normalize node scores by parameter count to avoid systematically favoring large modules: 
+
+˜Φm = Φm
+
+|θm| , (4) where |θm| is the number of parameters in node m (See Supp.). We then sort nodes by ˜Φm in descending order to obtain a ranked list. Rather than selecting the top-k% nodes by a score per-centile threshold, we define the circuit as the set of nodes 
+
+whose cumulative parameter count fits a target parameter budget . Let Ptotal be the total number of backbone param-eters and let k be the desired tunable fraction. The budget is 
+
+B = ⌊k · Ptotal ⌋ . (5) We construct the circuit T ⊆ M using a two-stage greedy procedure: (1) select the highest-ranked from each layer (when feasible under budget) to ensure full layer coverage, then (2) fill the remaining budget by adding the next highest-Table 3: CFT and sensitivity-based method select substan-tially different weights. We report overlap between CFT vs. GPS at matched backbone-parameter budgets, averaged across 19 VTAB-1k tasks. Shared weights denote the inter-section as a percentage of either matched-size selected set.       
+
+> Budget Shared weights Jaccard (Mean)
+> 1% 1.2% 0.006 20% 26.5% 0.153
+
+ranked nodes until the budget is exhausted: 
+
+T = GreedyBudgetSelect 
+
+
+
+{(m, ˜Φm)}m∈M , {| θm|} m∈M , B 
+
+
+
+.
+
+(6) Finally, we define the binary mask M ∈ { 0, 1}|M| by mem-bership: 
+
+Mm = 1[m ∈ T ]. (7) This mask specifies the circuit for the target distribution and determines which nodes are updated during Phase 2. 
+
+Circuits are task-specific (no universal circuit). Figure 1 shows that circuits vary substantially across VTAB-1k tasks on Swin-V2-B. Out of 400 candidate nodes, no node ap-pears in all 19 circuits. The frequency distribution is heavy-tailed: 28 nodes appear in only 1–2 tasks, while only 6 ap-pear in ≥12, forming shared bottlenecks split between late-stage MLPs and attention heads. Pairwise circuit overlap is well above the ∼15% expected under random selection at matched budget, and is consistently higher within VTAB groups (Natural/Specialized/Structured) than across them. This indicates that CFT discovers task-conditioned compu-tational subgraphs rather than a fixed global ranking, moti-vating discovery to be performed per task rather than reusing a single mask. 
+
+CFT differs from sensitivity-based selection (Table 3). 
+
+To evaluate the similarity between CFT and sensitivity-based selection, we compare the overlap across CFT and GPS, a modern sensitivity-based selection approach with strong ac-curacy on VTAB-1k (Table 6). At the weight level, CFT and GPS differ significantly. At a 1% parameter budget, their Jac-card overlap is 0.006 (random is 0.005). At a matched 20% backbone-parameter budget, CFT and GPS differ at approx-imately 73.5% of the selected weights, corresponding to a weight-level Jaccard similarity of 0.153 (random is 0.111). Thus, although CFT and sensitivity-based selectors may oc-casionally target similar coarse model regions, they allocate adaptation capacity to largely distinct pretrained weights. 
+
+Warmup provides no benefit for CFT CFT is trained with a cosine schedule and no learning-rate warmup; adding one does not change its accuracy (Table 4). By contrast, SSF’s official recipe applies a 10-epoch linear learning-rate ramp (10 −7 → 5 × 10 −3) on every VTAB-1k task, and removing it costs 7.7 points. Mean over 3 seeds. 
+
+3.2 Phase 2: Sparse Circuit Adaptation 
+
+Given the mask M , we partition the backbone parameters into an active set θactive = {θm : Mm = 1 } and a frozen set 
+
+Table 4: Warmup ablation (6 representative VTAB-1k tasks, see Table 5). CFT shows no benefit from warmup; SSF degrades without it due to newly initialized scale/shift parameters.         
+
+> Method Warmup Avg. (%)
+> CFT (CFT) None 76.4 ±0.2
+> 5 ep. 76.4 ±0.2
+> SSF Standard 74.73 None 67.06
+
+θfrozen = {θm : Mm = 0 }. We discard the probe head and attach a new classification head Whead initialized with stan-dard Kaiming initialization (He et al. 2015). During training, only θactive and Whead are updated. 
+
+CFT needs no schedule tuning. CFT is trained with a cosine schedule and no learning-rate warmup; adding one does not change its accuracy. 
+
+3.3 Computational Cost Analysis 
+
+We distinguish three cost dimensions: discovery, training, and inference. 
+
+Discovery cost. EAP-IG with S integration steps on 
+
+N samples requires 2SN forward-backward passes. With 
+
+S=12 and N =32 , this equals 768 passes. Relative to one training epoch of size |D| :Cost disc = 2SN 
+
+|D| epochs. (8) On VTAB-1k ( |D| =1 ,000 ), this is ≈0.8 epochs. On CIFAR-100 ( |D| =50 ,000 ), it drops to ≈0.015 epochs. On ImageNet (|D| =1 .28 M), it is <0.001 epochs. The cost is small rela-tive to training and amortizes rapidly on larger datasets. All compute figures in Sec. 4 include discovery cost. 
+
+Training cost: FLOPs analysis. Let Ffwd denote the FLOPs of a forward pass through the full backbone. The backward pass can be decomposed into two components: (i) gradients with respect to intermediate activations and (ii) gradients with respect to model weights: 
+
+Fbwd = Fbwd,act + Fbwd,w . (9) In deep networks, backward computation is typically about twice the cost of the forward pass. For clarity and generality, we assume that these two components contribute equally to the backward cost, and that each is comparable to the forward cost: 
+
+Fbwd,act ≈ F bwd,w ≈ F fwd . (10) Thus a standard training step costs 
+
+Fstep ≈ F fwd + Fbwd,act + Fbwd,w ≈ 3Ffwd . (11) For fine-tuning methods that update only a fraction of the parameters, we consider a conservative (worst-case for CFT Figure 1: Selected circuits across VTAB-1k tasks. Left: Node selection frequency over the 19 tasks; no node is selected by all tasks, 28 are selected by 1–2, and 6 by ≥12. Right: Pairwise circuit overlap, against the ∼15% expected for independent random masks at matched budget. only) bound in which the full activation-gradient graph re-mains active ( i.e. , Fbwd,act = 1 ). In this case, only the weight-gradient term scales with the fraction of updated parameters 
+
+α:
+
+Fstep (α) ≈ F fwd +Fbwd,act +α Fbwd,w ≈ (2+ α) Ffwd , (12) where α (e.g. , 0.03 vs. 0.15 ) is the fraction of parameters for which weight gradients are computed and updated during training. 
+
+Inference cost and deployment. CFT modifies only the values of existing weight tensors. The architecture, tensor shapes, sequence length, and computational graph are iden-tical to the original ViT. This guarantees: (1) 1× infer-ence latency : no additional tokens (VPT), no extra layers (AdaptFormer), no merge step (SSF/SPT at deployment); (2) 
+
+full kernel compatibility : FlashAttention (Dao et al. 2022), xFormers, TensorRT, and ONNX export work without mod-ification; and (3) drop-in deployment : the adapted model is a single .pth file loadable by any standard ViT implemen-tation. 
+
+## 4 Experiments 
+
+4.1 Experimental Setup 
+
+Datasets. VTAB-1k (Zhai et al. 2019): 19 visual classifica-tion tasks (Natural, Specialized, Structured), each with 1,000 training examples. CBIS-DDSM (Sawyer-Lee et al. 2016): mammography classification, which has a large domain shift from ImageNet. We additionally evaluate on FGVC (five fine-grained datasets —CUB-200-2011 (Wah et al. 2011), NABirds (Van Horn et al. 2015), Oxford Flowers (Nilsback and Zisserman 2008), Stanford Dogs (Khosla et al. 2011), Stanford Cars (Krause et al. 2013)); results are in the supple-mentary. 
+
+Architectures. Our main backbone is ViT-B/16 (85.8M parameters, ImageNet-21k). We also test Swin-v2-B (88M), DINOv2 ViT-B/14 (86.6M), and Gemma-3-4B-IT (Kamath, Ferret et al. 2025). 
+
+Baselines. Full Fine-Tuning (FFT),SSF (Lian et al. 2022), SPT (He et al. 2023), GPS (Zhang et al. 2024), Pro-VPT (Shang et al. 2025) and LoRA (Hu et al. 2022) on ViT-B/16, and AdaptFormer (Chen et al. 2022) on the Swin and DINOv2 backbones. We run each baseline with its of-ficial public code and default hyperparameters, except the learning rate, which we tune as described below, and report the mean over 3 seeds. 
+
+CFT configuration. N =32 , S=12 , σ=10 −5; AdamW with a cosine schedule and no warmup; about 20 epochs on average. The budget k is chosen per task from [8% , 17%] on the same held-out validation split used for baseline learning-rate selection, and its cost is included in all reported compute. The supplementary shows accuracy varies little across this range. 
+
+4.2 Results on VTAB-1k 
+
+We evaluate three questions. First, how much accuracy does each method yield per unit of compute? This is our main result. Second, does building each baseline a recipe for a short schedule close the gap? Third, does an accuracy gap remain under very high compute? 
+
+CFT reaches high accuracy with far less compute (Fig. 2). 
+
+We run all methods in one implementation on the same hard-ware and count cumulative training FLOPs (forward and backward) and wall-clock time. For every baseline we tune the learning rate over five values around its published de-fault, {ηdef × 10 ±1, η def × 10 ±1/2, η def }, and pick the best one on a held-out validation split. CFT uses a single default learning rate, and its compute numbers include the cost of circuit discovery. Figure 2 plots the result. Both panels show the same runs: the y-axis is mean accuracy over the 19 tasks, and each point is a per-epoch checkpoint. The left panel prices each checkpoint in training FLOPs; the right panel prices it in wall-clock time, which also captures overhead that FLOP counts miss. Three things follow. First, CFT is the highest curve across the low-compute range in both panels, and it reaches Figure 2: CFT reaches high accuracy with far less compute (VTAB-1k, 19-task mean, ViT-B/16). Mean top-1 accuracy against cumulative training FLOPs (left) and wall-clock time (right). Every point is a per-epoch checkpoint, averaged over the 19 tasks and 3 seeds. Each baseline uses its best learning rate, chosen on a held-out validation split; CFT uses one default. The CFT curve includes the cost of circuit discovery. CFT is the most accurate method across the low-compute range and reaches 72.4 accuracy within 1,351 TFLOPs; the baselines need 2.3–6.6× more compute to reach their own peaks, which end at most 0.7 points higher. Table 5: Equal epoch budgets with retuned learning rates for each schedule. (mean over 6 VTAB-1k tasks, ViT-B/16). Each column is a separate set of runs.                                 
+
+> Method Ep. 10 Ep. 20 Ep. 30 Ep. 35 CFT 74.70 76.80 77.53 77.83
+> Full FT 74.04 75.32 75.45 75.47 SSF 72.46 76.00 76.42 76.60 SPT 73.11 75.53 76.58 77.05 LoRA 71.07 74.29 74.03 74.14 GPS 69.71 73.28 74.90 75.01 Pro-VPT 66.82 70.89 73.28 73.63
+
+72.4 accuracy within 1,351 TFLOPs and 7.6 minutes, in 20.4 epochs on average. Second, the baselines converge slowly: each needs 44–96 epochs, which is 2.3–6.6× more FLOPs and 2.9–16 .2× more wall-clock time, to reach its own peak. The cost per epoch is similar across methods, so the whole gap comes from convergence speed. Third, the two panels do not agree on the ranking of the baselines: Pro-VPT, for example, is far worse in wall-clock time than in FLOPs, and Full Fine-Tuning reaches its own peak with fewer FLOPs than SPT or GPS. Using fewer parameters does not mean using less compute. 
+
+Baselines tuned for short schedules (Table 5). A natural question is whether the baselines are slow only because their recipes were written for long runs. We therefore give each baseline a recipe built for the specific budget it is given, training a separate run per method per budget: the cosine schedule is annealed over that budget rather than over the published horizon, the warmup from the published recipe is kept and scaled to the budget, and the learning rate is retuned over the five values used in Figure 2 and selected on a held-out validation split. CFT uses one default learning rate and no warmup. We run this on six VTAB-1k tasks, two from each group: DTD and Oxford-IIIT Pet (Natural), EuroSAT and RESISC45 (Specialized), KITTI and SmallNORB-Elevation (Structured). CFT is ahead at every budget: at 10 epochs it reaches 74.70 against 74.04 for the best baseline, and at 35 epochs 77.83 against 77.05 for SPT. 
+
+Three-to-seven times the compute yields at most 0.1–0.7
+
+points. Table 6 shows each method at its best checkpoint within a 100-epoch budget. We employ 100-epochs as the very high compute case since most methods are heavily tuned for VTAB-1k under this setup. CFT reaches 72.4 mean ac-curacy: best on Natural, tied for best on Specialized, with no learning-rate warmup and no added parameters (See Supple-mentary). Full Fine-Tuning never reaches CFT at any bud-get. The four PEFT baselines that exceed CFT do so by small margins: 0.1 (SSF), 0.4 (SPT), 0.5 (Pro-VPT), and 0.7 (GPS) points, and each pays 3.5–6.6× more compute for that mar-gin. LoRA trails CFT in both accuracy and compute. The % Param. column makes the decoupling concrete: GPS up-dates ∼60 × fewer backbone parameters than CFT and still requires 5.5× the training compute, while Full Fine-Tuning updates ∼7× more than CFT at 4.7× the compute and lower accuracy. 
+
+Stability. On VTAB-1k (ViT-B/16), the standard deviation is ±0.41 over the number of IG steps, and ±0.47 over resam-plings of the calibration set ( N ). 
+
+Peak GPU memory. CFT peaks at 24 .8 GB, above full fine-tuning ( 21 .7 GB) and SSF ( 23 .5 GB), and below SPT (29 .0 GB). The peak is set by circuit discovery rather than adaptation: EAP-IG caches activations along the integration path (as a one-time initial phase), whereas the adaptation Table 6: VTAB-1k training cost (ViT-B/16). TFLOPs and wall-clock time are measured up to the best checkpoint of each method. Relative TFLOPs are normalized to CFT. % Param. is the fraction of backbone parameters updated, excluding the classification head.                                                 
+
+> Method % Param. Acc. Best Ep. TFLOPs Rel. TFLOPs Wall (min)
+> Full Fine-Tuning 100 67.7 79.0 6,374 4.7×30.2 SSF (Lian et al. 2022) 0.28 72.5 72.9 4,742 3.5×43.1 LoRA (Hu et al. 2022) 0.7 71.8 44.2 3,167 2.3×22.2 SPT (He et al. 2023) 0.44 72.8 95.3 8,856 6.6×117.2 GPS (Zhang et al. 2024) 0.25 73.1 82.9 7,499 5.5×36.8 Pro-VPT (Shang et al. 2025) 0.07 72.9 96.4 6,913 5.1×123.6
+> CFT 15.0 72.4 20.4 1,351 1.0×7.6
+
+Table 7: CBIS-DDSM, ViT-B/16 backbone.                 
+
+> Method Acc. AUC
+> Full Fine-Tuning 64.1 0.652 SSF (Lian et al. 2022) 62.5 0.626 SPT (He et al. 2023) 71.9 0.766 GPS (Zhang et al. 2024) 60.8 0.695 LoRA (Hu et al. 2022) 70.3 0.761 Pro-VPT (Shang et al. 2025) 69.5 0.648
+> CFT 73.7 0.768
+
+phase stores gradients and optimizer state for only ∼15% of the backbone. CFT therefore trades peak memory for train-ing time; our objective is training compute, not memory footprint. 
+
+4.3 Domain Shift 1: CBIS-DDSM 
+
+To evaluate CFT beyond standard vision benchmarks, we conduct experiments on CBIS-DDSM (Sawyer-Lee et al. 2016), where we classify all images as benign or malignant. This setting is challenging and far from the ImageNet distri-bution the backbones were pretrained on: the dataset is small and class-imbalanced, and the images are high-resolution grayscale mammograms. Every method trains for the same 5 epochs, and every learning rate is chosen with the validation protocol of Sec. 4.1. We test three backbones and report them in two tables, because the available baselines differ by architecture. Table 7 covers the standard ViT-B/16 and compares against PEFT methods built for plain ViTs (SSF, SPT, GPS, Pro-VPT). Table 8 covers the self-supervised DINOv2 ViT-B/14 (Oquab et al. 2024) and Swin Transformer (Swin-v2-B) (Liu et al. 2022). We apply the same two baselines so that both blocks of Table 8 are directly comparable. This is a fixed-budget comparison rather than a converged one: it asks which method reaches the highest accuracy within a short schedule under domain shift, and does not establish which method is strongest given unlimited com-pute. Under this protocol CFT attains the highest accuracy on all three backbones. On ViT-B/16 its AUC (0.768) falls within the seed variation of the strongest baseline (SPT), so we read the two as comparable in ranking quality while CFT Table 8: CBIS-DDSM on additional backbones.                   
+
+> Method Acc. AUC
+> Swin-v2-B
+> Full Fine-Tuning 67.1 0.721 VPT-Deep (Jia et al. 2022) 65.7 0.669 AdaptFormer (Chen et al. 2022) 64.6 0.671
+> CFT 68.2 0.722
+> DINOv2 ViT-B/14
+> Full Fine-Tuning 63.4 0.678 VPT-Deep (Jia et al. 2022) 65.7 0.696 AdaptFormer (Chen et al. 2022) 65.6 0.683
+> CFT 66.1 0.697
+
+Table 9: VLM adaptation on CUB-200 (Gemma-3-4B-IT), a feasibility study. All fine-tuned methods use the same 5-epoch budget.         
+
+> Method % Updated Top-1 (%)
+> Full Fine-Tuning 100% 67.6 LoRA ∼0.5% 68.3
+> CFT (Ours) 17% 71.3
+
+leads at the operating threshold. 
+
+Stability. The standard deviation of accuracy is ±0.57 over 3 random seeds, ±0.013 for AUC. 
+
+4.4 Domain Shift 2: Vision-Language Model 
+
+As a feasibility study, we apply CFT to Gemma-3-4B-IT on CUB-200 (Table 9). With a 5-epoch budget, CFT reaches 71.3% top-1 accuracy by training only the discovered circuit, which is 17% of the backbone parameters. It outperforms both LoRA, which updates a far smaller fraction ( ∼0.5% ), and full fine-tuning. This is a claim about placement , not parameter efficiency. At a fixed short budget, concentrat-ing updates on attribution-selected modules outperforms dis-tributing low-rank updates uniformly across layers, and the remaining 83% of parameters updated by full fine-tuning yield no benefit within this budget. 
+
+## 5 Conclusion 
+
+We introduced Circuit Fine-Tuning (CFT), which selects the backbone subset to adapt by circuit attribution—using integrated-gradient edge attribution against a near-zero-initialized probe head to recover the circuit the backbone uses for the target distribution—rather than by loss-gradient sensitivity. Across VTAB-1k, a mammography benchmark, and four backbones, CFT reaches accuracy within 0.7 points of the strongest baseline at 2.3–6.6× fewer training FLOPs and up to 16 × less wall-clock time, with no learning-rate warmup and no added parameters. 
+
+## References 
+
+Ben Zaken, E.; Goldberg, Y.; and Ravfogel, S. 2022. Bit-Fit: Simple Parameter-efficient Fine-tuning for Transformer-based Masked Language-models. In Muresan, S.; Nakov, P.; and Villavicencio, A., eds., Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers) . Dublin, Ireland: Association for Computational Linguistics. Chen, S.; GE, C.; Tong, Z.; Wang, J.; Song, Y.; Wang, J.; and Luo, P. 2022. AdaptFormer: Adapting Vision Transformers for Scalable Visual Recognition. In Koyejo, S.; Mohamed, S.; Agarwal, A.; Belgrave, D.; Cho, K.; and Oh, A., eds., 
+
+Advances in Neural Information Processing Systems , vol-ume 35, 16664–16678. Curran Associates, Inc. Conmy, A.; Mavor-Parker, A. N.; Lynch, A.; Heimersheim, S.; and Garriga-Alonso, A. 2023. Towards Automated Circuit Discovery for Mechanistic Interpretability. In Thirty-seventh Conference on Neural Information Processing Systems .Dao, T.; Fu, D. Y.; Ermon, S.; Rudra, A.; and Ré, C. 2022. Flashattention: Fast and memory-efficient exact attention with io-awareness. In Advances in neural information pro-cessing systems .Dosovitskiy, A.; Beyer, L.; Kolesnikov, A.; Weissenborn, D.; Zhai, X.; Unterthiner, T.; Dehghani, M.; Minderer, M.; Heigold, G.; Gelly, S.; Uszkoreit, J.; and Houlsby, N. 2021. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In 9th International Conference on Learning Representations, ICLR 2021, Virtual Event, Aus-tria, May 3-7, 2021 . OpenReview.net. Elhage, N.; Nanda, N.; Olsson, C.; Henighan, T.; Joseph, N.; Mann, B.; Askell, A.; Bai, Y.; Chen, A.; Conerly, T.; et al. 2021. A Mathematical Framework for Transformer Circuits. 
+
+Transformer Circuits Thread .Hanna, M.; Pezzelle, S.; and Belinkov, Y. 2024. Have Faith in Faithfulness: Going Beyond Circuit Overlap When Find-ing Model Mechanisms. In First Conference on Language Modeling .He, H.; Cai, J.; Zhang, J.; Tao, D.; and Zhuang, B. 2023. Sensitivity-aware visual parameter-efficient fine-tuning. In 
+
+Proceedings of the IEEE/CVF international conference on computer vision , 11825–11835. He, K.; Zhang, X.; Ren, S.; and Sun, J. 2015. Delving deep into rectifiers: Surpassing human-level performance on ima-genet classification. In Proceedings of the IEEE international conference on computer vision , 1026–1034. Houlsby, N.; Giurgiu, A.; Jastrzebski, S.; Morrone, B.; De Laroussilhe, Q.; Gesmundo, A.; Attariyan, M.; and Gelly, S. 2019. Parameter-efficient transfer learning for NLP. In 
+
+International conference on machine learning , 2790–2799. PMLR. Hu, E. J.; Shen, Y.; Wallis, P.; Allen-Zhu, Z.; Li, Y.; Wang, S.; Wang, L.; and Chen, W. 2022. Lora: Low-rank adaptation of large language models. In Iclr .Jia, M.; Tang, L.; Chen, B.-C.; Cardie, C.; Belongie, S.; Hariharan, B.; and Lim, S.-N. 2022. Visual prompt tuning. In 
+
+European conference on computer vision , 709–727. Springer. Jie, S.; and Deng, Z.-H. 2023. FacT: Factor-Tuning for Lightweight Adaptation on Vision Transformer. In AAAI .Kamath, G. T. A.; Ferret, J.; et al. 2025. Gemma 3 Technical Report. ArXiv , abs/2503.19786. Khosla, A.; Jayadevaprakash, N.; Yao, B.; and Fei-Fei, L. 2011. Novel Dataset for Fine-Grained Image Categorization : Stanford Dogs. In CVPR Workshop on FGVC .Krause, J.; Stark, M.; Deng, J.; and Fei-Fei, L. 2013. 3D Object Representations for Fine-Grained Categorization. In 
+
+2013 IEEE International Conference on Computer Vision Workshops .Lee, Y.; Chen, A. S.; Tajwar, F.; Kumar, A.; Yao, H.; Liang, P.; and Finn, C. 2023. Surgical Fine-Tuning Improves Adap-tation to Distribution Shifts. In ICLR .Lian, D.; Zhou, D.; Feng, J.; and Wang, X. 2022. Scaling & Shifting Your Features: A New Baseline for Efficient Model Tuning. In NeurIPS .Liu, Z.; Hu, H.; Lin, Y.; Yao, Z.; Xie, Z.; Wei, Y.; Ning, J.; Cao, Y.; Zhang, Z.; Dong, L.; Wei, F.; and Guo, B. 2022. Swin Transformer V2: Scaling Up Capacity and Resolution. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 12009–12019. Liu, Z.; Zou, X.; Hua, G.; and Zhou, J. 2025. Token Coor-dinated Prompt Attention is Needed for Visual Prompting. In International Conference on Machine Learning , 40214– 40226. PMLR. Nilsback, M.-E.; and Zisserman, A. 2008. Automated Flower Classification over a Large Number of Classes. In Indian Conference on Computer Vision, Graphics and Image Pro-cessing .Olah, C.; Cammarata, N.; Schubert, L.; Goh, G.; Petrov, M.; and Carter, S. 2020. Zoom In: An Introduction to Circuits. 
+
+Distill .Oquab, M.; Darcet, T.; Moutakanni, T.; Vo, H.; Szafraniec, M.; Khalidov, V.; Fernandez, P.; Haziza, D.; Massa, F.; El-Nouby, A.; et al. 2024. DINOv2: Learning Robust Visual Features without Supervision. In TMLR .Ran, W.; Zhang, W.; Pang, S.; Zhu, Q.; Liu, J.; Liu, J.; Cao, X.; Li, Q.; Yan, Y.; and Ma, C. 2025. Correlated Low-Rank Adaptation for ConvNets. In Advances in Neural Information Processing Systems , volume 38, 127740–127771. Curran As-sociates, Inc. Sawyer-Lee, R.; Gimenez, F.; Hoogi, A.; and Rubin, D. 2016. Curated Breast Imaging Subset of Digital Database for Screening Mammography (CBIS-DDSM). [Data set]. Shang, C.; Li, M.; Zhang, Y.; Chen, Z.; Wu, J.; Gu, F.; Lu, Y.; and Cheung, Y.-m. 2025. PRO-VPT: Distribution-Adaptive Visual Prompt Tuning via Prompt Relocation. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , 1558–1568. Shen, S.; Sun, J.; Ji, X.; Huang, Q.; and Wang, S. 2024. Ex-panding Sparse Tuning for Low Memory Usage. In Glober-son, A.; Mackey, L.; Belgrave, D.; Fan, A.; Paquet, U.; Tom-czak, J. M.; and Zhang, C., eds., Advances in Neural Informa-tion Processing Systems , volume 37, 76616–76642. Curran Associates, Inc. Sundararajan, M.; Taly, A.; and Yan, Q. 2017. Axiomatic Attribution for Deep Networks. In ICML .Sung, Y.-L.; Cho, J.; and Bansal, M. 2022. LST: Ladder Side-Tuning for Parameter and Memory Efficient Transfer Learning. In Advances in Neural Information Processing Systems (NeurIPS) , volume 35, 12991–13005. Syed, A.; Rager, C.; and Conmy, A. 2024. Attribution Patch-ing Outperforms Automated Circuit Discovery. In Belinkov, Y.; Kim, N.; Jumelet, J.; Mohebbi, H.; Mueller, A.; and Chen, H., eds., Proceedings of the 7th BlackboxNLP Workshop: An-alyzing and Interpreting Neural Networks for NLP .Van Horn, G.; Branson, S.; Farrell, R.; Haber, S.; Barry, J.; Ipeirotis, P.; Perona, P.; and Belongie, S. 2015. Building a Bird Recognition App and Large Scale Dataset with Citizen Scientists: The Fine Print in Fine-Grained Dataset Collec-tion. In CVPR .Wah, C.; Branson, S.; Welinder, P.; Perona, P.; and Belongie, S. 2011. The Caltech-UCSD Birds-200-2011 Dataset. In 
+
+Tech. Report CNS-TR-2011-001, Caltech .Yin, D.; Hu, L.; Li, B.; Zhang, Y.; and Yang, X. 2025. 5% >100% Breaking Performance Shackles of Full Fine-Tuning on Visual Recognition Tasks. In 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Zhai, X.; Puigcerver, J.; Kolesnikov, A.; Ruyber, P.; Lucic, M.; Djolonga, J.; Pinto, A. S.; Neumann, M.; and Beyer, L. 2019. A Large-scale Study of Representation Learning with the Visual Task Adaptation Benchmark. In NeurIPS Workshop .Zhang, Z.; Zhang, Q.; Gao, Z.; Zhang, R.; Shutova, E.; Zhou, S.; and Zhang, S. 2024. Gradient-based parameter selection for efficient fine-tuning. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,28566–28577.

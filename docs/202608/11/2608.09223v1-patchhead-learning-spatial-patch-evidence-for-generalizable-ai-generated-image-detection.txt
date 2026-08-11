@@ -1,0 +1,445 @@
+Title: PatchHead: Learning Spatial Patch Evidence for Generalizable AI-Generated Image Detection
+
+URL Source: https://arxiv.org/pdf/2608.09223v1
+
+Published Time: Tue, 11 Aug 2026 02:31:10 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# PatchHead: Learning Spatial Patch Evidence for Generalizable AI-Generated Image Detection 
+
+Shengbo Qi 1, Hongyi Fang 1, Benjia Zhou 1, ∗, Rui Mao 2
+
+> 1
+
+Beijing Institute of Technology, Zhuhai 
+
+> 2
+
+Shenzhen University 
+
+Abstract 
+
+AI-generated image detectors generalize poorly when their training and test images originate from different generators or datasets. Despite the rich spatial representations produced by vision foundation models like DINO, existing detectors typically classify images using only the globally aggregated CLS token. We hypothesize that globally aggregating DINO features into a single CLS token obscures spatially distributed generation traces. To test this hypothesis, we introduce Patch-Head, a lightweight spatial aggregation head that preserves the two-dimensional organization of DINO patch tokens and inte-grates evidence across neighboring regions. During training, we freeze the pretrained DINO backbone and optimize only the inserted LoRA adapters, PatchHead, and auxiliary pro-jection head. Across nine cross-dataset benchmarks spanning manually curated and in-the-wild settings, PatchHead ranks first on seven datasets and second on the remaining two. It improves the strongest prior method from 91 .6% to 94 .6% in average balanced accuracy ( +3.0 points) and raises the worst-case accuracy from 82 .4% to 89 .4% (+6.9 points), while introducing only 8.6% more trainable parameters and 0.08% 
+
+additional FLOPs. Further qualitative analysis suggests that PatchHead (i) reduces class-conditional domain discrepancy, and (ii) redirects the representation from content-dominated saliency toward spatially distributed authenticity evidence. Together, these observations provide a representation-level account of why spatial patch aggregation transfers more reli-ably across generators and datasets than a single CLS-based global representation. Our code and models will be made available upon acceptance. 
+
+Introduction 
+
+AI-generated image detection (AIGID) is fundamentally an out-of-distribution recognition problem (Cai et al. 2025; Ojha, Li, and Lee 2023; Ren et al. 2026). A detector trained on a limited collection of generators must remain effective when confronted with unseen synthesis models, image sources, and post-processing pipelines. Yet, despite near-saturated in-distribution performance, existing detec-tors often suffer substantial degradation once the training and test distributions differ (Zhu et al. 2023; Yan et al. 2025; Cavia et al. 2024). This gap suggests that improving the 
+
+> ∗
+
+Corresponding author. SynthB. BigGAN GauGAN BFree Cham. WildRF AIGC DDA-COCO DRCT-2M  
+
+> 20 40 60 80 100
+> Balanced Accuracy on Cross-Dataset Evaluation PatchHead (Ours) DDA AlignedForensics DRCT C2P-CLIP UnivFD AIDE SAFE FatFormer NPR
+
+Figure 1: Radar visualization of balanced accuracy on cross-dataset evaluation. The proposed PatchHead consistently achieves the best performance across most generative cate-gories. backbone alone may be insufficient; how its visual represen-tations are used for authenticity prediction may be equally important. A common design is to use only the final CLS token for downstream classification, leaving the spatial organization of patch tokens unexploited at the detector interface (Doso-vitskiy et al. 2021; Dhakal et al. 2026; Guillaro et al. 2025; Liu et al. 2026). This choice is natural for semantic recog-nition, where a global representation summarizes what is present in an image. Its suitability for AIGID, however, is less obvious: the detector must identify how an image was produced rather than what it depicts. Generation-related evi-dence can be weak, localized, and distributed across multiple regions, and may not coincide with the most semantically salient objects (Zhong et al. 2023). Compressing such ev-idence into a single global token may therefore attenuate authenticity-related cues while retaining image-content and dataset-specific variations. This raises a simple question: is the globally aggregated CLS token the appropriate represen-tation for generalizable AI-generated image detection? 
+
+We hypothesize that the limited cross-domain general-arXiv:2608.09223v1 [cs.CV] 10 Aug 2026 ization of CLS-based detectors stems partly from a repre-sentation mismatch: global aggregation entangles authen-ticity prediction with content- and dataset-specific varia-tions, while weakening spatially distributed generation ev-idence. To test this hypothesis, we introduce PatchHead, a lightweight replacement for the conventional CLS-based classifier. We keep the pretrained DINO backbone (Oquab et al. 2024; Siméoni et al. 2026) and the remaining training protocol unchanged. PatchHead reshapes the output patch tokens according to their original two-dimensional layout, models interactions among neighboring regions with a small convolutional module, and aggregates the resulting spatial evidence for image-level prediction. Our goal is not to de-sign a new vision backbone or a sophisticated forensic archi-tecture. Instead, we isolate a single design choice: whether DINO representations should be globally compressed into a CLS token or spatially modeled before image-level aggrega-tion. 
+
+Despite its minimal design, PatchHead delivers strong cross-dataset generalization, as shown in Fig. 1. Under a single-model evaluation protocol without target-specific fine-tuning or test-time adaptation, it ranks first on seven of nine benchmarks and second on the remaining two. Com-pared with the strongest prior method, PatchHead improves the average balanced accuracy from 91 .6% to 94 .6% (+3.0 
+
+points) and raises the worst-case accuracy from 82 .4% to 
+
+89 .4% (+6.9 points), while introducing only 8.6% more trainable parameters and 0.08% additional FLOPs. A se-ries of controlled studies supports the underlying represen-tation hypothesis. Simply averaging patch tokens does not reproduce the gains, and randomizing their spatial arrange-ment substantially degrades performance. A 3-hidden-layer MLP head also underperforms PatchHead, indicating that the improvement cannot be explained by additional capacity alone. Feature-space analyses further show reduced class-conditional discrepancy between training and unseen test domains. Together, these results suggest that the standard CLS-based interface underutilizes the spatial representations al-ready available in DINO. For generalizable AIGID, patch tokens should be spatially modeled before being compressed into an image-level prediction. Our contributions are threefold: 
+
+• We identify and empirically characterize a representa-tion mismatch between CLS-based global features and the spatially distributed evidence required for generaliz-able AI-generated image detection. 
+
+• We introduce PatchHead, a lightweight spatial aggrega-tion head that preserves the two-dimensional organiza-tion of DINO patch tokens and models neighboring re-gional evidence while keeping the pretrained backbone unchanged. 
+
+• Extensive experiments across nine cross-dataset bench-marks, together with controlled ablations, feature-space measurements, and spatial-response analyses, demon-strate the effectiveness of spatial patch aggregation for cross-generator and cross-dataset generalization. CLS-driven Representation Patch-driven Representation 
+
+> Generated Image Generated Image
+> Global Representation DINO Encoder
+
+... 
+
+> Single Global Representation
+> DINO Encoder
+
+...  
+
+> Spatially Structured
+> Distribute Spatial Evidence
+> Artifact-driven Representation
+> Generated Image
+
+...   
+
+> CNN
+> Isolated Local Artifacts (a) (b) (c)
+
+Figure 2: Conceptual comparison of representation strategies for AI-generated image detection. 
+
+Related Work 
+
+Generalizable AI-Generated Image Detection 
+
+Early general-purpose detectors learned generator finger-prints or frequency-sensitive artifacts from CNN-generated imagery (Wang et al. 2020). Subsequent approaches devel-oped more explicit forms of generation evidence, including up-sampling-induced pixel dependencies (Tan et al. 2024), local texture statistics (Zhong et al. 2023), diffusion re-construction residuals (Wang et al. 2023), and challenging reconstruction-based training pairs (Chen et al. 2024). These methods improve generalization by explicitly designing or amplifying particular forensic cues, but their effectiveness still remains sensitive to generator architectures or image-processing conditions (Ren et al. 2026). A complementary line of work focuses on reducing short-cut learning induced by semantic bias and domain discrep-ancies in AI-generated image detection.B-Free constructs semantically aligned real–fake pairs (Guillaro et al. 2025), while Dual Data Alignment aligns real and generated images in both pixel and frequency domains (Chen et al. 2025). These studies primarily improve which forensic evidence is learned or how biased training distributions are constructed. Our work instead investigates how pretrained spatial repre-sentations should be organized at the detector interface. 
+
+Vision Foundation Models for Detection 
+
+Large-scale vision foundation models, including CLIP fam-ily (Radford et al. 2021; Ojha, Li, and Lee 2023; Cozzolino et al. 2024) and the DINO family (Oquab et al. 2024; Siméoni et al. 2026) have become strong feature extractors for gener-alizable detection. Recent detectors use these foundations in different ways: B-Free (Guillaro et al. 2025) fine-tunes DI-NOv2 features, SimLBR (Dhakal et al. 2026) regularizes DI-NOv3 latent geometry, and MIRROR (Liu et al. 2026) com-pares DINOv3 features against a learned real-image mani-fold. Their success motivates our backbone choice, but does not establish that a single global token is the best detector input. Input Image 
+
+> CLSToken PatchToken
+
+BCE Loss Contrastive Loss PatchHead     
+
+> Reshape DWConv 3×3GELU GAP Flatten Linear
+> Conv 1×1
+
+Frozen 
+
+Tunabel 
+
+Pretrained Transformer 
+
+LORA  
+
+> BA raww'
+
+Adin ×rBr×dout 
+
+W
+
+> Targets: attn.qkv attn.proj mlp.fc1 mlp.fc2
+
+Figure 3: Overall framework of PatchHead. DINOv3 ViT-L/16 is adopted as the visual backbone and optimized with LoRA-based parameter-efficient fine-tuning. Unlike conventional CLS-based detectors, PatchHead utilizes Patch Tokens and preserves their two-dimensional spatial organization. The Patch Tokens are processed by a lightweight spatial aggregation head consisting of reshaping, depth-wise convolution, point-wise convolution, and global pooling operations. During training, CLS Token representations are only used for auxiliary contrastive learning and are discarded during inference. 
+
+Patch-Level and Spatial Representation Learning 
+
+Patch-level processing has been explored through local crops, texture selection, and input-space patch rearrange-ment (Zhong et al. 2023; Zheng et al. 2024). These methods operate directly on image regions or treat local patches as candidate forensic cues. Recent work has further incorpo-rated patch tokens from vision foundation models through learnable attention pooling, combining global and local to-ken representations for image-level prediction (Abdullah, Ebert, and Wasenmüller 2026). PatchHead explores a dif-ferent perspective. Rather than aggregating patch tokens primarily as a token sequence into a global embedding, it restores their explicit two-dimensional layout and models in-teractions according to spatial adjacency before image-level aggregation. 
+
+Method 
+
+Existing detectors typically obtain authenticity evidence ei-ther from explicitly designed forensic cues (Fig. 2(a)) (Wang et al. 2023; Cheng et al. 2025; Tan et al. 2024) or from a sin-gle globally aggregated representation (Fig. 2(b)) (Guillaro et al. 2025; Dhakal et al. 2026; Liu et al. 2026). Patch-Head (Fig. 2(c)) instead preserves the native spatial layout of foundation-model patch tokens and models neighboring evidence before image-level aggregation. We first formulate the cross-domain detection problem and then introduce the proposed spatial prediction head. 
+
+Problem Formulation Let Ds = {(xi, y i)}Ni=1 denote a source-domain training set, where xi is an image and 
+
+yi ∈ { 0, 1} indicates whether the image is real or syn-thetic. The detector is evaluated on unseen target domains Dt
+
+whose image sources, generator families, or post-processing pipelines may differ from those observed during training. Given an input image x, a pretrained DINO backbone produces one global CLS token and a set of patch tokens: 
+
+Z(x) = [ zcls , z1, . . . , zNp ], (1) where zcls ∈ RD and zi ∈ RD . Our objective is to learn an image-level authenticity predictor that generalizes from Ds
+
+to unseen target domains without target-domain adaptation. 
+
+PatchHead A conventional DINO-based detector predicts image authenticity from the global CLS token: 
+
+ˆycls = gcls (zcls ), (2) where gcls (·) represents a nonlinear mapping function. PatchHead instead retains patch tokens as spatially indexed regional representations. (Fig. 3) Let Np = HpWp. We restore the token sequence to its original spatial layout: 
+
+F0 = Reshape( Zp) ∈ RD×Hp×Wp . (3) PatchHead first applies a 3 × 3 depthwise convolu-tion (Howard et al. 2017) to exchange information among spatially adjacent patches, followed by a nonlinear activation and a 1 × 1 pointwise projection: 
+
+Fh = Conv 1×1 (GELU (DWConv 3×3(F0))) . (4) The depthwise convolution models local spatial interactions, whereas the pointwise convolution mixes feature channels and projects the DINO dimension to the detector-head di-mension. The image-level patch representation is obtained through global average pooling: 
+
+fpatch = GAP( Fh), (5) Method Manually Curated Datasets In-the-Wild Datasets Avg. Min. DRCT-2M DDA-COCO EvalGEN SynthB. AIGC Cham. SynthW. WildRF BFree NPR (Tan et al. 2024) 37.3 42.2 2.9 50.0 53.1 59.9 49.8 63.5 49.5 45.4 2.9 UnivFD (Ojha, Li, and Lee 2023) 61.8 52.4 15.4 67.8 72.5 50.7 52.3 55.3 49.0 53.0 15.4 FatFormer (Liu et al. 2024) 52.2 51.7 45.6 56.1 85.0 51.2 52.1 58.9 50.0 55.9 45.6 SAFE (Li et al. 2025) 59.3 49.9 1.1 46.5 50.3 59.2 49.1 54.2 ∗ 50.5 46.7 1.1 C2P-CLIP (Tan et al. 2025) 59.2 51.3 38.9 68.5 81.4 51.1 57.1 59.6 50.0 57.5 38.9 AIDE (Yan et al. 2025) 64.6 50.0 19.1 53.9 63.6 63.1 54.7 ∗ 58.4 53.1 53.4 19.1 DRCT (Chen et al. 2024) 90.5 60.2 77.8 81.3 ∗ 81.4 56.6 55.1 51.6 ∗ 55.7 67.8 51.6 AlignedForensics (Rajan et al. 2025) 95.5 86.5 68.0 77.4 66.6 71.0 78.8 80.1 68.5 76.9 66.6 DDA (Chen et al. 2025) 98.1 92.2 97.2 90.1 87.8 82.4 90.9 90.3 95.1 91.6 82.4 PatchHead(ours) 99.2 95.1 99.4 92.1 96.2 92.0 89.4 93.4 94.6 94.6 89.4 
+
+Table 1: Balanced Accuracy (%) on cross-dataset evaluation. The best and second-best results for each generator are highlighted in bold and underline, respectively. * indicates values corrected from the original reports (DDA (Chen et al. 2025)). Avg. and Min. denote the average and minimum accuracy across all datasets, respectively. 
+
+Algorithm 1 PyTorch-like pseudocode of PatchHead                                              
+
+> class PatchHeadDetector(nn.Module): def __init__(self, dino, C, head_dim): super().__init__() self.backbone =AddLoRA(Freeze(dino)) self.patch_head =nn.Sequential( DWConv3x3(groups=C), GELU(), Conv1x1(C, head_dim), AdaptiveAvgPool2d(1), Flatten(1) )self.classifier =Linear(head_dim, 1) def forward(I): z_cls, Z_p =self.backbone(I) B, N, C=Z_p.shape P=Reshape(Z_p, B, C, H, W) f_patch =self.patch_head(P) logit =self.classifier(f_patch) return logit, z_cls #Optimization L_cls =BCEWithLogits(logit, y) L_con =Contrastive(z_cls) L=(1-lambda) * L_cls +lambda * L_con
+
+and the authenticity probability is predicted as 
+
+ˆy = σ  w⊤fpatch + b . (6) 
+
+Training Objective PatchHead is trained with image-level classification supervision and an auxiliary contrastive objec-tive as shown in Algorithm 1. The final prediction relies exclusively on the spatial patch representation: 
+
+Lcls = −y log ˆ y − (1 − y) log(1 − ˆy), (7) where y is the ground-truth label and ˆy is the predicted probability of being synthetic. Following prior work (Chen et al. 2025), we freeze the original DINO weights and optimize its LoRA adapters. An auxiliary contrastive loss Lcon is applied to the CLS rep-resentations of augmented views to regularize the adapted backbone. The CLS branch is used only during training and discarded at inference. The overall objective is 
+
+L = (1 − λ)Lcls + λLcon , (8) where λ balances the two objectives. 
+
+Experiments 
+
+Datasets. We evaluate PatchHead on nine benchmarks, including five curated datasets (DRCT-2M (Chen et al. 2024), DDA-COCO (Chen et al. 2025), EvalGEN (Chen et al. 2025), Synthbuster (Bammey 2024), and AIGCDe-tectionBenchmark (Zhong et al. 2023)) and four in-the-wild datasets (Chameleon (Yan et al. 2025), SynthWildX (Coz-zolino et al. 2024), WildRF (Cavia et al. 2024), and BFree-Online (Guillaro et al. 2025)). The curated benchmarks cover diverse generative paradigms and provide controlled evalu-ation of cross-generator generalization, whereas the in-the-wild benchmarks contain online images with more diverse content, post-processing, and generation sources. Detailed statistics are provided in the supplementary material. 
+
+Training and Evaluation Protocol. We use DINOv3 ViT-L/16 (Siméoni et al. 2026) with frozen base parameters and trainable LoRA adapters of rank 8. All models are trained for one epoch on the DDA-aligned COCO-SD-2 dataset (Chen et al. 2025) using the same augmentations, optimization schedule, and auxiliary contrastive objective. Training aug-mentations include random cropping, pixel- and frequency-domain mixing, random JPEG compression, and multi-scale augmentations via random downsampling and upsampling for contrastive learning. Center cropping is used at infer-ence. Unless otherwise specified, the contrastive-loss weight is set to λ = 0 .5 , as determined by ablation experiments. We evaluate a single trained model on all target benchmarks without dataset-specific fine-tuning or test-time adaptation, and report balanced accuracy as the primary metric. Full Method ADM D2 Glide MJ VQDM BigGAN CycleGAN GauGAN ProGAN SDXL SD1.4 SD1.5 StarGAN StyleGAN StyleGAN2 WFR Wukong Avg. NPR (Tan et al. 2024) 43.8 20.0 41.2 53.4 48.4 53.1 76.6 42.2 58.7 59.6 55.1 55.0 67.4 57.9 54.6 58.8 57.4 53.1 UnivFD (Ojha, Li, and Lee 2023) 62.5 50.0 61.3 55.1 76.9 87.5 96.9 98.8 99.4 58.2 55.6 55.7 95.1 80.0 69.4 69.2 61.1 72.5 FatFormer (Liu et al. 2024) 80.2 68.5 91.1 54.4 88.0 99.2 99.5 99.1 98.5 71.7 67.5 67.2 99.4 98.0 98.8 88.3 75.6 85.0 SAFE (Li et al. 2025) 49.5 49.5 53.0 49.0 50.2 52.2 51.9 50.0 50.0 49.8 49.7 49.8 50.1 50.0 50.0 49.8 50.3 50.3 C2P-CLIP (Tan et al. 2025) 71.6 52.3 73.5 56.6 73.7 98.4 96.8 98.8 99.3 62.3 77.5 76.9 99.6 93.1 79.4 94.8 79.4 81.4 AIDE (Yan et al. 2025) 52.9 51.1 60.2 49.8 69.3 70.1 93.6 60.6 89.0 49.6 51.6 51.0 72.1 66.5 59.0 80.6 54.5 63.6 DRCT (Chen et al. 2024) 79.9 89.2 89.2 85.5 88.6 81.4 91.0 93.8 71.1 88.3 91.4 91.0 53.0 62.7 63.8 73.9 90.8 81.4 AlignedForensics (Rajan et al. 2025) 51.6 52.0 55.6 96.2 72.1 51.2 49.5 50.8 50.7 95.1 99.7 99.6 53.8 52.7 51.6 50.0 99.6 66.6 DDA (Chen et al. 2025) 89.5 94.6 89.6 95.6 76.6 91.0 72.5 92.7 92.8 99.4 98.7 98.6 72.7 87.8 90.2 52.1 98.8 87.8 PatchHead(ours) 95.5 99.2 96.7 97.9 98.0 97.1 92.6 97.8 94.2 99.5 98.9 99.0 84.9 92.7 94.1 98.7 99.1 96.2 
+
+Table 2: Balanced Accuracy (%) on the AIGCDetectionBenchmark. 
+
+Method SynthWildX WildRF 
+
+DALL-E 3 Firefly Midjourney Avg. Facebook Reddit Twitter Avg. NPR (Tan et al. 2024) 43.6 61.3 44.5 49.8 78.1 61.0 51.3 63.5 UnivFD (Ojha, Li, and Lee 2023) 45.4 65.3 46.2 52.3 49.1 60.2 56.5 55.3 FatFormer (Liu et al. 2024) 46.5 61.6 48.3 52.1 54.1 68.1 54.4 58.9 SAFE (Li et al. 2025) 49.4 48.2 49.6 49.1 50.9 74.1 37.5 54.2 ∗
+
+C2P-CLIP (Tan et al. 2025) 56.9 61.4 53.0 57.1 54.4 68.4 55.9 59.6 AIDE (Yan et al. 2025) 63.4 48.8 51.9 54.7 ∗ 57.8 71.5 45.8 58.4 DRCT (Chen et al. 2024) 58.3 56.4 50.5 55.1 46.6 53.1 55.2 51.6 ∗
+
+AlignedForensics (Rajan et al. 2025) 85.5 58.5 92.2 78.8 89.4 69.1 81.8 80.1 DDA (Chen et al. 2025) 92.3 87.3 93.1 90.9 93.1 86.4 91.5 90.3 PatchHead(ours) 89.8 88.3 90.0 89.4 93.4 94.0 92.8 93.4 
+
+Table 3: Balanced Accuracy (%) on SynthWildX and WildRF. implementation details are provided in the supplementary material. 
+
+Comparison with State-of-the-Art Methods As shown in Table 1, PatchHead ranks first on seven of the nine unseen benchmarks and second on the remaining two. It achieves an average balanced accuracy of 94 .6% , outperforming the strongest baseline, DDA, by 3.0 percentage points, with con-sistent gains on both manually curated ( +3 .3) and in-the-wild (+2 .7) datasets. Moreover, PatchHead raises the worst-case accuracy from 82 .4% to 89 .4% (+6 .9 points), demonstrat-ing more reliable generalization across heterogeneous target domains and supporting spatial patch aggregation as an ef-fective detection interface. 
+
+Fine-grained comparison. Tables 2 and 3 provide generator- and source-level results on representative curated and in-the-wild benchmarks. Detailed results on the remain-ing benchmarks are provided in the supplementary material. On AIGCDetectionBenchmark, PatchHead achieves the best average accuracy of 96 .2% , with notable gains of 9.4 points on VQDM and 3.9 points on WFR. On the in-the-wild bench-marks, it reaches 89 .4% on SynthWildX and improves DDA from 90 .3% to 93 .4% on WildRF, ranking first across all three social-media sources. These results show that the over-all gains extend across diverse generators and online data sources rather than being driven by a single subset. 
+
+Ablation Studies 
+
+PatchHead vs. Alternative Representation Interfaces. 
+
+Table 4 shows that simple global averaging of patch tokens performs slightly worse than the CLS baseline, indicating that merely replacing CLS with patch features does not au-tomatically improve generalization. In contrast, PatchHead achieves 94 .6% average accuracy, outperforming CLSHead and GAP+Linear by 0.7 and 1.0 points, respectively. Shuf-fling patch positions further reduces the result to 94 .3% .Thus, the main gain comes from learnable regional aggrega-tion, while the native spatial arrangement provides an addi-tional benefit. 
+
+Authenticity-Adaptive Spatial Responses. Figure 4a shows that the CLS-based detector responds to similar sparse and content-salient regions in both real and generated im-ages, whereas PatchHead exhibits more restricted responses on real images and broader activations on generated images. Dataset-level statistics on BFree-Online further support this observation (Fig. 4b): compared with CLS, PatchHead pro-duces a larger real–synthetic coverage gap and a lower top-
+
+10% activation concentration on generated images. The coverage distributions and spatial variance show that this distinction persists across samples and response structures. Together, these results suggest that PatchHead aggregates more distributed and authenticity-sensitive spatial evidence. Metric definitions and additional results are provided in the supplementary material. 
+
+Cross-Domain Feature Consistency. Figure 5 visualizes the feature distributions of the CLS-based baseline and Patch-Head across the source training set and unseen target datasets. The CLS-based representations form visibly separated clus-ters according to dataset origin, even among samples sharing Representation Cham. AIGC DRCT-2M SynthB. SynthW. WildRF BFree DDA-COCO EvalGEN Avg. Params. FLOPs CLSHead(Linear) 91.3 94.7 99.0 91.8 88.9 91.5 92.5 95.8 99.5 93.9 3.15M ∼2K CLSHead(MLP) 91.0 95.2 99.1 90.6 88.4 93.3 92.6 95.4 99.3 93.9 3.84M ∼1.38M GAP+Linear 90.8 94.8 99.0 91.4 87.5 92.3 92.1 95.7 99.2 93.6 3.15M ∼0.45M PatchHead+Shuffle 92.0 95.7 99.1 91.2 89.3 93.4 92.8 96.1 99.3 94.3 3.42M ∼242M PatchHead 92.0 96.2 99.2 92.1 89.4 93.4 94.6 95.1 99.4 94.6 3.42M ∼242M 
+
+Table 4: Ablation of representation interfaces and spatial organization. All variants share the same DINOv3 backbone, LoRA configuration, training data, augmentations, and contrastive objective. PatchHead+Shuffle applies a fixed random permutation to patch positions before spatial aggregation.The best results are shown in bold . Params. denotes the total trainable parameters, and FLOPs denotes the additional computational cost of the prediction head. Real Fake      
+
+> Original CLS Patch Original CLS Patch
+> Real Fake
+
+(a) Spatial response maps. CLS_Real CLS_Fake Patch_Real Patch_Fake          
+
+> 0.000 0.025 0.050 0.075 0.100 0.125 0.150 0.175 0.200
+> Coverage (Adaptive)
+> 0.105 0.109 0.021 0.109
+> (a) Coverage
+> CLS_Real CLS_Fake Patch_Real Patch_Fake
+> 0.0 0.1 0.2 0.3 0.4 0.5 0.6
+> Top-10% Ratio  0.306 0.326 0.429 0.152
+> (b) Top-10% Ratio
+> 0.00 0.05 0.10 0.15 0.20
+> Coverage (Adaptive)
+> 020 40 60 80 100 120
+> Density
+> (c) Coverage Histogram
+> CLS_Real CLS_Fake Patch_Real Patch_Fake
+> CLS_Real CLS_Fake Patch_Real Patch_Fake
+> 0.00 0.02 0.04 0.06 0.08 0.10
+> Spatial Variance
+> 0.013 0.014 0.007 0.040
+> (d) Spatial Variance
+> Spatial Response Statistics BFree-Online
+
+(b) Response statistics on BFree-Online. 
+
+Figure 4: Qualitative and quantitative comparisons of spatial responses. Left: representative response maps of the CLS-based baseline and PatchHead on real and generated images. Right: dataset-level statistical analysis on BFree-Online, confirming that PatchHead produces more authenticity-sensitive and spatially distributed response patterns. 
+
+Patch Aggregation Head Cham. AIGC DRCT-2M SynthB. SynthW. WildRF BFree DDA-COCO EvalGEN Avg. Min. PatchHead 92.0 96.2 99.2 92.1 89.4 93.4 94.6 95.1 99.4 94.6 89.4 
+
+w/ Multi-scale 91.5 95.0 99.0 90.9 88.1 92.7 93.7 95.8 99.3 94.0 88.1 w/ Multi-level 85.4 93.2 99.0 95.3 92.4 94.0 93.4 95.1 97.0 93.9 85.4 w/ HRM (Wang et al. 2025) 81.5 89.2 97.6 87.2 78.6 84.4 74.5 90.9 97.4 86.8 74.5 
+
+Table 5: Comparison of different patch aggregation heads. All variants share the same DINOv3 backbone, LoRA configuration, training objective, and classifier, and differ only in how spatial patch features are aggregated. the same authenticity label. In contrast, PatchHead brings real or synthetic samples from different domains closer to-gether while largely preserving the separation between the two classes. This consistent pattern suggests that spatial patch aggregation reduces dataset dependence and produces more transferable representations for cross-domain authen-ticity detection. 
+
+Is More Complex Spatial Designing Necessary? Table 5 compares the default PatchHead with Multi-scale (uses mul-tiple receptive fields), multi-level (fuses patch features from backbone layers 8, 12, 16, and 23), and HRM-inspired vari-ants (introduces hierarchical aggregation) under identical set-tings. Detailed architectures are provided in the supplemen-tary material. The lightweight PatchHead achieves the best average and worst-case accuracies of 94 .6% and 89 .4% , re-spectively. More complex designs offer isolated gains but do not generalize consistently, while the HRM-inspired variant drops to 86 .8% on average. Thus, lightweight local aggrega-tion provides the most reliable cross-domain performance. 
+
+Sensitivity to Contrastive Regularization. Figure 6 eval-uates the contrastive-loss weight λ on four representative curated and in-the-wild benchmarks, with all other settings fixed. PatchHead remains competitive across a broad range of values, while λ = 0 .5 provides the best overall perfor-mance. Larger weights yield no consistent gains, likely be-cause they reduce the relative contribution of authenticity classification. We therefore adopt λ = 0 .5 throughout the experiments. 
+
+Test-Time Robustness. As shown in Table 6, PatchHead consistently outperforms CLSHead under JPEG compres-CLS Token (a) BFree-Online 
+
+> Train Real (n=1000) Train Fake (n=1000) Test Real (n=271) Test Fake (n=542)
+> (b) Chameleon
+> Train Real (n=1000) Train Fake (n=1000) Test Real (n=1000) Test Fake (n=1000)
+> (c) WildRF
+> Train Real (n=1000) Train Fake (n=1000) Test Real (n=1000) Test Fake (n=1000)
+> PatchHead
+> Train Real (n=1000) Train Fake (n=1000) Test Real (n=271) Test Fake (n=542)
+> Train Real (n=1000) Train Fake (n=1000) Test Real (n=1000) Test Fake (n=1000)
+> Train Real (n=1000) Train Fake (n=1000) Test Real (n=1000) Test Fake (n=1000)
+
+t-SNE Feature Space Train + Test Datasets Figure 5: t-SNE visualization of feature distributions learned by the CLS-based baseline and PatchHead on the training set and the unseen test sets. CLS-based features remain strongly separated by dataset origin, whereas PatchHead exhibits greater class-conditional alignment across domains while preserving real–fake discrimination. 0.0 0.1 0.3 0.5 0.8 
+
+Contrastive Loss Weight λ
+
+> 88 90 92 94 96 98 100
+> Balanced Accuracy (%)
+> DRCT-2M AIGCDetectionBenchmark Chameleon BFree-Online
+> 99.18 96.22 91.99 94.56
+
+Figure 6: Effect of different contrastive learning weights for PatchHead. 
+
+Method Original JPEG60 Resize2.0 Blur2.0 CLSHead(Linear) 93.9 90.7 93.6 84.5 PatchHead 94.6 91.4 94.6 85.0 
+
+Table 6: Robustness evaluation under different test-time per-turbations. Balanced accuracy (%) is averaged over nine target benchmarks. sion, resizing, and Gaussian blur. It is particularly stable under resizing, retaining its original 94 .6% accuracy. While blur remains challenging for both methods, PatchHead main-tains higher performance under all tested perturbations. 
+
+Conclusion 
+
+This work revisits the representation interface of vision foun-dation models for generalizable AI-generated image detec-tion. Instead of predicting authenticity from a single global CLS token, PatchHead restores DINO patch tokens to their native two-dimensional layout and applies lightweight local aggregation before image-level prediction. Controlled com-parisons show that simply accessing patch tokens is insuffi-cient: effective generalization requires learnable aggregation of regional representations, with their native spatial orga-nization providing additional benefits. Feature-space and spatial-response analyses further suggest that PatchHead re-duces dataset-specific biases while forming more distributed and authenticity-sensitive decision patterns. These findings reveal that cross-domain transferability in foundation-model-based detectors depends not only on the choice of pretrained features, but also on preserving and aggregating their spatial structure. Therefore, a minimal spatial inductive bias can provide a stronger and more reliable detection interface than conventional global-token prediction. References 
+
+Abdullah, A.; Ebert, N.; and Wasenmüller, O. 2026. TAP into the Patch Tokens: Leveraging Vision Foundation Model Features for AI-Generated Image Detection. In Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops , 379–389. Bammey, Q. 2024. Synthbuster: Towards Detection of Diffu-sion Model Generated Images. IEEE Open Journal of Signal Processing , 5: 1–9. Cai, Q.; Wu, C.; Zhang, Y.; Yu, J.; and Tian, X. 2025. Towards Generalizable Detector for Generated Image. In Belgrave, D.; Zhang, C.; Montoya, L. N.; Lin, H.; Pascanu, R.; Koniusz, P.; Ghassemi, M.; Chen, N.; Ruíz, I. V. M.; and Loaiza-Bonilla, A., eds., Advances in Neural Informa-tion Processing Systems 38: Annual Conference on Neural Information Processing Systems 2025, NeurIPS 2025, San Diego, CA, USA, December 2-7, 2025 / Mexico City, Mex-ico, November 30 - December 5, 2025 .Cavia, B.; Horwitz, E.; Reiss, T.; and Hoshen, Y. 2024. Real-Time Deepfake Detection in the Real-World. CoRR ,abs/2406.09398. Chen, B.; Zeng, J.; Yang, J.; and Yang, R. 2024. DRCT: Diffusion Reconstruction Contrastive Training towards Uni-versal Detection of Diffusion Generated Images. In Salakhut-dinov, R.; Kolter, Z.; Heller, K. A.; Weller, A.; Oliver, N.; Scarlett, J.; and Berkenkamp, F., eds., Forty-first Interna-tional Conference on Machine Learning, ICML 2024, Vi-enna, Austria, July 21-27, 2024 , volume 235 of Proceedings of Machine Learning Research , 7621–7639. PMLR / Open-Review.net. Chen, R.; Xi, J.; Yan, Z.; Zhang, K.; Wu, S.; Xie, J.; Chen, X.; Xu, L.; Guan, I.; Yao, T.; and Ding, S. 2025. Dual Data Alignment Makes AI-Generated Image Detector Easier Gen-eralizable. In Belgrave, D.; Zhang, C.; Montoya, L. N.; Lin, H.; Pascanu, R.; Koniusz, P.; Ghassemi, M.; Chen, N.; Ruíz, I. V. M.; and Loaiza-Bonilla, A., eds., Advances in Neu-ral Information Processing Systems 38: Annual Conference on Neural Information Processing Systems 2025, NeurIPS 2025, San Diego, CA, USA, December 2-7, 2025 / Mexico City, Mexico, November 30 - December 5, 2025 .Cheng, S.; Lyu, L.; Wang, Z.; Zhang, X.; and Sehwag, V. 2025. CO-SPY: Combining Semantic and Pixel Features to Detect Synthetic Images by AI. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2025, Nashville, TN, USA, June 11-15, 2025 , 13455–13465. Com-puter Vision Foundation / IEEE. Cozzolino, D.; Poggi, G.; Corvi, R.; Nießner, M.; and Ver-doliva, L. 2024. Raising the Bar of AI-generated Image De-tection with CLIP. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2024 - Workshops, Seattle, WA, USA, June 17-18, 2024 , 4356–4366. IEEE. Dhakal, A.; Khanal, S.; Sastry, S.; Arndt, J.; Ambrozio Dias, P.; Lunga, D.; and Jacobs, N. 2026. SimLBR: Learning to Detect Fake Images by Learning to Detect Real Images. In 
+
+Computer Vision and Pattern Recognition . IEEE/CVF. Dosovitskiy, A.; Beyer, L.; Kolesnikov, A.; Weissenborn, D.; Zhai, X.; Unterthiner, T.; Dehghani, M.; Minderer, M.; Heigold, G.; Gelly, S.; Uszkoreit, J.; and Houlsby, N. 2021. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In 9th International Conference on Learning Representations, ICLR 2021, Virtual Event, Aus-tria, May 3-7, 2021 . OpenReview.net. Guillaro, F.; Zingarini, G.; Usman, B.; Sud, A.; Coz-zolino, D.; and Verdoliva, L. 2025. A Bias-Free Training Paradigm for More General AI-generated Image Detection. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2025, Nashville, TN, USA, June 11-15, 2025 , 18685–18694. Computer Vision Foundation / IEEE. Howard, A. G.; Zhu, M.; Chen, B.; Kalenichenko, D.; Wang, W.; Weyand, T.; Andreetto, M.; and Adam, H. 2017. Mo-bileNets: Efficient Convolutional Neural Networks for Mo-bile Vision Applications. CoRR , abs/1704.04861. Li, O.; Cai, J.; Hao, Y.; Jiang, X.; Hu, Y.; and Feng, F. 2025. Improving Synthetic Image Detection Towards Gener-alization: An Image Transformation Perspective. In Sun, Y.; Chierichetti, F.; Lauw, H. W.; Perlich, C.; Tok, W. H.; and Tomkins, A., eds., Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining, V.1, KDD 2025, Toronto, ON, Canada, August 3-7, 2025 , 2405– 2414. ACM. Liu, H.; Tan, Z.; Tan, C.; Wei, Y.; Wang, J.; and Zhao, Y. 2024. Forgery-aware Adaptive Transformer for Generaliz-able Synthetic Image Detection. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2024, Seattle, WA, USA, June 16-22, 2024 , 10770–10780. IEEE. Liu, R.; Cui, M.; Qin, Z.; Yan, Z.; Chen, R.; Han, Y.; Li, Z.; Chen, J.; Chen, Z.; Lin, K.; Shen, J.; Weng, L.; Dong, J.; Wang, Y.; and Wu, S. 2026. MIRROR: Manifold Ideal Reference ReconstructOR for Generalizable AI-Generated Image Detection. CoRR , abs/2602.02222. Ojha, U.; Li, Y.; and Lee, Y. J. 2023. Towards Universal Fake Image Detectors that Generalize Across Generative Models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2023, Vancouver, BC, Canada, June 17-24, 2023 , 24480–24489. IEEE. Oquab, M.; Darcet, T.; Moutakanni, T.; Vo, H. V.; Szafraniec, M.; Khalidov, V.; Fernandez, P.; Haziza, D.; Massa, F.; El-Nouby, A.; Assran, M.; Ballas, N.; Galuba, W.; Howes, R.; Huang, P.; Li, S.; Misra, I.; Rabbat, M.; Sharma, V.; Synnaeve, G.; Xu, H.; Jégou, H.; Mairal, J.; Labatut, P.; Joulin, A.; and Bojanowski, P. 2024. DINOv2: Learning Robust Visual Features without Supervision. Trans. Mach. Learn. Res. , 2024. Radford, A.; Kim, J. W.; Hallacy, C.; Ramesh, A.; Goh, G.; Agarwal, S.; Sastry, G.; Askell, A.; Mishkin, P.; Clark, J.; Krueger, G.; and Sutskever, I. 2021. Learning Transfer-able Visual Models From Natural Language Supervision. In Meila, M.; and Zhang, T., eds., Proceedings of the 38th In-ternational Conference on Machine Learning, ICML 2021, 18-24 July 2021, Virtual Event , volume 139 of Proceedings of Machine Learning Research , 8748–8763. PMLR. Rajan, A. S.; Ojha, U.; Schloesser, J.; and Lee, Y. J. 2025. Aligned Datasets Improve Detection of Latent Diffusion-Generated Images. In The Thirteenth International Confer-ence on Learning Representations, ICLR 2025, Singapore, April 24-28, 2025 . OpenReview.net. Ren, S.; Zhou, Y.; Shen, X.; Zewde, K.; Duong, T.; Huang, G.; Wei, E.; Xue, J.; et al. 2026. How well are open sourced AI-generated image detection models out-of-the-box: A comprehensive benchmark study. arXiv preprint arXiv:2602.07814 .Siméoni, O.; Vo, H. V.; Seitzer, M.; Baldassarre, F.; Oquab, M.; Jose, C.; Khalidov, V.; Szafraniec, M.; Yi, S. E.; Rama-monjisoa, M.; Massa, F.; Haziza, D.; Wehrstedt, L.; Wang, J.; Darcet, T.; Moutakanni, T.; Sentana, L.; Roberts, C.; Vedaldi, A.; Tolan, J.; Brandt, J.; Couprie, C.; Mairal, J.; Jégou, H.; Labatut, P.; and Bojanowski, P. 2026. DINOv3. 
+
+Trans. Mach. Learn. Res. , 2026. Tan, C.; Liu, H.; Zhao, Y.; Wei, S.; Gu, G.; Liu, P.; and Wei, Y. 2024. Rethinking the Up-Sampling Operations in CNN-Based Generative Network for Generalizable Deepfake Detection. In IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2024, Seattle, WA, USA, June 16-22, 2024 , 28130–28139. IEEE. Tan, C.; Tao, R.; Liu, H.; Gu, G.; Wu, B.; Zhao, Y.; and Wei, Y. 2025. C2P-CLIP: Injecting Category Common Prompt in CLIP to Enhance Generalization in Deepfake Detection. In Walsh, T.; Shah, J.; and Kolter, Z., eds., Thirty-Ninth AAAI Conference on Artificial Intelligence, Thirty-Seventh Con-ference on Innovative Applications of Artificial Intelligence, Fifteenth Symposium on Educational Advances in Artificial Intelligence, AAAI 2025, Philadelphia, PA, USA, February 25 - March 4, 2025 , 7184–7192. AAAI Press. Wang, G.; Li, J.; Sun, Y.; Chen, X.; Liu, C.; Wu, Y.; Lu, M.; Song, S.; and Yadkori, Y. A. 2025. Hierarchical reasoning model. arXiv preprint arXiv:2506.21734 .Wang, S.; Wang, O.; Zhang, R.; Owens, A.; and Efros, A. A. 2020. CNN-Generated Images Are Surprisingly Easy to Spot... for Now. In 2020 IEEE/CVF Conference on Com-puter Vision and Pattern Recognition, CVPR 2020, Seattle, WA, USA, June 13-19, 2020 , 8692–8701. Computer Vision Foundation / IEEE. Wang, Z.; Bao, J.; Zhou, W.; Wang, W.; Hu, H.; Chen, H.; and Li, H. 2023. DIRE for Diffusion-Generated Image Detection. In IEEE/CVF International Conference on Com-puter Vision, ICCV 2023, Paris, France, October 1-6, 2023 ,22388–22398. IEEE. Yan, S.; Li, O.; Cai, J.; Hao, Y.; Jiang, X.; Hu, Y.; and Xie, W. 2025. A Sanity Check for AI-generated Image Detec-tion. In The Thirteenth International Conference on Learn-ing Representations, ICLR 2025, Singapore, April 24-28, 2025 . OpenReview.net. Zheng, C.; Lin, C.; Zhao, Z.; Wang, H.; Guo, X.; Liu, S.; and Shen, C. 2024. Breaking Semantic Artifacts for Gen-eralized AI-generated Image Detection. In Globersons, A.; Mackey, L.; Belgrave, D.; Fan, A.; Paquet, U.; Tomczak, J. M.; and Zhang, C., eds., Advances in Neural Information Processing Systems 37: Annual Conference on Neural Infor-mation Processing Systems 2024, NeurIPS 2024, Vancouver, BC, Canada, December 10 - 15, 2024 .Zhong, N.; Xu, Y.; Li, S.; Qian, Z.; and Zhang, X. 2023. Patchcraft: Exploring Texture Patch for Ef-ficient AI-generated Image Detection. arXiv preprint arXiv:2311.12397 .Zhu, M.; Chen, H.; Yan, Q.; Huang, X.; Lin, G.; Li, W.; Tu, Z.; Hu, H.; Hu, J.; and Wang, Y. 2023. GenImage: A Million-Scale Benchmark for Detecting AI-Generated Im-age. In Oh, A.; Naumann, T.; Globerson, A.; Saenko, K.; Hardt, M.; and Levine, S., eds., Advances in Neural Informa-tion Processing Systems 36: Annual Conference on Neural Information Processing Systems 2023, NeurIPS 2023, New Orleans, LA, USA, December 10 - 16, 2023 .A Dataset Details 
+
+This section provides additional details and statistics of the nine AI-generated image detection datasets used in the main experiments. These datasets cover both manually curated benchmarks and in-the-wild scenarios, representing diverse generation paradigms and real-world distributions. Detailed statistics of all datasets are summarized in Table 7. The Manually Curated Datasets include DRCT-2M (Chen et al. 2024), DDA-COCO (Chen et al. 2025), EvalGEN (Chen et al. 2025), Synthbuster (Bammey 2024), and AIGCDetec-tionBenchmark (Zhong et al. 2023). These datasets contain images generated by known generative models and cover diverse generation paradigms, including GANs, diffusion models, flow matching models, and autoregressive models. They provide controlled benchmarks for measuring cross-generator generalization. The In-the-Wild Datasets include Chameleon (Yan et al. 2025), SynthWildX (Cozzolino et al. 2024), WildRF (Cavia et al. 2024), and BFree-Online (Guillaro et al. 2025). These datasets are collected from real-world online environments and contain more complex data distributions and unknown generation processes, providing challenging scenarios for evaluating the robustness of AI-generated image detectors. 
+
+B Implementation Details 
+
+The training data is constructed from the DDA-aligned COCO-SD-2 dataset (Chen et al. 2025), which contains real images from MS COCO and corresponding VAE re-constructed images. We adopt DINOv3 ViT-L/16 as the vi-sual encoder and employ LoRA for parameter-efficient fine-tuning. Specifically, LoRA modules are inserted into the combined QKV projection, attention output projection, and two MLP linear layers of each Transformer block, while the original backbone weights remain frozen. To improve the robustness of the model against diverse generation artifacts and real-world image degradations, we employ multiple data augmentation strategies during train-ing, including pixel-domain mixing, frequency-domain mix-ing, and random JPEG compression. Furthermore, to con-struct augmented views required for contrastive learning, each training image undergoes an additional scale transfor-mation, where the image is first randomly downsampled or upsampled and then resized back to the original input size to generate another view. The model is optimized using the AdamW optimizer with an initial learning rate of 1 × 10 −4. A cosine annealing strategy is adopted for learning rate scheduling. The training batch size is set to 16 with 4 gradient accumulation steps, resulting in an effective batch size of 64. All experiments are conducted on a single NVIDIA GeForce RTX 5090 GPU. Unless otherwise specified, the weight of the auxiliary contrastive learning loss is fixed to 0.5. All experiments are conducted under a single-model evaluation setting, without dataset-specific fine-tuning or test-time adaptation. 
+
+C Detailed Cross-Dataset Evaluation 
+
+We provide detailed cross-dataset results on more bench-marks in Tables 8-11, including DRCT-2M, Synthbuster, DDA-COCO, and EvalGEN. These results further validate the effectiveness and generalization ability of PatchHead across diverse generation sources, covering both large-scale benchmarks. On DRCT-2M, PatchHead achieves the best average bal-anced accuracy of 99 .2% , outperforming existing approaches and maintaining consistently strong performance across 16 generation sources. On Synthbuster, PatchHead reaches an average balanced accuracy of 92 .1% , achieving the best re-sults across most evaluated generators. Notably, it maintains a balanced accuracy above 90 .1% even on the most chal-lenging generation source, improving by 13 .6 points over the second-best method. For DDA-COCO and EvalGEN, PatchHead achieves average balanced accuracies of 95 .1% 
+
+and 99 .4% , respectively, outperforming previous best results by 2.9 and 2.2 points. Overall, these results demonstrate that PatchHead generalizes effectively across diverse manually curated benchmarks. 
+
+D Ablation Study Details 
+
+Analysis of Spatial Responses and Visualization 
+
+This section provides additional details for the Authenticity-Adaptive Spatial Responses analysis in the main paper. We describe the visualization methods used to generate the spa-tial response maps and provide detailed definitions of the quantitative metrics used to characterize spatial responses. We employ different attribution methods for CLS repre-sentations and PatchHead, respectively. Specifically, Atten-tion Rollout is adopted for CLS-based detectors to estimate patch-level contributions from transformer attention maps, while Class Activation Mapping (CAM) is used for Patch-Head to generate region-level response maps from the patch-based classification head. These attribution methods are selected according to the corresponding prediction mech-anisms of the two architectures. Additional visualization examples are provided in Figure 7 to further illustrate the spatial response patterns across different samples. For the quantitative analysis, we introduce four comple-mentary metrics to characterize spatial responses: Coverage, Top-10 Activation Ratio, Coverage Histogram, and Spatial Variance. Coverage measures the spatial extent of activated regions, Top-10 Activation Ratio evaluates the concentration of responses on the most activated patches, Coverage His-togram describes the distribution of spatial response ranges across samples, and Spatial Variance measures the structural variation of response maps. Although the two attribution methods are derived from different prediction mechanisms, both produce spatial re-sponse maps indicating prediction-related regions. Before quantitative analysis, all response maps are normalized us-ing the same Min-Max normalization procedure, making the subsequent spatial statistics comparable across methods. In addition to the BFree-Online results reported in the main paper, we further provide quantitative results on Chameleon and WildRF in Figure 8 to verify the consistency of the observed spatial response patterns across different datasets. 
+
+Coverage Coverage measures the proportion of spatial re-gions where the model produces significant responses. Given Category Dataset Real Fake Images Generators Generator Families 
+
+Manually Curated 
+
+DRCT-2M (Chen et al. 2024) 5,000 80,000 85,000 16 Diffusion DDA-COCO (Chen et al. 2025) 5,000 29,969 34,969 6 Diffusion EvalGEN (Chen et al. 2025) 0 55,298 55,298 5 Flow Matching + Autoregressive Synthbuster (Bammey 2024) 1,000 9,000 10,000 9 Diffusion AIGC (Zhong et al. 2023) 81,299 81,299 162,598 17 GAN + Diffusion 
+
+In-the-Wild 
+
+Chameleon (Yan et al. 2025) 14,863 11,170 26,033 Unknown Unknown SynthWildX (Cozzolino et al. 2024) 421 1,318 1,739 3 Diffusion WildRF (Cavia et al. 2024) 1,251 1,252 2,503 Unknown Unknown BFree-Online (Guillaro et al. 2025) 271 542 813 Unknown Unknown 
+
+Table 7: Statistics of the nine evaluation benchmarks used in this work. curated datasets contain images generated by known synthesis models, whereas in-the-wild datasets are collected from real online scenarios. “Generators” denotes the number of distinct image generators.                                                                                                                                                                                            
+
+> Method LDM SD1.4 SD1.5 SD2 SDXL SDXL-R SD-T SDXL-T LCM1.5 LCM-XL SD1-C SD2-C SDXL-C SD1-I SD2-I SDXL-I Avg. NPR (Tan et al. 2024) 33.0 29.1 29.0 35.1 33.2 28.4 27.9 27.9 29.4 30.2 28.4 28.3 34.7 67.9 67.4 66.1 37.3 UnivFD (Ojha, Li, and Lee 2023) 85.4 56.8 56.4 58.2 63.2 55.0 56.5 53.0 54.5 65.9 68.0 65.4 75.9 64.6 56.2 53.9 61.8 FatFormer (Liu et al. 2024) 55.9 48.2 48.2 48.2 48.2 48.3 48.2 48.2 48.3 50.6 49.7 49.9 59.8 66.3 60.6 56.0 52.2 SAFE (Li et al. 2025) 50.3 50.1 50.0 50.0 49.9 50.1 50.0 50.0 50.1 50.0 49.9 50.0 54.7 98.2 98.5 97.3 59.3 C2P-CLIP (Tan et al. 2025) 83.0 51.7 51.7 52.9 51.9 64.6 51.7 50.6 52.0 66.1 56.9 54.7 77.8 67.2 57.1 56.7 59.2 AIDE (Yan et al. 2025) 64.4 74.9 75.1 58.5 53.5 66.3 52.8 52.8 70.0 54.3 65.9 53.6 53.9 95.3 73.3 69.0 64.6 DRCT (Chen et al. 2024) 96.7 96.3 96.3 94.9 96.2 93.5 93.4 92.9 91.2 95.0 95.6 92.7 92.0 94.1 69.6 57.4 90.5 AlignedForensics (Rajan et al. 2025) 99.9 99.9 99.9 99.6 90.2 81.3 99.7 89.4 99.7 90.0 99.9 99.2 87.6 99.9 99.8 92.6 95.5 DDA (Chen et al. 2025) 99.2 98.9 99.0 98.3 98.0 96.8 97.9 94.8 95.9 98.2 98.7 99.0 99.4 99.0 99.5 96.3 98.1 PatchHead(ours) 99.4 99.1 99.0 98.9 99.1 99.2 99.2 98.8 99.3 99.3 99.4 99.4 99.5 99.4 99.4 98.5 99.2
+
+Table 8: Balanced accuracy (%) on DRCT-2M. The best and second-best results for each generator are highlighted in bold and underline. * indicates values corrected from the original reports (DDA (Chen et al. 2025)). 
+
+Method DALL ·E2 DALL ·E3 Firefly GLIDE Midjourney SD1.3 SD1.4 SD2 SDXL Avg. NPR (Tan et al. 2024) 51.1 49.3 46.5 48.5 52.8 51.4 51.8 46.0 52.8 50.0 UnivFD (Ojha, Li, and Lee 2023) 83.5 47.4 89.9 53.3 52.5 70.4 69.9 75.7 68.0 67.8 FatFormer (Liu et al. 2024) 59.4 39.5 60.3 72.7 44.4 53.7 54.0 52.3 69.1 56.1 SAFE (Li et al. 2025) 58.0 9.9 10.3 52.2 56.7 59.4 59.1 53.0 59.5 46.5 C2P-CLIP (Tan et al. 2025) 55.6 63.2 59.5 86.7 52.9 75.2 76.7 69.2 77.7 68.5 AIDE (Yan et al. 2025) 34.9 33.7 24.8 65.0 57.5 74.1 73.7 53.2 68.4 53.9 DRCT (Chen et al. 2024) 77.2 86.6 84.1 82.6 73.7 86.6 86.6 83.2 71.3 81.3 ∗
+
+AlignedForensics (Rajan et al. 2025) 50.2 48.9 51.7 53.5 98.7 98.8 98.8 98.6 97.3 77.4 DDA (Chen et al. 2025) 86.3 90.0 91.9 76.5 93.5 92.9 92.7 93.3 93.5 90.1 PatchHead(ours) 92.1 92.4 92.3 90.1 92.5 92.5 92.5 92.5 92.5 92.1 
+
+Table 9: Balanced Accuracy (%) on the Synthbuster benchmark. the normalized response map ˆH ∈ RH×W , Coverage is de-fined as: 
+
+Coverage = 1
+
+HW 
+
+X
+
+> i,j
+
+I( ˆHij > τ ), (9) where τ denotes the response threshold. In our experi-ments, τ is adaptively determined as the mean value plus one standard deviation of each response map: 
+
+τ = μ ˆH + σ ˆH . (10) This adaptive criterion avoids manually selected fixed thresholds and provides a sample-specific measurement of significant spatial activation. A larger Coverage indicates that the model activates a broader spatial range. As shown in Figure 8(a), CLS representations exhibit simi-lar Coverage distributions between real and generated images on both datasets. In contrast, PatchHead maintains low Cov-erage on real images while producing substantially higher Coverage on generated images. This indicates that Patch-Head produces category-dependent spatial responses, with broader activations on generated images. Method Real Fake Avg. XL EMA MSE SD2.1 SD3.5 FLUX.1 NPR (Tan et al. 2024) 55.4 16.1 31.1 41.3 41.2 24.9 19.2 42.2 UnivFD (Ojha, Li, and Lee 2023) 99.2 3.9 9.6 7.3 7.4 3.4 1.8 52.4 FatFormer (Liu et al. 2024) 96.4 5.4 6.9 10.4 10.3 6.6 2.8 51.7 SAFE (Li et al. 2025) 98.8 0.6 0.9 0.9 1.0 0.3 1.8 49.9 C2P-CLIP (Tan et al. 2025) 99.5 2.0 2.7 4.3 4.2 4.0 1.3 51.3 AIDE (Yan et al. 2025) 98.8 0.6 2.2 1.7 1.8 0.3 0.6 50.0 DRCT (Chen et al. 2024) 94.2 16.9 34.8 33.5 33.6 21.7 17.2 60.2 AlignedForensics (Rajan et al. 2025) 99.8 82.5 99.2 99.0 99.1 55.4 3.6 86.5 DDA (Chen et al. 2025) 99.0 95.0 99.3 99.7 99.7 68.1 50.2 92.2 PatchHead (ours) 98.9 94.4 99.2 99.4 99.4 75.2 80.3 95.1 
+
+Table 10: Balanced Accuracy (%) on DDA-COCO.                                                        
+
+> Method Flux GoT Infinity NOVA OmniGen Avg. NPR (Tan et al. 2024) 0.7 0.2 6.5 4.7 2.2 2.9 UnivFD (Ojha, Li, and Lee 2023) 4.0 9.2 15.7 8.3 39.6 15.4 FatFormer (Liu et al. 2024) 9.9 47.9 44.7 98.3 27.3 45.6 SAFE (Li et al. 2025) 1.0 0.5 1.9 0.6 1.6 1.1 C2P-CLIP (Tan et al. 2025) 8.7 49.6 35.3 86.4 14.5 38.9 AIDE (Yan et al. 2025) 17.9 24.7 3.4 16.3 33.4 19.1 DRCT (Chen et al. 2024) 72.5 81.4 77.9 84.6 72.5 77.8 AlignedForensics (Rajan et al. 2025) 32.0 72.3 74.0 84.8 77.0 68.0 DDA (Chen et al. 2025) 89.9 99.5 97.8 99.5 99.5 97.2 PatchHead (ours) 97.5 99.9 100.0 100.0 99.9 99.4
+
+Table 11: Balanced Accuracy (%) on EvalGEN. 
+
+Top-10 Activation Ratio To measure the concentration of spatial responses, we introduce the Top-10 Activation Ratio. Given the flattened normalized response vector 
+
+v = [ v1, · · · , v N ] sorted in descending order, the Top-10 Activation Ratio is defined as: 
+
+T op 10 = 
+
+PKi=1 vi
+
+PNi=1 vi
+
+, (11) where K = 0 .1N .A higher Top-10 Activation Ratio indicates that a small subset of patches contributes most of the overall response, whereas a lower ratio indicates that the final decision is sup-ported by more distributed spatial evidence. Figure 8(b) shows that CLS representations maintain rela-tively high Top-10 Activation Ratios for both real and gener-ated images. By contrast, PatchHead achieves lower Top-10 Activation Ratios on generated images, suggesting that it ag-gregates authenticity-related evidence from multiple spatial patches rather than relying on a few dominant regions. 
+
+Coverage Histogram Since averaged statistics may con-ceal sample-level variations, we further analyze the complete Coverage distribution over all samples. As shown in Figure 8(c), the Coverage distributions of CLS representations for real and generated images are highly over-lapped. In contrast, PatchHead exhibits a clear distribution shift: real images are concentrated in the low-Coverage re-gion, while generated images show consistently higher Cov-erage values. This indicates that the observed spatial re-sponse difference consistently appears across samples rather than being dominated by individual cases. 
+
+Spatial Variance Finally, we introduce Spatial Variance to measure the structural difference of response maps. It is defined as: 
+
+V ar = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+( ˆHi − μ ˆH )2, (12) where μ represents the mean value of the response map. A larger Spatial Variance indicates stronger spatial variation and more distinctive response structures. Figure 8(d) shows that CLS representations exhibit lim-ited Spatial Variance differences between real and generated images, suggesting similar response structures across cate-gories. In contrast, PatchHead maintains lower variance on real images while producing substantially higher variance on generated images. This indicates that PatchHead pro-duces more diverse spatial response structures for generated images. 
+
+Architecture of Complex Spatial Designs 
+
+This section provides detailed descriptions of three variants based on the default PatchHead architecture, as introduced in the main paper. All variants use the same DINO backbone and training objective as PatchHead, while introducing addi-tional spatial modeling components from three perspectives: multi-scale receptive field aggregation, multi-level feature fusion, and HRM-inspired iterative refinement. The detailed architectures are described as follows. 
+
+Multi-scale The Multi-scale variant extends PatchHead by incorporating multiple spatial receptive fields. Given the final-layer patch tokens, the features are first projected from the backbone dimension into the PatchHead feature dimen-sion and reshaped into a two-dimensional spatial feature map. Three parallel branches with different receptive fields are then applied: a 1 × 1 convolution branch for channel-wise feature interaction, a 3 × 3 depth-wise convolution branch for local spatial aggregation, and a dilated 3 × 3 depth-wise convolution branch for capturing larger spatial context. The outputs from different branches are adaptively fused using image-dependent weights. The fused features are aggregated using a statistical pool-ing strategy that combines global feature statistics (mean and standard deviation) with a soft-weighted aggregation of Top-K high-response patches. The resulting representation is then fed into the classification head for final prediction. 
+
+Multi-level The Multi-level variant incorporates patch fea-tures from multiple DINO layers. Specifically, patch repre-sentations from layers 8, 12, 16, and 23 are extracted and projected into a shared feature space. The features from different layers are fused as: 
+
+Fml = X
+
+> l∈{ 8,12 ,16 ,23 }
+
+αlϕ(Xl), (13) where Xl denotes the patch representation from the l-th DINO layer, ϕ(·) represents the shared feature projection, and αl denotes the learnable weight of each layer. Real Fake 
+
+Original CLS Patch Original CLS Patch Original CLS Patch Original CLS Patch Figure 7: Additional qualitative visualization of spatial responses. CLS_Real CLS_Fake Patch_Real Patch_Fake  
+
+> 0.000 0.025 0.050 0.075 0.100 0.125 0.150 0.175 0.200
+> Coverage (Adaptive)
+> 0.105 0.099 0.016 0.115
+
+(a) Coverage  
+
+> CLS_Real CLS_Fake Patch_Real Patch_Fake
+> 0.0 0.1 0.2 0.3 0.4 0.5 0.6
+> Top-10% Ratio
+> 0.323 0.316 0.430 0.165
+
+(b) Top-10% Ratio      
+
+> 0.00 0.05 0.10 0.15 0.20 0.25
+> Coverage (Adaptive)
+> 020 40 60 80 100
+> Density
+
+(c) Coverage Histogram  
+
+> CLS_Real CLS_Fake Patch_Real Patch_Fake
+> CLS_Real CLS_Fake Patch_Real Patch_Fake
+> 0.00 0.02 0.04 0.06 0.08 0.10
+> Spatial Variance
+> 0.012 0.011 0.005 0.039
+
+(d) Spatial Variance 
+
+Spatial Response Statistics Chameleon CLS_Real CLS_Fake Patch_Real Patch_Fake  
+
+> 0.000 0.025 0.050 0.075 0.100 0.125 0.150 0.175
+> Coverage (Adaptive)
+> 0.097 0.096 0.020 0.087
+
+(a) Coverage  
+
+> CLS_Real CLS_Fake Patch_Real Patch_Fake
+> 0.0 0.1 0.2 0.3 0.4 0.5 0.6
+> Top-10% Ratio
+> 0.339 0.324 0.386 0.139
+
+(b) Top-10% Ratio      
+
+> 0.00 0.05 0.10 0.15 0.20 0.25
+> Coverage (Adaptive)
+> 020 40 60 80 100
+> Density
+
+(c) Coverage Histogram  
+
+> CLS_Real CLS_Fake Patch_Real Patch_Fake
+> CLS_Real CLS_Fake Patch_Real Patch_Fake
+> 0.00 0.02 0.04 0.06 0.08 0.10
+> Spatial Variance
+> 0.011 0.011 0.007 0.042
+
+(d) Spatial Variance 
+
+Spatial Response Statistics WildRF 
+
+Figure 8: Additional quantitative spatial response analysis on Chameleon and WildRF datasets. The fused representation is further combined with the final-layer feature through a learnable residual scaling op-eration and then reshaped into a spatial feature map. The re-sulting feature is processed by the spatial aggregation module used in the Multi-scale variant. 
+
+HRM-inspired The HRM-inspired variant introduces an iterative refinement mechanism inspired by the Hierarchical Reasoning Model (HRM) (Wang et al. 2025). Instead of directly aggregating patch features in a single stage, this variant maintains two interacting latent states: a refinement state for progressively updating spatial information and an output state for generating the final prediction representation. At each refinement step, the two states are updated through interactions with patch features and each other: 
+
+rt+1 = fr (rt, a t, X ), (14) 
+
+at+1 = fa(at, r t+1 , X ), (15) where rt and at denote the two latent states at step t,respectively, and X represents the patch features. The refinement process is performed iteratively with shared parameters. The final prediction is obtained from the refined output state through a gated pooling mechanism that aggregates spatial statistics. 
+
+Ablation Study on LoRA Configuration 
+
+To analyze the sensitivity to LoRA configurations, we eval-uate different combinations of rank and scaling factor α on Configuration Cham. AIGCBench DRCT-2M SynthBuster SynthWildX WildRF BFree DDA-COCO EvalGEN Avg. Rank=8, α=1(default) 92.0 96.2 99.2 92.1 89.4 93.4 94.6 95.1 99.4 94.6 Rank=8, α=2 91.0 95.5 99.1 94.5 89.2 92.1 93.6 95.9 98.9 94.0 Rank=8, α=4 91.9 95.3 99.4 95.4 89.5 92.1 94.2 95.5 99.1 94.7                       
+
+> Rank=16, α=1 92.2 96.0 99.2 91.9 89.4 93.3 92.2 95.6 99.1 94.3 Rank=32, α=1 91.6 95.7 99.2 91.7 89.4 94.2 94.5 95.2 99.4 94.5
+
+Table 12: Ablation study of different LoRA configurations on nine cross-dataset benchmarks. Results are reported in Balanced Accuracy (%). Best results are shown in bold , and second-best results are underlined. nine cross-dataset benchmarks. As shown in Table 12, dif-ferent LoRA settings result in relatively small performance variations. Increasing the rank or α value may improve indi-vidual datasets, but these gains are not consistently observed across different domains. For example, larger α values im-prove performance on SynthBuster and DDA-COCO, while slightly degrading results on other benchmarks, indicating that increasing LoRA capacity within the evaluated range does not consistently improve cross-domain generalization. We adopt Rank=8 with α = 1 as the default configuration. Although Rank=8 with α = 4 achieves a slightly higher av-erage score (by 0.1 percentage points), the improvement is marginal, and the default configuration provides more bal-anced performance across different datasets.

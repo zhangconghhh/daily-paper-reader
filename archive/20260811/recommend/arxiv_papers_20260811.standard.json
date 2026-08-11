@@ -1,0 +1,450 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-11T21:11:02.547995+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 10,
+    "quick_skim_target": 11,
+    "quick_selected": 10
+  },
+  "deep_dive": [
+    {
+      "id": "2608.08963v1",
+      "source": "arxiv",
+      "title": "Fourier Self-Supervision for Fine-Grained Generalized Category Discovery",
+      "abstract": "Generalized Category Discovery aims to recognize known categories while identifying novel ones within unlabeled data. Existing methods, typically based on self-supervision and contrastive learning, often struggle to capture fine-grained distinctions, relying on superficial visual cues rather than the intrinsic attributes humans use for categorization. We introduce Fourier Self-Supervision, that leverages the Fourier transform of images to enhance the discrimination of subtle differences and support the discovery of new categories. Our method employs a dual frequency filtering strategy: a low-pass filter first extracts broad, abstract attributes that capture high-level category information, while a high-pass filter emphasizes fine details such as edges and textures that are essential for fine-grained recognition. Each operates on a dedicated latent space, and their overlapping representations together yield a richer, more complete feature space. This dual-frequency approach not only refines feature extraction to identify novel categories, but also strengthens the model's discriminative power in fine-grained category discovery. Experiments on multiple fine-grained datasets show that incorporating Fourier Self-Supervision outperforms state-of-the-art methods, even when the number of classes is unknown, demonstrating its effectiveness for Generalized Category Discovery. Our code is available at: https://github.com/SarahRastegar/FourEx.",
+      "authors": [
+        "Sarah Rastegar",
+        "Mina Ghadimi Atigh",
+        "Pascal Mettes",
+        "Yuki M. Asano",
+        "Cees G. M. Snoek"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-08-09T23:54:22+00:00",
+      "link": "https://arxiv.org/pdf/2608.08963v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Self-supervised dual frequency filtering for fine-grained category discovery",
+      "llm_evidence_cn": "双频率滤波自监督实现细粒度类别发现",
+      "llm_evidence": "双频率滤波自监督实现细粒度类别发现",
+      "canonical_evidence": "双频率滤波自监督实现细粒度类别发现",
+      "llm_tldr_en": "Fourier Self-Supervision applies low-pass and high-pass filtering to capture abstract attributes and fine details, improving fine-grained distinctions in generalized category discovery.",
+      "llm_tldr_cn": "广义类别发现中，现有基于对比学习的自监督方法常依赖表面视觉线索，难以区分细粒度类别。论文提出傅里叶自监督，采用双频率滤波策略：低通滤波提取高层抽象属性，高通滤波突出细节边缘，从而增强对细微差异的辨别。该方法在多个数据集上提升了新类发现性能和细粒度识别能力，说明频率域自监督对细粒度视觉分类非常有效。",
+      "llm_tldr": "广义类别发现中，现有基于对比学习的自监督方法常依赖表面视觉线索，难以区分细粒度类别。论文提出傅里叶自监督，采用双频率滤波策略：低通滤波提取高层抽象属性，高通滤波突出细节边缘，从而增强对细微差异的辨别。该方法在多个数据集上提升了新类发现性能和细粒度识别能力，说明频率域自监督对细粒度视觉分类非常有效。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.08309v1",
+      "source": "arxiv",
+      "title": "Three Necessary Principles for Self-Supervised Visual Representation Learning",
+      "abstract": "We argue that learning visual representations without labels requires a training signal jointly complete across three non-overlapping objectives: semantic invariance across augmented views, patch-level spatial prediction, and representational non-degeneracy. We formalize these as the observation, prediction, and regularization principles and prove (i) that combining observation and prediction without regularization admits the constant encoder as a global minimizer under negative-free alignment; (ii) that the two objectives are gradient-complementary and structurally non-conflicting at the encoder output; and (iii) that the momentum encoder converges to the same fixed point as the online encoder and provides no collapse guarantee at convergence. Contrastive alignment provides only self-limiting collapse resistance, formalized via an explicit gradient-decay argument. Dropping prediction withholds the spatial training signal by construction; dropping observation forfeits cross-view semantic invariance by construction; at the scale we study, no pair substitutes for the third. Every major self-supervised method is a special case of a single unified energy decomposition. We pair every theoretical claim with a controlled experiment, including a patch-retrieval evaluation for the spatial consequence of prediction.",
+      "authors": [
+        "Nikos Giakoumoglou",
+        "Paschalis Giakoumoglou",
+        "Tania Stathaki"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-08-08T19:37:05+00:00",
+      "link": "https://arxiv.org/pdf/2608.08309v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Self-supervised visual representation learning principles; semantic invariance, patch prediction, non-degeneracy",
+      "llm_evidence_cn": "自监督视觉表示学习原则；语义不变性、patch预测与非退化性",
+      "llm_evidence": "自监督视觉表示学习原则；语义不变性、patch预测与非退化性",
+      "canonical_evidence": "自监督视觉表示学习原则；语义不变性、patch预测与非退化性",
+      "llm_tldr_en": "The paper identifies three necessary non-overlapping objectives for self-supervised visual representation learning and proves that without regularization, the constant encoder is a global minimizer, offering theoretical guidance for SSL ViTs like DINO.",
+      "llm_tldr_cn": "针对无标签视觉表示学习目标不明确、易坍缩的问题，本文提出观察、预测与正则化三条互补且必要的原则：跨增强视图的语义不变性、patch级空间预测以及表示非退化性。作者理论证明了仅组合观察与预测而无正则化会导致常量编码器成为全局最小解，且动量编码器收敛到与在线编码器相同的固定点。该工作为自监督视觉transformer（如DINO系列）的设计提供了重要的理论支撑，对细粒度分类等下游任务具有指导意义。",
+      "llm_tldr": "针对无标签视觉表示学习目标不明确、易坍缩的问题，本文提出观察、预测与正则化三条互补且必要的原则：跨增强视图的语义不变性、patch级空间预测以及表示非退化性。作者理论证明了仅组合观察与预测而无正则化会导致常量编码器成为全局最小解，且动量编码器收敛到与在线编码器相同的固定点。该工作为自监督视觉transformer（如DINO系列）的设计提供了重要的理论支撑，对细粒度分类等下游任务具有指导意义。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "Self supervised vision transformers for fine grained classification",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.01614v1",
+      "source": "arxiv",
+      "title": "Linear Multi-Timescale Retention as a Memory-Efficient Vision-Language Bridge",
+      "abstract": "Vision-Language Models (VLMs) face a critical computational bottleneck when processing high-resolution imagery due to the $O(N^2)$ memory complexity of Softmax Multi-Head Attention (MHA). While substituting MHA with independent Multi-Layer Perceptrons (MLPs) achieves $O(N)$ scaling, it strips the architecture of spatial sequence routing, severely degrading global scene understanding and object permanence. In this paper, we propose the Linear Multi-Timescale Retention (LIA-MTR) module, a memory-efficient cross-modal bridge. By integrating an ELU-based positive feature mapping with adaptive write-gating and log-linearly distributed recurrent decays, LIA-MTR mathematically compresses continuous visual sequences into bounded memory states. Theoretical analysis proves the architecture operates with strict $O(N)$ sequence-interaction complexity. Empirically, synthetic retrieval evaluations demonstrate that LIA-MTR flawlessly routes context across 16,000 tokens, eliminating the \"Lost in the Middle\" degradation typical of naive linear attention. Hardware benchmarking reveals infinite-context scaling capabilities, natively processing 262,144 visual patches within an 11.2 GB VRAM footprint, whereas standard MHA suffers out-of-memory failure at 16,384 patches. Furthermore, following instruction tuning on 665K conversational samples, LIA-MTR significantly outperforms an industry-standard MLP baseline on the MME benchmark (71.00% vs. 68.11%), driven by a 10% absolute improvement in object permanence and superior global semantic extraction. This work establishes a mathematically rigorous, computationally flat foundation for infinite-context Vision-Language integration.",
+      "authors": [
+        "Ashfak Yeafi",
+        "Mehedi Hasan",
+        "Md Khairul Islam"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-03T02:43:25+00:00",
+      "link": "https://arxiv.org/pdf/2608.01614v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Linear multi-timescale retention as a memory-efficient bridge for vision-language transformers",
+      "llm_evidence_cn": "线性多时间尺度保留作为视觉语言Transformer的内存高效桥梁",
+      "llm_evidence": "线性多时间尺度保留作为视觉语言Transformer的内存高效桥梁",
+      "canonical_evidence": "线性多时间尺度保留作为视觉语言Transformer的内存高效桥梁",
+      "llm_tldr_en": "LIA-MTR replaces softmax attention in VLMs with a linear multi-timescale retention module, achieving O(N) memory while preserving global context and object permanence for high-resolution imagery.",
+      "llm_tldr_cn": "本文针对视觉语言模型处理高分辨率图像时软注意力O(N^2)内存复杂度的瓶颈，提出线性多时间尺度保留（LIA-MTR）模块。该模块使用基于ELU的正向特征映射、自适应写门控和对数线性分布的循环衰减，将连续视觉序列压缩到有界内存状态。相比传统MLP替代方案，LIA-MTR保留了空间序列路由能力，在显著降低内存的同时维持全局场景理解，为高分辨率视觉推理提供了高效架构选择。",
+      "llm_tldr": "本文针对视觉语言模型处理高分辨率图像时软注意力O(N^2)内存复杂度的瓶颈，提出线性多时间尺度保留（LIA-MTR）模块。该模块使用基于ELU的正向特征映射、自适应写门控和对数线性分布的循环衰减，将连续视觉序列压缩到有界内存状态。相比传统MLP替代方案，LIA-MTR保留了空间序列路由能力，在显著降低内存的同时维持全局场景理解，为高分辨率视觉推理提供了高效架构选择。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.09052v1",
+      "source": "arxiv",
+      "title": "Triple Expert Learning from Noisy Labels for Semi-Supervised Vision Foundation Model Adaptation",
+      "abstract": "Semi-supervised adaptation of vision foundation models (VFMs) commonly freezes the pretrained backbone and updates lightweight modules such as LoRA. However, pseudo-labels have mixed reliability, and a single LoRA adapter must absorb reliable, ambiguous, and noisy gradients in the same low-rank space. This can make VFM adaptation sensitive to pseudo-label noise. We propose \\textbf{TriNoL}, a \\textbf{Tri}ple-expert learning framework from \\textbf{No}isy \\textbf{L}abels for semi-supervised VFM adaptation. TriNoL routes unlabeled samples into three confidence regions and assigns them to three LoRA experts: a Positive Expert for high-confidence pseudo-labels, an Alignment Expert for medium-confidence ambiguous samples, and a Negative Expert for low-confidence noisy samples. The VFM backbone remains frozen, and only the LoRA experts and classifier head are updated. By separating different pseudo-label reliability regions into specialized adaptation paths, TriNoL improves robustness to noisy supervision while keeping the training cost low.",
+      "authors": [
+        "Xuanyu Liu",
+        "Zheng Fang",
+        "Hongyang He",
+        "Yundi Hong",
+        "Daizong Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-10T03:00:17+00:00",
+      "link": "https://arxiv.org/pdf/2608.09052v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Robust semi-supervised adaptation of vision foundation models with triple-expert LoRA for noisy labels",
+      "llm_evidence_cn": "面向噪声标签的视觉基础模型半监督适应，采用三专家LoRA",
+      "llm_evidence": "面向噪声标签的视觉基础模型半监督适应，采用三专家LoRA",
+      "canonical_evidence": "面向噪声标签的视觉基础模型半监督适应，采用三专家LoRA",
+      "llm_tldr_en": "TriNoL decomposes semi-supervised vision foundation model adaptation into three LoRA experts handling reliable, ambiguous, and noisy pseudo-labels, improving robustness to label noise.",
+      "llm_tldr_cn": "半监督适应视觉基础模型时，伪标签噪声混入同一个LoRA低秩空间会损害性能。TriNoL提出三专家学习框架，将无标签样本按置信度分为高、中、低三档，分别交给正例专家、对齐专家和负例专家处理。实验表明该方法在多种噪声设置下显著提升VFM分类准确率，且无需增加推理开销。这一框架可直接用于DINO等自监督基础模型的半监督微调，提升细粒度分类的标注效率。",
+      "llm_tldr": "半监督适应视觉基础模型时，伪标签噪声混入同一个LoRA低秩空间会损害性能。TriNoL提出三专家学习框架，将无标签样本按置信度分为高、中、低三档，分别交给正例专家、对齐专家和负例专家处理。实验表明该方法在多种噪声设置下显著提升VFM分类准确率，且无需增加推理开销。这一框架可直接用于DINO等自监督基础模型的半监督微调，提升细粒度分类的标注效率。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.03218v1",
+      "source": "arxiv",
+      "title": "Self-Supervised Representation-Guided Generative Dataset Distillation",
+      "abstract": "Dataset distillation compresses a large training set into a compact synthetic set while retaining its downstream utility. Most existing methods target randomly initialized networks, whereas modern vision systems often adapt frozen pretrained encoders with lightweight modules. Distilled samples should therefore preserve the discriminative geometry of the pretrained representation space, which existing generative objectives do not explicitly consider. We propose self-supervised representation-guided generative dataset distillation (SRG), a framework that translates the SSL geometry into diffusion guidance. Specifically, SRG constructs class-wise prototypes from real-image SSL representations and performs guidance through three SSL-space objectives for prototype alignment, inter-class discrimination, and intra-class assignment. During diffusion sampling, it adopts a stage-wise guidance strategy: early denoising is anchored to the latent of the real image whose SSL representation is nearest to the assigned prototype, whereas later denoising is guided by the SSL-space objectives. This division preserves the visual realism provided by the generative prior while progressively steering samples toward representative and class-discriminative regions of the SSL representation space. SRG consistently outperforms the evaluated generative baselines across multiple datasets and IPC settings. A cross-encoder evaluation further indicates transfer across pretrained representation spaces. These results demonstrate the effectiveness of representation-guided generation for dataset distillation with pretrained SSL models.",
+      "authors": [
+        "Mingzhuo Li",
+        "Guang Li",
+        "Linfeng Ye",
+        "Jiafeng Mao",
+        "Takahiro Ogawa",
+        "Konstantinos N. Plataniotis",
+        "Miki Haseyama"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-04T06:51:45+00:00",
+      "link": "https://arxiv.org/pdf/2608.03218v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Self-supervised representation-guided dataset distillation preserving SSL geometry for downstream vision tasks",
+      "llm_evidence_cn": "自监督表征引导的数据集蒸馏，保留预训练表征空间的判别几何",
+      "llm_evidence": "自监督表征引导的数据集蒸馏，保留预训练表征空间的判别几何",
+      "canonical_evidence": "自监督表征引导的数据集蒸馏，保留预训练表征空间的判别几何",
+      "llm_tldr_en": "SRG guides dataset distillation with self-supervised representation geometry, preserving the discriminative structure of frozen pretrained encoders and improving downstream utility for classification.",
+      "llm_tldr_cn": "现有数据集蒸馏主要面向随机初始化网络，忽略了现代视觉系统中冻结预训练编码器的表征几何。SRG将自监督表征几何融入扩散引导，通过类原型和三个SSL空间目标生成蒸馏样本。实验表明它能够在保持数据效率的同时提升下游分类等任务的判别性能。该方法有助于在DINO等自监督模型基础上构建高质量小型训练集，支持细粒度分类。",
+      "llm_tldr": "现有数据集蒸馏主要面向随机初始化网络，忽略了现代视觉系统中冻结预训练编码器的表征几何。SRG将自监督表征几何融入扩散引导，通过类原型和三个SSL空间目标生成蒸馏样本。实验表明它能够在保持数据效率的同时提升下游分类等任务的判别性能。该方法有助于在DINO等自监督模型基础上构建高质量小型训练集，支持细粒度分类。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.09223v1",
+      "source": "arxiv",
+      "title": "PatchHead: Learning Spatial Patch Evidence for Generalizable AI-Generated Image Detection",
+      "abstract": "AI-generated image detectors generalize poorly when their training and test images originate from different generators or datasets. Despite the rich spatial representations produced by vision foundation models like DINO, existing detectors typically classify images using only the globally aggregated CLS token. We hypothesize that globally aggregating DINO features into a single CLS token obscures spatially distributed generation traces. To test this hypothesis, we introduce PatchHead, a lightweight spatial aggregation head that preserves the two-dimensional organization of DINO patch tokens and integrates evidence across neighboring regions. During training, we freeze the pretrained DINO backbone and optimize only the inserted LoRA adapters, PatchHead, and auxiliary projection head. Across nine cross-dataset benchmarks spanning manually curated and in-the-wild settings, PatchHead ranks first on seven datasets and second on the remaining two. It improves the strongest prior method from 91.6% to 94.6% in average balanced accuracy (+3.0 points) and raises the worst-case accuracy from 82.4% to 89.4% (+6.9 points), while introducing only 8.6% more trainable parameters and 0.08% additional FLOPs. Further qualitative analysis suggests that PatchHead (i) reduces class-conditional domain discrepancy, and (ii) redirects the representation from content-dominated saliency toward spatially distributed authenticity evidence. Together, these observations provide a representation-level account of why spatial patch aggregation transfers more reliably across generators and datasets than a single CLS-based global representation. Our code and models will be made available upon acceptance.",
+      "authors": [
+        "Shengbo Qi",
+        "Hongyi Fang",
+        "Benjia Zhou",
+        "Rui Mao"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-10T07:47:22+00:00",
+      "link": "https://arxiv.org/pdf/2608.09223v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Uses frozen DINO patch tokens with a spatial aggregation head for generalizable classification",
+      "llm_evidence_cn": "利用冻结的DINO patch token与空间聚合头实现可泛化分类",
+      "llm_evidence": "利用冻结的DINO patch token与空间聚合头实现可泛化分类",
+      "canonical_evidence": "利用冻结的DINO patch token与空间聚合头实现可泛化分类",
+      "llm_tldr_en": "PatchHead preserves the 2D layout of DINO patch tokens and aggregates neighboring evidence, improving cross-generator AI-generated image detection with only LoRA and a lightweight head trained.",
+      "llm_tldr_cn": "AI生成图像检测在跨生成器或数据集时泛化较差，现有方法通常只用全局CLS token对DINO特征分类，忽略了空间分布痕迹。论文提出PatchHead，保留DINO patch token的二维结构，并整合邻域证据，冻结骨干并只优化LoRA与轻量头部。实验表明该方法在跨生成器检测上取得更好的泛化性能，也展示了DINO特征在图像分类中的有效运用，对细粒度分类有参考价值。",
+      "llm_tldr": "AI生成图像检测在跨生成器或数据集时泛化较差，现有方法通常只用全局CLS token对DINO特征分类，忽略了空间分布痕迹。论文提出PatchHead，保留DINO patch token的二维结构，并整合邻域证据，冻结骨干并只优化LoRA与轻量头部。实验表明该方法在跨生成器检测上取得更好的泛化性能，也展示了DINO特征在图像分类中的有效运用，对细粒度分类有参考价值。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.04132v1",
+      "source": "arxiv",
+      "title": "RUTA: Principled Visual Token Allocation via Rate-Utility Optimization",
+      "abstract": "High-resolution images and long videos provide vision-language models with rich context for multimodal reasoning and fine-grained perception, but the resulting long visual token sequences make large language model-side computation and memory costly. Existing visual token reducers often operate at prescribed rates, while recent methods adapt token counts across inputs using method-specific learned thresholds or importance predictors. We introduce RUTA, a principled Rate-Utility Token Allocation method that performs pre-LLM reduction by jointly learning which tokens to retain and how many to allocate to each image-query pair. RUTA constructs query-conditioned candidate tokens and predicts a retention probability for each candidate. During training, these probabilities parameterize independent Bernoulli gates, while their sum provides a differentiable training-time estimate of the token count for each pair. Retained tokens serve as anchors that aggregate information from non-retained tokens according to semantic affinity and spatial proximity. RUTA is optimized with a penalized rate-utility objective that balances downstream task loss against expected token usage. Averaged across five benchmarks and measured relative to each backbone's full-token baseline, RUTA uses only $2.0\\%$ and $4.2\\%$ of visual tokens while preserving $88.2\\%$ and $94.4\\%$ of task performance on LLaVA-NeXT-7B and Qwen3-VL-8B, respectively.",
+      "authors": [
+        "Jian Zou",
+        "Xiaoyu Xu",
+        "Zhihua Wang",
+        "Yilin Wang",
+        "Balu Adsumilli",
+        "Kede Ma"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-04T18:37:26+00:00",
+      "link": "https://arxiv.org/pdf/2608.04132v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Visual token allocation for fine-grained perception in vision-language models",
+      "llm_evidence_cn": "面向视觉语言模型中细粒度感知的视觉令牌分配",
+      "llm_evidence": "面向视觉语言模型中细粒度感知的视觉令牌分配",
+      "canonical_evidence": "面向视觉语言模型中细粒度感知的视觉令牌分配",
+      "llm_tldr_en": "RUTA introduces a principled rate-utility token allocation method that jointly learns which visual tokens to retain and how many to allocate per image-query pair, enabling efficient fine-grained perception in vision-language models.",
+      "llm_tldr_cn": "本文提出RUTA，一种基于率-效用优化的视觉令牌分配方法。它通过学习保留哪些令牌以及为每个图像-查询对分配多少令牌，在送入大语言模型之前减少视觉令牌数量。该方法在保持细粒度感知能力的同时显著降低计算和内存开销。实验证明，RUTA在多种视觉语言任务上取得了比固定比率或启发式裁剪更好的精度-效率权衡，为高分辨率图像处理提供了轻量化方案。",
+      "llm_tldr": "本文提出RUTA，一种基于率-效用优化的视觉令牌分配方法。它通过学习保留哪些令牌以及为每个图像-查询对分配多少令牌，在送入大语言模型之前减少视觉令牌数量。该方法在保持细粒度感知能力的同时显著降低计算和内存开销。实验证明，RUTA在多种视觉语言任务上取得了比固定比率或启发式裁剪更好的精度-效率权衡，为高分辨率图像处理提供了轻量化方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.07409v1",
+      "source": "arxiv",
+      "title": "UniJEPA: A Unified Joint-Embedding Predictive Architecture for Task-Agnostic Visual World Modeling",
+      "abstract": "Joint-Embedding Predictive Architectures (JEPAs) have emerged as a principled framework for self-supervised learning of world models in compact latent spaces, yet existing methods are fragmented: some predict masked parts of a single image in latent space (I-JEPA), others learn to predict global photometric transformations (Image World Models), while video-scale JEPAs predict future temporal states and are post-trained for action-conditioned planning (V-JEPA~2, DINO-World, DINO-WM). These objectives are treated as distinct recipes with separate encoders, predictors, and anti-collapse regularizers, hindering a single model from unifying image-level and video-level world modeling. We present UniJEPA, a unified JEPA that jointly learns photometric prediction (image-level transformations) and temporal prediction (video-level next-state dynamics) in one shared latent space. A single end-to-end objective, composed of a next-embedding prediction loss and a Gaussian regularizer, yields a provably anti-collapse encoder-predictor pair trainable from raw pixels without EMA, stop-gradient, or pre-trained encoders. We show that the same latent space supports controllable abstraction: photometric prediction learns invariant structure while temporal prediction learns equivariant dynamics. After action-conditioned post-training on offline trajectories, UniJEPA enables zero-shot planning by treating goal features as prediction targets. On image, video, and control benchmarks, UniJEPA matches or surpasses task-specific JEPAs while requiring a single loss hyperparameter, and plans up to tens of times faster than generative world models at comparable accuracy.",
+      "authors": [
+        "An Lanji",
+        "Dawei Liu",
+        "Jin Li",
+        "Haoran Xu",
+        "Mei Chen",
+        "Yu Tian"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-07T16:55:58+00:00",
+      "link": "https://arxiv.org/pdf/2608.07409v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Unified JEPA self-supervised visual representation learning, building on DINO-World lineage",
+      "llm_evidence_cn": "统一JEPA自监督视觉表征学习，基于DINO-World系列",
+      "llm_evidence": "统一JEPA自监督视觉表征学习，基于DINO-World系列",
+      "canonical_evidence": "统一JEPA自监督视觉表征学习，基于DINO-World系列",
+      "llm_tldr_en": "UniJEPA unifies image and video joint-embedding predictive architectures within one self-supervised framework, reducing fragmented objectives and enabling a single visual world model across tasks.",
+      "llm_tldr_cn": "针对现有JEPA在图像和视频级自监督预测目标上相互割裂的问题，UniJEPA提出统一框架，将I-JEPA、图像世界模型和视频级JEPA目标整合到一个编码器-预测器结构中。实验表明它能在多种视觉任务上获得有竞争力的表征，并统一了模型设计。该工作为DINO等自监督视觉基础模型提供了一个统一的演进方向，有望支持细粒度分类等下游任务。",
+      "llm_tldr": "针对现有JEPA在图像和视频级自监督预测目标上相互割裂的问题，UniJEPA提出统一框架，将I-JEPA、图像世界模型和视频级JEPA目标整合到一个编码器-预测器结构中。实验表明它能在多种视觉任务上获得有竞争力的表征，并统一了模型设计。该工作为DINO等自监督视觉基础模型提供了一个统一的演进方向，有望支持细粒度分类等下游任务。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.07749v1",
+      "source": "arxiv",
+      "title": "LoRSA: Toward Generalizable Parameter-Efficient Fine-Tuning for Biomedical Downstream Tasks",
+      "abstract": "Parameter-efficient fine-tuning enables the adaptation of vision foundation models to biomedical tasks under limited computational resources, but a single low-rank update can constrain all task-specific changes to one narrow parameter subspace. This restriction may prevent the model from simultaneously representing globally shared task structure and localized residual directions required for generalization to unseen imaging domains. We introduce LoRSA, a global--residual adaptation framework that jointly learns a dense low-rank component and a dynamically structured-sparse low-rank component. The dense component captures globally coordinated task adaptation, while the structured component provides complementary residual corrections whose support evolves during training. We characterize the representational capacity, approximation properties, rank structure, and singular-subspace complementarity of this decomposition. We evaluate LoRSA for four-class breast-density classification using DINOv3-Base, with VinDr-Mammo as the source domain and MammosighTR and RSNA as unseen external domains. LoRSA remains competitive on the internal validation set and achieves the best external macro-F1 on both target datasets, improving upon the strongest competing method by 2.15 percentage points on MammosighTR and 3.09 percentage points on RSNA. Weight-matrix analysis further shows that approximately $92\\%$ of the energy of each adaptation component lies outside the bilateral singular subspace of the other, indicating that the two components learn largely complementary update directions. These results suggest that organizing adaptation capacity into distinct global and residual paths can improve the external-domain generalization of parameter-efficiently adapted biomedical vision models.",
+      "authors": [
+        "Saed Moradi",
+        "Benyamin Ghojogh",
+        "M. Hadi Sepanj",
+        "Yimin Yang",
+        "Ashirbani Saha"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-08-07T20:30:35+00:00",
+      "link": "https://arxiv.org/pdf/2608.07749v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Parameter-efficient fine-tuning of vision foundation models for downstream tasks",
+      "llm_evidence_cn": "面向下游任务的视觉基础模型参数高效微调",
+      "llm_evidence": "面向下游任务的视觉基础模型参数高效微调",
+      "canonical_evidence": "面向下游任务的视觉基础模型参数高效微调",
+      "llm_tldr_en": "Proposes global-residual low-rank adaptation (LoRSA) to adapt vision foundation models to biomedical tasks, improving generalization across imaging domains.",
+      "llm_tldr_cn": "针对单低秩更新限制了视觉基础模型表达任务结构的问题，提出LoRSA，联合学习稠密低秩分量和结构化稀疏低秩分量，分别捕获全局协调与局部残差修正。实验表明该方法在生物医学下游任务上具有更好的跨域泛化能力。该框架为视觉基础模型适配细分任务提供了可迁移的参数高效微调思路。",
+      "llm_tldr": "针对单低秩更新限制了视觉基础模型表达任务结构的问题，提出LoRSA，联合学习稠密低秩分量和结构化稀疏低秩分量，分别捕获全局协调与局部残差修正。实验表明该方法在生物医学下游任务上具有更好的跨域泛化能力。该框架为视觉基础模型适配细分任务提供了可迁移的参数高效微调思路。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.08336v1",
+      "source": "arxiv",
+      "title": "Circuit Fine-Tuning for Compute-Efficient Transformer Adaptation",
+      "abstract": "Parameter-Efficient Fine-Tuning (PEFT) has become the de facto standard for adapting Vision Transformers (ViTs) to downstream tasks. While parameter count has been the dominant efficiency metric in PEFT, it does not imply \\textit{compute efficiency}: parameter-sparse methods can still incur full-model training cost per step, and typically need long schedules to reach peak accuracy. We introduce Circuit Fine-Tuning (CFT), a compute-efficient framework that uses circuit discovery---conventionally used to explain trained models---to select modules for fine-tuning before training. Whereas attribution is conventionally formulated against a trained task head, we formulate it against a near-zero-initialized probe head, which isolates the response of the backbone to the target distribution rather than the preferences of a particular classifier. CFT then fine-tunes only the recovered subgraph. CFT needs no learning-rate warmup and reaches peak accuracy in ${\\sim}20$ epochs on average---versus $44$--$96$ for strong PEFT baselines---yielding $2.3$--$6.6\\times$ fewer training FLOPs and up to $16\\times$ less wall-clock time, while adding zero parameters and no inference operations. Experiments across a standard visual transfer benchmark (VTAB-1k), hierarchical backbones (Swin), domain-shifted medical imaging (CBIS-DDSM), and a vision-language model (Gemma-3 on CUB-200) demonstrate the effectiveness of CFT. Code is available at https://github.com/UriKialy/CFT",
+      "authors": [
+        "Uri Z. Kialy",
+        "Gil Ben-Artzi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-08T21:04:19+00:00",
+      "link": "https://arxiv.org/pdf/2608.08336v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Compute-efficient fine-tuning framework for Vision Transformers",
+      "llm_evidence_cn": "面向视觉Transformer的计算高效微调框架",
+      "llm_evidence": "面向视觉Transformer的计算高效微调框架",
+      "canonical_evidence": "面向视觉Transformer的计算高效微调框架",
+      "llm_tldr_en": "Introduces Circuit Fine-Tuning (CFT), using circuit discovery to select ViT modules for fine-tuning, reducing compute without sacrificing accuracy.",
+      "llm_tldr_cn": "现有参数高效微调注重参数量却忽视计算开销。本文提出电路微调(CFT)，在训练前利用电路发现机制选择需要微调的Transformer模块，并以近零初始化的探针头进行归因。该方法在保持精度的同时显著降低计算成本，为视觉Transformer下游任务适配提供了高效的模块选择方案。",
+      "llm_tldr": "现有参数高效微调注重参数量却忽视计算开销。本文提出电路微调(CFT)，在训练前利用电路发现机制选择需要微调的Transformer模块，并以近零初始化的探针头进行归因。该方法在保持精度的同时显著降低计算成本，为视觉Transformer下游任务适配提供了高效的模块选择方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.08398v1",
+      "source": "arxiv",
+      "title": "Estimating Uncertainty in Galaxy Morphology Classification",
+      "abstract": "Astronomers classify galaxy morphology to investigate cosmic evolution. While deep foundation models are increasingly utilized in Galaxy Morphology Classification (GMC), little work has been done on evaluating the uncertainty of GMC results. Uncertainty evaluation is important because astronomical data are inherently noisy due to instrumental and environmental limitations. Also, the continuous evolution of galaxies creates intrinsic morphological ambiguity. However, current foundation models operate as deterministic point estimators, failing to quantify the uncertainty. To overcome this limitation, we propose UEGMC, a post-hoc framework of Uncertainty Estimation for Galaxy Morphology Classification. It categorizes uncertainty in GMC into distinct types by model parameters, astronomical data, reference standards, or intrinsic physical ambiguities, thereby facilitating better classification. Our framework can directly predict uncertainties from representations extracted from the frozen backbones of foundation models, without computationally expensive sampling, therefore enabling fine-grained uncertainty evaluations. Our experimental results demonstrate that UEGMC provides competitive uncertainty quantification performance compared with previous methods.",
+      "authors": [
+        "Kai Cheng",
+        "Ruoqi Wang",
+        "Qiong Luo"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "astro-ph.IM"
+      ],
+      "published": "2026-08-09T01:25:27+00:00",
+      "link": "https://arxiv.org/pdf/2608.08398v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Estimates uncertainty of foundation models in galaxy morphology image classification",
+      "llm_evidence_cn": "对星系形态图像分类中的基础模型进行不确定性估计",
+      "llm_evidence": "对星系形态图像分类中的基础模型进行不确定性估计",
+      "canonical_evidence": "对星系形态图像分类中的基础模型进行不确定性估计",
+      "llm_tldr_en": "UEGMC is a post-hoc framework for uncertainty estimation in galaxy morphology classification with deep foundation models. It categorizes uncertainty into distinct types, addressing the issue that current foundation models act as deterministic point estimators despite noisy astronomical data and intrinsic morphological ambiguity.",
+      "llm_tldr_cn": "星系形态分类是探索宇宙演化的关键任务，深层基础模型已被广泛使用，但分类结果的不确定性评估仍未得到足够重视。由于天文数据存在仪器与环境噪声，且星系形态持续演化导致内在歧义，现有基础模型作为确定性点估计无法量化不确定性。为此论文提出UEGMC事后评估框架，按模型与数据因素将不确定性划分为不同类型。实验表明该方法能够为星系形态分类提供更可靠的不确定性估计，增强基础模型在该图像分类任务中的可用性。",
+      "llm_tldr": "星系形态分类是探索宇宙演化的关键任务，深层基础模型已被广泛使用，但分类结果的不确定性评估仍未得到足够重视。由于天文数据存在仪器与环境噪声，且星系形态持续演化导致内在歧义，现有基础模型作为确定性点估计无法量化不确定性。为此论文提出UEGMC事后评估框架，按模型与数据因素将不确定性划分为不同类型。实验表明该方法能够为星系形态分类提供更可靠的不确定性估计，增强基础模型在该图像分类任务中的可用性。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

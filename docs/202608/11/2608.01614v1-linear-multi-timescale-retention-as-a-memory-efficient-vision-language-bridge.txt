@@ -1,0 +1,301 @@
+Title: Linear Multi-Timescale Retention as a Memory-Efficient Vision-Language Bridge
+
+URL Source: https://arxiv.org/pdf/2608.01614v1
+
+Published Time: Tue, 04 Aug 2026 01:43:45 GMT
+
+Number of Pages: 6
+
+Markdown Content:
+# Linear Multi-Timescale Retention as a Memory-Efficient Vision-Language Bridge 
+
+Ashfak Yeafi 
+
+Department of Electrical and Electronic Engineering Khulna University of Engineering & Technology Khulna-9203, Bangladesh Email: yeafiashfak@gmail.com 
+
+Mehedi Hasan 
+
+Department of Computer Science and Engineering Brac University, Dhaka, Bangladesh Email: mehedi.hasan1@g.bracu.ac.bd 
+
+Md Khairul Islam 
+
+Department of Mathematics and Computer Science Hobart and William Smith Colleges Geneva, NY, USA Email: khairul.robotics@gmail.com 
+
+Abstract —Vision-Language Models (VLMs) face a critical computational bottleneck when processing high-resolution im-agery due to the O(N2) memory complexity of Softmax Multi-Head Attention (MHA). While substituting MHA with indepen-dent Multi-Layer Perceptrons (MLPs) achieves O(N) scaling, it strips the architecture of spatial sequence routing, severely degrading global scene understanding and object permanence. In this paper, we propose the Linear Multi-Timescale Retention (LIA-MTR) module, a memory-efficient cross-modal bridge. By integrating an ELU-based positive feature mapping with adaptive write-gating and log-linearly distributed recurrent decays, LIA-MTR mathematically compresses continuous visual sequences into bounded memory states. Theoretical analysis proves the architecture operates with strict O(N) sequence-interaction com-plexity. Empirically, synthetic retrieval evaluations demonstrate that LIA-MTR flawlessly routes context across 16,000 tokens, eliminating the “Lost in the Middle” degradation typical of naive linear attention. Hardware benchmarking reveals infinite-context scaling capabilities, natively processing 262,144 visual patches within an 11.2 GB VRAM footprint, whereas standard MHA suffers out-of-memory failure at 16,384 patches. Furthermore, following instruction tuning on 665K conversational samples, LIA-MTR significantly outperforms an industry-standard MLP baseline on the MME benchmark (71.00% vs. 68.11%), driven by a 10% absolute improvement in object permanence and superior global semantic extraction. This work establishes amathematically rigorous, computationally flat foundation for infinite-context Vision-Language integration. 
+
+Index Terms —Vision-Language Models, Linear Attention, State-Space Models, Multi-Timescale Retention, Cross-Modal Bridge, High-Resolution Multimodal 
+
+I. I NTRODUCTION 
+
+Recent advancements in Vision-Language Models (VLMs) have demonstrated exceptional capabilities in cross-modal rea-soning, largely driven by aligning powerful pre-trained visual encoders, such as CLIP [1], with large causal language models (LLMs) [2], [3]. The architectural crux of this alignment is the cross-modal bridge, which is responsible for projecting visual features into the text embedding space. As the demand for high-resolution image analysis, multi-image reasoning, and continuous video understanding grows, the length of the visual token sequence, N, expands exponentially. Managing this expanding context window is currently the primary com-putational challenge in multimodal foundation models. Historically, the architectural standard for sequence routing has relied on Softmax Multi-Head Attention (MHA) [4]. Early and highly successful VLMs, such as Flamingo [5] and InstructBLIP [6], utilized attention-based Resampler modules or Q-Formers to compress visual information. Furthermore, the visual encoders themselves heavily rely on MHA via the Vision Transformer (ViT) architecture [7]. While MHA provides excellent global semantic routing, it requires the com-putation of a dense N × N affinity matrix, inherently suffering from an O(N2) asymptotic sequence-interaction complexity bottleneck. Even with highly optimized, hardware-aware im-plementations like FlashAttention [8], this quadratic memory scaling leads to catastrophic Out-Of-Memory (OOM) failures on standard hardware when visual contexts exceed 16,000 tokens. To bypass this quadratic bottleneck and achieve greater computational efficiency, recent high-performing models, no-tably LLaVA [2], adopted a minimalist approach by replacing MHA bridges with simple two-layer Multi-Layer Perceptrons (MLPs). While an MLP bridge processes sequences in strict 
+
+O(N) time, it does so by mapping visual patches indepen-dently. Consequently, it fundamentally lacks a temporal or spatial routing mechanism to mix sequence information. This independent processing severely restricts the model’s under-standing of global visual semantics and exacerbates object hallucination over long conversations, as the LLM is forced to manage thousands of uncompressed visual tokens natively. As our empirical evaluations demonstrate, this lack of sequence routing causes a significant degradation in object permanence, dropping to 83.33% on the MME Existence benchmark. Parallel to visual architectures, the natural language process-ing domain has seen a surge in recent work exploring sub-quadratic alternatives to MHA. Linear Attention techniques, such as Performers [9] and Linear Transformers [10], approx-arXiv:2608.01614v1 [cs.CV] 3 Aug 2026 imate the Softmax operation to express attention as a cumu-lative sum. Simultaneously, State-Space Models (SSMs) like Mamba [11], RWKV [12], and Retention Networks (RetNet) [13] utilize data-dependent decays or fixed exponential mask-ing to achieve linear-time processing. Recent works, such as Vision Mamba (Vim) [14], have begun applying these concepts to visual backbones. However, adapting these mechanisms specifically for cross-modal bridging presents unique chal-lenges. Naive linear attention models frequently fail in com-plex associative memory tasks due to ”accumulation noise,” where early visual features are overwritten by subsequent tokens—a phenomenon commonly referred to as the ”Lost in the Middle” problem. Furthermore, standard SSMs utilizing a single learned decay struggle to balance conflicting temporal dynamics: the simultaneous need for sharp, short-term spatial relationships and long-term, lossy global semantics. To bridge this context gap without sacrificing global seman-tic understanding or computational efficiency, we propose the Linear Multi-Timescale Retention (LIA-MTR) module. LIA-MTR is an O(N) cross-modal bridge that eschews quadratic pairwise attention in favor of a gated, fixed-size recurrent memory state. By introducing an ELU-based positive feature mapping combined with an adaptive write-gate ( gt ) [10], LIA-MTR dynamically restricts state updates, preventing noise accumulation and ensuring flawless retrieval across extended visual sequences. Furthermore, by distributing retention across 
+
+S distinct log-linear timescale decays ( λs) and dynamically weighting them via a token-specific scale mixer ( αt ), the module acts as a global low-pass filter. It mathematically compresses massive visual sequences into bounded memory states O(dS ), allowing the LLM to access global image context natively. The main contributions of this work are three-fold: 1) Algorithmic Innovation: We formulate the LIA-MTR architecture, proving its optimal O(N) asymp-totic sequence-interaction complexity and theoretically bounding its memory stability over infinite contexts. 2) Perfect Sequence Routing: We validate the archi-tecture’s mathematical routing capability via synthetic Visual Needle-In-A-Haystack (V-NIAH) evaluations, demonstrating flawless key-value retrieval across mas-sive sequences where naive linear attention degrades. 3) High-Resolution Multimodal Scaling: We empirically demonstrate that LIA-MTR avoids the O(N2) MHA crash, comfortably scaling up to 262,144 visual patches while utilizing minimal hardware resources. Further-more, when instruction-tuned on 665K samples, LIA-MTR outperforms standard MLP baselines in global scene understanding and object permanence (scoring 71.0% on the MME benchmark compared to the base-line’s 68.11%). II. M ATERIALS AND METHODS 
+
+A. System Architecture 
+
+Our Vision-Language Model is constructed using a late-fusion architecture comprising three primary components: a pre-trained visual encoder, a cross-modal bridge, and a causal Large Language Model (LLM). To rigorously isolate the impact of the cross-modal bridge, we employ identical backbones across all experimental models. We utilize the CLIP-ViT-Large-Patch14 model [1] to extract flattened grid features from the input images, and Qwen-2.5-3B-Instruct [3] as the reasoning engine. The methodological contribution of this work lies entirely in the mathematical formulation of the intermediate cross-modal bridge: the Linear Multi-Timescale Retention (LIA-MTR) module. 
+
+B. The LIA-MTR Formulation 
+
+Standard cross-modal bridges map visual features via inde-pendent linear projections, failing to route sequence context. To enable context mixing without invoking O(N2) attention, LIA-MTR processes the visual sequence X = [ x1, . . . , xN ] ∈
+
+RN×dvision autoregressively. For a given visual token xt at index t, we compute the query, key, and value projections. To guarantee non-negativity in the key representations—a requirement for stable recurrent accu-mulation without denominator collapse—we apply a positive-feature mapping utilizing an Exponential Linear Unit (ELU) [10]: 
+
+qt = Wqxt , kt = φ (Wkxt ), vt = Wvxt (1) where φ (z) = ELU (z) + 1. To prevent noisy accumulation from spatial redundancy, we introduce an adaptive, token-wise write gate, gt . Simultane-ously, a scale mixer, αt , is computed to dynamically weight the memory horizons: 
+
+gt = σ (Wgxconv  
+
+> t
+
+), αt = softmax (Wmix xconv  
+
+> t
+
+) (2) where σ denotes the sigmoid activation function. Internal probe analyses indicate the write gate maintains a stable activation mean of ≈ 0.5053, ensuring balanced information injection without memory saturation. 
+
+C. Multi-Timescale Recurrent State and Readout 
+
+The foundation of LIA-MTR is its bounded recurrent mem-ory. The architecture maintains S parallel memory states, each governed by a fixed decay constant λs ∈ (0, 1). The per-scale update is defined as: 
+
+Mt,s = λsMt−1,s + ut , ut = gt ⊙ (kt ⊙ vt ) (3) By distributing λs log-linearly across [0.70 , 0.995 ], the mod-ule yields effective memory half-lives ranging from t1/2 = 1.94 steps to t1/2 = 138 .28 steps. This explicitly allows the model to simultaneously capture sharp, short-term spatial details alongside long-term, global scene semantics. The output is constructed by aggregating across all S
+
+timescales weighted by the scale mixer αt,s, and applying a final projection: 
+
+mt =
+
+> S
+
+# ∑
+
+> s=1
+
+αt,s ⊙ Mt,s (4) 
+
+ot = qt ⊙ mt , yt = Woot (5) Fig. 1: The LIA-VLM Architecture. The pre-trained Vision Encoder and LLM remain frozen. High-resolution visual patches enter the trainable LIA-MTR Bridge, where the 2D Spatial Conv drives the Write Gate ( gt ) to filter noise. The Multi-Timescale Retention tracks compress spatial geometry, and the Scale Mixer ( αt ) dynamically routes the readout. The dense, linear-scaling visual tokens are then concatenated with the text prompt and passed to the LLM. 
+
+D. Mathematical Analysis and Theoretical Guarantees 
+
+The LIA-MTR formulation provides several critical theo-retical guarantees for processing continuous, high-resolution visual sequences. 
+
+Theorem 1 (Asymptotic Sequence-Interaction Complex-ity). For a fixed embedding dimension d and a constant number of multi-timescale tracks S, the LIA-MTR architecture operates with a strict linear sequence-interaction complexity of O(N).Proof: Let CMHA denote the computational cost of se-quence interaction in standard Softmax MHA, which requires computing the dense affinity matrix A = QK ⊤ ∈ RN×N . This yields an all-pairs bottleneck: 
+
+CMHA = Θ(N2d)
+
+Conversely, let CLIA denote the interaction cost for LIA-MTR. The sequence interaction is strictly localized to the recurrent update of the fixed-size state tensor Mt,s ∈ Rdh×dh across S
+
+scales. The computational cost per discrete time step t is independent of the total sequence length N:
+
+Cstep = O(d2S)
+
+Summing over the entire sequence of length N, the total asymptotic interaction complexity resolves to: 
+
+CLIA =
+
+> N
+
+# ∑
+
+> t=1
+
+Cstep = O(Nd 2S)
+
+Because d and S are bounded architectural constants, CLIA 
+
+simplifies strictly to O(N), effectively decoupling the memory state from the sequence length. 
+
+Lemma 1 (Closed-Form State Expansion). For any given scale s, the recurrent memory state M t,s can be explicitly un-rolled as a geometrically weighted sum of all past injections: Mt,s = λ ts M0,s +
+
+> t−1
+
+# ∑
+
+> j=0
+
+λ js ut− j (6) 
+
+Proof: We proceed by mathematical induction on t. For the base case t = 1, substituting into the primary recurrence relation yields M1,s = λsM0,s + u1, which satisfies the lemma. Assume the proposition holds for an arbitrary step t = k:
+
+Mk,s = λ ks M0,s +
+
+> k−1
+
+# ∑
+
+> j=0
+
+λ js uk− jFor the subsequent step t = k + 1, we substitute the inductive hypothesis: 
+
+Mk+1,s = λsMk,s + uk+1
+
+= λs λ ks M0,s +
+
+> k−1
+
+# ∑
+
+> j=0
+
+λ js uk− j
+
+!
+
++ uk+1
+
+= λ k+1 
+
+> s
+
+M0,s +
+
+> k−1
+
+# ∑
+
+> j=0
+
+λ j+1 
+
+> s
+
+uk− j + uk+1
+
+= λ k+1 
+
+> s
+
+M0,s +
+
+> k
+
+# ∑
+
+> j=0
+
+λ js u(k+1)− j
+
+By induction, the closed-form expansion holds for all t ≥ 1. 
+
+Theorem 2 (Bounded-State Stability). Let the token in-jections be bounded such that ∥ut ∥ ≤ U for all t, and let the decay factor satisfy 0 < λs < 1. The memory state magnitude 
+
+∥Mt,s∥ remains strictly bounded and converges geometrically as N → ∞.Proof: Applying the triangle inequality to the expanded state from Lemma 1, we obtain a step-by-step bound: 
+
+∥Mt,s∥ = λ ts M0,s +
+
+> t−1
+
+# ∑
+
+> j=0
+
+λ js ut− j
+
+≤ ∥ λ ts M0,s∥ +
+
+> t−1
+
+# ∑
+
+> j=0
+
+∥λ js ut− j∥≤ λ ts ∥M0,s∥ +U
+
+> t−1
+
+# ∑
+
+> j=0
+
+λ js
+
+Recognizing the second term as a finite geometric series, we apply the upper limit as t → ∞:
+
+> t−1
+
+# ∑
+
+> j=0
+
+λ js = 1 − λ ts
+
+1 − λs
+
+< 11 − λs
+
+Therefore, the absolute state boundary is governed by: lim 
+
+> t→∞
+
+∥Mt,s∥ ≤ ∥ M0,s∥ + U
+
+1 − λs
+
+This mathematical guarantee ensures strict numerical stability across infinite sequence contexts without gradient explosion. 
+
+Lemma 2 (Special-Case Reduction). LIA-MTR mathemat-ically generalizes standard first-order linear attention. Proof: Let the LIA-MTR architecture be constrained under the following baseline parameter conditions: 1. S = 1 (Single scale representation) 2. αt,1 = 1 (Static read routing) 3. gt = 1 (Unrestricted write gate) Substituting these constraints into the primary recurrent update reduces the function to: 
+
+Mt = λ1Mt−1 + ( kt ⊙ vt )
+
+This formulation maps exactly to generic linear attention augmented with an exponential moving average. Consequently, LIA-MTR strictly encompasses generic linear attention while providing enhanced representational bandwidth through gt and multi-scale αt,s.
+
+Theorem 3 (Order-Optimality in Sequence Length). LIA-MTR achieves the theoretical optimal complexity lower bound for full-sequence readers. Proof: Let ΩR define the absolute minimum compu-tational operations required for an autoregressive model to sequentially read an input vector X of length N. Reading the sequence necessitates at least one operation per token: 
+
+ΩR = Ω(N)
+
+From Theorem 1, the computational complexity of the LIA-MTR sequence interaction is: 
+
+CLIA = O(N)
+
+Because O(N) tightly bounds the fundamental limit Ω(N),LIA-MTR is mathematically proven to be optimal-order in N.
+
+E. Training Protocol 
+
+To isolate the architectural performance, the baseline MLP model and the LIA-MTR model were subjected to an identical two-phase training protocol utilizing DeepSpeed ZeRO-2 op-timization [15]. ZeRO-2 was specifically selected to facilitate the memory-efficient offloading of optimizer states during high-resolution training. 
+
+1) Phase 1: Feature Alignment: The first phase aligns the frozen visual patches to the frozen LLM embeddings. The models were trained on a subset of 150K image-caption pairs [2]. The objective was next-token prediction via cross-entropy loss, utilizing a micro-batch size of 4 and an effective global batch size of 32. 
+
+2) Phase 2: Instruction Tuning: The second phase adapts the models to complex logical tasks. The vision encoder remained frozen, while both the cross-modal bridge and the LLM were trained jointly on the LLaVA-1.5 mix contain-ing 665K visual instruction samples [2]. To accommodate high-resolution activation memory, sequence-chunked gradient checkpointing was utilized. The models trained with a micro-batch size of 2 and an effective global batch size of 32. III. R ESULTS AND DISCUSSION 
+
+A. Algorithmic Isolation: Text-NIAH Retrieval 
+
+Before evaluating the architecture on multimodal datasets, we isolated the cross-modal bridges to assess their funda-mental sequence-routing capabilities using a synthetic Needle-In-A-Haystack (NIAH) retrieval task. The objective was to retrieve a specific key-value pair buried at various depths within a continuous sequence of up to 16,000 tokens. As shown in Fig. 2, naive linear attention models exhibited severe ”Lost in the Middle” degradation. Without a gating mechanism, early key-value injections were systematically overwritten by subsequent token updates, resulting in retrieval failure for features located early in the sequence context. Soft-max MHA successfully retrieved early tokens but exhibited patchy noise due to the saturation of the attention matrix over extended lengths. In contrast, the LIA-MTR module achieved a flawless 1.0 retrieval score across all depths and context lengths. The adaptive write gate ( gt ) successfully restricted the accumulation of background noise, permanently locking the target sequence into the multi-timescale recurrent state. 
+
+B. Computational Efficiency and Memory Scaling 
+
+To validate the O(N) asymptotic sequence-interaction com-plexity established in Theorem 1, we conducted an empirical VRAM allocation benchmark. We measured the peak acti-vation memory during the forward pass across exponentially increasing visual patch sequence lengths. The empirical results perfectly mirror the theoretical Θ(N2)
+
+bottleneck of traditional attention. The standard Softmax MHA bridge exhibited quadratic memory scaling, triggering a catastrophic Out-Of-Memory (OOM) failure at 16,384 visual patches on a 32 GB hardware constraint. Conversely, LIA-MTR scaled linearly, bypassing the quadratic context bound-ary entirely. LIA-MTR successfully processed a continuous sequence of 262,144 visual patches while consuming only 11.2 GB of VRAM. This strictly validates that the architec-ture decouples memory consumption from sequence length, establishing a foundation for infinite-context Vision-Language integration. 
+
+C. Global Semantics and Object Permanence 
+
+To assess the architecture’s capacity for real-world visual understanding, we evaluated LIA-MTR against the highly ef-ficient, industry-standard MLP baseline (used in architectures like LLaVA) using the MME benchmark [16]. TABLE I: MME Benchmark Performance Comparison             
+
+> Metric MLP Baseline LIA-MTR
+> Phase 1 (Feature Alignment)
+> Existence (Permanence) 81.67% 91.67%
+> Phase 1 Overall 62.30% 58.42%
+> Phase 2 (Instruction Tuning)
+> Scene Recognition 78.75% 90.40%
+> Spatial Positioning 43.33% 35.00%
+> Phase 2 Overall 68.11% 71.00%
+
+As detailed in Table I, during Phase 1 (Feature Alignment), the MLP baseline initially outscored LIA-MTR on overall ac-curacy (62.30% vs. 58.42%). This behavior is mathematically expected; simple linear projections converge rapidly on static, flat captioning tasks, whereas LIA-MTR requires complex instruction data to appropriately train its recurrent routing gates. However, Phase 1 revealed a critical architectural flaw in the MLP: it scored only 81.67% on the Existence metric, compared to LIA-MTR’s 91.67%. Because the MLP processes patches independently, it frequently drops objects from its global context. LIA-MTR’s fixed recurrent state successfully solved this object permanence failure before instruction tuning even commenced. Following Phase 2 (Instruction Tuning) on 665K conver-sational samples, the MLP baseline hit a strict performance ceiling, achieving an overall MME score of 68.11%. Because the MLP cannot route visual tokens together, the language model is overwhelmed by uncompressed spatial data, resulting in poor global scene recognition (78.75%). LIA-MTR, lever-aging its multi-timescale decays to act as a global low-pass filter, achieved an overall MME accuracy of 71.00%, driven by a massive 90.40% score in Scene Recognition. While LIA-MTR explicitly trades off minor localized spatial precision to achieve this compression, the empirical data proves that gated sequence routing is a structural necessity for maintaining global image context. 
+
+D. Internal Probe Analysis 
+
+To mathematically verify that the architecture functioned as designed during inference, we probed the internal acti-vations of the LIA-MTR bridge. The token-wise write gate (gt ) maintained an activation mean of 0.5053 with a low standard deviation (0.0444). This indicates that the gate suc-cessfully prevented total saturation of the recurrent state while avoiding gradient starvation. Furthermore, by distributing the decay constants ( λs) log-linearly, the architecture maintained simultaneous memory horizons with half-lives ranging from 
+
+t1/2 = 1.94 steps to t1/2 = 138 .28 steps. This mathematical diversity confirms that the token-specific scale mixer ( αt ) had the requisite bandwidth to extract both high-frequency spatial details and low-frequency global themes. IV. C ONCLUSION 
+
+This paper introduced the Linear Multi-Timescale Retention (LIA-MTR) module, an O(N) cross-modal bridge designed to resolve the quadratic memory bottlenecks of standard Soft-max MHA and the semantic limitations of independent MLP bridges. By integrating an ELU-based positive feature map-ping with adaptive write-gating and multi-timescale recurrent states, LIA-MTR successfully compresses continuous visual sequences into bounded memory representations. Theoretical analysis and synthetic Text-NIAH evaluations confirmed that LIA-MTR achieves optimal-order sequence scaling while flawlessly routing key-value pairs across massive contexts, eliminating the “Lost in the Middle” degradation characteristic of naive linear attention. Empirically, the archi-tecture demonstrated infinite-context scaling, natively process-ing 262,144 visual patches within an 11.2 GB memory foot-print, whereas standard MHA suffered catastrophic failure at 16,384 patches. Furthermore, when instruction-tuned on 665K conversational samples, LIA-MTR significantly outperformed an industry-standard MLP baseline on the MME benchmark (71.00% vs. 68.11%). This performance was largely driven by its superior object permanence (91.67% Existence) and global scene recognition, proving that sequence routing is structurally necessary for high-level visual understanding. While LIA-MTR establishes a robust foundation for memory-efficient Vision-Language integration, the current (a) Naive Linear (b) Softmax MHA (c) LIA-MTR (Ours) 
+
+Fig. 2: Needle-In-A-Haystack retrieval heatmaps... 
+
+Fig. 3: Peak VRAM Allocation vs. Visual Sequence Length. Standard Softmax MHA suffers an Out-of-Memory (OOM) failure at 16,384 patches due to its O(N2) complexity. In contrast, the proposed LIA-MTR architecture demonstrates strict O(N) scaling, successfully processing 262,144 continu-ous patches natively within an 11.2 GB memory footprint. instruction-tuning paradigm was limited to single-image inter-actions. Future work will focus on a third training phase uti-lizing interleaved multi-image datasets and continuous video streams, allowing the model to natively exploit its infinite-context recurrent state across highly complex spatial-temporal domains. REFERENCES [1] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark et al. , “Learning transferable visual models from natural language supervision,” in International conference on machine learning . PMLR, 2021, pp. 8748–8763. [2] H. Liu, C. Li, Q. Wu, and Y. J. Lee, “Visual instruction tuning,” 
+
+Advances in neural information processing systems , vol. 36, 2024. [3] J. Bai, S. Bai, Y. Chu, Z. Cui, K. Dang, X. Deng, Y. Fan, W. Ge, Y. Han 
+
+et al. , “Qwen technical report,” arXiv preprint arXiv:2309.16609 , 2023. [4] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” in Advances in neural information processing systems , vol. 30, 2017. [5] J.-B. Alayrac, J. Donahue, P. Luc, A. Miech, I. Barr, Y. Hasson, K. Lenc, A. Mensch, K. Millican, M. Reynolds et al. , “Flamingo: a visual language model for few-shot learning,” Advances in Neural Information Processing Systems , vol. 35, pp. 23 716–23 736, 2022. [6] W. Dai, J. Li, D. Li, A. M. H. Tiong, J. Zhao, W. Wang, B. Li, P. Fung, and S. Hoi, “Instructblip: Towards general-purpose vision-language models with instruction tuning,” Advances in Neural Infor-mation Processing Systems , vol. 36, 2023. [7] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly et al. ,“An image is worth 16x16 words: Transformers for image recognition at scale,” arXiv preprint arXiv:2010.11929 , 2020. [8] T. Dao, D. Y. Fu, S. Ermon, A. Rudra, and C. R´ e, “Flashattention: Fast and memory-efficient exact attention with io-awareness,” Advances in Neural Information Processing Systems , vol. 35, pp. 32 089–32 102, 2022. [9] K. Choromanski, V. Likhosherstov, D. Dohan, X. Song, A. Gane, T. Sar-los, P. Hawkins, J. Davis, A. Mohiuddin, L. Kaiser et al. , “Rethinking attention with performers,” arXiv preprint arXiv:2009.14794 , 2020. [10] A. Katharopoulos, A. Vyas, N. Pappas, and F. Fleuret, “Transformers are rnns: Fast autoregressive transformers with linear attention,” in 
+
+International conference on machine learning . PMLR, 2020, pp. 5465– 5473. [11] A. Gu and T. Dao, “Mamba: Linear-time sequence modeling with selective state spaces,” arXiv preprint arXiv:2312.00752 , 2023. [12] B. Peng, E. Alcaide, Q. Anthony, A. Albalak, S. Arcadinho, H. Cao, X. Cheng, M. Chung, M. Grella, K. K. GV et al. , “Rwkv: Reinventing rnns for the transformer era,” arXiv preprint arXiv:2305.13048 , 2023. [13] Y. Sun, L. Dong, S. Huang, S. Ma, Y. Xia, J. Xue, J. Wang, and F. Wei, “Retentive network: A successor to transformer for large language models,” arXiv preprint arXiv:2307.08621 , 2023. [14] L. Zhu, B. Liao, Q. Zhang, X. Wang, W. Liu, and X. Wang, “Vision mamba: Efficient visual representation learning with bidirectional state space model,” arXiv preprint arXiv:2401.09417 , 2024. [15] J. Rasley, S. Rajbhandari, O. Ruwase, and Y. He, “Deepspeed: System optimizations enable training deep learning models with over 100 billion parameters,” in Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining , 2020, pp. 3505– 3506. [16] C. Fu, P. Chen, Y. Shen, Y. Qin, M. Zhang, X. Lin, J. Yang, X. Zheng, W. Ke, X. Sun, and R. Ma, “Mme: A comprehensive evaluation benchmark for multimodal large language models,” arXiv preprint arXiv:2306.13394 , 2023.

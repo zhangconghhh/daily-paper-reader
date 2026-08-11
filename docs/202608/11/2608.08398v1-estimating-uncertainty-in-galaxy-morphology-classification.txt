@@ -1,0 +1,539 @@
+Title: Estimating Uncertainty in Galaxy Morphology Classification
+
+URL Source: https://arxiv.org/pdf/2608.08398v1
+
+Published Time: Tue, 11 Aug 2026 01:00:52 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Estimating Uncertainty in Galaxy Morphology Classification 
+
+Kai Cheng 1, Ruoqi Wang 2, Qiong Luo 1,2 
+
+> 1
+
+The Hong Kong University of Science and Technology, Hong Kong, China 
+
+> 2
+
+The Hong Kong University of Science and Technology (Guangzhou), Guangzhou, China 
+
+Abstract 
+
+Astronomers classify galaxy morphology to investigate cos-mic evolution. While deep foundation models are increas-ingly utilized in Galaxy Morphology Classification (GMC), little work has been done on evaluating the uncertainty of GMC results. Uncertainty evaluation is important because as-tronomical data are inherently noisy due to instrumental and environmental limitations. Also, the continuous evolution of galaxies creates intrinsic morphological ambiguity. However, current foundation models operate as deterministic point es-timators, failing to quantify the uncertainty. To overcome this limitation, we propose UEGMC, a post-hoc framework of Uncertainty Estimation for Galaxy Morphology Classifica-tion. It categorizes uncertainty in GMC into distinct types by model parameters, astronomical data, reference standards, or intrinsic physical ambiguities, thereby facilitating better clas-sification. Our framework can directly predict uncertainties from representations extracted from the frozen backbones of foundation models, without computationally expensive sam-pling, therefore enabling fine-grained uncertainty evaluations. Our experimental results demonstrate that UEGMC provides competitive uncertainty quantification performance compared with previous methods. 
+
+Introduction 
+
+Classifying the morphology of galaxies is important for as-tronomers (Baker et al. 2025; Wang et al. 2025b), providing critical insights into cosmics (Angeloudi et al. 2024). As as-tronomical surveys continuously increase, deep foundation models (Lastufka et al. 2024) have been rapidly applied to Galaxy Morphology Classification (GMC), taking advantage of their powerful representation learning capabilities across diverse data (Abdullah, Ebert, and Wasenmüller 2026). De-spite predictive success, current GMC results are missing certainty information. As shown in Figure 1 (a), recent foundation models for GMC typically lack a quantitative measure of their confidence (Abdar et al. 2021). Challenged by noise arising from instrumental limitations and intricate physical mechanisms (Wang, Wang, and Luo 2025), these models are prone to misclassifications with overconfidence (Domínguez Sánchez et al. 2019; Kim, Kang, and Lee 2025). The inability to trace the complex sources of uncertainty re-stricts these models. Therefore, Uncertainty Quantification (UQ) (Bethell, Gerasimou, and Calinescu 2024) is vital to Scale up Model   
+
+> Ambiguous
+> Galaxy
+> Overconfidence
+> & Misclassification
+> Require More Data
+> Seek Human Expertise
+> Request Multimodal Input
+> (a) Foundation models provide unreliable predictions on ambiguous galaxies.
+> (b) The uncertainty of morphological ambiguity caused by evolutions of galaxies.
+> Foundation
+> Model
+> Confident
+> Incorrect
+> Unbarred
+> Spiral
+> Predict Validate
+> Uncertainty
+> Source
+> Morphology Boundary Uncertainty
+> Baseline Confidence Seek Human
+> Expertise
+
+Figure 1: Unaddressed uncertainty in foundation models and the critical role of cognitive identification for galaxy mor-phology classification. establish scientific credibility bounds for GMC results. In this paper, we propose a framework for UQ in GMC. Quantifying the confidence in GMC presents two unique challenges. The main challenge is that the underlying mul-tiple sources of uncertainty are complex (Kendall and Gal 2017), rendering a single homogeneous uncertainty evalua-tor inadequate. First, galaxy data are inherently imperfect due to instrumental limitations and environmental factors during collection (Lastufka et al. 2024; Slijepcevic et al. 2024). Sec-ond, many approaches (Mishra-Sharma, SONG, and Thaler 2024; Wang, Wang, and Luo 2025) emulate citizen scientists to achieve multimodal GMC by incorporating supplementary reference standards, as shown in Figure 2. Such multimodal integration introduces deviations in understanding standards from multiple angles (Chen et al. 2025). The symbols are highly idealized, creating a domain gap with physical im-ages. Third, galaxies frequently reside in transitional states due to continuous morphological evolutions (Walmsley et al. 2022; Baker et al. 2025), as shown in Figure 1 (b), causing an intrinsic physical boundary blur. The second challenge lies in the limitations of calculat-ing the predictive uncertainty. On the one hand, although arXiv:2608.08398v1 [cs.AI] 9 Aug 2026 Round 
+
+> Smooth
+> In-Between Round Smooth
+> Cigar Round Smooth
+> Merging Disturbed
+> Unbarred Loose Spiral
+> Edge-on without Bulge
+> Edge-on with Bulge
+> Unbarred Tight Spiral
+> Barred Spiral
+
+Figure 2: Illustration of galaxy morphology description and schematic symbols corresponding to the examples of galaxy images. In each morphology type, the upper and lower panels show the schematic symbols and corresponding examples of galaxy images, respectively. Images and textual labels are from the Galaxy10 DECaLS dataset (Henry 2024), whereas schematic symbols are from the Galaxy Zoo 2 decision tree (Willett et al. 2013; Dieleman, Willett, and Dambre 2015). sampling-based methods, such as Bayesian Neural Networks (BNNs) (Goan and Fookes 2020), can empirically estimate the uncertainty, they are highly cost-intensive and structurally incompatible with post-hoc evaluations. On the other hand, previous prediction-based methods are limited in distinguish-ing uncertainties originating from diverse sources for GMC (Chun et al. 2026; Mohammed, Daneshfar, and Liò 2026). To address these challenges, we introduce Uncertainty Es-timation for Galaxy Morphology Classification (UEGMC), a post-hoc framework that empowers foundation models with a fine-grained uncertainty quantification capability by cat-egorizing the predictive uncertainty into distinct types, as shown in Figure 1 (a). UEGMC first establishes a baseline, called UEGMC-B, by performing Bayesian approximations across four uncertainty types in our categorization. Then, we propose UEGMC-P, encompassing a suite of strategies de-signed to achieve sampling-free and lightweight uncertainty predictions and alleviate computational costs. We categorize the predictive uncertainty as follows. First, the model epistemic (Depeweg et al. 2018) uncertainty re-flects the cognitive capacity of the foundation model, which cost-efficiently helps evaluate whether scaling to a larger model will be worthwhile. Second, the data aleatoric (De-peweg et al. 2018) uncertainty evaluates the quality of data (Kendall and Gal 2017). Because astronomical data exhibit long-tail distributions and scarcity (Hosenie et al. 2020), the training data cannot fully cover the vast diversity of astro-physical phenomena. While pretraining on extensive datasets is deployed to alleviate this issue (Oquab et al. 2024; Walms-ley et al. 2023), retrieving this aleatoric component provides a metric to assess whether such computationally expensive pretraining will yield meaningful improvements in classifica-tion. Third, the modality aleatoric uncertainty quantifies the deviations introduced when foundation models comprehend supplementary reference standards. Finally, the morphology boundary uncertainty captures the ambiguity caused by in-tricate morphological evolutions. Thus, our framework em-powers the model to recognize its main sources of limitations and low-confidence predictions. Also, it enables the quantifi-cation of physical uncertainty that is challenging to capture, allowing physically ambiguous samples to be effectively de-ferred to astronomers and thus preserving human effort. Our contributions are as follows: 
+
+• By explicitly categorizing uncertainty from multiple sources, we propose the UEGMC framework to perform a fine-grained uncertainty quantification tailored to model the complex nature of galaxy morphology. 
+
+• Our UEGMC not only provides a Bayesian approxima-tion baseline, but also proposes the post-hoc, efficient, and sampling-free UEGMC-P to alleviate the issue of computational limitations and costs. 
+
+• Extensive experimental results demonstrate the effective-ness and robustness of our proposed UEGMC in accu-rately capturing and quantifying distinct sources of un-certainty in GMC. 
+
+Background and Related Work 
+
+Foundation Models in Astrophysics 
+
+Modern astrophysical surveys produce a large amount of data. Unlike natural images, they exhibit systematic noise and artifacts alongside a highly dynamic range (Wang, Wang, and Luo 2025), prompting continuous exploration into the appli-cation of foundation models in this domain (Lastufka et al. 2024). Moreover, existing models designed for astronomical tasks, including Zoobot (Walmsley et al. 2023) and CLIP-based methods (Mishra-Sharma, SONG, and Thaler 2024; Wang, Wang, and Luo 2025), focus on scaling datasets or ap-plying multi-modal pretraining to enhance the performance. However, previous work does not address the uncertainty of GMC. In contrast, we explicitly identify and model the in-herent uncertainties from multiple sources to better facilitate classification. 
+
+Uncertainty Quantification 
+
+Quantifying uncertainty in deep neural networks traditionally relied on computationally expensive methods such as BNNs (Goan and Fookes 2020) or Deep Ensembles (Lakshmi-narayanan, Pritzel, and Blundell 2017). Recently, some post-hoc Artificial Intelligence (AI) methods have been proposed. Deng et al. (Deng et al. 2023) utilized the Fisher information matrix to dynamically reweight loss terms for improved un-certainty estimation. Chen et al. (Chen, Gao, and Xu 2024) treated the prior weight as an adjustable hyperparameter and directly optimized the expected Dirichlet distribution without variance-minimizing regularization. Mohammed et al. (Mo-hammed, Daneshfar, and Liò 2026) proposed gated evidential mixtures, which integrated a distance-informed gating mech-anism with a Fisher-regularized mixture of evidential heads. Chun et al. (Chun et al. 2026) proposed to convert standard pretrained models into evidential models by interpreting the transformed output as parameters of a Dirichlet distribution for uncertainty estimation. These methods did not categorize various types of uncertainty critical to GMC. In contrast, our UEGMC offers a physics-aware uncertainty categorization, and the computational overhead is low. 
+
+Methodology 
+
+In this section, we present UEGMC, a framework we specifi-cally design to categorize and predict critical uncertainties for GMC. First, we perform a fine-grained categorization of the uncertainty, facilitating corresponding quantification strate-gies for uncertainties from distinct sources. Subsequently, we leverage established foundation models to conduct Bayesian approximations, thereby providing a baseline and revealing their limitations. Finally, we present UEGMC-P, our post-hoc training approach to sampling-free uncertainty prediction for GMC. 
+
+Uncertainty Categorization for GMC 
+
+We denote the entire parameter set of the model as θ and the training data as D. Given an input x, the comprehensive Bayesian predictive distribution (Gal and Ghahramani 2015) for the target y is formulated as follows: 
+
+p(y|x, D) = 
+
+Z
+
+> θ
+
+p(y|x, θ )p(θ|D )dθ. (1) This integral provides a basis for quantifying the confidence that the prediction of the model is correct. Typically, the term p(y|x, θ ) is categorized into the Aleatoric uncertainty, while p(θ|D ) is the Epistemic uncertainty (Depeweg et al. 2018). However, it also presents significant computational challenges because acquiring the posterior distribution of the model parameters p(θ|D ) is typically intractable (Liu et al. 2023), and integrating over the vast parameter space requires excessive computational resources. To facilitate a finer-grained categorization to match var-ious sources in GMC, we further expand Equation (1), the predictive distribution, into multiple integrals involving dis-tinct probabilistic components as follows: 
+
+p(y|x, D) = 
+
+Z
+
+> m
+
+Z
+
+> xM
+
+Z
+
+> θ
+
+p(y|m, θ, x )
+
+| {z }
+
+> Data Aleatoric
+
+p(m|θ, x )
+
+| {z }
+
+> Morphology Boundary
+
+p(xM |xg )
+
+| {z }
+
+> Modality Aleatoric
+
+p(θ|D )
+
+| {z } 
+
+> Model Epistemic
+
+dθdx M dm , (2) where xg is the galaxy image, xM is the supplementary multimodal data, x = {xg , x M } is the input, and m is the latent variable for modeling the physical boundary. These four components systemically categorize the predictive un-certainty into four types. Specifically, the posterior distribution p(θ|D ) represents the model epistemic uncertainty. Since reference standards, including schematic symbols and textual descriptions, are ex-ploited in several GMC approaches (Mishra-Sharma, SONG, and Thaler 2024; Wang, Wang, and Luo 2025) to characterize the intrinsic cognitive process of citizen scientists, it is essen-tial to account for multimodal implications. Thus, we divide the Aleatoric uncertainty by the added modalities. Formally, 
+
+x is decomposed into xM and the original galaxy image xg ,which is denoted as x = {xg , x M }. This way, the relation-ship p(xM |xg ) between xg and xM represents the modality aleatoric uncertainty. And the model outputs the prediction probability p(y|m, θ, x ) given the input data x, reflecting the data aleatoric uncertainty. Furthermore, we incorporate a latent variable m to model the physical boundary, morpho-logical ambiguity caused by the evolution of the galaxy. In other words, by modeling p(m|θ, x ) in our UEGMC, we can quantitatively assess the morphology boundary uncertainty. 
+
+UEGMC-B: Bayesian Approximation 
+
+The predictive uncertainty in Equation (2) is intractable (Liu et al. 2023). To tackle this issue, we first consider sampling-based methods (Liu et al. 2023; Wang et al. 2025a) to ap-proximate the uncertainty. We utilize the Shannon entropy of the predictive probability distribution to realize the Bayesian UQ. For a classification task with N categories, the entropy of a prediction is formulated as: 
+
+H(y) = −
+
+> N
+
+X
+
+> i=1
+
+yi log 2(yi). (3) We define a set Y = yi Ki=1 , where K is the prod-uct of the cardinalities of four distinct sets Θ, A, XM ,and R. Specifically, θ ∈ Θ represents models of vari-ous sizes. a ∈ A represents pretraining on different ex-ternal datasets, encompassing both general and domain-specific data enhancements. xM ∈ XM denotes differ-ent configurations for integrating supplementary modalities 
+
+{∅ , x txt , x sym , {xtxt , x sym }} , where xsym and xtxt denote schematic symbols and textual descriptions, respectively. Fi-nally, r ∈ R denotes a series of galaxy evolution phenom-ena since galaxies may exist in transitional evolving states and cause ambiguity. Therefore, we formulate a physics-consistent strategy to reveal morphological ambiguity by per-forming perturbations on the labels of samples based on the phenomena of galaxy evolution. For instance, there is a phe-nomenon "Unbarred Loose Spiral → Unbarred Tight Spiral", which is driven by central mass accumulation and enhances the shear rate of differential rotation. This phenomenon leads to a reduction in the spiral pitch angle, resulting in tightly wound spiral arms. Thus, a sample originally labeled as "Un-barred Loose Spiral" can be subjected to a perturbation that shifts the label to "Unbarred Tight Spiral". To evaluate the model epistemic uncertainty caused by insufficient learning capabilities, we fix the data and labels to their unperturbed states and allow only the model parameters 
+
+θ to vary within the set Θ. The corresponding entropy is approximated by the expected prediction weighted by the probability p(θ|D ) as follows: 
+
+HΘ (xg , r, x M , Θ, Y) ≈ H
+
+ P
+
+> θ∈Θ
+
+p (θ|D ) · yxg ,r,x M ,θ 
+
+
+
+, (4) Enhanced with 
+
+> Uncertainty
+> Information
+
+Foundation Model  f
+
+> θ
+
+Layers  Sf
+
+Layers  Mf
+
+Layers  Df
+
+ˆ N Ky ×∈ 
+
+> Prediction
+
+ˆ) ( , Nyb y= ∈    
+
+> Brier Score
+> Input
+> NCHWg
+
+x × × ×∈ 
+
+UEGMC-P 
+
+> Model Epistemic Uncertainty Estimator
+> Data Aleatoric
+> Uncertainty Estimator
+> Modality Aleatoric Uncertainty Estimator
+> Morphology Boundary Uncertainty Estimator
+> N
+
+υΘ ∈ 
+
+> N
+
+υ ∈ 
+
+> MN
+
+υ ∈ 
+
+> N
+
+υ ∈ 
+
+fΘ
+
+f
+
+> M
+
+f
+
+f
+
+Feature 
+
+Fusion  
+
+> …
+> Ground Truth
+> NK
+
+y ×∈ 
+
+> Overconfidence & Misclassification
+
+#          
+
+> Foundation Model Prediction Flow
+> UEGMC-P
+> Inference Flow
+> UEGMC-P
+> Training Flow
+> Employ
+> Uncertainty Source
+> Analysis Set
+> M⊂××Θ×
+> ()j
+
+z
+
+ξFigure 3: An illustration of our proposed UEGMC-P framework. With the foundation model kept frozen, UEGMC-P undergoes independent training in a post-hoc manner to provide categorized uncertainty predictions across four types. This mechanism evaluates the overconfidence inherent in the direct output of the original model and its sources of uncertainty. where p(θ|D ) = 1 
+
+> |Θ|
+
+.Similarly, the data aleatoric uncertainty is estimated as follows:             
+
+> HA(xg, r, x M, θ, A,Y)≈H
+>  P
+> a∈A
+> p(y|x, θ, m )·ya(xg),r,x M,θ
+> 
+
+, (5) where p(y|x, θ, m ) = 1 
+
+> |A|
+
+.The modality aleatoric uncertainty is assessed by varying the multimodal configurations within XM as follows:                 
+
+> HXM(xg, r, θ, XM,Y)≈HP
+> xM∈X M
+> p(xM|xg)·yxg,r,x M,θ
+> !
+
+, (6) where p(xM |xg ) = 1  
+
+> |X M|
+
+.Finally, the morphology boundary uncertainty is estimated as follows: 
+
+HXM (xg , x M , θ, R, Y) ≈ H
+
+ P
+
+> r∈R
+
+p (m|x, θ ) · yxg ,r,x M ,θ 
+
+
+
+, (7) where p(m|x, θ ) = 1 
+
+> |R|
+
+. Directly executing this Bayesian entropy approximation is computationally expensive and de-mands ground truth information when evaluating the mor-phology boundary uncertainty. Consequently, we deploy this Bayesian methodology within our framework as a compara-tive baseline only, designated as UEGMC-B. 
+
+UEGMC-P: Uncertainty Prediction 
+
+Through the derivation of the Bayesian approach, the exten-sive multiple integral problem is transformed into a series of discrete expected values. However, Monte Carlo variations used to estimate uncertainty are not applicable post-hoc and are highly costly. To address this issue, we train lightweight estimators to efficiently predict uncertainties from the latent space. As shown in Figure 3, foundation models only gener-ate a single label prediction ˆy, lacking any quantitative mea-sure of the model’s confidence. In contrast, our UEGMC-P leverages the hierarchical embeddings z(j) to achieve feature fusion ξ = Concat (z(j)), ensuring that UEGMC-P simulta-neously yields the nature of the observation and the current predictive inclination. The UEGMC-P estimators employ the lightweight Multi-Layer Perceptron (MLP) architecture tai-lored to map ξ to the target uncertainty estimations. Also, UEGMC-P is post-hoc and freezes the converged foundation models, ensuring that only the weights of the estimators are updated via backpropagation. Our design not only guaran-tees that the estimators fit the target uncertainties in a stable representation space, but also keeps the uninterrupted feature learning process required for classification. Due to the distinct characteristics of uncertainties, we con-struct different learning tasks and strategies for their respec-tive estimators. The Brier score serves as the main metric to evaluate the discrepancy between the prediction ˆy and the corresponding ground truth y, calculated as: 
+
+BS  ˆyi, y i =
+
+> K
+
+X
+
+> i=1
+
+(ˆ yi − yi)2. (8) where K is the total number of categories. The Brier score simultaneously measures reliability and uncertainty (Murphy 1973), penalizing predictions that are both overconfident and incorrect. We formulate a function ρ to map ξ to the respective Brier scores. First, the model epistemic uncertainty is quan-tified as the difference in predictions between the estima-tors trained on the results from tiny and large model ar-chitectures, denoted as υΘ = ρT (ξ) − ρL(ξ). Second, we assess the data aleatoric uncertainty utilizing models fine-tuned after general or domain-specific pretraining. The av-erage Brier scores from these models define the target of ρA(ξ). The corresponding data aleatoric uncertainty is measured as υA = ρB (ξ) − ρA(ξ), where ρB (ξ) repre-sents the estimator trained on the results from the base model. Third, to quantify the modality aleatoric uncertainty, we incorporate configurations of supplementary modalities, 
+
+{∅ , x txt , x sym , {xtxt , x sym }} , to calculate their expected Brier scores. The results are then averaged to serve as the target of the estimator ρXM . The modality aleatoric uncer-tainty is consequently quantified by υXM = ρB (ξ)−ρXM (ξ).Finally, we calculate auxiliary Brier Scores using the changed labels of galaxy morphologies into which the sample could potentially evolve. The morphology boundary uncertainty can be quantified as υm = 1 − | ρB (ξ) − ρm(ξ)|.
+
+Experiments 
+
+Experimental Setup 
+
+All proposed models and experiments are implemented in PyTorch (Paszke et al. 2019). The training and evaluation processes are conducted on a high-performance Linux work-station equipped with an NVIDIA H100 GPU. In our ex-periments, we evaluate our UEGMC on two widely adopted public galaxy datasets: (1) Galaxy10 DECaLS (Henry 2024) and (2) GalaxyMNIST (Walmsley 2022). 
+
+Foundation Models To comprehensively evaluate our ap-proach and facilitate comparison with previous UQ methods, we employ a diverse suite of foundation models as back-bones, encompassing two mainstream architectures: (1) Vi-sion Transformers (ViT) (Dosovitskiy et al. 2021) and (2) ConvNeXt (Woo et al. 2023). This suite comprises models of diverse scales, a variety of unimodal and multimodal mod-els, and models pretrained on general and domain-specific datasets. 
+
+UQ Methods under Comparison The comparison UQ methods include Deep Ensembles (Lakshminarayanan, Pritzel, and Blundell 2017), I-EDL(Deng et al. 2023), R-EDL(Chen, Gao, and Xu 2024), ETN (Chun et al. 2026), and GEM-FI (Mohammed, Daneshfar, and Liò 2026). To evaluate the effectiveness of our proposed categorization strategies, we also compare with using the maximum logit value as an indicator of uncertainty. 
+
+Evaluation Metrics We select three standard metrics in classification tasks, including Accuracy (Acc), F1 Score, and mean Average Precision (mAP). While these metrics quantify the deterministic point-estimation performance of a model, we evaluate and rank competing UQ methods based on the Area Under Curve (AUC) derived from these indica-tors (Kendall and Gal 2017; Geifman, Uziel, and El-Yaniv Table 1: Comparison of the model epistemic uncertainty quantification across datasets with the ViT (Dosovitskiy et al. 2021) backbone. This table shows the relative Area Under Curve (AUC) (%) ↑ when predicting a variable fraction of the most uncertain samples with a larger model, while predictions of other samples remain unchanged. Bold and underlined numbers denote the best and second best results respectively. Method GalaxyMNIST Galaxy10 AUC AUC AUC AUC AUC AUC (Acc) (F1 Score) (mAP) (Acc) (F1 Score) (mAP) DeepEns 28.659 28.210 11.851 24.345 22.721 21.863                                           
+
+> I-EDL 26.882 27.142 11.733 23.913 22.236 21.097 R-EDL 27.086 25.902 11.871 25.834 23.669 20.962 GEM-FI 27.120 27.101 11.654 25.213 23.283 20.347 ETN 29.215 29.307 11.905 23.563 23.232 21.852 MaxLogit 27.016 26.996 11.779 23.791 24.006 22.673
+> UEGMC-B 25.550 25.525 11.779 24.587 25.555 22.354
+> UEGMC-P 41.885 41.807 12.281 43.199 41.353 36.633
+
+Table 2: Comparison of the data aleatoric uncertainty quan-tification across datasets with the ViT (Dosovitskiy et al. 2021) backbone. This table shows the relative Area Under Curve (AUC) (%) ↑ when predicting a variable fraction of the most uncertain samples with more pretrained data, while predictions of other samples remain unchanged. Bold and underlined numbers denote the best and second best results respectively. Method GalaxyMNIST Galaxy10 AUC AUC AUC AUC AUC AUC (Acc) (F1 Score) (mAP) (Acc) (F1 Score) (mAP) DeepEns 34.076 34.324 36.557 35.478 41.324 44.213                                           
+
+> I-EDL 46.799 43.518 57.425 44.996 44.109 46.136 R-EDL 43.973 45.841 57.591 45.704 43.951 49.407 GEM-FI 45.231 45.104 56.510 43.915 42.817 48.259 ETN 34.846 34.850 39.714 36.613 41.975 44.610 MaxLogit 81.462 81.573 85.026 72.087 71.455 75.567
+> UEGMC-B 92.615 92.598 89.063 82.496 83.060 81.647
+> UEGMC-P 94.538 94.526 91.276 89.643 88.489 89.497
+
+2019). Specifically, across the four uncertainty types, we compute the AUC by identifying a variable fraction between 0% and 100% of the most uncertain samples and substitut-ing their original estimates with a better one. Depending on the specific type under evaluation, we either correct these uncertain samples using ground-truth labels to simulate hu-man expert intervention or refine their predictions by using a larger model, leveraging extensive pretraining datasets, or incorporating additional data modalities. An effective UQ method systematically assigns higher uncertainty scores to samples most vulnerable to misclassification. Thus, targeted refinement of these samples improves classification perfor-mance, increasing AUC and demonstrating its efficacy. 
+
+Overall Performance 
+
+For readability, we normalize the AUC between the best and worst possible results. The evaluation across four uncertainty types reveals that our UEGMC-P and its Bayesian baseline, UEGMC-B, consistently perform competitively compared Table 3: Comparison of the modality aleatoric uncertainty quantification across datasets with the ViT (Dosovitskiy et al. 2021) backbone. This table shows the relative Area Under Curve (AUC) (%) ↑ when predicting a variable fraction of the most uncertain samples with more combinations of modal-ities, while predictions of other samples remain unchanged. 
+
+Bold and underlined numbers denote the best and second best results respectively. Method GalaxyMNIST Galaxy10 AUC AUC AUC AUC AUC AUC (Acc) (F1 Score) (mAP) (Acc) (F1 Score) (mAP) DeepEns 32.347 32.134 38.175 32.869 35.191 34.842                                           
+
+> I-EDL 39.673 39.464 48.497 35.497 33.293 38.515 R-EDL 38.137 39.423 48.869 39.275 33.896 35.110 GEM-FI 39.001 38.943 47.684 37.144 35.080 37.534 ETN 33.102 33.171 37.062 31.911 34.378 35.067 MaxLogit 45.524 45.410 51.412 42.226 37.558 37.909
+> UEGMC-B 65.441 65.299 71.751 59.604 57.764 56.139
+> UEGMC-P 75.017 75.035 82.712 72.154 68.101 69.759
+
+Table 4: Comparison of the morphology boundary uncer-tainty quantification across datasets with the ViT (Dosovit-skiy et al. 2021) backbone. This table shows the relative Area Under Curve (AUC) (%) ↑ when replacing a variable fraction of the most uncertain samples with the human su-pervised signal, while predictions of other samples remain unchanged. Bold and underlined numbers denote the best and second best results respectively. Method GalaxyMNIST Galaxy10 AUC AUC AUC AUC AUC AUC (Acc) (F1 Score) (mAP) (Acc) (F1 Score) (mAP) DeepEns 37.514 37.893 40.953 37.318 45.221 44.104                               
+
+> I-EDL 47.922 48.130 58.351 46.449 45.865 46.501 R-EDL 47.429 49.914 57.025 40.983 42.117 45.990 GEM-FI 46.411 46.401 56.454 45.055 45.447 49.163 ETN 36.376 36.408 40.426 37.458 45.195 44.617
+> UEGMC-P 78.746 78.756 77.447 79.073 78.892 76.914
+
+with previous UQ methods on both datasets, as shown in Tables 1–4. Specifically, the results of model epistemic un-certainty in Table 1 show that UEGMC-P efficiently identifies samples exceeding the cognitive capacity of the foundation model of a small size and achieves the best results. On data and modality aleatoric uncertainties in Tables 2 and 3, our UEGMC-P exhibits a robust capability to categorize ambi-guities caused by instrumental degradation and multimodal misalignment, yielding substantial AUC improvements over previous baselines. Moreover, the results of the morphology boundary uncer-tainty in Table 4 demonstrate that UEGMC-P better captures the intrinsic evolutionary ambiguity of galaxies than previ-ous methods. On average of the three metrics, our method outperforms the second-best method on datasets GalaxyM-NIST and Galaxy10 by 26.254% and 31.134%, respectively. Overall, these results showcase that categorizing uncertainty into distinct, physically meaningful types improves the un-certainty evaluation of foundation models in GMC. Disturbed  Merging  Round Smooth  In-Between Round Smooth                                      
+
+> Cigar Round Smooth
+> Barred Spiral Unbarred Tight Spiral
+> Unbarred Loose Spiral
+> Edge-on without Bulge
+> Edge-on
+> with Bulge
+> 0.909
+> υ=0.995
+> υ=0.946
+> υ=0.986
+> υ=0.989
+> υ=
+> 0.996
+> υ=0.999
+> υ=0.703
+> υ=0.921
+> υ=0.800
+> υ=
+> 0.303
+> υ=0.070
+> υ=0.572
+> υ=0.375
+> υ=0.390
+> υ=
+> 0.015
+> υ=0.226
+> υ=0.153
+> υ=0.045
+> υ=0.367
+> υ=
+> (a)
+> (b)
+> (c)
+> (d)
+
+Figure 4: Examples with different morphology boundary un-certainty scores, quantified with UEGMC-P, where (a) and (c) represent samples with high uncertainty, while (b) and (d) represent samples with low uncertainty. 
+
+Qualitative Analysis and Ablation Experiments 
+
+We show examples of galaxies with various levels of mor-phology boundary uncertainty in Figure 4 to further assess the effectiveness of UEGMC-P. These examples differenti-ate between distinct and ambiguous galaxy morphologies. Specifically, examples assigned high uncertainty scores as shown in Figure 4 (a) and (c) exhibit visually ambiguous fea-tures, such as irregular structures and spiral arms. These characteristics represent evolutionary states that are typi-cally misleading. In comparison, galaxies assigned low un-certainty scores, as shown in Figure 4 (b) and (d), display clearly defined structural boundaries. This contrast demon-strates that the morphology boundary uncertainty quantified by UEGMC-P moves beyond merely measuring model con-fidence to meaningfully capturing the intrinsic uncertainty in GMC. UEGMC-P also demonstrates computational efficiency. As a post-hoc framework, it avoids the computational bur-den of retraining foundation models. The estimators are lightweight, requiring less than 6 million parameters and occupying a model size of under 23 MB. Consequently, it achieves an inference speed of over 0.5 million frames per second. These results demonstrate that UEGMC-P incurs only a marginal parameter overhead while delivering robust and highly competitive uncertainty evaluation in GMC. We further ablate the extraction of feature representation layers. Given the streamlined architecture of our model, the primary configurable design choice is the depth of the ex-tracted representations. We compare our strategy with three other extraction strategies, including relying solely on shal-low layers, utilizing only deep layers, and including addi-tional layers. When restricted to shallow layers, the model reduces to an AUC (Acc) of 69.460% in terms of morphology 0.84  -0.01  0.15  0.06                                                
+
+> 0.04 0.83 0.16 0.08
+> 0.06 0.22 0.80 0.01
+> -0.01 0.41 0.01 0.77
+> 0.74 -0.08 -0.05 -0.02
+> -0.05 0.74 0.43 0.13
+> -0.05 0.34 0.81 0.11
+> -0.07 0.50 0.40 0.71
+> 0.70 -0.19 -0.23 -0.05
+> -0.14 0.81 0.51 0.11
+> -0.11 0.53 0.71 0.03
+> -0.21 0.53 0.52 0.78
+> 0.76 -0.09 -0.11 -0.10
+> -0.10 0.82 0.55 0.20
+> -0.10 0.51 0.80 0.17
+> -0.18 0.50 0.46 0.79
+> 1.00
+> 0.75
+> 0.50
+> 0.25
+> 0.00
+> -0.25
+> -0.50
+> -0.75
+> -1.00
+> 1.00
+> 0.75
+> 0.50
+> 0.25
+> 0.00
+> -0.25
+> -0.50
+> -0.75
+> -1.00
+> 1.00
+> 0.75
+> 0.50
+> 0.25
+> 0.00
+> -0.25
+> -0.50
+> -0.75
+> -1.00
+> 1.00
+> 0.75
+> 0.50
+> 0.25
+> 0.00
+> -0.25
+> -0.50
+> -0.75
+> -1.00
+> Model Epistemic
+> Data Aleatoric
+> Modality Aleatoric
+> Morphology Boundary
+> Galaxy10 GalaxyMNIST
+> Model Epistemic
+> Data Aleatoric
+> Modality Aleatoric
+> Morphology Boundary
+> (b)
+> (c) (d)
+> ViT ConvNeXt
+> υΘ
+> υ
+> M
+> υ
+> υ
+> υΘ
+> υ
+> M
+> υ
+> υ
+> (a)
+
+Figure 5: Pearson correlation between different uncertainty types of our UEGMC-P and Oracle. Red and blue colors rep-resent positive and negative correlations, respectively, with color intensity corresponding to the magnitude of Pearson’s 
+
+r, where scales are shown on the right. boundary uncertainty on the Galaxy10 dataset. Transitioning to deep layers alone decreases the evaluation AUC (Acc) to 71.223%. In contrast, our proposed configuration yields the highest performance at 79.073%, demonstrating its effective-ness. Notably, incorporating additional layers into our con-figuration provides no improvement, plateauing at 79.018%. 
+
+Efficacy of Uncertainty Decomposition in GMC 
+
+To assess whether our UEGMC-P accurately captures distinct types of uncertainty, we calculate the Pearson correlation be-tween our estimated uncertainties and the Oracle results. As shown in Figure 5, the uncertainties quantified by UEGMC-P exhibit strong positive correlations with their corresponding Oracle measurements. This robust alignment indicates that our framework effectively identifies the target uncertainty types. This physically meaningful categorization provides a reliable basis for understanding model behavior in GMC. To further demonstrate the efficacy of our uncertainty de-composition, we illustrate the performance improvements on the Galaxy10 dataset when the original estimates of a vari-able fraction of uncertain samples, as prioritized by different UQ methods, are substituted with improved ones in Figure 6. Across both the ViT and ConvNeXt backbones, sample re-finement guided by UEGMC-P consistently yields the steep-est and most substantial accuracy improvements compared to previous UQ methods. This performance gap demonstrates that UEGMC-P more precisely identifies the samples that are intrinsically vulnerable to misclassification, highlighting the effectiveness of uncertainty categorization for enhancing GMC. ViT ConvNeXt                     
+
+> Acc Acc
+> Model Epistemic Data Aleatoric Modality Aleatoric Morphology Boundary
+> 0.74
+> 0.73
+> 0.72
+> 0.71
+> 0.70
+> 0.85
+> 0.80
+> 0.75
+> 0.70
+> 0.85
+> 0.80
+> 0.75
+> 0.70
+> 0.90
+> 0.85
+> 0.80
+> 0.75
+> 0.70
+> 0.90
+> 0.670
+> 0.665
+> 0.660
+> 0.655
+> 0.680
+> 0.675
+> 0.85
+> 0.80
+> 0.75
+> 0.70
+> 0.80
+> 0.75
+> 0.70
+> 0.65
+> 0.85
+> 0.80
+> 0.75
+> 0.70
+> 0.65
+> 0.85
+> 0.0 0.2 0.4 0.0 0.2 0.4 0.0 0.2 0.4 0.0 0.2 0.4
+> Ratio Ratio Ratio Ratio
+> GEM-FI ETN MaxLogit UEGMC-P UEGMC-B
+> 0.65
+
+Figure 6: Comparison of accuracy performance gain while improving predictions selected with different UQ methods on the Galaxy10 dataset. The first row shows results that are evaluated with the ViT backbone setting. The second row shows results that are evaluated with the ConvNeXt back-bone setting. Our UEGMC consistently shows promising performance compared with previous methods. 
+
+Conclusion 
+
+In this paper, we address the problem of multi-source un-certainty quantification for GMC by proposing the UEGMC framework. We explicitly categorize the predictive uncer-tainty into four distinct types, including model epistemic, data aleatoric, modality aleatoric, and morphology bound-ary uncertainty, based on physical characteristics of galaxies and limitations in current GMC approaches. Our UEGMC framework enables foundation models to efficiently quantify uncertainties in a post-hoc manner through our lightweight and sampling-free UEGMC-P estimator. Extensive experi-ments on the Galaxy10 and GalaxyMNIST datasets with both ViT and ConvNeXt backbones demonstrate that UEGMC ac-curately identifies distinct sources of ambiguity, consistently showing competitive performance compared with previous methods. Crucially, UEGMC empowers astronomers to eval-uate the origins of misclassification systematically and en-ables targeted interventions. Our UEGMC is currently eval-uated on galaxy image data. Its effectiveness for broader and heterogeneous astrophysical data streams, such as time-series spectra, remains underexplored, though restricted by the cur-rent unavailability of suitably paired ground-truth data. We envision that extending our framework to incorporate such data could be an important next step. These extensions will further strengthen the reliability of foundation models, es-tablishing comprehensive scientific credibility bounds for large-scale, AI-based astronomical discovery. 
+
+References 
+
+Abdar, M.; Pourpanah, F.; Hussain, S.; Rezazadegan, D.; Liu, L.; Ghavamzadeh, M.; Fieguth, P.; Cao, X.; Khosravi, A.; Acharya, U. R.; et al. 2021. A Review of Uncertainty Quantification in Deep Learning: Techniques, Applications and Challenges. Information Fusion , 76: 243–297. Abdullah, A.; Ebert, N.; and Wasenmüller, O. 2026. TAP into the Patch Tokens: Leveraging Vision Foundation Model Features for AI-Generated Image Detection. In Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) Workshops , 379–389. Angeloudi, E.; Falcón-Barroso, J.; Huertas-Company, M.; Boecker, A.; Sarmiento, R.; Eisert, L.; and Pillepich, A. 2024. Constraints on the in situ and ex situ Stellar Masses in Nearby Galaxies Obtained with Artificial Intelligence. Nature As-tronomy , 8(10): 1310–1320. Baker, W. M.; Tacchella, S.; Johnson, B. D.; Nelson, E.; Suess, K. A.; D’Eugenio, F.; Curti, M.; de Graaff, A.; Ji, Z.; Maiolino, R.; et al. 2025. A Core in a Star-Forming Disc as Evidence of Inside-out Growth in the Early Universe. Nature Astronomy , 9(1): 141–154. Bethell, D.; Gerasimou, S.; and Calinescu, R. 2024. Ro-bust Uncertainty Quantification Using Conformalised Monte Carlo Prediction. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 38, 20939–20948. Chen, C.; Tseng, Y.-Y.; Li, Z.; Venkatesh, A.; and Gurari, D. 2025. Acknowledging Focus Ambiguity in Visual Questions. In Proceedings of the IEEE/CVF International Conference on Computer Vision , 1228–1238. Chen, M.; Gao, J.; and Xu, C. 2024. R-EDL: Relaxing Nonessential Settings of Evidential Deep Learning. In Inter-national Conference on Learning Representations .Chun, Y.; Park, C.; Yoon, J.; Seo, J.; and Lim, H. 2026. Evi-dential Transformation Network: Turning Pretrained Models into Evidential Models for Post-Hoc Uncertainty Estimation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 6157–6166. Deng, D.; Chen, G.; Yu, Y.; Liu, F.; and Heng, P.-A. 2023. Un-certainty Estimation by Fisher Information-Based Evidential Deep Learning. In International Conference on Machine Learning , 7596–7616. Depeweg, S.; Hernandez-Lobato, J.-M.; Doshi-Velez, F.; and Udluft, S. 2018. Decomposition of Uncertainty in Bayesian Deep Learning for Efficient and Risk-Sensitive Learning. In 
+
+International Conference on Machine Learning , 1184–1193. Dieleman, S.; Willett, K. W.; and Dambre, J. 2015. Rotation-Invariant Convolutional Neural Networks for Galaxy Mor-phology Prediction. Monthly Notices of the Royal Astronom-ical Society , 450(2): 1441–1459. Domínguez Sánchez, H.; Huertas-Company, M.; Bernardi, M.; Kaviraj, S.; Fischer, J.-L.; Abbott, T.; Abdalla, F.; Annis, J.; Avila, S.; Brooks, D.; et al. 2019. Transfer Learning for Galaxy Morphology from One Survey to Another. Monthly Notices of the Royal Astronomical Society , 484(1): 93–100. Dosovitskiy, A.; Beyer, L.; Kolesnikov, A.; Weissenborn, D.; Zhai, X.; Unterthiner, T.; Dehghani, M.; Minderer, M.; Heigold, G.; Gelly, S.; Uszkoreit, J.; and Houlsby, N. 2021. An Image Is Worth 16x16 Words: Transformers for Image Recognition at Scale. In International Conference on Learn-ing Representations .Gal, Y.; and Ghahramani, Z. 2015. Bayesian Convolutional Neural Networks with Bernoulli Approximate Variational Inference. arXiv preprint arXiv:1506.02158 .Geifman, Y.; Uziel, G.; and El-Yaniv, R. 2019. Bias-Reduced Uncertainty Estimation for Deep Neural Classifiers. In In-ternational Conference on Learning Representations .Goan, E.; and Fookes, C. 2020. Bayesian Neural Networks: An Introduction and Survey. In Case Studies in Applied Bayesian Data Science: Cirm Jean-Morlet Chair, Fall 2018 ,45–87. Springer. Henry, L. 2024. Galaxy10 Decals Dataset. https://github.com/henrysky/Galaxy10. Hosenie, Z.; Lyon, R.; Stappers, B.; Mootoovaloo, A.; and McBride, V. 2020. Imbalance Learning for Variable Star Classification. Monthly Notices of the Royal Astronomical Society , 493(4): 6050–6059. Kendall, A.; and Gal, Y. 2017. What Uncertainties Do We Need in Bayesian Deep Learning for Computer Vision? Ad-vances in Neural Information Processing Systems , 30. Kim, H.; Kang, B.; and Lee, Y. 2025. Generalized Zero-Shot Learning for Point Cloud Segmentation with Evidence-Based Dynamic Calibration. In Proceedings of the AAAI Conference on Artificial Intelligence , volume 39, 4248–4256. Lakshminarayanan, B.; Pritzel, A.; and Blundell, C. 2017. Simple and Scalable Predictive Uncertainty Estimation Us-ing Deep Ensembles. Advances in Neural Information Pro-cessing Systems , 30. Lastufka, E.; Drozdova, M.; Kinakh, V.; and Voloshynovskiy, S. 2024. Vision Foundation Models: Can They Be Applied to Astrophysics Data? In NeurIPS 2024 Workshop Founda-tion Models for Science: Progress, Opportunities, and Chal-lenges .Liu, J. Z.; Padhy, S.; Ren, J.; Lin, Z.; Wen, Y.; Jerfel, G.; Nado, Z.; Snoek, J.; Tran, D.; and Lakshminarayanan, B. 2023. A Simple Approach to Improve Single-Model Deep Uncertainty Via Distance-Awareness. Journal of Machine Learning Research , 24(42): 1–63. Mishra-Sharma, S.; SONG, Y.; and Thaler, J. 2024. PAPER-CLIP: Associating Astronomical Observations and Natural Language with Multi-Modal Models. In Conference on Lan-guage Modeling .Mohammed, M. M.; Daneshfar, F.; and Liò, P. 2026. Gem-Fi: Gated Evidential Mixtures with Fisher Modulation. In 
+
+International Conference on Machine Learning , Proceedings of Machine Learning Research. Murphy, A. H. 1973. A New Vector Partition of the Probabil-ity Score. Journal of Applied Meteorology and Climatology ,12(4): 595–600. Oquab, M.; Darcet, T.; Moutakanni, T.; Vo, H. V.; Szafraniec, M.; Khalidov, V.; Fernandez, P.; Haziza, D.; Massa, F.; El-Nouby, A.; Assran, M.; Ballas, N.; Galuba, W.; Howes, R.; Huang, P.; Li, S.; Misra, I.; Rabbat, M.; Sharma, V.; Syn-naeve, G.; Xu, H.; Jégou, H.; Mairal, J.; Labatut, P.; Joulin, A.; and Bojanowski, P. 2024. Dinov2: Learning Robust Vi-sual Features without Supervision. Transactions on Machine Learning Research Journal , 2024. Paszke, A.; Gross, S.; Massa, F.; Lerer, A.; Bradbury, J.; Chanan, G.; Killeen, T.; Lin, Z.; Gimelshein, N.; Antiga, L.; et al. 2019. Pytorch: An Imperative Style, High-Performance Deep Learning Library. Advances in Neural Information Processing Systems , 32. Slijepcevic, I. V.; Scaife, A. M.; Walmsley, M.; Bowles, M.; Wong, O. I.; Shabala, S. S.; and White, S. V. 2024. Radio Galaxy Zoo: Towards Building the First Multipurpose Foun-dation Model for Radio Astronomy with Self-Supervised Learning. RAS Techniques and Instruments , 3(1): 19–32. Walmsley, M. 2022. Galaxy Mnist Dataset. https://github.com/mwalmsley/galaxy_mnist. Walmsley, M.; Allen, C.; Aussel, B.; Bowles, M.; Gregorow-icz, K.; Slijepcevic, I. V.; Lintott, C. J.; Scaife, A. M.; Jabłońska, M.; Karchev, K.; et al. 2023. Zoobot: Adaptable Deep Learning Models for Galaxy Morphology. Journal of Open Source Software , 8(85). Walmsley, M.; Scaife, A. M.; Lintott, C.; Lochner, M.; Etse-beth, V.; Géron, T.; Dickinson, H.; Fortson, L.; Kruk, S.; Mas-ters, K. L.; et al. 2022. Practical Galaxy Morphology Tools from Deep Supervised Representation Learning. Monthly Notices of the Royal Astronomical Society , 513(2): 1581– 1599. Wang, K.; Cuzzolin, F.; Shariatmadar, K.; Moens, D.; and Hallez, H. 2025a. A Review of Uncertainty Representation and Quantification in Neural Networks. IEEE Transactions on Pattern Analysis and Machine Intelligence .Wang, R.; Wang, H.; and Luo, Q. 2025. Galaxalign: Mim-icking Citizen Scientists’ Multimodal Guidance for Galaxy Morphology Analysis. In Proceedings of the ACM Interna-tional Conference on Multimedia , 8636–8644. Wang, W.; Cantalupo, S.; Pensabene, A.; Galbiati, M.; Travascio, A.; Steidel, C. C.; Maseda, M. V.; Pezzulli, G.; De Beer, S.; Fossati, M.; et al. 2025b. A Giant Disk Galaxy Two Billion Years after the Big Bang. Nature Astronomy ,9(5): 710–719. Willett, K. W.; Lintott, C. J.; Bamford, S. P.; Masters, K. L.; Simmons, B. D.; Casteels, K. R.; Edmondson, E. M.; Fortson, L. F.; Kaviraj, S.; Keel, W. C.; et al. 2013. Galaxy Zoo 2: Detailed Morphological Classifications for 304 122 Galaxies from the Sloan Digital Sky Survey. Monthly Notices of the Royal Astronomical Society , 435(4): 2835–2860. Woo, S.; Debnath, S.; Hu, R.; Chen, X.; Liu, Z.; Kweon, I. S.; and Xie, S. 2023. Convnext V2: Co-Designing and Scaling Convnets with Masked Autoencoders. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 16133–16142.
