@@ -1,0 +1,174 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-12T21:26:29.203424+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 4,
+    "quick_skim_target": 11,
+    "quick_selected": 4
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2608.10723v1",
+      "source": "arxiv",
+      "title": "Grid-Preserving Knowledge Distillation: Transferring Convolutional Inductive Bias to Vision Transformers under Data Scarcity",
+      "abstract": "Vision Transformers underperform convolutional networks when training data is scarce, and distilling convolutional inductive biases from a CNN teacher is an effective remedy that leaves the deployed model unchanged. General-purpose feature distillation, however, transfers little in this setting. The pooling, flattening, and logit-space projections it inherits from CNN to CNN pipelines discard the spatial grid in which locality and translation equivariance are encoded, and unlike a convolutional student, a ViT cannot rebuild that structure on its own. In this paper, we propose iBKD, a distillation framework that preserves the grid along the entire transfer path. Its core module, the Inductive Bias Attention Module, aggregates every student layer onto the teacher grid with learned weights, sharpens structural cues with channel and deformable spatial attention, and injects them through convolutional cross-attention that operates between grids rather than between token sets. The module is used only during training, so the deployed model is an unmodified ViT with no inference overhead. Across seven Transformer backbones and six data-scarce benchmarks, iBKD outperforms both locality-guidance methods and general knowledge distillation baselines, and its margin widens as training data shrinks.",
+      "authors": [
+        "Junyong Choi",
+        "Cheolhyeon Park",
+        "Jaehoon Cho"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-11T09:39:13+00:00",
+      "link": "https://arxiv.org/pdf/2608.10723v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "ViT architecture classification under data scarcity",
+      "llm_evidence_cn": "数据稀缺下基于视觉Transformer的分类方法",
+      "llm_evidence": "数据稀缺下基于视觉Transformer的分类方法",
+      "canonical_evidence": "数据稀缺下基于视觉Transformer的分类方法",
+      "llm_tldr_en": "iBKD preserves the spatial grid when distilling CNN inductive biases into Vision Transformers, improving ViT classification accuracy under scarce data by transferring locality and translation equivariance more effectively.",
+      "llm_tldr_cn": "针对数据稀缺时视觉Transformer性能不佳的问题，提出iBKD知识蒸馏框架，在从CNN教师向ViT学生迁移归纳偏置时保持空间网格，避免池化与展平破坏局部性和平移等变性。实验表明该框架显著提升ViT在小数据下的分类准确率。",
+      "llm_tldr": "针对数据稀缺时视觉Transformer性能不佳的问题，提出iBKD知识蒸馏框架，在从CNN教师向ViT学生迁移归纳偏置时保持空间网格，避免池化与展平破坏局部性和平移等变性。实验表明该框架显著提升ViT在小数据下的分类准确率。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.07409v1",
+      "source": "arxiv",
+      "title": "UniJEPA: A Unified Joint-Embedding Predictive Architecture for Task-Agnostic Visual World Modeling",
+      "abstract": "Joint-Embedding Predictive Architectures (JEPAs) have emerged as a principled framework for self-supervised learning of world models in compact latent spaces, yet existing methods are fragmented: some predict masked parts of a single image in latent space (I-JEPA), others learn to predict global photometric transformations (Image World Models), while video-scale JEPAs predict future temporal states and are post-trained for action-conditioned planning (V-JEPA~2, DINO-World, DINO-WM). These objectives are treated as distinct recipes with separate encoders, predictors, and anti-collapse regularizers, hindering a single model from unifying image-level and video-level world modeling. We present UniJEPA, a unified JEPA that jointly learns photometric prediction (image-level transformations) and temporal prediction (video-level next-state dynamics) in one shared latent space. A single end-to-end objective, composed of a next-embedding prediction loss and a Gaussian regularizer, yields a provably anti-collapse encoder-predictor pair trainable from raw pixels without EMA, stop-gradient, or pre-trained encoders. We show that the same latent space supports controllable abstraction: photometric prediction learns invariant structure while temporal prediction learns equivariant dynamics. After action-conditioned post-training on offline trajectories, UniJEPA enables zero-shot planning by treating goal features as prediction targets. On image, video, and control benchmarks, UniJEPA matches or surpasses task-specific JEPAs while requiring a single loss hyperparameter, and plans up to tens of times faster than generative world models at comparable accuracy.",
+      "authors": [
+        "An Lanji",
+        "Dawei Liu",
+        "Jin Li",
+        "Haoran Xu",
+        "Mei Chen",
+        "Yu Tian"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-07T16:55:58+00:00",
+      "link": "https://arxiv.org/pdf/2608.07409v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Unified JEPA mention DINO-World and DINO-WM",
+      "llm_evidence_cn": "统一JEPA，关联DINO-World与DINO-WM",
+      "llm_evidence": "统一JEPA，关联DINO-World与DINO-WM",
+      "canonical_evidence": "统一JEPA，关联DINO-World与DINO-WM",
+      "llm_tldr_en": "UniJEPA unifies image and video joint-embedding predictive architectures into a single model, covering I-JEPA, image world models, and DINO-style video models with shared encoders and predictors.",
+      "llm_tldr_cn": "针对现有JEPA在图像与视频世界建模上目标碎片化的问题，UniJEPA提出统一架构，将I-JEPA、图像世界模型以及DINO-World/DINO-WM等视频JEPA整合为单一模型，共享编码器与预测器，实现任务无关的视觉世界建模。",
+      "llm_tldr": "针对现有JEPA在图像与视频世界建模上目标碎片化的问题，UniJEPA提出统一架构，将I-JEPA、图像世界模型以及DINO-World/DINO-WM等视频JEPA整合为单一模型，共享编码器与预测器，实现任务无关的视觉世界建模。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.07616v2",
+      "source": "arxiv",
+      "title": "HSMLA: Hierarchical Softmax Multi-scale Linear Attention for Efficient Vision Transformers",
+      "abstract": "Vision transformers face significant computational overheads in high-resolution dense prediction due to the quadratic complexity of self-attention. Linear attention offers efficiency but sacrifices local context modeling. We propose \\textbf{HSMLA (Hierarchical Softmax Multi-scale Linear Attention)}, which combines ReLU-based linear attention for global context, selective softmax refinement for critical local features, and multi-scale token representations via depthwise convolutions. HSMLA achieves superior accuracy-efficiency trade-offs: up to $4.2\\times$ inference-time speedup across dense prediction tasks, $87.3%$ Dice with $3.2\\times$ speedup on CT organ segmentation, and $94.2%$ AUC with $4.1\\times$ speedup on pathology WSI.",
+      "authors": [
+        "Dong Liu",
+        "Yanxuan Yu",
+        "Renata Borovica-Gajic",
+        "Tong Geng",
+        "Ying Nian Wu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-07T03:47:04+00:00",
+      "link": "https://arxiv.org/pdf/2608.07616v2",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Efficient multi-scale linear attention for vision transformers, applicable to classification backbones",
+      "llm_evidence_cn": "高效的视觉Transformer多尺度线性注意力，适用于分类骨干网络",
+      "llm_evidence": "高效的视觉Transformer多尺度线性注意力，适用于分类骨干网络",
+      "canonical_evidence": "高效的视觉Transformer多尺度线性注意力，适用于分类骨干网络",
+      "llm_tldr_en": "Proposes Hierarchical Softmax Multi-scale Linear Attention (HSMLA) for efficient vision transformers, combining ReLU linear attention, selective softmax, and multi-scale tokens; it achieves up to 4.2x speedup on dense prediction tasks with strong accuracy, offering an efficient backbone option for classification.",
+      "llm_tldr_cn": "针对视觉Transformer在高分辨率密集预测中计算开销大的问题，论文提出分层Softmax多尺度线性注意力（HSMLA），融合ReLU线性注意力、选择性Softmax细化与深度卷积多尺度标记，兼顾全局上下文与局部细节。实验在CT器官分割和病理WSI上取得87.3% Dice、94.2% AUC及最高4.1倍加速，为高效视觉Transformer架构提供了新方案，也可用于分类任务。",
+      "llm_tldr": "针对视觉Transformer在高分辨率密集预测中计算开销大的问题，论文提出分层Softmax多尺度线性注意力（HSMLA），融合ReLU线性注意力、选择性Softmax细化与深度卷积多尺度标记，兼顾全局上下文与局部细节。实验在CT器官分割和病理WSI上取得87.3% Dice、94.2% AUC及最高4.1倍加速，为高效视觉Transformer架构提供了新方案，也可用于分类任务。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.08676v1",
+      "source": "arxiv",
+      "title": "UniSpace: Unified Visual Representation and Scalable Multimodal Modeling",
+      "abstract": "Semantic vision encoders have become a central visual interface for multimodal understanding and semantic conditioning in image generation. However, their final tokens discard fine-grained visual details, leading to poor pixel reconstruction and limiting their use in reconstruction-sensitive tasks such as image generation and editing. In this work, we ask whether understanding, generation, and editing can be modeled in a single visual representation space built from a pretrained semantic ViT. We show that the frozen Transformer blocks of a semantic ViT are not intrinsically unable to preserve visual details. Instead, the original patch parameterization drives the representation toward semantic abstraction, making fine-grained information difficult to recover from the final tokens. Based on this observation, we introduce \\emph{Patch Reparameterization}, which preserves the original semantic pathway while adding a reconstruction-aware patch embedding that provides fine-grained visual information to the same frozen ViT blocks. The resulting unified representation preserves multimodal understanding while enabling high-fidelity image reconstruction and a favorable reconstruction--generation trade-off. We further scale this representation into \\emph{UniSpace}, an 8B Mixture-of-Transformer-Experts model that performs understanding, generation, and editing in the same visual space without a separate VAE pathway. System-level evaluations demonstrate practical text-to-image generation and instruction-based image editing, showing that a reparameterized pretrained ViT can serve as a unified visual interface for scalable multimodal modeling.",
+      "authors": [
+        "Jinbo Yan",
+        "Limeng Qiao",
+        "Jie Qin",
+        "Junyan He",
+        "Feize Wu",
+        "Guanglu Wan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-09T12:46:56+00:00",
+      "link": "https://arxiv.org/pdf/2608.08676v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses pretrained semantic ViT as a foundation model; explicitly addresses fine-grained visual details in representation.",
+      "llm_evidence_cn": "使用预训练语义ViT作为基础模型，明确关注表示中的细粒度视觉细节。",
+      "llm_evidence": "使用预训练语义ViT作为基础模型，明确关注表示中的细粒度视觉细节。",
+      "canonical_evidence": "使用预训练语义ViT作为基础模型，明确关注表示中的细粒度视觉细节。",
+      "llm_tldr_en": "UniSpace investigates whether a single representation space from a pretrained semantic ViT can serve understanding, generation, and editing. It shows frozen ViT blocks preserve fine-grained details, and proposes a new parameterization to unlock them.",
+      "llm_tldr_cn": "UniSpace 研究能否在预训练语义 ViT 的基础上构建一个同时支持理解、生成和编辑的统一视觉表示空间。作者发现冻结的 Transformer 块并非天然无法保留细节，而是原始 patch 参数化导致了语义抽象；通过修改参数化方式，可以恢复并利用细粒度信息，从而提升重建敏感任务的效果，并为多模态建模提供可扩展的视觉表示基础。",
+      "llm_tldr": "UniSpace 研究能否在预训练语义 ViT 的基础上构建一个同时支持理解、生成和编辑的统一视觉表示空间。作者发现冻结的 Transformer 块并非天然无法保留细节，而是原始 patch 参数化导致了语义抽象；通过修改参数化方式，可以恢复并利用细粒度信息，从而提升重建敏感任务的效果，并为多模态建模提供可扩展的视觉表示基础。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
