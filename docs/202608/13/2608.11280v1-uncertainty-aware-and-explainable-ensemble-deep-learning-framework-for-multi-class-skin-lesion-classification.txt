@@ -1,0 +1,155 @@
+Title: Uncertainty-Aware and Explainable Ensemble Deep Learning Framework for Multi-Class Skin Lesion Classification
+
+URL Source: https://arxiv.org/pdf/2608.11280v1
+
+Published Time: Thu, 13 Aug 2026 00:03:36 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# Uncertainty-Aware and Explainable Ensemble Deep Learning Framework for Multi-Class Skin Lesion Classification 
+
+Rofiqul Islam ∗, Lilatul Ferdouse ∗∗Department of Computer Science and Physics, Wilfrid Laurier University, Waterloo, ON, Canada Email: {isla5070@mylaurier.ca, lferdouse@wlu.ca }
+
+Abstract —Skin cancer diagnosis from dermoscopic images remains challenging due to high intra-class variability, inter-class similarity, class imbalance, and the limited interpretability of deep learning models. This paper proposes an uncertainty-aware and explainable deep learning framework for multi-class skin lesion classification. The framework combines a vision transformer model (MaxViT-Tiny) with CNN-based models (ConvNeXt-Tiny and EfficientNetV2-B0) through deep ensemble learning. Monte Carlo (MC) Dropout estimates predictive uncertainty and iden-tifies unreliable predictions, while Grad-CAM++, an explainable AI (XAI) technique, provides visual explanations by highlighting lesion regions that influence model decisions. Evaluated on the HAM10000 dataset, the framework achieves 96% accuracy and 
+
+99% ROC-AUC under uncertainty-aware filtering (entropy < 1.0,confidence ≥ 0.7), with macro-average precision, recall, and F1-score of 94% , 95% , and 95% , respectively, and 96% weighted-average scores across all three metrics. The results demonstrate accurate, interpretable, and uncertainty-aware skin lesion classi-fication for trustworthy computer-aided diagnosis. 
+
+Index Terms —Skin lesion classification, deep ensemble learning, uncertainty estimation, explainable artificial intelligence (XAI), Monte Carlo dropout, Grad-CAM++. 
+
+I. I NTRODUCTION 
+
+Skin cancer is one of the most common cancers worldwide and represents a significant public health challenge. It includes multiple clinically distinct skin lesion categories that vary in appearance, biological characteristics, and treatment ap-proaches. Early and accurate diagnosis is crucial for improving patient outcomes and reducing disease progression, particularly for aggressive forms such as melanoma [1]. Dermoscopy is a widely adopted non-invasive imaging technique that enables dermatologists to examine skin lesions in greater detail and improves diagnostic accuracy compared with conventional visual examination [2]. However, accurate interpretation of dermoscopic images requires substantial clinical expertise, and diagnostic decisions may vary among dermatologists due to differences in experience and subjective assessment. Further-more, the limited availability of specialized dermatologists in many healthcare settings emphasizes the need for automated, reliable, and interpretable computer-aided diagnostic systems. Recent advances in deep learning have significantly im-proved medical image analysis by enabling automatic ex-traction of discriminative features from complex images [3]. Convolutional Neural Networks (CNNs) have demonstrated strong capability in learning local visual patterns and hierar-chical feature representations [4], while Vision Transformers (ViTs) employ self-attention mechanisms to capture long-range dependencies and global contextual information from images [5]. Hybrid CNN-transformer architectures combine the strengths of convolutional feature extraction and transformer-based global representation learning, achieving promising per-formance in medical image classification tasks [6]. In der-moscopic image analysis, these models can capture important lesion characteristics, including texture, pigmentation, shape, border irregularities, and structural patterns, which are valuable for distinguishing different skin lesion categories. However, many existing studies [7]–[11] primarily emphasize improving classification performance, while uncertainty estimation and model interpretability remain relatively less explored, despite their importance for reliable clinical deployment. Despite these advances, accurate classification of multiple skin lesion types remains challenging. Dermoscopic datasets often suffer from class imbalance, where common lesion categories substantially outnumber rare but clinically important classes. Other challenges include high intra-class variability, strong inter-class visual similarity, image artifacts, and the limited availability of annotated medical data, all of which can affect model performance and generalization [12]. Moreover, many deep learning models produce deterministic predictions without quantifying predictive uncertainty, which may limit their reliability in clinical decision-making [13]. In addition, the limited interpretability of deep learning models reduces clinicians’ trust and limits their adoption in routine clinical practice [14]. To overcome these limitations, this work develops an uncertainty-aware and explainable deep learning framework for multi-class skin lesion classification. A deep ensemble of MaxViT-Tiny, ConvNeXt-Tiny, and EfficientNetV2-B0 is com-bined with Monte Carlo (MC) Dropout to estimate predictive uncertainty via multiple stochastic forward passes, enabling the identification of low-confidence cases for further clinical assessment [13]. Furthermore, Grad-CAM++ is utilized to vi-sualize the regions contributing to model decisions, enhancing model interpretability and supporting transparent analysis of classification outcomes [15]. The motivation of this research is based on both clinical arXiv:2608.11280v1 [eess.IV] 11 Aug 2026 and technical needs. Clinically, an uncertainty-aware and ex-plainable multi-class diagnostic system can support dermatol-ogists by providing reliable predictions, reducing diagnostic variations, and helping detect different types of skin lesions at an early stage, especially in areas with limited health-care resources. Technically, the integration of deep ensemble learning, uncertainty estimation, explainable AI, and advanced CNN and transformer models aims to improve classification accuracy, robustness, and model transparency. Therefore, this work contributes to the development of reliable and practical AI-based systems for automated skin cancer diagnosis. The main contributions of this paper are summarized as follows:  
+
+> •
+
+We propose an uncertainty-aware deep ensemble frame-work that combines a vision transformer model (MaxViT-Tiny) with CNN-based models (ConvNeXt-Tiny and EfficientNetV2-B0) for robust multi-class skin lesion clas-sification.  
+
+> •
+
+We integrate deep ensemble learning with Monte Carlo Dropout to estimate predictive uncertainty, enabling reli-able and confidence-aware clinical decision support.  
+
+> •
+
+We employ Grad-CAM++ to generate visual explanations, improving the interpretability and transparency of the classification process.  
+
+> •
+
+We validate the proposed framework on the HAM10000 dataset, achieving 96% accuracy and 99% ROC-AUC under the uncertainty-aware filtering criterion (entropy 
+
+< 1.0 and confidence ≥ 0.7).  
+
+> •
+
+The proposed uncertainty-aware framework supports clin-ically relevant operating scenarios by enabling high-coverage large-scale skin lesion assessment and high-confidence point-of-care diagnosis. The organization of this paper is as follows. Section I presents the clinical motivation, discusses the existing research gaps, and summarizes the main contributions. Section II de-scribes the proposed framework, including data preparation, ensemble-based classification, uncertainty estimation, and ex-plainability. Next, Section III presents the performance evalu-ation, including the experimental results, and confusion matrix analysis. Section IV discusses potential clinical deployment scenarios, including large-scale skin lesion assessment with high prediction coverage and point-of-care decision support with high-confidence predictions. Finally, Section V concludes the paper and outlines future research directions. II. M ETHODOLOGY 
+
+The proposed uncertainty-aware deep learning framework for multi-class skin lesion classification is illustrated in Fig. 1. The framework is designed to improve classification reliability by combining deep ensemble learning, uncertainty quantifica-tion, and selective prediction. 
+
+A. Dataset and Preprocessing 
+
+The proposed framework is evaluated on the HAM10000 dataset [12], a widely adopted benchmark for dermoscopic skin lesion classification. The dataset consists of 10 , 015 RGB 
+
+Fig. 1: Uncertainty-Aware Ensemble Deep Learning Framework for Multi-Class Skin Lesion Classification. dermoscopic images collected from diverse clinical sources, covering multiple lesion categories with considerable variations in visual appearance and imaging conditions. Each image is expert-annotated and associated with metadata, enabling reproducible evaluation and stratified dataset partitioning. Introduced as part of the ISIC 2018 challenge [16], the HAM10000 dataset comprises seven diagnostic classes: benign keratosis-like lesions (bkl), melanocytic nevi (nv), dermatofi-broma (df), melanoma (mel), vascular lesions (vasc), basal cell carcinoma (bcc), and actinic keratoses and intraepithelial carcinoma (akiec). These categories exhibit significant varia-tions in color, texture, morphology, and lesion size, presenting challenges for automated dermoscopic image classification. To ensure unbiased evaluation, the dataset is divided into training (80%) and testing (20%) subsets using stratified sampling. This approach preserves the original class distribution across subsets and enables reliable assessment of model performance. All images were resized to 224 × 224 pixels and normalized using the standard ImageNet normalization parameters, with mean values μ = [ 0.485 , 0.456 , 0.406 ] and standard deviation values σ = [ 0.229 , 0.224 , 0.225 ]. During training, data augmen-tation techniques, including random horizontal and vertical flip-ping, random rotation up to 25 ◦, color jittering with brightness, contrast, and saturation variations of 0.2, and random affine transformations with a shear factor of 10 degrees, are applied to improve model robustness and generalization. To mitigate the impact of class imbalance, a weighted sampling strategy is employed to provide balanced exposure to minority lesion classes during model training. 
+
+B. Deep Ensemble Classification 
+
+To improve classification robustness, a deep ensemble of three state-of-the-art architectures is constructed, includ-ing MaxViT-Tiny, ConvNeXt-Tiny, and EfficientNetV2-B0. These models provide complementary feature representa-tions by combining convolution-based local feature extrac-tion and transformer-based global dependency modeling.Each pretrained model is initialized using ImageNet weights and fine-tuned for seven-class skin lesion classification. The orig-inal classification layer is replaced with a task-specific fully connected layer corresponding to the seven lesion categories. During training, focal loss [17] is employed to mitigate class imbalance by assigning greater emphasis to difficult and minority-class samples. The focal loss is defined as 
+
+LFL = −α(1 − pt )γ log (pt ), (1) where pt denotes the predicted probability of the ground-truth class, α is the class-balancing factor, and γ is the focusing parameter that reduces the contribution of easily classified samples while emphasizing hard examples. 
+
+C. Uncertainty Estimation 
+
+To quantify predictive uncertainty, MC Dropout [13] is combined with deep ensemble learning [18] to capture both model uncertainty and prediction variability. During inference, dropout layers remain active, and multiple stochastic forward passes are performed for each input image. Specifically, each ensemble model performs T = 20 stochastic forward passes, where m indexes the ensemble model. The predictive proba-bility of each model is obtained by averaging the stochastic outputs: ¯pm(y|x) = 1
+
+T
+
+> T
+
+# ∑
+
+> t=1
+
+pm,t (y|x), (2) where pm,t (y|x) represents the predicted probability from the 
+
+t-th stochastic forward pass of the m-th ensemble model. The final predictive distribution is obtained by averaging the outputs of all M = 3 ensemble models: 
+
+p(y|x) = 1
+
+M
+
+> M
+
+# ∑
+
+> m=1
+
+¯pm(y|x), (3) where M denotes the number of ensemble models. The predic-tive uncertainty is quantified using predictive entropy: 
+
+H (p) = −
+
+> C
+
+# ∑
+
+> c=1
+
+pc log (pc), (4) where C = 7 represents the number of lesion classes and pc
+
+denotes the predicted probability of class c. Higher entropy val-ues indicate a more uncertain prediction distribution, whereas lower entropy corresponds to confident model predictions. 
+
+D. Uncertainty-Aware Selective Prediction 
+
+To improve reliability, a selective prediction strategy is adopted by rejecting uncertain predictions. A prediction is considered reliable when both entropy and confidence satisfy predefined criteria: 
+
+H (p) < τe, max (pc) ≥ τc, (5) where τe and τc represent the entropy and confidence thresh-olds, respectively. In this work, τe = 1.0 and τc = 0.7 are used to retain high-confidence predictions for evaluation. Samples that do not satisfy these criteria are considered uncertain and can be referred to dermatologists for further clinical assess-ment, supporting reliable AI-assisted decision-making. 
+
+E. Explainability Analysis 
+
+To improve model interpretability, Grad-CAM++ is em-ployed to visualize discriminative image regions influencing the classification decisions. The final feature extraction stage of the MaxViT-Tiny backbone is selected as the target layer for generating class-specific activation maps based on the predicted lesion category. The generated heatmaps highlight image re-gions that have a strong influence on the model’s classification decisions, providing visual evidence for the predictions and improving the transparency of the AI-based diagnostic process. Figure 2 presents representative Grad-CAM++ visualizations under different prediction scenarios. The selected examples include correctly classified high-confidence cases representing a common benign lesion (nv) (confidence: 0.988, entropy: 0.081), a malignant lesion (mel) (confidence: 0.941, entropy: 0.254), and a minority-class lesion (akiec) (confidence: 0.930, entropy: 0.319). In addition, an uncertain prediction case that was correctly classified (confidence: 0.553, entropy: 1.039) and identified by the uncertainty estimation module is presented. These visual explanations illustrate the image regions con-tributing to the model’s classification decisions, while the un-certainty estimation mechanism helps identify cases requiring further expert assessment. III. P ERFORMANCE EVALUATION 
+
+A. Implementation Details 
+
+The proposed framework is implemented using PyTorch and trained on a GPU-enabled environment. The models are optimized using the AdamW optimizer with a learning rate of 10 −4 and a weight decay of 10 −4. A cosine annealing learning rate scheduler is employed throughout training. Each model is trained for 15 epochs with a batch size of 16. Automatic mixed precision (AMP) training is employed to accelerate training, reduce GPU memory consumption, and maintain numerical stability. Gradient clipping with a maximum norm of 1.0 is applied to improve optimization stability. 
+
+B. Experimental Results 
+
+The classification performance of the proposed uncertainty-aware explainable framework is evaluated on the HAM10000 test dataset after applying the uncertainty-aware filtering cri-terion. The class-wise performance is summarized in Table I. Overall, the proposed framework achieves 96% accuracy and a ROC-AUC of 0.99, demonstrating excellent discriminative capability for multi-class skin lesion classification. The proposed framework consistently achieves high preci-sion, recall, and F1-score across most lesion categories. In par-ticular, bkl, nv, df, vasc, and bcc exhibit F1-scores ranging from 0.95 to 0.98, indicating robust classification performance for both common and relatively underrepresented lesion classes. (a) High-confidence nv (b) High-confidence mel  
+
+> (c) High-confidence akiec (d) Uncertain bkl
+
+Fig. 2: Grad-CAM++ visualization of representative skin lesion predictions: (a) correctly classified high-confidence nv, (b) correctly classified high-confidence mel, (c) correctly classi-fied high-confidence akiec, and (d) a correctly classified but uncertain bkl prediction identified by high entropy and low confidence. TABLE I: Classification performance on the uncertainty-filtered test set.                                                 
+
+> Class Precision Recall F1-score Samples
+> bkl 0.96 0.94 0.95 141 nv 0.99 0.97 0.98 1044 df 1.00 0.94 0.97 16 mel 0.81 0.92 0.86 150 vasc 1.00 0.96 0.98 26 bcc 0.95 0.98 0.96 84 akiec 0.90 0.94 0.92 47 Accuracy ––0.96 1508 ROC-AUC ––0.99 1508 Macro Avg 0.94 0.95 0.95 1508 Weighted Avg 0.96 0.96 0.96 1508
+
+Although mel remains the most challenging category because of its high visual similarity to other pigmented lesions and substantial intra-class variability, the framework still achieves a recall of 0.86, which is clinically important for reducing missed melanoma diagnoses. Overall, the framework obtains macro-average precision, re-call, and F1-score of 0.94, 0.95, and 0.95, respectively, together with weighted-average scores of 0.96 across all three met-rics. These results demonstrate that the proposed uncertainty-bkl nv df mel vasc bcc akiec                                           
+
+> Predicted label
+> bkl nv df mel vasc bcc akiec
+> True label
+> 133 40101231009 030 0110115 0000010 0138 002000125 002000082 010000244
+> 0200 400 600 800 1000
+
+Fig. 3: Confusion matrix of the proposed framework on the uncertainty-filtered test set. aware deep ensemble effectively addresses class imbalance while maintaining reliable and consistent performance across the seven diagnostic categories. The high ROC-AUC further confirms the framework’s strong ability to distinguish between different skin lesion types, highlighting its potential for reliable computer-aided skin lesion classification. 
+
+C. Confusion Matrix Analysis 
+
+Figure 3 illustrates the confusion matrix of the proposed framework on the uncertainty-filtered test set. The confusion matrix provides a detailed visualization of the classification outcomes by showing the distribution of correct and incorrect predictions across the seven skin lesion categories. Most predictions are concentrated along the main diagonal, indicating that the proposed framework correctly classifies the majority of skin lesion images. Only a small number of samples are misclassified across different lesion categories. The largest confusion occurs between mel and nv, where 10 mel samples are predicted as nv and 30 nv samples are predicted as mel. This observation is expected because these lesion types often exhibit similar dermoscopic characteristics, including pigmentation patterns, color variation, and lesion boundaries. Minor misclassifications are also observed among bkl, bcc, and akiec, reflecting the visual similarities between these lesion categories. In contrast, df and vasc show very few classification errors, indicating that their distinctive visual characteristics are effectively captured by the proposed framework. Overall, the confusion matrix demonstrates that most errors occur between clinically similar lesion types, suggesting that the uncertainty-aware deep ensemble learns discriminative lesion represen-tations while maintaining robust classification performance across all seven categories. IV. C LINICAL DEPLOYMENT SCENARIOS 
+
+To demonstrate the potential practical applicability of the proposed uncertainty-aware framework, two clinical deploy-ment scenarios are considered: large-scale skin lesion assess-ment with high prediction coverage and point-of-care decision support with high prediction confidence. The uncertainty esti-mation mechanism enables the framework to balance prediction coverage and reliability according to different clinical require-ments. 
+
+A. Large-Scale Skin Lesion Assessment (High Coverage) 
+
+In large-scale skin lesion assessment, the objective is to classify a large number of dermoscopic images while max-imizing prediction coverage. This scenario can be supported by applying a relatively relaxed uncertainty criterion, allowing the framework to provide predictions for a larger number of cases. However, accepting predictions with higher uncertainty may increase the likelihood of misclassification, particularly among visually similar lesion categories. Therefore, uncertain cases can be prioritized for dermatologist review, while the framework efficiently handles a large number of cases with high-confidence predictions. 
+
+B. Point-of-Care Decision (High-Confidence Prediction) 
+
+In point-of-care clinical decision support, prediction reliabil-ity is prioritized over coverage. Therefore, a stricter uncertainty filtering criterion is applied to retain only highly reliable pre-dictions while rejecting uncertain cases for further assessment. In this work, predictions satisfying an entropy threshold of 
+
+H (p) < 1.0 and a confidence threshold of max (pc) ≥ 0.7 are considered reliable. Although this strategy reduces prediction coverage by sending more cases for manual dermatologist review, it improves the reliability of automated predictions and provides more trustworthy decision support for individual clinical assessments. V. C ONCLUSION 
+
+This paper presents an uncertainty-aware and explainable deep learning framework for multi-class skin lesion classifica-tion using dermoscopic images. The proposed framework inte-grates advanced CNN and transformer-based architectures with deep ensemble learning and MC Dropout to enhance classifica-tion robustness and quantify predictive uncertainty, while Grad-CAM++ provides visual explanations to improve model trans-parency. Experimental evaluation on the HAM10000 dataset demonstrates that the framework achieves competitive classi-fication performance with reliable uncertainty estimation and interpretable predictions. Under the uncertainty-aware filtering criterion (entropy < 1.0 and confidence ≥ 0.7), the framework achieves 96% accuracy and 99% ROC-AUC, with competitive macro and weighted-average precision, recall, and F1-score performance. Despite these promising results, further validation on larger and more diverse multi-center datasets is required to assess generalizability across different clinical scenarios. Future work will focus on improving computational efficiency, exploring multimodal learning approaches, and developing more robust uncertainty estimation strategies for trustworthy AI-assisted skin lesion diagnosis. REFERENCES [1] L. Zhou, Y. Zhong, L. Han, Y. Xie, and M. Wan, “Global, Regional, and National Trends in the Burden of Melanoma and Non-Melanoma Skin Cancer: Insights from the Global Burden of Disease Study 1990–2021,” 
+
+Scientific reports , vol. 15, no. 1, p. 5996, 2025. [2] H. Kittler, H. Pehamberger, K. Wolff, and M. Binder, “Diagnostic Accuracy of Dermoscopy,” The lancet oncology , vol. 3, no. 3, pp. 159– 165, 2002. [3] G. Litjens, T. Kooi, B. E. Bejnordi, A. A. A. Setio, F. Ciompi, M. Ghafoo-rian, J. A. Van Der Laak, B. Van Ginneken, and C. I. S´ anchez, “A Survey on Deep Learning in Medical Image Analysis,” Medical image analysis ,vol. 42, pp. 60–88, 2017. [4] C. Chen, N. A. M. Isa, and X. Liu, “A Review of Convolutional Neural Network Based Methods for Medical Image Classification,” Computers in Biology and Medicine , vol. 185, p. 109507, 2025. [5] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly et al. ,“An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale,” arXiv preprint arXiv:2010.11929 , 2020. [6] Y. Zhang, H. Liu, and Q. Hu, “TransFuse: Fusing Transformers and CNNs for Medical Image Segmentation,” in Medical Image Computing and Computer Assisted Intervention – MICCAI 2021: 24th International Conference, Strasbourg, France, September 27–October 1, 2021, Pro-ceedings, Part I . Springer-Verlag, 2021, p. 14–24. [7] B. Ozdemir and I. Pacal, “A Robust Deep Learning Framework for Multiclass Skin Cancer Classification,” Scientific Reports , vol. 15, no. 1, p. 4938, 2025. [8] U. K. Lilhore, Y. K. Sharma, S. Simaiya, R. Alroobaea, A. M. Baqasah, M. Alsafyani, and A. Alhazmi, “SkinEHDLF a Hybrid Deep Learning Approach for Accurate Skin Cancer Classification in Complex Systems,” 
+
+Scientific Reports , vol. 15, no. 1, p. 14913, 2025. [9] S. Mavaddati, “Skin Cancer Classification Based on a Hybrid Deep Model and Long Short-Term Memory,” Biomedical Signal Processing and Control , vol. 100, p. 107109, 2025. [10] A. A. Abdulredah, M. A. Fadhel, L. Alzubaidi, Y. Duan, M. Kherallah, and F. Charfi, “Towards Unbiased Skin Cancer Classification using Deep Feature Fusion,” BMC Medical Informatics and Decision Making ,vol. 25, no. 1, p. 48, 2025. [11] M. Shakya, R. Patel, and S. Joshi, “A Comprehensive Analysis of Deep Learning and Transfer Learning Techniques for Skin Cancer Classification,” Scientific reports , vol. 15, no. 1, p. 4633, 2025. [12] P. Tschandl, C. Rosendahl, and H. Kittler, “The HAM10000 Dataset, a Large Collection of Multi-Source Dermatoscopic Images of Common Pigmented Skin Lesions,” Scientific data , vol. 5, no. 1, pp. 1–9, 2018. [13] Y. Gal and Z. Ghahramani, “Dropout as a Bayesian Approximation: Representing Model Uncertainty in Deep Learning,” in international conference on machine learning . PMLR, 2016, pp. 1050–1059. [14] A. B. Arrieta, N. D´ ıaz-Rodr´ ıguez, J. Del Ser, A. Bennetot, S. Tabik, A. Barbado, S. Garc´ ıa, S. Gil-L´ opez, D. Molina, R. Benjamins et al. ,“Explainable Artificial Intelligence (XAI): Concepts, Taxonomies, Op-portunities and Challenges Toward Responsible AI,” Information fusion ,vol. 58, pp. 82–115, 2020. [15] A. Chattopadhay, A. Sarkar, P. Howlader, and V. N. Balasubramanian, “Grad-CAM++: Generalized Gradient-Based Visual Explanations for Deep Convolutional Networks,” in 2018 IEEE winter conference on applications of computer vision (WACV) . IEEE, 2018, pp. 839–847. [16] N. C. F. Codella, V. M. Rotemberg, P. Tschandl, M. E. Celebi, S. W. Dusza, D. Gutman, B. Helba, A. Kalloo, K. Liopyris, M. A. Marchetti, H. Kittler, and A. C. Halpern, “Skin Lesion Analysis Toward Melanoma Detection 2018: A Challenge Hosted by the International Skin Imaging Collaboration (ISIC),” arXiv preprint arXiv:1902.03368 , 2019. [17] T.-Y. Lin, P. Goyal, R. Girshick, K. He, and P. Doll´ ar, “Focal Loss for Dense Object Detection,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 42, no. 2, pp. 318–327, 2020. [18] B. Lakshminarayanan, A. Pritzel, and C. Blundell, “Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles,” in Proceed-ings of the 31st International Conference on Neural Information Pro-cessing Systems . Curran Associates Inc., 2017, p. 6405–6416.

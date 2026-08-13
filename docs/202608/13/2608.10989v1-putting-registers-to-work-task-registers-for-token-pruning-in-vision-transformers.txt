@@ -1,0 +1,1378 @@
+Title: Putting Registers to Work: Task Registers for Token Pruning in Vision Transformers
+
+URL Source: https://arxiv.org/pdf/2608.10989v1
+
+Published Time: Wed, 12 Aug 2026 01:30:26 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+# Putting Registers to Work: Task Registers for Token Pruning in Vision Transformers 
+
+# Hongsen Cao, Mona Jaber, Shanxin Yuan, Ahmed Sayed 
+
+School of Electronic Engineering and Computer Science Queen Mary University of London London, United Kingdom {hong.cao, m.jaber, shanxin.yuan, ahmed.sayed}@qmul.ac.uk 
+
+Abstract 
+
+Token-pruning policies are usually designed for a single recog-nition pipeline, but pretrained Vision Transformers are reused across tasks with different spatial demands. We ask which parts of a pruning policy transfer across image classifica-tion, semantic segmentation, and object detection. For each pipeline, controlled probes freeze the no-pruning checkpoint and apply a series of parameter-free reduction criteria at one eligible layer at a time without retraining. The probes reveal three differences: segmentation and detection rank the criteria differently, classification is especially sensitive to attention-based pruning in the earliest layers, and the dense tasks prefer opposite recovery endpoints. These findings motivate Task-Adaptive Pruning (TAP). Existing register tokens serve as task-agnostic storage for feature artifacts. TAP instead intro-duces one task register per task and activates only the current one. Its evolving state ranks tokens, distributes an exact re-moval budget over depth, and sets the recovery scale for dense features. At a final keep rate of ρ = 0 .5, our jointly adapted model, TAP-J, reaches 47 .0 mIoU at 1.30 × encoder through-put on ADE20K and 53 .7 box AP at 1.32 × encoder through-put on COCO while remaining competitive on ImageNet-1K. 
+
+# Introduction 
+
+Self-attention in a Vision Transformer (ViT) scales quadrat-ically with the number of tokens (Dosovitskiy et al. 2021; Vaswani et al. 2017). Token pruning lowers this cost by re-moving low-ranked patch tokens before later blocks (Rao et al. 2021; Liang et al. 2022; Yin et al. 2022). Most pruning criteria are developed for image classification, yet pretrained ViT backbones are now routinely adapted to segmentation and detection (Li et al. 2022; Xie et al. 2021). Applying the same pruning policy across these pipelines assumes that to-ken importance transfers across tasks. When this assumption fails, equal token budgets need not preserve equal amounts of task-relevant information. Existing methods use fixed, learned, or task-specific selectors (Rao et al. 2021; Liang et al. 2022; Bolya et al. 2023; Bergner, Lippert, and Mahen-dran 2025; Chen et al. 2025), but generally treat pruning as a single policy. Across tasks, however, at least three choices may vary: which tokens to retain, how to distribute a global budget over depth, and how to represent removed positions for dense prediction. These decisions are often intertwined, making it difficult to see what actually transfers. Our experiments in Figure 1 show that the effectiveness of a pruning criterion changes across network depths and tasks. We highlight two representative criteria, attention and coverage, with random selection included as a reference. For the classification task, Figure 1(a) shows that attention-based selection causes large drops in the earliest layers of the classification pipeline, but a spatially distributed crite-rion (coverage) is more stable, where the coverage criterion is implemented with Farthest Point Sampling (FPS) (Qi et al. 2017). For the segmentation and detection tasks, Figure 1(b) shows that the relative advantage of attention and coverage changes with depth and differs between the two tasks. These observations motivate learning the layer allocation rather than applying the same removal schedule at every layer. Fig-ure 1(c) reveals a negative rank correlation between segmen-tation and detection tasks. The criterion with the smallest detection drop ranks among the poorer choices for segmen-tation, indicating a score calibrated for one dense pipeline may transfer poorly to another. As dense prediction requires a feature at every removed position, we pair each removed to-ken with a retained stand-in and store their feature difference. We find that restoring this difference improves the segmen-tation task only, while using the stand-in alone improves the detection task, see (Figure 1(d)). This motivates a recovery scale conditioned on task and depth. Together, these findings motivate our Task-Adaptive Prun-ing (TAP), which puts registers to work as pruning con-trollers. Existing register tokens absorb feature artifacts but remain task agnostic and do not control pruning (Darcet et al. 2024). TAP instead introduces one initial task register per task and activates only the current one during a forward pass. The active register evolves alongside the image tokens throughout the backbone. Its current state coordinates token selection, the distribution of an exact global removal budget across pruning layers, and recovery scaling for dense predic-tion. We study two adaptation regimes. TAP-J jointly fine-tunes a separate backbone and register for each task, while TAP-F freezes a shared backbone and trains a task-specific register together with low-rank updates. Our contributions are threefold: 1) We develop a controlled framework that freezes each no-pruning pipeline and changes one pruning choice at one eligible layer to study ViT backbone pruning across image classification, semantic segmentation, and object detec-arXiv:2608.10989v1 [cs.CV] 11 Aug 2026 0 2 4 6 8 10 layer 0510 15 20 25 accuracy drop (pp) unstable early (a) depth Attention FPS (coverage) Random 0 2 4 6 8 10 layer 010 20 30 40       
+
+> Δ drop = attn  − coverage (pp seg needs coverage det needs attention (b) task conflict seg det 246810 seg drop (pp) 123det drop (pp) Attention FPS (coverage) Random rank correlation −0.62 (c) criterion agreement seg det 01234drop (pp) 1.3 3.1 2.6 1.4 (d) recovery probe full offset stand-in only
+> Attn. drop - cov. drop (pp)
+
+Figure 1: Controlled probes apply pruning to one layer of the corresponding fixed no-pruning checkpoint and vary one design choice at a time. Attention and coverage (FPS) are highlighted as representative criteria, with random selection as a reference. Colors identify the highlighted criteria in (a) and (c), and the tasks in (b) and (d). Drops are reported in percentage points (pp). (a) For classification, attention incurs a large accuracy drop in the early layers, while coverage is more stable. (b) Attention drop minus coverage drop for segmentation and detection. Positive values favor coverage and negative values favor attention. Detection is evaluated only at global-attention blocks. (c) Each point represents an evaluated criterion and shows its mean segmentation and detection drops over the eligible layers. The rank correlation is computed across criteria. (d) Recovery with the full stored offset (solid) or the final stand-in alone (hatched). tion. The probes show that segmentation and detection rank pruning criteria differently, spatial coverage is more stable than attention in the early classification layers, and the dense pipelines favor opposite recovery endpoints. 2) We introduce task registers as active, task-specific con-trollers of sparse computation rather than task-agnostic stores for feature artifacts. Only the current task’s register enters the backbone, and its evolving state coordinates token selection, exact budget allocation across depth, and dense-recovery scaling. 3) TAP introduces a task-conditioned pruning process that treats token removal and feature recovery as a unified operation, rather than relying solely on token removal or in-backbone merging. Each discarded token is matched to a surviving stand-in, and the task register scales its stored feature offset only at the dense readout, keeping reconstructed features out of later encoder blocks. 
+
+# Related Work 
+
+Token reduction criteria. Several pruning methods rank tokens using a single criterion and discard those with low scores (Kong et al. 2022; Wang, Dedhia, and Jha 2024). EViT (Liang et al. 2022) retains tokens that receive high attention from the class token, while DynamicViT (Rao et al. 2021) predicts token retention probabilities with lightweight modules inserted between transformer blocks. Evo-ViT (Xu et al. 2022) maintains slow and fast token sets, and ATS (Fayyaz et al. 2022) samples tokens according to their attention scores. Token merging shortens the sequence by combining tokens (Marin et al. 2023). ToMe (Bolya et al. 2023) uses bipartite matching, while DiffRate (Chen et al. 2023) learns layerwise compression rates. TPS fuses infor-mation from pruned tokens into the retained sequence for classification (Wei et al. 2023). ALGM (Norouzi et al. 2024) and SegFormer++ (Kienzle et al. 2024) adapt token merging to semantic segmentation. In contrast to these in-backbone reduction schemes, TAP keeps the encoder sparse after re-moval and reconstructs dense positions only at downstream read points. 
+
+Task-aware and diversity-based pruning. BAT (Long et al. 2023) preserves attentive tokens while merging sim-ilar inattentive tokens to maintain diversity, a goal related to the coverage criterion in our probe. Token Cropr (Bergner, Lippert, and Mahendran 2025) learns task-relevant scores through auxiliary prediction heads that are removed after training. VLTP (Chen et al. 2025) conditions token relevance on vision-language guidance for task-oriented segmentation. Dynamic Tuning (Zhao et al. 2024) pairs lightweight adapters with a token dispatcher that allows less informative tokens to skip the original transformer block. TAP differs from these approaches by assigning one register to each task and us-ing the active register to jointly condition token selection, layerwise budget allocation, and recovery scaling. 
+
+Controlled studies of token reduction. Haurum et al. (2023) evaluate ten methods on four image-classification datasets. For dense prediction, DToP (Tang et al. 2023) intro-duces token early exit for semantic segmentation, while SViT (Liu et al. 2024) studies token preservation and reactivation for detection and instance segmentation. Sparse DETR (Roh et al. 2022) learns sparsity within a detection pipeline. Our probes hold each task pipeline fixed and ask how the same criteria rank across three settings. 
+
+# Method 
+
+Figure 2 summarizes TAP, which maintains one learned ini-tial register per task and propagates only the register associ-ated with the current task. The active register evolves with the image features and conditions token selection, exact bud-get allocation, and recovery scaling. Each removed token is deterministically matched to the retained token with the highest key-space cosine similarity, and the register controls how much of the stored offset is restored. Token features re-main image-dependent and can become task-specific through Input Sequence 
+
+c
+
+> Class
+> Token
+
+x
+
+x
+
+> Patch
+> Tokens
+> ⋮
+> r1
+> r2
+> r3
+> Task
+> Registers
+
+Backbone (n Layers)          
+
+> Early
+> Pruning Layer
+> Allocation Matching Scale Readout
+> −δ
+> Stand-in
+> Block 1 Block 2 Block 3 Block k Block n ... ...
+> r
+> Score f
+> Selection
+
+Pruning Process    
+
+> r
+> Late
+> Pruning Layer 01
+> α
+> Register Only
+> Scale
+> Dense Output
+
+x̂ 
+
+> Label
+> Classification skips recovery
+> Stored offsets δ
+
++
+
+Recovery 
+
+> ...
+> Surviving Tokens
+> ×α
+> Reconstruction
+> ...
+> r
+> Removed per Layer
+> R1
+> Rn
+> ...
+> ...
+> Pruned Tokens
+> Most Similar Key
+
+Figure 2: Overview of TAP. Each task has its own learned initial register, and only the register associated with the current task is active in a forward pass. The active register evolves through the backbone and conditions token selection, exact budget allocation, and recovery scaling. Removed patches are matched to retained stand-ins, and reconstructed features are sent only to the dense readout. backbone fine-tuning in TAP-J or low-rank updates in TAP-F. 
+
+Notation. A Vision Transformer splits an image into patch tokens and may prepend a class token c. Let X(l) =[x(l)1 , . . . , x(l) 
+
+> Nl
+
+] denote the patch tokens entering layer l,where x(l) 
+
+> i
+
+∈ Rd and Nl is the number of patch tokens entering that layer. The model processes one task t ∈ T at a time and prunes at M ordered layers, L = {l1 < · · · < l M },where M = |L| is the number of pruning layers. We use 
+
+σ and LN to denote the logistic sigmoid and layer normal-ization, respectively. For compactness, the equations include the class token c, which is omitted for tasks without one. At each pruning layer, tokens are scored and hard-selected before self-attention, so only the retained patch tokens are passed into the block. 
+
+Task register. For each task t ∈ T , TAP adds a learned register r(0)  
+
+> t
+
+∈ Rd whose dimension matches that of the patch tokens and class token. Standard transformer blocks update the register together with the image tokens. At a pruning layer, the block receives only the retained patch tokens together with the class token and register. Neither the class token nor the register is pruned. The evolving register state drives the decisions described below. 
+
+Task-conditioned selection. At a pruning layer l ∈ L ,TAP normalizes the pre-attention states and reuses the block’s query and key projections to compute a pre-softmax register-to-patch score. We define this score as 
+
+f (l) 
+
+> i
+
+=
+
+> H
+
+X
+
+> h=1
+
+ W(l,h ) 
+
+> q
+
+¯r(l)
+
+> t
+
+⊤ W(l,h ) 
+
+> k
+
+¯x(l)
+
+> i
+
+
+
+√dh
+
+, (1) where W(l,h ) 
+
+> q
+
+and W(l,h ) 
+
+> k
+
+are the query and key projections for head h, and dh = d/H is the per-head dimension for H
+
+heads. The normalized states are ¯r(l) 
+
+> t
+
+= LN( r(l) 
+
+> t
+
+) and ¯x(l) 
+
+> i
+
+=LN( x(l) 
+
+> i
+
+). For each head, scoring forms one register query and one key for each candidate patch by reusing the block’s existing projections, so it introduces no additional projection parameters. At inference, TAP ranks the patch tokens by decreasing f (l) 
+
+> i
+
+and resolves ties by ascending original patch index. During training, the hard forward pass applies the same ranking rule to the perturbed scores z(l) 
+
+> i
+
+defined below. The required number of highest-ranked patches forms S(l),while the remaining patches form P(l). Only the patches in 
+
+S(l) enter full self-attention and the feed-forward sublayer together with the class token and task register, neither of which is ranked or pruned. 
+
+Budget allocation. A learned allocation must satisfy the requested global token budget exactly. Let N1 denote the ini-tial number of patch tokens. A target keep rate ρ ∈ (0 , 1] 
+
+sets the final integer keep count K and the removal bud-get R = N1 − K. At pruning layer l, B(l) denotes the unspent budget, l+ denotes the next pruning layer, and 
+
+C(l) = min {B(l), N l − 1} is the removal capacity. The sig-moid of a shared linear readout (w, b ) gives the fraction of 
+
+B(l) proposed for that layer. Algorithm 1 gives the resulting integer allocation. Here eR(l) is the continuous proposal and R(l) is the integer removal count. The parameters w ∈ Rd and b ∈ R are shared across tasks and layers. When no budget remains, R(l) =0 and selection is skipped. After the preceding removals, 
+
+B(l) = Nl − K; hence the final budget cannot exceed NlM −
+
+1. The last layer can therefore consume the remainder while preserving at least one patch, which gives P 
+
+> l∈L
+
+R(l) = R
+
+exactly. Training and inference both use the current image’s register state. Algorithm 1: Register-conditioned exact-budget allocation 
+
+K ← max(1 , round( ρN 1)) , R ← N1 − KB(l1) ← R
+
+for l = l1, . . . , l M −1 do 
+
+eR(l) ← σ
+
+
+
+w⊤r(l) 
+
+> t
+
++ b
+
+
+
+B(l)
+
+R(l) ← min 
+
+n
+
+round 
+
+ eR(l)
+
+
+
+, C (l)
+
+o
+
+B(l+) ← B(l) − R(l)
+
+end for 
+
+R(lM ) ← B(lM )
+
+Dense-feature recovery. Pruning removes a token from the backbone, but a dense head still requires a feature at its spatial position. Let k(l) 
+
+> i
+
+= W(l) 
+
+> k
+
+¯x(l) 
+
+> i
+
+, and let ek(l) 
+
+> i
+
+=
+
+k(l) 
+
+> i
+
+/ max( ∥k(l) 
+
+> i
+
+∥2, ϵ ) denote its normalized form for a small 
+
+ϵ > 0. For each removed token i ∈ P (l), we select the retained stand-in with the largest key-space cosine similarity: 
+
+π(i) = arg max 
+
+> j∈S (l)
+
+ ek(l)
+
+> i
+
+⊤ ek(l) 
+
+> j
+
+, (2) where W(l) 
+
+> k
+
+is the concatenated multi-head key projection already computed for selection. We store the pointer π(i)
+
+and the offset δi = x(l) 
+
+> i
+
+− x(l)
+
+> π(i)
+
+. The stand-in remains in the sequence and evolves through later blocks. At a dense read point L, the removed position is reconstructed as 
+
+ˆxi = x(L) 
+
+> π∗(i)
+
++ α(l) 
+
+> t
+
+δi, α(l) 
+
+> t
+
+= σ u⊤r(l) 
+
+> t
+
++ v, (3) where π∗(i) follows the pointer chain to a token that sur-vives at the read point. Reconstruction combines the original offset δi with the final surviving endpoint and omits offsets from intermediate stand-ins. Those offsets arise at different depths and are not directly additive without a transport map. The shared readout, parameterized by u ∈ Rd and v ∈ R,controls how much of the early offset is added to the later endpoint. Values near one recover the full stored offset, while values near zero use the endpoint alone (Bergner, Lippert, and Mahendran 2025). Both training and inference compute 
+
+α(l) 
+
+> t
+
+from the current register state. 
+
+Sparse backbone, dense readout. Every surviving token retains its original patch index. At a feature read point, the recovery map reconstructs all positions removed up to that depth and scatters the surviving and reconstructed features back to the original grid. Reconstructed features are con-sumed only by the task head and never reenter the backbone. Classification reads the class token and skips recovery. De-tection prunes only at global-attention blocks. Each subse-quent window block groups surviving tokens by their orig-inal window and applies variable-length attention to every nonempty group. The original two-dimensional indices de-termine relative-position bias. No per-window quota is im-posed, so global top-k removes exactly R(l) tokens. If nω
+
+tokens survive in window ω, variable-length packing incurs P 
+
+> ω
+
+O(n2 
+
+> ω
+
+d) attention cost without computation on padding. 
+
+Training. Hard top-k selection blocks gradients to the scoring and allocation readouts. Let Q(l) = min { eR(l), C (l)}
+
+for l̸ = lM and Q(lM ) = B(lM ) denote the feasible con-tinuous removal target. We train TAP with a cardinality-constrained straight-through mask. Let τ > 0 be the temper-ature, and let γi be independent standard Gumbel samples (Jang, Gu, and Poole 2017). When Q(l) > 0, θ(l) is the unique solution to 
+
+z(l) 
+
+> i
+
+= f (l) 
+
+> i
+
++ γi,
+
+> Nl
+
+X
+
+> i=1
+
+σ z(l) 
+
+> i
+
+− θ(l)
+
+τ
+
+!
+
+= Nl − Q(l),m(l) 
+
+> i, soft
+
+= σ z(l) 
+
+> i
+
+− θ(l)
+
+τ
+
+!
+
+.
+
+(4) We solve this monotone scalar equation by bisection and differentiate the solution implicitly. The hard mask is zero for the R(l) lowest perturbed scores and one otherwise. Its removed set is empty when R(l) = 0 . The straight-through mask is 
+
+m(l) 
+
+> i
+
+= stopgrad 
+
+
+
+m(l) 
+
+> i, hard
+
+− m(l)
+
+> i, soft
+
+
+
++ m(l)
+
+> i, soft
+
+, (5) where stopgrad is the identity in the forward pass and has zero derivative. The resulting hard-sparse feature input is 
+
+X(l)ST = Gather S(l)
+
+h
+
+m(l) 
+
+> i
+
+x(l)
+
+> i
+
+iNl
+
+> i=1
+
+
+
+. (6) Here Gather S(l) selects the rows indexed by S(l) and pre-serves their original patch order. The forward value is ex-actly the retained sequence because m(l) 
+
+> i
+
+= 1 on the gath-ered indices. During backpropagation, the selected index set remains fixed, while the feature multipliers follow the soft mask (Bengio, Léonard, and Courville 2013). The implic-itly differentiated threshold couples all candidates, allowing a removed score to affect the masks of retained candidates. Dense-task losses also reach removed features through recov-ery. We anneal τ during training and omit Gumbel noise at inference. TAP-J trains the backbone, register, readouts, and task head separately for each task. TAP-F freezes the base and trains on all three tasks jointly. At each step, we sam-ple one task uniformly and activate its register, task head, and rank-8 LoRA updates in the attention and MLP linear maps (Hu et al. 2022). The shared allocation readout receives gradients from every task batch, but the recovery readout is updated only by dense-task batches. The low-rank updates can be merged for single-task inference. Because the hard forward pass already enforces the target budget, no rate loss is needed. 
+
+Parameter and memory cost. TAP-J adds one register and two readouts, totaling 3d + 2 = 2 ,306 pruning-specific parameters for ViT-B. Recovery stores one pointer and one d-dimensional offset per removed token, requiring R(d b s +bp)
+
+bytes for scalar width bs and pointer width bp. TAP-F stores one frozen backbone and adds approximately 1.2M low-rank parameters and one register per task, excluding the existing task heads. Experiments 
+
+Setup. We evaluate ImageNet-1K classification (Deng et al. 2009), ADE20K semantic segmentation (Zhou et al. 2017), and joint object detection and instance segmentation on COCO (Lin et al. 2014). Unless stated otherwise, all mod-els use a ViT-B backbone with masked autoencoder (MAE) pretraining (He et al. 2022). Classification uses a linear head, segmentation uses a SegFormer MLP head (Xie et al. 2021), and detection uses ViTDet (Li et al. 2022) with Cascade Mask R-CNN (Cai and Vasconcelos 2018). Detection and instance segmentation are optimized within the same detec-tor pipeline and share one task register. Classification and segmentation prune at three evenly spaced layers. Detection prunes tokens in global attention blocks, after which window attention processes the survivors in groups of varying size. We report top-1 accuracy, mean intersection over union (mIoU), and COCO box and mask average precision (AP). Segmentation uses five seeds, while classification and detec-tion use three seeds. We measure throughput in images per second on a single NVIDIA RTX PRO 4000 Blackwell un-der mixed precision. Unless a value is marked as full-model throughput, it refers to the encoder. All methods within a task use the same input resolution, batch size, and timing procedure. The final keep rate ρ is the fraction of input patch tokens that reach the last block. TAP-J jointly fine-tunes a separate backbone and register for each task. TAP-F freezes one shared base and trains task-specific registers, low-rank updates, and heads together with shared allocation and recovery readouts. We compare TAP-J with fully fine-tuned methods and report TAP-F as a shared-base operating point. All methods start from the same pretrained weights and task head and are fine-tuned with their pruning mechanisms. TAP-F throughput uses unmerged low-rank updates. A dag-ger marks a dense baseline without a native readout. We give these baselines the same parameter-free reconstruction: the most similar key-space stand-in and the validation-selected endpoint, with the full offset for segmentation and the stand-in alone for detection. The readout has no trainable parame-ters and is fixed across selectors. 
+
+The controlled study. For each task, the probe freezes the corresponding no-pruning backbone and head, prunes each eligible layer in turn at a fixed token count without retrain-ing, and measures the change from its no-pruning result. The parameter-free criteria span attention, activation magni-tude, spatial coverage, and pairwise feature affinities used for merging. Learned selectors appear only as trained baselines in the main comparisons. Each task retains its native data, resolution, head, and eligible pruning layers, so the probes compare complete pipelines rather than task semantics alone. Attention is the incoming patch-attention probability av-eraged over heads and query tokens, so it does not require a class token. Coverage applies deterministic farthest point sampling to normalized patch centers, starting with the patch nearest the image center. For affinity-based merging, the se-lected representative is retained and its pair removed, pre-serving the same hard token count. The recovery probe ap-plies coverage at a local keep rate of 0.5 over the same layers.                                       
+
+> Method Size/add. mIoU ( ∆)im/s ( ×)No pruning 87.5M 47.2 216 (1.00 ×)Random +0 44.6 ( −2.6) 287 (1.33 ×)Attn Top-K †+0 45.1 ( −2.1) 283 (1.31 ×)ToMe +0 46.0 ( −1.2) 260 (1.20 ×)DiffRate †<+0 .1K46.1 ( −1.1) 271 (1.25 ×)ALGM +0 46.6 ( −0.6) 276 (1.28 ×)DToP +0.5M 46.2 ( −1.0) 253 (1.17 ×)Token Cropr +2.6M 46.7 ( −0.5) 268 (1.24 ×)Static rule †+0 45.7 ( −1.5) 279 (1.29 ×)TAP-F +1.2M 45.8 ( −1.4) 275 (1.27 ×)TAP-J (ours) +2.3K 47.0 (−0.2) 280 (1.30 ×)
+
+Table 1: Semantic segmentation on ADE20K at ρ = 0 .5.Parentheses report changes from no pruning, and throughput multipliers use the same reference. Size/add-on lists the no-pruning model once and then each method’s addition. Fully fine-tuned rows require one backbone per task. TAP-F stores one frozen base and the listed task-specific add-on. The best fully fine-tuned result is bold.                                             
+
+> Method Size/add. Top-1 ( ∆)im/s ( ×)No pruning 86.6M 83.6 1830 (1.00 ×)Random +0 82.0 ( −1.6) 2339 (1.28 ×)Attn Top-K +0 83.0 ( −0.6) 2325 (1.27 ×)EViT +0 83.1 ( −0.5) 2277 (1.24 ×)DynamicViT +2.0M 83.0 ( −0.6) 2176 (1.19 ×)Evo-ViT +0 82.6 ( −1.0) 1964 (1.07 ×)ATS +0 82.9 ( −0.7) 2061 (1.13 ×)ToMe +0 83.2 ( −0.4) 2202 (1.20 ×)DiffRate <+0 .1K83.3 (−0.3) 2264 (1.24 ×)Token Cropr +2.6M 83.2 ( −0.4) 2225 (1.22 ×)Static rule +0 83.1 ( −0.5) 2314 (1.26 ×)TAP-F +1.2M 82.6 ( −1.0) 2288 (1.25 ×)TAP-J (ours) +2.3K 83.2 ( −0.4) 2300 (1.26 ×)
+
+Table 2: Image classification on ImageNet-1K at ρ = 0 .5.Layout, notation, and storage assumptions follow Table 1. Paired evaluations share retained sets, stand-ins, and offsets and differ only in α: full offset uses α = 1 and stand-in only uses α = 0 . The supplement lists all criteria and values. 
+
+Main comparison. The static rule combines attention se-lection with one shared late-heavy schedule across tasks. TAP derives both choices from the current task register state. Across Tables 1–3, TAP-J has the smallest accuracy drop on segmentation and detection among the fully fine-tuned methods. On classification, its 83 .2 top-1 accuracy matches ToMe (Bolya et al. 2023) and Token Cropr (Bergner, Lippert, and Mahendran 2025), and trails DiffRate (Chen et al. 2023) by 0.1 point. Compared with the static rule, TAP-J gains 
+
+0.1 point on classification, 1.3 mIoU on segmentation, and 
+
+0.5 box AP on detection. The largest gains occur on the dense tasks, linking the conflicts in criterion ranking, pruning depth, and recovery identified in Figure 1(b–d) to TAP’s task-conditioned decisions. TAP-F reduces task-specific storage Attention Token Cropr Random TAP-J Attention Token Cropr Random TAP-J Figure 3: Tokens that reach the last block for one image at ρ = 0 .5. Columns show attention, Token Cropr, random selection, and TAP-J, while rows show the three task settings. Removed tokens are darkened. Detection uses a higher input resolution and a finer token grid. In this example, TAP-J retains a spatially distributed set for segmentation and concentrates more tokens around objects for detection.                                 
+
+> Method Size/add. AP bAP mim/s (enc./full) No pruning 132M 54.0 46.7 14.2 / 9.6 Random +0 52.0 ( −2.0) 44.9 ( −1.8) 19.9 / 11.9 Attn Top-K †+0 53.1 ( −0.9) 45.9 ( −0.8) 19.7 / 11.8 SViT +0.6M 53.5 ( −0.5) 46.2 ( −0.5) 17.9 / 11.2 Token Cropr +2.6M 53.4 ( −0.6) 46.1 ( −0.6) 18.7 / 11.5 Static rule †+0 53.2 ( −0.8) 46.0 ( −0.7) 19.4 / 11.7 TAP-F +1.2M 52.5 ( −1.5) 45.3 ( −1.4) 18.4 / 11.3 TAP-J (ours) +2.3K 53.7 (−0.3) 46.4 (−0.3) 18.8 / 11.5
+
+Table 3: Object detection and instance segmentation on COCO at ρ = 0 .5. AP b and AP m denote box and mask AP, with changes from no pruning in parentheses. The final column reports encoder-only and full-model throughput in images per second. Size/add-on follows Table 1, and the best fully fine-tuned results are bold. by sharing the frozen base. With approximately 1.2M task-specific parameters, it trails no pruning by 1.0 top-1 points, 
+
+1.4 mIoU, and 1.5 box AP. Figure 3 illustrates task-dependent selection, complement-ing the dataset-level evidence in Figure 1. 
+
+Ablation. Table 4 directly tests the selection, depth, and recovery conflicts identified in Figure 1 by ablating TAP’s three register-driven choices. Replacing Equation (1) with incoming patch attention loses 0.9 mIoU and 0.5 box AP. Using the initial register instead of its evolving state costs 
+
+0.4 mIoU and 0.3 box AP. Zero-filling is worse than both recovery endpoints, and the preferred endpoint differs be-                                             
+
+> Variant cls seg det TAP-F (full) 0.0 0.0 0.0 attention selection −0.2 −0.9 −0.5 static task query −0.1 −0.4 −0.3 recovery off (zero-fill) n/a −3.4 −2.2
+> α≡1(full offset) n/a −0.1 −1.0
+> α≡0(stand-in copy) n/a −1.6 −0.1 task adapters, shared register −0.2 −1.3 −1.1 task-shared allocation −0.1 −0.6 −0.5 layer-uniform allocation −0.6 −1.2 −0.8 task-mean allocation −0.1 −0.2 −0.1 task-mean recovery n/a −0.1 −0.1 both task means −0.1 −0.3 −0.2
+
+Table 4: Selection, recovery, register, and allocation ablations at ρ = 0 .5 in the frozen-base regime. Results are changes from TAP-F. The notation n/a marks recovery settings that do not apply to classification. Cls, Seg, and Det denote clas-sification, segmentation, and detection. tween segmentation and detection. Sharing the initial regis-ter across task-specific adapters costs 0.2 top-1 points, 1.3
+
+mIoU, and 1.1 box AP, although the shared state still receives task-specific adapter features. Task-shared and layer-uniform controls show that allocation depends on task and depth. Replacing per-image allocation and recovery with layerwise validation means costs 0.3 mIoU and 0.2 box AP. 
+
+Efficiency and stability. Figure 4 summarizes TAP-J’s accuracy-throughput trade-off across all three tasks. At 1.1 1.3 1.5 012           
+
+> accuracy drop (pp)  ρ=0.7 0.5 0.3
+> F
+> 0.5 pp
+> (a) classification
+> 1.1 1.3 1.5
+> ρ=0.7 0.5 0.3
+> F
+> 0.9 pp
+> (b) segmentation
+> 1.1 1.3 1.5
+> ρ=0.7 0.5 0.3
+> F1.2 pp
+> (c) detection
+> speedup (×, encoder for detection)
+> TAP-J TAP-F competitors best competitor
+
+Figure 4: Accuracy drop against encoder speedup with the vertical axis inverted. Competitors use ρ = 0 .5, TAP-J uses 
+
+ρ ∈ { 0.3, 0.5, 0.7}, and the open symbol marks TAP-F. Out-lined symbols identify the strongest competitor for each task. 
+
+ρ = 0 .5, TAP-J reaches encoder speedups of 1.26 ×, 1.30 ×,and 1.32 × with corresponding losses of 0.4 top-1 points, 0.2
+
+mIoU, and 0.3 box AP. Its dense-task losses are the small-est among the compared methods. The unchanged detection head limits the full-model speedup to 1.20 ×. The register query, budget readout, and top-k bookkeeping account for 
+
+0.7% of encoder runtime. Throughput includes recovery matching, sparse packing, and reconstruction. Standard deviations are at most 0.24 , and Table 5 shows lower peak inference memory for every task and regime. Component profiles are in the supplement. 3 6 9layer 20 30 40 50 Removed per layer (%)        
+
+> 29.6 21.8 33.1 32.5 45.7 37.3
+> (a) removal split vs oracle
+> Seg Det oracle static
+> 369layer 0.0 0.5 1.0 recovery scale  α
+> 0.84 0.92 0.94 0.11 0.14 0.23 Seg Det
+> full offset stand-in only (LLF-style)
+> classification skips recovery
+> (b) recovery scale α
+
+Figure 5: Register-conditioned validation summaries. (a) Mean layerwise removal allocation with the oracle (open markers) and static schedule. (b) Mean recovery scale by dense task and layer. 
+
+What does the register learn? Figure 5(a) compares the learned allocation with a diagnostic oracle that exhaustively selects the best integer layer split on held-out data under the same budget. The oracle is used only for this analysis. TAP removes fewer tokens early and learns different mean schedules for segmentation and detection. Figure 5(b) places segmentation near the full-offset endpoint and detection near the stand-in endpoint, consistent with the paired recovery probe. The curves report validation-set means, but allocation and recovery are computed per image from the register. 
+
+Task Score Std. Base Peak GB ∆ (%) Cls 83.2/82.6 0.06/0.08 0.42 0.37/0.38 −11.9/ −9.5 Seg 47.0/45.8 0.18/0.24 0.78 0.64/0.66 −17.9/ −15.4 Det 53.7/52.5 0.11/0.14 3.10 2.82/2.88 −9.0/ −7.1 
+
+Table 5: Run-to-run variation and peak inference memory at 
+
+ρ = 0 .5. Slashes report TAP-J/TAP-F. Score denotes top-1 accuracy, mIoU, or box AP for Cls, Seg, or Det. Base is the no-pruning peak. 
+
+# Discussion 
+
+The evidence argues against treating token reduction as a single transferable rule. As ViT representations move from local structure to higher-level semantics, token value changes with depth and with the task that reads the backbone. TAP uses the evolving register to turn this internal state into task-dependent computational decisions. TAP-J trails DiffRate by 0.1 point on classification. Classi-fication reads a class token and skips dense recovery, leaving one of TAP’s three mechanisms unused. Its global objec-tive also supplies weaker spatial guidance than segmentation masks or detection boxes. These factors leave a classification-specific rate schedule competitive. These results point to finer-grained task-adaptive compu-tation. Segmentation may need broad spatial support across more layers, while detection may concentrate computa-tion once object-level evidence emerges. Depth estimation could preserve geometry, video could retain temporally sta-ble regions, and language-conditioned vision could focus on prompt-relevant content. Layerwise policies may capture these transitions and coordinate pruning with intermediate feature reads. The present design fixes the total keep rate, re-quires task-specific training, and reconstructs each removed position from one stand-in and one earlier offset. Future work should examine image-conditioned budgets, multiple stand-ins, cross-layer transport, and matched pipelines that separate task semantics from implementation differences. As vision backbones grow, our longer-term goal is a unified model that adapts sparse computation across more visual tasks with minimal task-specific storage. 
+
+# Conclusion 
+
+Our preliminary experiments show that pruning behavior changes with task and depth, which motivates us to pro-pose Task-Adaptive Pruning (TAP). Rather than relying on a pruning rule tailored to one visual task, TAP puts an evolving task register to work as the controller of a shared sparse com-putation process under an exact global budget. This simple and efficient design maintains a favorable balance between predictive performance and encoder throughput across tasks, making TAP particularly well suited to unified vision systems that serve multiple tasks through a shared backbone. 
+
+# References 
+
+Bengio, Y.; Léonard, N.; and Courville, A. 2013. Estimating or Propagating Gradients Through Stochastic Neurons for Conditional Computation. arXiv preprint arXiv:1308.3432 .Bergner, B.; Lippert, C.; and Mahendran, A. 2025. Token Cropr: Faster ViTs for Quite a Few Tasks. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Bolya, D.; Fu, C.-Y.; Dai, X.; Zhang, P.; Feichtenhofer, C.; and Hoffman, J. 2023. Token Merging: Your ViT but Faster. In International Conference on Learning Representations (ICLR) .Cai, Z.; and Vasconcelos, N. 2018. Cascade R-CNN: Delving into High Quality Object Detection. In IEEE/CVF Confer-ence on Computer Vision and Pattern Recognition (CVPR) .Chen, H.; Ni, Y.; Huang, W.; Liu, Y.; Jeong, S.; Wen, F.; Bastian, N. D.; Latapie, H.; and Imani, M. 2025. VLTP: Vision-Language Guided Token Pruning for Task-Oriented Segmentation. In IEEE/CVF Winter Conference on Applica-tions of Computer Vision (WACV) .Chen, M.; Shao, W.; Xu, P.; Lin, M.; Zhang, K.; Chao, F.; Ji, R.; Qiao, Y.; and Luo, P. 2023. DiffRate: Differen-tiable Compression Rate for Efficient Vision Transformers. In IEEE/CVF International Conference on Computer Vision (ICCV) .Darcet, T.; Oquab, M.; Mairal, J.; and Bojanowski, P. 2024. Vision Transformers Need Registers. In International Con-ference on Learning Representations (ICLR) .Deng, J.; Dong, W.; Socher, R.; Li, L.-J.; Li, K.; and Fei-Fei, L. 2009. ImageNet: A Large-Scale Hierarchical Image Database. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Dosovitskiy, A.; Beyer, L.; Kolesnikov, A.; Weissenborn, D.; Zhai, X.; Unterthiner, T.; Dehghani, M.; Minderer, M.; Heigold, G.; Gelly, S.; Uszkoreit, J.; and Houlsby, N. 2021. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In International Conference on Learn-ing Representations (ICLR) .Fayyaz, M.; Koohpayegani, S. A.; Jafari, F. R.; Sengupta, S.; Joze, H. R. V.; Sommerlade, E.; Pirsiavash, H.; and Gall, J. 2022. Adaptive Token Sampling for Efficient Vi-sion Transformers. In European Conference on Computer Vision (ECCV) .Haurum, J. B.; Escalera, S.; Taylor, G. W.; and Moeslund, T. B. 2023. Which Tokens to Use? Investigating Token Re-duction in Vision Transformers. In IEEE/CVF International Conference on Computer Vision Workshops (ICCVW) .He, K.; Chen, X.; Xie, S.; Li, Y.; Dollár, P.; and Girshick, R. 2022. Masked Autoencoders Are Scalable Vision Learners. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Hu, E. J.; Shen, Y.; Wallis, P.; Allen-Zhu, Z.; Li, Y.; Wang, S.; Wang, L.; and Chen, W. 2022. LoRA: Low-Rank Adaptation of Large Language Models. In International Conference on Learning Representations (ICLR) .Jang, E.; Gu, S.; and Poole, B. 2017. Categorical Reparam-eterization with Gumbel-Softmax. In International Confer-ence on Learning Representations (ICLR) .Kienzle, D.; Kantonis, M.; Schön, R.; and Lienhart, R. 2024. SegFormer++: Efficient Token-Merging Strategies for High-Resolution Semantic Segmentation. In IEEE International Conference on Multimedia Information Processing and Re-trieval (MIPR) .Kong, Z.; Dong, P.; Ma, X.; Meng, X.; Niu, W.; Sun, M.; Shen, X.; Yuan, G.; Ren, B.; Tang, H.; Qin, M.; and Wang, Y. 2022. SPViT: Enabling Faster Vision Transformers via Latency-Aware Soft Token Pruning. In European Conference on Computer Vision (ECCV) .Li, Y.; Mao, H.; Girshick, R.; and He, K. 2022. Exploring Plain Vision Transformer Backbones for Object Detection. In European Conference on Computer Vision (ECCV) .Liang, Y.; Ge, C.; Tong, Z.; Song, Y.; Wang, J.; and Xie, P. 2022. Not All Patches Are What You Need: Expediting Vision Transformers via Token Reorganizations. In Interna-tional Conference on Learning Representations (ICLR) .Lin, T.-Y.; Maire, M.; Belongie, S.; Hays, J.; Perona, P.; Ra-manan, D.; Dollár, P.; and Zitnick, C. L. 2014. Microsoft COCO: Common Objects in Context. In European Confer-ence on Computer Vision (ECCV) .Liu, Y.; Gehrig, M.; Messikommer, N.; Cannici, M.; and Scaramuzza, D. 2024. Revisiting Token Pruning for Object Detection and Instance Segmentation. In IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) .Long, S.; Zhao, Z.; Pi, J.; Wang, S.; and Wang, J. 2023. Be-yond Attentive Tokens: Incorporating Token Importance and Diversity for Efficient Vision Transformers. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Marin, D.; Chang, J.-H. R.; Ranjan, A.; Prabhu, A.; Raste-gari, M.; and Tuzel, O. 2023. Token Pooling in Vision Trans-formers for Image Classification. In IEEE/CVF Winter Con-ference on Applications of Computer Vision (WACV) .Norouzi, N.; Orlova, S.; de Geus, D.; and Dubbelman, G. 2024. ALGM: Adaptive Local-then-Global Token Merging for Efficient Semantic Segmentation with Plain Vision Trans-formers. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Qi, C. R.; Yi, L.; Su, H.; and Guibas, L. J. 2017. PointNet++: Deep Hierarchical Feature Learning on Point Sets in a Met-ric Space. In Advances in Neural Information Processing Systems (NeurIPS) .Rao, Y.; Zhao, W.; Liu, B.; Lu, J.; Zhou, J.; and Hsieh, C.-J. 2021. DynamicViT: Efficient Vision Transformers with Dynamic Token Sparsification. In Advances in Neural Infor-mation Processing Systems (NeurIPS) .Roh, B.; Shin, J.; Shin, W.; and Kim, S. 2022. Sparse DETR: Efficient End-to-End Object Detection with Learnable Spar-sity. In International Conference on Learning Representa-tions (ICLR) .Tang, Q.; Zhang, B.; Liu, J.; Liu, F.; and Liu, Y. 2023. Dy-namic Token Pruning in Plain Vision Transformers for Se-mantic Segmentation. In IEEE/CVF International Confer-ence on Computer Vision (ICCV) .Vaswani, A.; Shazeer, N.; Parmar, N.; Uszkoreit, J.; Jones, L.; Gomez, A. N.; Kaiser, L.; and Polosukhin, I. 2017. At-tention Is All You Need. In Advances in Neural Information Processing Systems (NeurIPS) .Wang, H.; Dedhia, B.; and Jha, N. K. 2024. Zero-TPrune: Zero-Shot Token Pruning through Leveraging of the At-tention Graph in Pre-Trained Transformers. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Wei, S.; Ye, T.; Zhang, S.; Tang, Y.; and Liang, J. 2023. Joint Token Pruning and Squeezing Towards More Aggres-sive Compression of Vision Transformers. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Xie, E.; Wang, W.; Yu, Z.; Anandkumar, A.; Alvarez, J. M.; and Luo, P. 2021. SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers. In Advances in Neural Information Processing Systems (NeurIPS) .Xu, Y.; Zhang, Z.; Zhang, M.; Sheng, K.; Li, K.; Dong, W.; Zhang, L.; Xu, C.; and Sun, X. 2022. Evo-ViT: Slow-Fast Token Evolution for Dynamic Vision Transformer. In AAAI Conference on Artificial Intelligence (AAAI) .Yin, H.; Vahdat, A.; Alvarez, J. M.; Mallya, A.; Kautz, J.; and Molchanov, P. 2022. A-ViT: Adaptive Tokens for Efficient Vision Transformer. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Zhao, W.; Tang, J.; Han, Y.; Song, Y.; Wang, K.; Huang, G.; Wang, F.; and You, Y. 2024. Dynamic Tuning Towards Pa-rameter and Inference Efficiency for ViT Adaptation. In Ad-vances in Neural Information Processing Systems (NeurIPS) .Zhou, B.; Zhao, H.; Puig, X.; Fidler, S.; Barriuso, A.; and Torralba, A. 2017. Scene Parsing Through ADE20K Dataset. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Supplementary Material 
+
+# Supplementary Overview 
+
+This document supplements “Putting Registers to Work: Task Registers for Token Pruning in Vision Transformers.” It ex-pands the method, experiments, and reproducibility record of Task-Adaptive Pruning (TAP). Section A gives the compu-tation order and proves the exact-budget property. Section B records the shared implementation and task-specific settings. Section C defines the controlled probes. Sections D–F ex-tend the main comparisons, ablations, and register analysis. Section G examines what a unified ViT backbone can share without imposing one pruning policy on every task. Sec-tion H separates policy overhead from sparse execution and dense reconstruction. The final sections cover spatial reten-tion, limitations, and the claim-to-evidence map. 
+
+# A TAP Formulation and Algorithms 
+
+A.1 Notation and computation order 
+
+TAP processes one task t ∈ T during a forward pass. The Vision Transformer has L blocks and prunes at the ordered subset L = {l1 < · · · < l M }. The patch sequence entering block l is X(l) = [ x(l)1 , . . . , x(l) 
+
+> Nl
+
+], where each token has dimension d. Each token retains its original spatial index after earlier tokens have been removed. A class token is present when the task pipeline uses one. Every task has a learned initial register r(0)  
+
+> t
+
+∈ Rd, and only the register for the active task enters the backbone. Table S1 collects the symbols used below. Batch dimen-sions are omitted because selection, allocation, and recov-ery are computed independently for each image. The global keep rate fixes the final integer token count. The register may change the distribution of removals across depth, but it cannot change that final count. Three constraints define the computation. The task register remains in the sparse sequence and is never a pruning candi-date. A removed patch cannot re-enter the encoder, even when a dense head later requests its feature. The final keep count is fixed before the first pruning decision. The register controls only how that budget is distributed. These constraints keep recovery outside the encoder and preserve the stated sparse workload. At a pruning block, TAP first normalizes the current states and computes one register query together with one key for every candidate patch. The score reuses the block projec-tions and is available before full self-attention. The allocator then determines the number of patches removed at this layer. The selected patches, the class token if present, and the task register enter the block. Removed patches do not return to later backbone blocks. Dense features are reconstructed only when a downstream head requests a complete spatial grid. 
+
+A.2 Task-conditioned selection 
+
+Let H be the number of attention heads and dh = d/H 
+
+the dimension of each head. We write ¯r(l) 
+
+> t
+
+= LN( r(l) 
+
+> t
+
+) and 
+
+¯x(l) 
+
+> i
+
+= LN( x(l) 
+
+> i
+
+). For head h, TAP applies the existing query projection to the normalized register and the existing key pro-jection to every normalized patch. Summing the pre-softmax logits over heads gives 
+
+f (l) 
+
+> i
+
+=
+
+> H
+
+X
+
+> h=1
+
+ W(l,h ) 
+
+> q
+
+¯r(l)
+
+> t
+
+⊤ W(l,h ) 
+
+> k
+
+¯x(l)
+
+> i
+
+
+
+√dh
+
+. (S1) The sum and mean over heads induce the same hard ranking because H is fixed within a block. Training uses the sum throughout, and the reported temperature and Gumbel scale follow this convention. The class token and task register by-pass the ranking. TAP orders patch tokens by decreasing score and uses the ascending original patch index to resolve an exact tie. The resulting selection is deterministic at infer-ence and preserves the requested cardinality. At a pruning block, the implementation slices the fused query-key-value projection. It first computes the key projec-tion for every candidate patch and the query projection for the active register. After hard selection, it gathers the retained keys and computes the remaining query and value projections only for the sequence that enters attention. The class token and register receive any projections not already computed. Non-pruning blocks retain the original fused projection path. This ordering reuses the candidate keys for matching and avoids computing patch queries, values, attention, or MLP activations for removed tokens. Algorithm S2 makes the index handling explicit. Each retained token keeps its original spatial index, which recovery and relative-position bias later reuse. During training, Algorithm S2 uses q(l) 
+
+> i
+
+= z(l) 
+
+> i
+
+. Inference sets q(l) 
+
+> i
+
+= f (l) 
+
+> i
+
+and introduces no perturbation. Symbol Meaning Shape or domain 
+
+t, T active task and task set t ∈ T 
+
+L, L, M backbone depth, pruning layers, number of pruning layers L = {l1 < · · · < l M }
+
+X(l), N l patch sequence and its length before block l X(l) ∈ RNl×d
+
+r(l) 
+
+> t
+
+state of the active task register Rd
+
+f (l) 
+
+> i
+
+register-to-patch selection score R
+
+ρ, K, R keep rate, final keep count, total removal budget ρ ∈ (0 , 1] , K ∈ N, R ∈ N0
+
+B(l), C (l) remaining budget and current removal capacity N0
+
+eR(l), R (l) continuous proposal and integer removal count R≥0, N0
+
+Q(l) feasible continuous removal target used in training [0 , N l − 1] 
+
+S(l), P(l) retained and removed patch sets subsets of current indices 
+
+π(i), π ∗(i) immediate stand-in and final surviving endpoint token indices 
+
+δi feature offset stored at the removal layer Rd
+
+α(l) 
+
+> t
+
+register-conditioned recovery scale (0 , 1) 
+
+m(l)
+
+> i, hard
+
+, s (l) 
+
+> i
+
+hard keep decision and soft keep probability {0, 1}, (0 , 1) 
+
+Table S1: Notation used in the supplementary derivations. The original spatial index is carried separately from the row position in the current sparse sequence. 
+
+A.3 Exact global budget 
+
+The target keep rate defines K = max {1, round( ρN 1)}
+
+and R = N1 − K. We implement rounding as round( x) = 
+
+⌊x+1 /2⌋ for nonnegative x, which removes any dependence on a library’s tie convention. Before any removal, B(l1) = R.At a non-final pruning layer, the readout w ∈ Rd and b ∈ R
+
+proposes a fraction of the unspent budget. Capacity clipping prevents that layer from removing every remaining patch: 
+
+g(l) = w⊤r(l) 
+
+> t
+
++ b, 
+
+eR(l) = σ(g(l))B(l),C(l) = min {B(l), N l − 1},R(l) = min {round( eR(l)), C (l)}, l̸ = lM ,B(l+) = B(l) − R(l).
+
+(S2) The final pruning layer sets R(lM ) = B(lM ). This assignment removes the rounding residue and produces the exact global count. 
+
+Proposition 1 (Exact budget and nonempty output) 
+
+Assume that pruning is the only operation that changes the number of patch tokens. The recursion in Equation S2 removes exactly R = N1 − K patches and leaves exactly 
+
+K ≥ 1 patches after the final pruning layer. Proof. Let Al denote the number of patches removed before pruning layer l. The current sequence has Nl = N1 − Al
+
+patches, and the remaining budget is 
+
+B(l) = R − Al = N1 − K − Al = Nl − K. (S3) The equality holds at l1 because Al1 = 0 . If a non-final layer removes R(l), both Nl and B(l) decrease by the same integer, so the invariant is preserved at the next pruning layer. Capacity clipping gives R(l) ≤ Nl − 1 and leaves at least one patch after every non-final removal. At lM , Equation S3 gives B(lM ) = NlM − K ≤ NlM − 1 because K ≥ 1. The final layer can remove the entire remainder without emptying the sequence. The total removal is R − B(lM ) + B(lM ) = R,and the final sequence contains N1 − R = K patches. □
+
+Table S2 illustrates the invariant with synthetic unit tests. These cases test the integer logic and do not represent em-pirical results. 
+
+A.4 Cardinality-constrained straight-through training 
+
+The hard ranking used by the sparse forward pass is not dif-ferentiable. TAP retains the hard sequence length and sup-plies a soft gradient through a constrained mask. The feasible continuous target is Q(l) = min { eR(l), C (l)} at a non-final pruning layer and Q(lM ) = B(lM ) at the final one. During training, perturbed scores are z(l) 
+
+> i
+
+= f (l) 
+
+> i
+
++ γi, where γi fol-lows a standard Gumbel distribution (Jang, Gu, and Poole 2017). The soft keep probabilities satisfy 
+
+si = σ
+
+ zi − θτ
+
+
+
+, (S4) 
+
+> Nl
+
+X
+
+> i=1
+
+si = Nl − Q(l). (S5) 
+
+N1 K proposals removals check 196 196 0, 0, 0 0, 0, 0 keep all 196 137 18, 20, rem. 18, 20, 21 sum = 59 
+
+196 98 25, 31, rem. 25, 31, 42 sum = 98 
+
+196 59 0, 68, rem. 0, 68, 69 sum = 137 
+
+4 1 3, rem. 3, 0 one survives Table S2: Synthetic checks of exact integer allocation. “rem.” assigns the remaining budget to the final pruning layer. Algorithm S1: TAP forward pass for task t
+
+Require: Patch tokens X with original indices, active reg-ister r(0)  
+
+> t
+
+, task head, keep rate ρ, pruning layers L 
+
+> 1:
+
+Set K ← max {1, round( ρN 1)}, R ← N1 − K, and 
+
+B ← R 
+
+> 2:
+
+Initialize an empty dense-feature collection D 
+
+> 3:
+
+for l = 1 , . . . , L do  
+
+> 4:
+
+if l ∈ L and B > 0 then  
+
+> 5:
+
+Compute register-to-patch scores from the pre-attention normalized states  
+
+> 6:
+
+Convert the current register state and remaining budget into R(l) 
+
+> 7:
+
+Rank patches by score and original index, then form 
+
+S(l) and P(l) 
+
+> 8:
+
+if task t uses a dense readout then  
+
+> 9:
+
+for each i ∈ P (l) do  
+
+> 10:
+
+Match i to its most similar retained key π(i)
+
+and store δi 
+
+> 11:
+
+end for  
+
+> 12:
+
+Compute and store the scalar recovery scale α(l) 
+
+> t
+> 13:
+
+end if  
+
+> 14:
+
+Gather the retained sequence and update B ← B −
+
+R(l) 
+
+> 15:
+
+end if  
+
+> 16:
+
+Apply the transformer block to the current sparse se-quence  
+
+> 17:
+
+if the task head reads a dense feature grid after block 
+
+l then  
+
+> 18:
+
+Follow each stored pointer to its surviving endpoint  
+
+> 19:
+
+Reconstruct removed positions and scatter all posi-tions to the original grid  
+
+> 20:
+
+Append the dense grid to D without reinserting it into the backbone  
+
+> 21:
+
+end if  
+
+> 22:
+
+end for  
+
+> 23:
+
+return The task head applied to the final class token or the collected grids D
+
+For 0 < Q (l) < N l, the left side is continuous and strictly decreasing in θ. Its limits are Nl and zero, so Equation S5 has a unique solution. We solve for θ in FP32 with 32 bisection steps. The initial interval is [min i zi − 20 τ, max i zi + 20 τ ].For the sequence lengths used here, this bracket places the endpoint residual below 10 −5. When Q(l) = 0 , TAP keeps every token and skips the solve. The implicit derivative also has a closed form. Let ai =
+
+si(1 − si) and A = P 
+
+> i
+
+ai. Holding Q(l) fixed gives 
+
+∂θ ∂z j
+
+= aj
+
+A , ∂s i
+
+∂z j
+
+= ai
+
+τ
+
+
+
+I[i = j] − aj
+
+A
+
+
+
+. (S6) When the allocation readout changes Q(l), the additional derivative is 
+
+∂θ ∂Q (l) = τA , ∂s i
+
+∂Q (l) = − ai
+
+A . (S7) These expressions are exact for A > 0. In the imple-mentation, every denominator A is replaced by Aϵ =
+
+Algorithm S2: Hard selection with stable spatial indices 
+
+Require: Ranking scores q(l) 
+
+> i
+
+, original indices oi, integer removal count R(l) 
+
+> 1:
+
+if R(l) = 0 then  
+
+> 2:
+
+return all patches in their current order  
+
+> 3:
+
+end if  
+
+> 4:
+
+Sort candidate patches by decreasing q(l) 
+
+> i
+
+and then by increasing oi 
+
+> 5:
+
+Retain the first Nl − R(l) candidates and remove the remainder  
+
+> 6:
+
+Restore the retained candidates to their original sequence order before gathering  
+
+> 7:
+
+return retained and removed sets with their original indices   
+
+> scores
+> f(l)
+> training scores
+> z(l)
+> hard top-kmhard
+> cardinality solve
+> s, θ
+> straight-through mask m
+> sparse encoder binary forward constrained gradient
+
+Figure S1: Training computation at one pruning layer. The encoder receives the binary hard selection. The backward path follows a soft mask whose total keep mass matches the continuous target. 
+
+max( A, 10 −6) to avoid numerical amplification after sig-moid saturation. Gradients pass through Q(l) while eR(l) <C(l) and stop at the capacity bound, with the zero subgradient used at equality. The integer budget passed to the next layer is detached, so each allocation receives a local gradient and the final layer consumes the remaining hard budget. The neg-ative sign in Equation S7 reflects the cardinality constraint: a larger removal target lowers the total soft keep mass. The hard mask keeps the Nl − R(l) highest perturbed scores. The straight-through mask is 
+
+mi = stopgrad( mi, hard − si) + si. (S8) Its forward value is binary, while its derivative follows the constrained soft mask (Bengio, Léonard, and Courville 2013). Gathering the hard retained set after multiplying by 
+
+mi keeps the actual encoder sparse. It also allows the scoring and allocation readouts to receive gradients through the re-tained features. Dense-task losses provide a second route through reconstructed removed features. The temperature follows a cosine schedule from 1.0 to 0.1. Gumbel perturba-tions are sampled only during training. Inference ranks the unperturbed scores and is deterministic. The exact hard count removes the need for an auxiliary rate loss. i j j kl1 l2 lread         
+
+> π(i)π(j)
+> later removed
+> bxi=x(lread )
+> k+α(l1)
+> tδi
+> store δiendpoint
+
+Figure S2: Pointer resolution across pruning layers. If the first stand-in is later removed, its pointer extends the chain to survivor k. Recovery uses the final endpoint and the off-set stored when i was removed. Intermediate offsets are not accumulated. 
+
+A.5 Stand-in matching and dense recovery 
+
+For each removed token, TAP selects a retained stand-in in the normalized concatenated multi-head key space. Let k(l)
+
+> i
+
+denote the concatenation of the keys already computed for selection and let ek(l) 
+
+> i
+
+= k(l) 
+
+> i
+
+/ max {∥ k(l) 
+
+> i
+
+∥2, ϵ } for a small 
+
+ϵ > 0. The immediate pointer and offset are 
+
+π(i) = arg max 
+
+> j∈S (l)
+
+ek(l)⊤ 
+
+> i
+
+ek(l) 
+
+> j
+
+, (S9) 
+
+δi = x(l) 
+
+> i
+
+− x(l)
+
+> π(i)
+
+. (S10) If an earlier stand-in is removed at a later layer, its pointer ex-tends the chain to a token that remains active. At a read point 
+
+lread ≥ l, following that chain yields π∗(i). TAP reconstructs the removed position as 
+
+bxi = x(lread ) 
+
+> π∗(i)
+
++ α(l) 
+
+> t
+
+δi, α(l) 
+
+> t
+
+= σ(u⊤r(l) 
+
+> t
+
++ v). (S11) Here u ∈ Rd and v ∈ R form the scalar recovery readout. The endpoint carries the later semantic state of the surviv-ing path. The stored offset preserves the difference observed when token i left the encoder. All ViT blocks retain the same residual-stream dimension, so the early offset can serve as a correction in the shared channel coordinates at a later read point. This is an approximation, since the intervening blocks do not provide an explicit transport map. The learned scale limits the contribution of an offset when that approximation is unreliable. TAP does not add offsets created by interme-diate stand-ins because they arise at different depths and are not directly additive. Stand-in assignment is deterministic. An exact similarity tie is resolved by the smaller original patch index. The pointer and its index operations are treated as discrete and receive no gradient. Gradients still pass through the removed feature, the selected endpoint, the stored offset, and the recovery scale. The implementation computes α(l) 
+
+> t
+
+once at each pruning layer and stores the single value for all tokens removed there. It does not retain the full register state for recovery. The implementation forms all stand-in similarities at a layer with one matrix multiplication between the normalized removed-key and retained-key matrices. Pointer chains con-tain at most M − 1 links and are resolved with batched index gathers at a dense read point. Algorithm S3: Pointer-chain recovery 
+
+Require: Surviving features at read point lread , stored point-ers, stored offsets, original spatial indices  
+
+> 1:
+
+for each position removed at layer l ≤ lread do  
+
+> 2:
+
+Follow its pointer chain until the endpoint survives at 
+
+lread  
+
+> 3:
+
+Read the scalar α(l) 
+
+> t
+
+saved when the token was re-moved  
+
+> 4:
+
+Reconstruct with Equation S11  
+
+> 5:
+
+end for  
+
+> 6:
+
+Scatter surviving and reconstructed features to the orig-inal spatial grid  
+
+> 7:
+
+return Dense grid for the task head 
+
+A.6 Sparse window attention for detection 
+
+Detection follows the global and windowed attention struc-ture of ViTDet (Li et al. 2022). The task register joins the sequence and is updated at global-attention blocks. It by-passes each intervening window-attention block without be-ing copied into the windows. Patch tokens continue to evolve inside their assigned windows, so the next global block scores current patch keys using the register state produced by the previous global interaction. The reported TAP models prune at blocks 3, 6, and 9, while the controlled probe also evalu-ates the final global-attention block. Each later window block assigns surviving tokens to windows using their original two-dimensional indices. For window ω, let Iω contain the sur-viving tokens whose original positions lie in that window. Attention is evaluated only for nonempty groups, and the relative-position bias uses pairs of original positions. The attention cost is 
+
+X  
+
+> ω:|I ω|>0
+
+O(|I ω |2d). (S12) TAP imposes no per-window quota, so the global ranking determines which tokens are removed and each image still removes exactly R(l) tokens. The implementation concate-nates the nonempty windows, records their cumulative se-quence lengths, and evaluates them with a variable-length attention kernel. Relative-position terms are gathered from the original two-dimensional indices before the kernel call. Packing, bias gathering, and scattering are included in the reported latency. This global-only register update avoids a separate rule for combining window-specific register copies and keeps the controller overhead independent of the number of windows. The task register has no two-dimensional patch coordinate. Backbones with absolute patch positions leave the register without a patch positional embedding. In ViTDet global at-tention, decomposed relative-position terms apply only to patch-patch pairs, and entries involving the register are set to zero. This convention preserves the original patch geometry and introduces no positional parameters. Component TAP-J TAP-F per task Initial task register d d
+
+Allocation readout d + 1 shared Recovery readout d + 1 shared LoRA updates 0 1,179,648 Pruning-specific total 2,306 1,180,416 Table S3: Parameter accounting for ViT-B. Existing task heads are excluded from the pruning add-on, following the storage convention in the main paper. 
+
+A.7 Parameter and recovery-buffer cost 
+
+For ViT-B with d = 768 , TAP-J adds one task register and two scalar readouts. Their total is 
+
+d + ( d + 1) + ( d + 1) = 3 d + 2 = 2 ,306 . (S13) The selection score introduces no new projection because it reuses the block query and key matrices. TAP-F applies rank-8 low-rank updates to the fused query-key-value projection, the attention output projection, and the two MLP linear maps in every transformer block. For ViT-B, one block adds 
+
+8(d+3 d)+(3 d+d)+( d+4 d)+(4 d+d) = 98 ,304 (S14) parameters. Across 12 blocks, the updates contain 1,179 ,648 
+
+parameters. Adding the 768 -dimensional task register gives 
+
+1,180 ,416 task-specific parameters, reported as 1.2M. The shared allocation and recovery readouts are stored once and are not charged per task. The TAP-J total of 2,306 counts the common dense-capable implementation, including a recovery readout. Clas-sification does not call this readout. Removing it from a classification-only deployment reduces the add-on to 2d +1 = 1 ,537 parameters, although the main tables retain the common 2.3K accounting convention. The recovery buffer stores one d-dimensional offset and one pointer for each removed token, plus one scale per prun-ing layer. Its size is 
+
+Mbuffer = R(db s + bp) + M b s bytes , (S15) where bs is the scalar width and bp is the pointer width. Offsets and recovery scales use the active 16-bit activation type, which is BF16 in the reported profiles, and pointers use INT32. Records are indexed by original patch position, so recovery does not store a second spatial index for each removed token. The expression excludes temporary matching tensors and framework overhead. Section H compares the theoretical buffer with measured peak memory. The main paper reports the dominant per-token term and omits the negligible M b s layer-scale term. 
+
+# B Implementation and Reproducibility 
+
+B.1 Shared protocol 
+
+All task pipelines start from the same MAE-pretrained ViT-B family (He et al. 2022). We use ImageNet-1K for classifica-tion, ADE20K for semantic segmentation, and COCO for joint object detection and instance segmentation (Deng et al. 2009; Zhou et al. 2017; Lin et al. 2014). Classification uses a linear head, segmentation uses a SegFormer MLP head, and detection uses ViTDet with Cascade Mask R-CNN (Xie et al. 2021; Li et al. 2022; Cai and Vasconcelos 2018). Detection and instance segmentation share one task register because one detector pipeline optimizes both outputs. The three heads read the sparse backbone differently. Clas-sification uses the final class token and does not invoke recovery. Segmentation reads blocks 3, 6, 9, and 12. TAP reconstructs the full grid independently at each read point before the four features enter the SegFormer head. Detection reconstructs the final backbone grid once, immediately be-fore the simple feature pyramid and Cascade Mask R-CNN head. A reconstructed feature is never used as input to a later transformer block. Table S4 specifies the task-native pipelines used for the no-pruning checkpoints and TAP-J. Batch sizes are global across all workers. Throughput and memory use the separate single-GPU protocol in Section H. 
+
+B.2 TAP-J and TAP-F ownership 
+
+The allocation and recovery readouts have no task-indexed branches and are reused across layers. Task dependence en-ters through the active register. TAP-J learns these compo-nents within each separately trained task checkpoint. TAP-F shares one allocation readout across all tasks and one recov-ery readout across the dense tasks. Each forward pass contains exactly one active register, se-lected by the task identifier before the image enters the back-bone. Switching tasks replaces that register and, in TAP-F, activates the corresponding low-rank updates and task head while the frozen backbone remains shared. The shared read-outs receive the active register state and produce decisions that depend on both the task and the current image. For each task, TAP-J trains a separate backbone, task regis-ter, allocation readout, task head, and, when needed, recovery readout. TAP-F freezes one shared backbone and trains the remaining modules for 480,000 optimizer steps. Each step samples one task uniformly, activates its register, head, and rank-8 LoRA updates, and performs one update with a shared AdamW optimizer (Hu et al. 2022). Inactive task modules receive no update on that step. This schedule gives each task about 160,000 updates, and the three data loaders cycle in-dependently with their task-native augmentations. We train each TAP-F setting with five joint seeds. Segmentation sum-maries use all five runs, while classification and detection use the prespecified three-run subset that matches their task-native comparisons. We record the sampler seed, optimiza-tion seed, and realized task counts for every run. TAP-F uses a base learning rate of 10 −4, weight decay 0.05, 5,000 warm-up steps, and cosine decay over the joint run. The low-rank updates target the fused query-key-value projection, attention output projection, and both MLP linear maps in every block. All tasks update the shared allocation readout, while only segmentation and detection update the recovery readout. Setting ImageNet-1K ADE20K COCO Input resolution 224 2 512 2 1024 2
+
+Patch grid 14 × 14 32 × 32 64 × 64 
+
+Training batch size 1024 16 64 Optimizer AdamW AdamW AdamW Base learning rate 5 × 10 −4 6 × 10 −5 10 −4
+
+Weight decay 0.05 0.01 0.10 Training length 100 epochs 160k iterations 100 epochs Warm-up and schedule 5 epochs, cosine 1500 iterations, polynomial 250 iterations, steps at 88/96 Augmentation RRC, RA, Mixup, CutMix, RE scale, crop, flip, photo LSJ and horizontal flip Pruning layers 3, 6, 9 3, 6, 9 3, 6, 9 Number of seeds 3 5 3Primary metric top-1 mIoU box AP Secondary metric n/a n/a mask AP Table S4: Task-native configurations for the no-pruning checkpoints and TAP-J. RRC, RA, RE, and LSJ denote random resized crop, RandAugment, random erasing, and large-scale jittering. Detection uses one-based block indices. Its controlled probe also evaluates the final global-attention block.              
+
+> Component TAP-J TAP-F Base backbone trainable per task shared and frozen Task register trainable per task trainable per task LoRA updates none trainable per task Allocation readout trained per model shared Recovery read-out trained for dense task shared by dense tasks Task head trainable per task trainable per task
+
+Table S5: Ownership and optimization of model components. “Shared” refers to one parameter set updated by the relevant task batches. 
+
+B.3 Baseline provenance and common recovery 
+
+Each baseline uses an archived implementation, checkpoint, and configuration. Dagger-marked dense baselines lack a na-tive readout and use the common parameter-free reconstruc-tion. This path matches each removed token to the surviving key with the highest cosine similarity. We use a held-out training subset to select one fixed endpoint per task. Seg-mentation uses the full offset, and detection uses the stand-in. This subset is disjoint from benchmark validation. Table S5 distinguishes parameter sharing from experimen-tal comparability. TAP-F shares the frozen base and con-troller readouts, but each task owns the modules that define its interface to that base. Tables S6 and S7 record imple-mentation provenance, native task pipelines, and the use of common dense recovery. The provenance record supports comparisons at two levels. Within a task, every method uses the same dataset, input reso-lution, metric, and throughput protocol, giving a deployment-level comparison of complete pipelines. Across tasks, the study asks whether one pruning design remains useful as the objective and prediction interface change. Methods retain their native readouts. Common recovery supplies missing dense positions only for baselines that define no readout.                   
+
+> Method Source Classification path EViT official (Liang et al. 2022) token fusion, official setup DynamicViT official (Rao et al. 2021) learned predictors, offi-cial setup Evo-ViT official (Xu et al. 2022) slow-fast update, official setup ATS official (Fayyaz et al. 2022) attention sampling, offi-cial setup ToMe official (Bolya et al. 2023) task-native configura-tion DiffRate official (Chen et al. 2023) task-native configura-tion Token Cropr official (Bergner, Lippert, and Ma-hendran 2025) task-specific official setup
+
+Table S6: Classification baseline provenance. The anony-mous code manifest records the archived repository commit, configuration, checkpoint checksum, and local changes for every row. The common path is parameter-free. It reuses each method’s retained set, matches removed positions with the same key-space rule, and fixes the task endpoint on the cali-bration subset. Methods with native recovery keep their pub-lished mechanism. This separation lets the main tables report pruning quality, dense readout design, and task-head cost as distinct parts of each pipeline. 
+
+# C Controlled-Probe Study 
+
+C.1 Protocol 
+
+Each probe freezes the backbone and head of the correspond-ing no-pruning checkpoint. It changes one eligible layer, re-tains the same hard token count, and evaluates the resulting pruned model without retraining. The criteria are parameter-free functions of the frozen states. They span incoming at-tention, activation magnitude, spatial coverage, and pairwise Method Source Dense readout and adap-tation Attn Top-K EViT score (Liang et al. 2022) no native readout, com-mon recovery ToMe official (Bolya et al. 2023) task-dependent readout, task-native setup DiffRate official (Chen et al. 2023) no native readout, common recovery on ADE20K ALGM official (Norouzi et al. 2024) native readout, official dense pipeline DToP official (Tang et al. 2023) native readout, official dense pipeline Token Cropr official (Bergner, Lippert, and Ma-hendran 2025) native readout, task-specific official setup SViT official (Liu et al. 2024) native readout, official de-tector setup 
+
+Table S7: Dense-task baseline provenance and readout han-dling. Common recovery uses the task endpoint selected on the training calibration subset. feature affinity. Learned selectors are excluded from the con-trolled probe and appear only as trained baselines in the main comparisons. The criterion study uses one designated no-pruning check-point for each task because the probe itself has no training stage. The paired recovery study repeats the evaluation over the checkpoint seeds listed in Table S4. Its standard deviation is computed from within-seed differences between the two recovery endpoints. The diagnostic attention criterion is the incoming patch-attention probability averaged over heads and query tokens. It is measured from the frozen full-attention block and is not used as an efficient pre-attention selector. This definition also applies to pipelines without a class token. Coverage runs deterministic farthest point sampling after scaling both patch-centre coordinates to [0 , 1] and begins at the patch nearest the image centre (Qi et al. 2017). Affinity criteria retain one representative and discard its paired token, preserving the same hard count as pruning. Each task keeps its native resolution, head, and eligible layers. The resulting differences compare complete pipelines and do not isolate task semantics from pipeline design. 
+
+C.2 Criterion definitions and layerwise values 
+
+Table S8 gives the complete reference set. The main paper groups the criteria and highlights attention, coverage, and random selection so Figure 1 remains readable. All data-dependent scores are computed from the same frozen pre-attention states. Token and key k-centre selection starts from the candidate closest to the corresponding feature mean. Ev-ery deterministic tie is resolved by original patch index. The reference set also clarifies what it means to prune a shared ViT backbone. Parameter sharing does not re-quire every task to assign the same value to a patch. The frozen probes expose all criteria to states produced by the same MAE-pretrained model family, but their relative qual-ity changes with the head, resolution, eligible layers, and objective. One common representation can support several task-dependent orderings. The backbone supplies the token space in which relevance is measured, while the active task determines which evidence must survive. Depth adds a second source of variation. Early tokens re-tain local position and texture that later blocks may combine into broader semantic evidence. Removing a spatially con-centrated set at this stage can erase information that no later block can recreate. Near the output, a task may benefit from concentrating computation on regions already identified as useful. Figure S3 shows this transition directly. Attention is weakest in the earliest classification and segmentation lay-ers, but the relation changes deeper in the network and differs again for detection. A unified backbone can share its feature transformations, but the route through them still needs a task-aware and depth-aware control signal. The criteria in Table S8 also test different notions of ev-idence. Attention and activation magnitude ask which in-dividual patches appear strong in the current state. Cover-age asks whether the retained set still spans the image. The affinity criteria instead search for patches whose information may already be represented elsewhere. These questions are not equivalent in a shared feature space. A high-magnitude patch may be redundant, and a weak local response may still mark the only surviving evidence for a boundary or a small object. Their relative value can change after each block be-cause attention mixes evidence before the next pruning site. The controlled study evaluates complete retained sets at fixed cardinality rather than interpreting a score in isolation. Resolution and readout geometry further change what that fixed cardinality represents. A classification head consumes one global summary, while a dense head must recover ev-idence across many spatial positions. Increasing the patch grid also creates more locally similar candidates, which can make redundancy useful without making spatial coverage ir-relevant. Keeping each pipeline’s native grid and head lets the probes test whether a criterion preserves its ordering under the full conditions in which pruning operates. Pruning also changes the states that drive later decisions. An early removal eliminates the current patch feature and its future interactions, altering the evidence available at the next eligible layer. This matters especially for segmentation because its head reads several backbone depths. An early selection error affects the feature tapped at that depth and the context passed to later taps. Detection reads the final grid after further task-specific processing, which allows object-centred evidence to concentrate before recovery. The single-layer probes measure this local sensitivity, and their depth trends specify the information that the learned allocator must combine when TAP prunes at several layers. 0 3 6 9 11 
+
+Layer 
+
+> 010 20
+> Top-1 drop (pp)
+
+(a) classification     
+
+> 036911
+
+Layer 
+
+> 010 20 30
+> mIoU drop (pp)
+
+(b) segmentation    
+
+> 36912
+
+Layer 
+
+> 024
+> Box AP drop (pp)
+
+(c) detection 
+
+> Random Attn-mean Attn-max Act-L1 Act-L2 Key-L2 Coverage Tok-kc Key-kc Tok-red Key-red
+
+Figure S3: Complete layerwise controlled probes. Each curve changes one criterion at one eligible layer of the frozen task checkpoint. Attention, coverage, and random selection use the colors and markers of main-paper Figure 1. The remaining criteria are shown in grey. Lower values are better. Detection is evaluated at global-attention blocks 3, 6, 9, and 12. 
+
+Criterion Family Rule and input Random reference stateless seeded permutation keyed by sample and layer Attention mean attention retain the largest mean incoming attention from the frozen block matrix Attention max attention retain the largest maximum incoming attention from the frozen block matrix Activation ℓ1 magnitude retain the largest pre-LN token 
+
+ℓ1 norm Activation ℓ2 magnitude retain the largest pre-LN token 
+
+ℓ2 norm Key ℓ2 magnitude retain the largest projected-key norm Coverage spatial farthest point sampling from the image centre using patch centres Token k-centre diversity farthest point sampling by normalized-token cosine dis-tance Key k-centre diversity farthest point sampling by normalized-key cosine distance Token redun-dancy affinity greedily remove the more re-dundant member of the closest normalized-token pair Key redun-dancy affinity greedily remove the more re-dundant member of the closest normalized-key pair 
+
+Table S8: Reduction criteria in the complete controlled study. Dense tasks use the paired recovery setting. For a redundancy criterion, the more redundant member has the larger mean cosine similarity to the current set. An exact tie removes the larger original patch index. Table S9 tests whether a criterion transfers when its layer-wise drops are averaged within each pipeline. Classification uses top-1 accuracy, segmentation uses mIoU, and detection uses box AP. 
+
+Criterion Cls Seg (rank) Det (rank) Random 2.2 4.2 (3) 2.5 (7) Attention mean 3.9 8.0 (10) 1.1 (3) Attention max 3.4 7.1 (9) 0.9 (2) Activation ℓ1 1.8 5.3 (6) 1.6 (4) Activation ℓ2 1.6 5.0 (4) 1.8 (5) Key ℓ2 1.9 3.8 (2) 2.0 (6) Coverage 1.3 2.5 (1) 3.4 (11) Token k-centre 1.5 6.3 (8) 2.9 (10) Key k-centre 1.6 5.2 (5) 2.7 (9) Token redundancy 1.7 6.2 (7) 2.6 (8) Key redundancy 1.8 8.8 (11) 0.8 (1) 
+
+Table S9: Mean single-layer drops in percentage points across eligible layers. Lower values and ranks are better. Across the 11 criteria, the Spearman correlation between the two dense-task rankings is −0.62 .Coverage ranks first for segmentation but last for detec-tion. Key redundancy shows the opposite pattern, and the full dense-task rankings have a Spearman correlation of −0.62 .Figure S3 shows where these averages arise. Early classi-fication and segmentation layers account for much of the attention loss, while detection reverses the relative ordering of attention and coverage after its first eligible block. 
+
+C.3 Paired recovery probe 
+
+The recovery probe uses coverage at a local keep rate of 0.5.Each pair shares the retained set, stand-in pointers, stored offsets, and checkpoint. The only change is the endpoint: full-offset recovery sets α = 1 , and stand-in-only recovery sets α = 0 . Pairing removes selection variation from the comparison. Table S10 reports every eligible layer and the paired difference. Task Layer Full offset Stand-in Paired ∆±SD Seg 3 46.2 44.6 +1 .6 ± 0.12                                                             
+
+> Seg 646.0 44.2 +1 .8±0.15
+> Seg 945.5 43.5 +2 .0±0.18
+> Det box 351.8 52.9 −1.1±0.08
+> Det box 651.6 52.8 −1.2±0.09
+> Det box 951.3 52.5 −1.2±0.10
+> Det box 12 50.9 52.2 −1.3±0.12
+> Det mask 344.8 45.8 −1.0±0.07
+> Det mask 644.6 45.6 −1.0±0.08
+> Det mask 944.3 45.4 −1.1±0.09
+> Det mask 12 43.9 45.1 −1.2±0.11
+
+Table S10: Paired recovery probe. The no-pruning anchors are 47.2 mIoU, 54.0 box AP, and 46.7 mask AP. Segmenta-tion uses five seeds and detection uses three. A positive dif-ference favors the full offset. SD is computed across paired seed differences with identical retained sets, pointers, and checkpoints. 
+
+# D Extended Results 
+
+D.1 Verified operating point at ρ = 0 .5
+
+Table S11 collects the TAP operating points stated in the main paper. The no-pruning deltas and throughput multi-pliers agree with its Tables 1–3 and anchor the additional keep-rate results below.                                    
+
+> Task Regime Score ∆Enc. im/s Speedup Cls TAP-J 83.2 −0.42300 1.26 ×
+> Cls TAP-F 82.6 −1.02288 1.25 ×
+> Seg TAP-J 47.0 −0.2280 1.30 ×
+> Seg TAP-F 45.8 −1.4275 1.27 ×
+> Det TAP-J 53.7 −0.318.8 1.32 ×
+> Det TAP-F 52.5 −1.518.4 1.30 ×
+
+Table S11: Verified TAP results at ρ = 0 .5. Cls, Seg, and Det denote ImageNet-1K classification, ADE20K segmentation, and COCO box AP. COCO full-model throughput is 11.5 im/s for TAP-J and 11.3 im/s for TAP-F. 
+
+D.2 Keep-rate results 
+
+Table S12 reports ρ ∈ { 0.3, 0.5, 0.7} for TAP-J and TAP-F. We train a separate model at each keep rate and hold all other settings fixed within each task and adaptation regime. Scores are means across five seeds for segmentation and three seeds for the other tasks. The table gives the sample stan-dard deviation, encoder throughput, full-model throughput where applicable, and peak memory. Full-model throughput is listed only for detection to match the main comparison, while Table S20 reports end-to-end latency for all tasks at 
+
+ρ = 0 .5.At ρ = 0 .5, TAP-J remains within 0.1 point of its ρ = 0 .7
+
+score on all three tasks and raises encoder throughput by 
+
+7–11% . TAP-F makes a larger score trade-off, losing 0.3 top-1 points, 0.6 mIoU, and 0.5 box AP for similar throughput gains. These results support ρ = 0 .5 as the balanced operat-ing point used in the main paper.                                                                                                              
+
+> Setting ρScore ±SD Enc. Full GB Cls J 0.3 83 .1±0.09 2683 n/a 0.35 Cls J 0.5 83 .2±0.06 2300 n/a 0.37 Cls J 0.7 83 .5±0.04 2154 n/a 0.39 Cls F 0.3 82 .1±0.12 2669 n/a 0.36 Cls F 0.5 82 .6±0.08 2288 n/a 0.38 Cls F 0.7 82 .9±0.06 2141 n/a 0.40 Seg J 0.3 46 .3±0.29 330 n/a 0.58 Seg J 0.5 47 .0±0.18 280 n/a 0.64 Seg J 0.7 47 .1±0.13 254 n/a 0.70 Seg F 0.3 44 .7±0.34 325 n/a 0.61 Seg F 0.5 45 .8±0.24 275 n/a 0.66 Seg F 0.7 46 .4±0.20 250 n/a 0.72 Det J 0.3 52 .8±0.19 22.2 12.3 2.70 Det J 0.5 53 .7±0.11 18.8 11.5 2.82 Det J 0.7 53 .8±0.08 16.9 10.6 2.94 Det F 0.3 51 .2±0.23 21.8 12.1 2.77 Det F 0.5 52 .5±0.14 18.4 11.3 2.88 Det F 0.7 53 .0±0.16 16.5 10.4 3.00
+
+Table S12: Keep-rate results for TAP-J (J) and TAP-F (F). Score denotes top-1 accuracy, mIoU, or box AP. Enc. and Full are images per second. GB is peak memory. 
+
+# E Ablations 
+
+E.1 Absolute values at ρ = 0 .5
+
+The main paper reports changes from TAP-F. Table S13 converts those changes to absolute metrics using the same rounded reference values so the rows can be compared di-rectly. Variant Cls Seg Det TAP-F full 82.6 45.8 52.5 Attention selection 82.4 44.9 52.0 Static task query 82.5 45.4 52.2 Recovery off n/a 42.4 50.3 
+
+α = 1 n/a 45.7 51.5 
+
+α = 0 n/a 44.2 52.4 Task adapters, shared register 82.4 44.5 51.4 Task-shared allocation 82.5 45.2 52.0 Layer-uniform allocation 82.0 44.6 51.7 Task-mean allocation 82.5 45.6 52.4 Task-mean recovery n/a 45.7 52.4 Both task means 82.5 45.5 52.3 Table S13: Absolute metrics for the ablations in main-paper Table 4, using the same rounded TAP-F reference values. 
+
+E.2 Controls and reporting protocol 
+
+Each ablation changes one component while fixing the back-bone, adapters, token count, training budget, and seeds. Reg-ister controls separate task identity from feature adaptation because a shared initial register may still receive task-specific adapter features. Allocation controls record every layer count and verify the exact-budget identity for each image. Recovery endpoint controls reuse the same retained sets and pointers. Replacing a per-image output with its task-layer mean leaves all other components unchanged. 
+
+E.3 Separating task identity from feature adaptation 
+
+The main ablation shares the initial register but retains task-specific adapters, changing only one axis of the design. A complete test crosses register ownership with adapter own-ership. The four models use the same frozen base, heads, optimizer, task sampler, keep rate, seeds, and training length. Task identity selects the task-specific register before the for-ward pass. A shared register uses one learned initial vec-tor for all task batches. Task-specific adapters activate a separate low-rank update for each task, while the shared-adapter condition trains one low-rank update on the mixed task stream. Table S14 isolates whether the register remains useful when the features are not already separated by task-specific adapters. Register Adapter Cls Seg Det task-specific task-specific 82.6 45.8 52.5 shared task-specific 82.4 44.5 51.4 task-specific shared 81.9 44.7 51.8 shared shared 81.2 42.8 49.9 Table S14: Register-by-adapter factorial at ρ = 0 .5. All en-tries are absolute metrics. The first two rows correspond to the full model and shared-register ablation in the main paper. Sharing the adapter lowers all three metrics even when the register remains task-specific. Sharing both components increases the losses to 1.4 top-1 points, 3.0 mIoU, and 2.6 box AP relative to TAP-F. The interaction is strongest on the dense tasks, where the register and low-rank path provide complementary forms of task specialization. 
+
+E.4 Stand-in matching controls 
+
+Recovery depends on two coupled choices. Matching selects the surviving feature and defines the stored offset. The end-point scale determines how much of that offset is restored. Endpoint comparisons alone do not test the matching rule. We keep the selected token set, allocation, recovery read-out, checkpoint, and random seeds fixed, then replace only the stand-in assignment. The controls use cosine similar-ity in token space, Euclidean distance on the patch grid, the highest-scoring retained token, and a seeded random retained token. Pointer chains and original-index tie handling remain unchanged. A separate control resolves every removed posi-tion directly against the final survivor set. It tests whether the chain itself, rather than key-space similarity, accounts for the result. Table S15 reports the effect of changing only the stand-in assignment. Table S16 then crosses each matching rule with the three recovery endpoints without changing the se-lected token sets or layer allocations. This paired sweep tests whether a stronger match changes the amount of offset pre-ferred by each task.                             
+
+> Matching rule Seg ∆Det ∆
+> Key cosine, pointer chain 45.8 0.0 52.5 0.0 Token cosine 45.6 −0.252.4 −0.1
+> Spatial nearest 45.1 −0.751.9 −0.6
+> Highest-score stand-in 44.7 −1.151.6 −0.9
+> Random stand-in 43.5 −2.350.7 −1.8
+> Direct final-survivor match 45.4 −0.452.2 −0.3
+
+Table S15: Stand-in controls in TAP-F at ρ = 0 .5. Changes are measured from key-cosine matching with pointer chains.                 
+
+> Matching rule Seg 0/L/ 1Det 0/L/ 1
+> Key cosine, pointer chain 44.2/45.8/45.7 52.4/52.5/51.5 Token cosine 43.9/45.6/45.3 52.2/52.4/51.1 Spatial nearest 43.1/45.1/44.4 51.8/51.9/50.6 Highest-score stand-in 42.7/44.7/43.8 51.5/51.6/50.2 Random stand-in 41.6/43.5/42.4 50.4/50.7/48.9 Direct final-survivor 43.7/45.4/45.1 52.0/52.2/50.8
+
+Table S16: Interaction between stand-in matching and re-covery in TAP-F at ρ = 0 .5. Within each task, entries give 
+
+α = 0 , the learned scale (L), and α = 1 . Selected sets, allo-cations, checkpoints, and seeds are fixed. Key-space matching gives the best result on both dense tasks, and token-space cosine remains close. Spatial, score-based, and random stand-ins lose more, showing that a useful endpoint requires more than proximity or selector rank. Di-rect matching to final survivors also trails the pointer chain. Across all matching rules, segmentation favors the learned or full-offset endpoint. Detection favors the learned or stand-in-heavy endpoint. 
+
+E.5 Training estimator controls 
+
+The constrained-ST variants and the hard-only control use the same initialization and sparse forward path. They differ only in the gradient estimator or its temperature. In the hard-only control, discrete decisions block the task-loss gradient to the scoring and allocation readouts. The independent-sigmoid baseline instead thresholds separate gates and controls their mean with a rate penalty, so its per-image sequence length may vary. Every row reports its realized final token count in addition to task performance. This comparison separates the exact inference budget from the mechanism used to train selection and allocation. Removing Gumbel perturbations has a small cost, while a fixed high temperature produces a larger drop on every task. Independent sigmoid gates miss the prescribed count and reduce all three metrics. Hard selection without a surrogate preserves the count but causes the largest loss, confirming that the controller needs a gradient through its discrete deci-sions. 
+
+# F What the Task Register Learns 
+
+The main paper reports validation-set means for allocation and recovery. Means alone do not show whether every im-age receives a similar policy or whether the task mean hides substantial image variation. The summaries here use the des-ignated TAP-F checkpoint at ρ = 0 .5 and all images in the corresponding validation split. Table S19 reports the standard deviation, median, and interquartile range across images for each dense task and pruning layer. Figure S4 and Figure S5 show the corresponding distributions. Segmentation updates its register before the first pruning layer, so all three decisions may vary by image. Detection follows a different schedule. Its register bypasses the two window-attention blocks that precede block 3, which leaves the first allocation and recovery scale task-conditioned but constant across images. After block 3 provides the first global interaction, the register can adapt the decisions at blocks 6 and 9 to the current image. 20 35 50 Block 3 Block 6 Block 9 
+
+(a) segmentation   
+
+> 20 35 50
+
+(b) detection 
+
+## Removal share (%) 
+
+> mean ± SD median [IQR] oracle shared static
+
+Figure S4: Per-image allocation summaries for TAP-F at ρ =0.5. Thin intervals show mean ± SD, thick intervals show the median and IQR, diamonds mark the calibration-grid oracle, and crosses mark the shared static schedule from main-paper Figure 5(a). Every image retains the same final token count. The diagnostic calibration-grid oracle evaluates a prespec-ified set of legal layer splits for every image in held-out subsets drawn from the training data. Each candidate re-moval share is a multiple of 5% , which gives 231 nonnega-tive triplets that sum to 100% . Largest-remainder conversion                              
+
+> Estimator Cls/Seg/Det Count Exact Constrained ST, co-sine τ
+> 82.6/45.8/52.5 K±0yes No Gumbel perturba-tion 82.5/45.4/52.2 K±0yes Fixed τ= 1 .082.2/44.9/51.9 K±0yes Independent sigmoid and rate loss 81.7/44.3/51.2 1.014 K±0.053 Kno Hard selection, no surrogate 80.8/41.9/49.4 K±0yes
+
+Table S17: Training-estimator controls at ρ = 0 .5. Count reports the mean and standard deviation of the final token count. “Exact” states whether every image reaches the pre-scribed integer count without a rate tolerance. maps every triplet to integer counts with the same exact total budget, using earlier layers to resolve equal remainders. The calibration subsets contain 500 ADE20K images and 1,000 COCO images and remain disjoint from the reported vali-dation sets. For each image, the native task loss selects the candidate: pixelwise cross-entropy for segmentation and the detector’s classification-plus-box loss for detection. We aver-age the winning splits and evaluate that fixed mean schedule on the validation set. Table S18 compares it with the learned policy and simpler static schedules while holding selection, recovery, checkpoints, and seeds fixed.              
+
+> Policy Seg split Seg Det split Det Learned per image 29.6/33.1/37.3 45.8 21.8/32.5/45.7 52.5 Task-mean static 29.6/33.1/37.3 45.6 21.8/32.5/45.7 52.4 Calibration-grid oracle 28.1/32.4/39.5 45.9 23.4/31.2/45.5 52.6 Shared static 26.8/33.4/39.8 45.2 26.8/33.4/39.8 52.0 Layer uniform 33/33/34 44.6 33/33/34 51.7 Early heavy 45/35/20 44.9 45/35/20 51.9 Late heavy 20/30/50 45.4 20/30/50 52.5
+
+Table S18: Allocation controls in TAP-F at ρ = 0 .5. Splits give the percentage of the removal budget assigned to blocks 3, 6, and 9. The learned row varies by image and reports its validation-set mean. The oracle row averages per-image winners on calibration data and evaluates the resulting fixed schedule on validation. The remaining rows also use one fixed schedule per task. Shared static reproduces main-paper Figure 5(a). Displayed split means may total 100 .1% after independent rounding. Table S18 separates image-dependent allocation from the mean schedule. Freezing the task mean costs 0.2 mIoU and 0.1 box AP, while a shared static schedule loses 0.6 and 0.5 points. The calibration oracle is only 0.1 point above the learned policy on either task. The comparison indicates that most of the benefit comes from learning a task-specific schedule, with a smaller gain from adapting that schedule to each image. Allocation and recovery expose different parts of the reg-ister state. The allocation readout determines when computa-tion is removed, so its outputs are coupled by the exact global budget. The recovery readout acts only after a removed po-sition has been assigned a surviving endpoint. Its scale can change with task and depth without altering the sparse se-quence. Figure S5 tests whether this second readout collapses to one fixed endpoint or preserves image-dependent variation after training. Removal share (%) Recovery scale Task/layer Mean ± SD Med. [IQR] Mean ± SD Med. [IQR] Seg 3 29 .6 ± 4.2 29.8 [5.7] 0.84 ± 0.08 0.85 [0.11] Seg 6 33 .1 ± 3.5 32.9 [4.5] 0.92 ± 0.06 0.93 [0.08] Seg 9 37 .3 ± 4.1 37.1 [5.6] 0.94 ± 0.05 0.95 [0.06] Det 3 21 .8 ± 0.0 21.8 [0.0] 0.11 ± 0.00 0.11 [0.00] Det 6 32 .5 ± 4.6 32.2 [6.1] 0.14 ± 0.06 0.13 [0.08] Det 9 45 .7 ± 4.6 46.0 [6.0] 0.23 ± 0.08 0.22 [0.11] 
+
+Table S19: Allocation and recovery summaries at ρ = 0 .5.The means reproduce main-paper Figure 5. Removal shares sum to 100% for every image. Detection block 3 is constant across images because the register has not yet participated in global attention. 0.0 0.5 1.0 Block 3 Block 6 Block 9 
+
+(a) segmentation   
+
+> 0.0 0.5 1.0
+
+(b) detection 
+
+## Recovery scale α  
+
+> mean ± SD median [IQR]
+
+Figure S5: Per-image recovery-scale summaries for TAP-F at 
+
+ρ = 0 .5. Thin intervals show mean ± SD and thick intervals show the median and IQR. The dashed lines mark stand-in-only recovery at α = 0 and full-offset recovery at α = 1 .Table S19 tests whether the mean curves in the main paper hide image-dependent policies. Segmentation varies at all three layers. Detection is fixed at block 3 and redistributes the remaining budget between blocks 6 and 9 after the register has received global image context. The recovery statistics show a second form of specialization. Segmentation remains close to full-offset recovery, while detection stays near the stand-in endpoint and becomes more image-dependent only after the register has participated in global attention. 
+
+# G Sharing a ViT Backbone Across Tasks 
+
+A unified visual backbone is often described only in terms of parameter reuse. That definition is incomplete for condi-tional computation. Two tasks may use the same transformer weights and still require different tokens, pruning depths, and dense outputs. TAP shares the representational machin-ery and sparse execution contract while allowing each task to follow a different path through the available computation. 
+
+G.1 A common representation, not a common ranking 
+
+The task register operates in the same d-dimensional residual space as the patch tokens. The block’s existing query projec-tion produces its selection query, and the corresponding key projection processes candidate patches. The policy reads the backbone in its native coordinates instead of introducing a selector with a separate feature space. A distinct predictor for every task could learn an effective ranking, but it would also create a new interface that must remain aligned with the backbone. TAP keeps this interface inside the transformer, and switching the active register changes how the same patch representation is queried. This operational role distinguishes a task register from a task-agnostic storage token. A storage register can absorb re-curring artifacts and improve the quality of the shared repre-sentation (Darcet et al. 2024). The TAP register also controls computation. Its state is read before selected blocks and con-verted into decisions that change the amount and location of subsequent computation. The register remains compact be-cause it does not carry a second feature pyramid or a bank of layer-specific selectors. Image evidence reaches it through ordinary transformer interactions, so the control state evolves with the same computation that it regulates. TAP-F makes this parameter sharing explicit. It reuses one frozen base and gives each task a register and low-rank up-dates (Hu et al. 2022). The low-rank path can adapt the patch states, and each task retains its own head. Task adaptation becomes a bounded modification of one base instead of a separate dense backbone. 
+
+G.2 Depth separates sharing from specialization 
+
+A ViT block does not have a fixed semantic role indepen-dent of its position. Early blocks build local relations from patches whose spatial support is still explicit. Later blocks act on features that have accumulated context through sev-eral attention and feed-forward updates. Removing a token at block 3 forfeits different future interactions from removing one at block 9. The layerwise probes make this distinction visible, and the allocation distributions show how the register responds to it. The exact global budget separates how much computation the backbone may use from where it is spent. The keep rate fixes the amount, and the register allocates it across depth. Because every image reaches the same final integer count, allocation differences reflect where the budget is spent. Seg-mentation tends to protect more early evidence, consistent with its need to preserve boundaries and semantic cover-age. Detection spends more of the removal budget later, after global interactions make object-centred evidence easier to identify. These task-specific patterns show why depth re-mains part of the interface even when the transformer pa-rameters are shared. The detection schedule also reveals a limit of register con-ditioning. Before the first global-attention block, the register has not received global image context, so the first allocation and recovery scale are task-conditioned but constant across images. Token scores remain image-dependent because they use the current patch keys. Later decisions can depend on both the task and the image. A unified backbone must expose enough communication points for the controller to observe the information on which its decisions depend. Adding a register alone cannot make a locally isolated block globally informed. 
+
+G.3 A sparse backbone with task-specific boundaries 
+
+Dense prediction constrains how a shared sparse backbone can expose its output. A segmentation or detection head ex-pects features at spatial positions that the sparse encoder no longer carries. Reinserting reconstructed tokens into the backbone would make later computation dense again and would mix task-specific recovery with the shared transfor-mation. TAP instead treats recovery as a boundary operation. The encoder remains sparse, and a complete grid is formed only when the task head requests one. This boundary is shared in form but not in value. Every removed token is matched to a surviving endpoint by the same key-space rule. The task register controls how much of the stored offset is restored at each eligible depth. Segmentation remains close to the full-offset endpoint because fine spatial distinctions remain useful at readout. Detection stays closer to the final stand-in because its head benefits more from the surviving object-centred representation. The same sparse backbone can support both behaviours because recovery does not impose either endpoint as a universal reconstruction rule. These components provide a practical form of backbone sharing. A common ViT provides the token space, trans-former stack, and exact compute budget. Task registers spe-cialize the path through that stack, and dense recovery spe-cializes the interface to the output head. A new task would require eligible pruning layers and a learned task interface, while the budget mechanism and sparse encoder contract remain unchanged. The present experiments cover three es-tablished pipelines. Scaling to a larger task set will require measuring interference among task interfaces and determin-ing when low-rank adaptation remains sufficient. 
+
+# H Efficiency, Throughput, and Memory 
+
+H.1 Profiling protocol 
+
+The measurements use one 24GB NVIDIA RTX PRO 4000 Blackwell with BF16 autocast. Throughput batches contain 128 classification images, 8 segmentation images, or 1 de-tection image. Each run performs 100 warm-up iterations followed by 500 measured iterations. We synchronize CUDA before and after every measured region and exclude data load-ing and host-to-device transfer. All methods within a task use the same resolution, batch size, and procedure. TAP-F keeps its low-rank updates unmerged during profiling, matching the main tables. 
+
+H.2 Component breakdown 
+
+The reported 0.7% controller overhead uses encoder latency as its denominator and covers the register query, budget readout, and top-k bookkeeping. The sparse-encoder mea-surement includes the candidate-key projection at pruning blocks, together with the retained-token projections, atten-tion, and MLP computation. End-to-end throughput also con-tains stand-in matching, pointer maintenance, sparse pack-                           
+
+> Component Cls Seg Det Register query/readouts 0.0008 (0.2) 0.006 (0.1) 0.08 (0.1) Ranking and indices 0.0022 (0.5) 0.019 (0.3) 0.29 (0.3) Stand-in matching n/a 0.09 (1.6) 1.40 (1.6) Sparse packing 0.010 (2.2) 0.06 (1.1) 1.00 (1.2) Sparse encoder 0.422 (94.8) 3.28 (58.8) 49.52 (56.9) Dense reconstruction n/a 0.12 (2.2) 0.90 (1.0) Task head 0.010 (2.2) 2.00 (35.8) 33.77 (38.8) End-to-end 0.445 (100) 5.58 (100) 86.96 (100)
+
+Table S20: TAP-J component latency in milliseconds per image at ρ = 0 .5, with the end-to-end percentage in paren-theses. Percentages may sum to 99.9 because of rounding. ing, dense reconstruction, and the task head. Table S20 re-ports each component as a fraction of end-to-end latency. The breakdown separates savings accumulated across later sparse blocks from costs paid near a pruning layer or at the dense output boundary. This distinction explains why encoder throughput reflects token reduction more directly than end-to-end throughput. 
+
+H.3 Peak memory 
+
+Table S21 reproduces the main full-model memory values. Every measurement uses batch size 1, the task resolution in Table S4, and the same BF16 inference path as the latency experiment. We reset the CUDA peak-memory counter after warm-up and report the maximum allocated memory over 50 iterations. The reported value includes sparse packing, pointers, offsets, dense reconstruction, and the task head. Peak memory does not follow encoder throughput exactly. Pruning shortens the tensors kept by later transformer blocks, but the dense pipelines must also retain indices and recovery data until their heads consume a complete grid. Segmenta-tion benefits most because several encoder blocks operate on the shortened sequence while its recovery buffers remain small relative to the backbone activations. Detection retains larger head and feature-pyramid allocations, which limits the full-model reduction even though sparse attention removes substantial encoder work. The complete inference profile as-signs controller state, recovery buffers, and head allocations to their corresponding components. Task Base TAP-J TAP-F Change J/F Cls 0.42 0.37 0.38 −11 .9/ − 9.5% 
+
+Seg 0.78 0.64 0.66 −17 .9/ − 15 .4% 
+
+Det 3.10 2.82 2.88 −9.0/ − 7.1% 
+
+Table S21: Peak full-model inference memory in GB at 
+
+ρ = 0 .5, measured with batch size 1 using the CUDA peak allocated-memory counter. 
+
+# I Spatial Retention Analysis 
+
+The visual examples in main-paper Figure 3 suggest that the tasks preserve different regions. We test this pattern over the full validation sets at ρ = 0 .5. On ADE20K, a boundary patch contains more than one non-void ground-truth label, and boundary retention is the fraction of these patches that survive. We assign each patch its majority non-void label, then average the fraction of classes represented by at least one retained patch in each image. On COCO, box-interior retention is the fraction of patch centres inside the union of the ground-truth boxes that survive. Following the COCO area threshold, a small object covers fewer than 32 2 pixels. Small-object coverage is the fraction of eligible objects that contain at least one retained patch centre.                      
+
+> ADE20K COCO Method Boundary Class Box interior Small object Random 50.0 92.1 50.0 50.2 Attention 44.8 88.7 62.3 60.8 Token Cropr 55.1 95.0 64.2 66.4 TAP-J 58.4 96.2 66.1 69.7
+
+Table S22: Spatial retention statistics in percent at ρ = 0 .5.Boundary and box-interior columns measure retained patch fractions. Class and small-object columns measure coverage. Table S22 separates local retention from coverage. Atten-tion concentrates on box interiors in detection but loses both ADE20K boundaries and semantic classes. Token Cropr im-proves all four measures. TAP-J raises boundary retention by 3.3 points and class coverage by 1.2 points over Token Cropr. Its gains on COCO are 1.9 points for box interiors and 3.3 points for small objects. Figure S6 shows simultaneous gains in local evidence and coverage on both datasets. 40 60 80 Random Attention Token Cropr TAP-J 
+
+(a) ADE20K   
+
+> 60 80 100
+
+(b) COCO 
+
+## Retained coverage (%) 
+
+> boundary class box interior small object
+
+Figure S6: Spatial retention statistics from Table S22. Filled circles measure retained boundary or box-interior patches. Open squares measure semantic-class or small-object cover-age. The segmentation and detection colors match the main-paper figures. 
+
+# J Scope and Reproducibility Map 
+
+The controlled probes compare complete task pipelines whose objectives, resolutions, heads, and eligible pruning layers differ. They measure transfer across these pipelines rather than task semantics in isolation. TAP uses a fixed         
+
+> Claim Evidence and reproduction artifact Criterion rank-ings change across pipelines Main Figure 1(c) Full criterion and rank tables Probe configurations and script Depth changes crite-rion quality Main Figure 1(a,b) Complete layerwise curves Layer-probe script Dense tasks pre-fer different recovery endpoints Main Figure 1(d) and Table 4 Paired recovery table Recovery configurations The task register controls three deci-sions Main Method, Table 4, and Figure 5 Algorithms S1–S3 and distributions Model and ablation configurations The global removal budget is exact Main Method Proposition and unit tests Allocation tests TAP balances score and throughput Main Tables 1–3 and Figure 4 Keep-rate and latency tables Profiler and logs TAP lowers peak in-ference memory Main Table 5 Memory protocol and breakdown Memory profiler
+
+Table S23: Mapping from central claims to the main paper, supplemental evidence, and reproduction artifacts. Each ev-idence cell lists these three sources in order. user-specified keep rate within each run and does not learn the total compute budget per image. Recovery combines one stand-in with an earlier-layer offset and has no explicit trans-port map to the dense read point. Classification does not use this mechanism. Detection updates the register only at global-attention blocks. Its block-3 allocation and recovery scale depend on the task but not the image, although the current patch keys still make token scores image-dependent. Later allocations and scales use image context from the preceding global block while patch states evolve through the intervening window-attention blocks. Efficient execution also requires a variable-length window-attention kernel. The reported claims apply to this global-block update schedule and variable-length ex-ecution path. The anonymous artifact records the environment, data preparation, configurations, seeds, probe and profiling scripts, checkpoint checksums, and commands for each re-ported result. The configuration record includes optimizer coefficients, numerical precision, layerwise learning-rate de-cay, stochastic-depth settings, gradient clipping, loss weights, augmentation ranges, and the checkpoint-selection rule. The artifact omits author names, institutional paths, and identify-ing metadata. 
+
+# References 
+
+Bengio, Y.; Léonard, N.; and Courville, A. 2013. Estimating or Propagating Gradients Through Stochastic Neurons for Conditional Computation. arXiv preprint arXiv:1308.3432 .Bergner, B.; Lippert, C.; and Mahendran, A. 2025. Token Cropr: Faster ViTs for Quite a Few Tasks. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Bolya, D.; Fu, C.-Y.; Dai, X.; Zhang, P.; Feichtenhofer, C.; and Hoffman, J. 2023. Token Merging: Your ViT but Faster. In International Conference on Learning Representations (ICLR) .Cai, Z.; and Vasconcelos, N. 2018. Cascade R-CNN: Delving into High Quality Object Detection. In IEEE/CVF Confer-ence on Computer Vision and Pattern Recognition (CVPR) .Chen, M.; Shao, W.; Xu, P.; Lin, M.; Zhang, K.; Chao, F.; Ji, R.; Qiao, Y.; and Luo, P. 2023. DiffRate: Differen-tiable Compression Rate for Efficient Vision Transformers. In IEEE/CVF International Conference on Computer Vision (ICCV) .Darcet, T.; Oquab, M.; Mairal, J.; and Bojanowski, P. 2024. Vision Transformers Need Registers. In International Con-ference on Learning Representations (ICLR) .Deng, J.; Dong, W.; Socher, R.; Li, L.-J.; Li, K.; and Fei-Fei, L. 2009. ImageNet: A Large-Scale Hierarchical Image Database. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Fayyaz, M.; Koohpayegani, S. A.; Jafari, F. R.; Sengupta, S.; Joze, H. R. V.; Sommerlade, E.; Pirsiavash, H.; and Gall, J. 2022. Adaptive Token Sampling for Efficient Vi-sion Transformers. In European Conference on Computer Vision (ECCV) .He, K.; Chen, X.; Xie, S.; Li, Y.; Dollár, P.; and Girshick, R. 2022. Masked Autoencoders Are Scalable Vision Learners. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Hu, E. J.; Shen, Y.; Wallis, P.; Allen-Zhu, Z.; Li, Y.; Wang, S.; Wang, L.; and Chen, W. 2022. LoRA: Low-Rank Adaptation of Large Language Models. In International Conference on Learning Representations (ICLR) .Jang, E.; Gu, S.; and Poole, B. 2017. Categorical Reparam-eterization with Gumbel-Softmax. In International Confer-ence on Learning Representations (ICLR) .Li, Y.; Mao, H.; Girshick, R.; and He, K. 2022. Exploring Plain Vision Transformer Backbones for Object Detection. In European Conference on Computer Vision (ECCV) .Liang, Y.; Ge, C.; Tong, Z.; Song, Y.; Wang, J.; and Xie, P. 2022. Not All Patches Are What You Need: Expediting Vision Transformers via Token Reorganizations. In Interna-tional Conference on Learning Representations (ICLR) .Lin, T.-Y.; Maire, M.; Belongie, S.; Hays, J.; Perona, P.; Ra-manan, D.; Dollár, P.; and Zitnick, C. L. 2014. Microsoft COCO: Common Objects in Context. In European Confer-ence on Computer Vision (ECCV) .Liu, Y.; Gehrig, M.; Messikommer, N.; Cannici, M.; and Scaramuzza, D. 2024. Revisiting Token Pruning for Object Detection and Instance Segmentation. In IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) .Norouzi, N.; Orlova, S.; de Geus, D.; and Dubbelman, G. 2024. ALGM: Adaptive Local-then-Global Token Merging for Efficient Semantic Segmentation with Plain Vision Trans-formers. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Qi, C. R.; Yi, L.; Su, H.; and Guibas, L. J. 2017. PointNet++: Deep Hierarchical Feature Learning on Point Sets in a Met-ric Space. In Advances in Neural Information Processing Systems (NeurIPS) .Rao, Y.; Zhao, W.; Liu, B.; Lu, J.; Zhou, J.; and Hsieh, C.-J. 2021. DynamicViT: Efficient Vision Transformers with Dynamic Token Sparsification. In Advances in Neural Infor-mation Processing Systems (NeurIPS) .Tang, Q.; Zhang, B.; Liu, J.; Liu, F.; and Liu, Y. 2023. Dy-namic Token Pruning in Plain Vision Transformers for Se-mantic Segmentation. In IEEE/CVF International Confer-ence on Computer Vision (ICCV) .Xie, E.; Wang, W.; Yu, Z.; Anandkumar, A.; Alvarez, J. M.; and Luo, P. 2021. SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers. In Advances in Neural Information Processing Systems (NeurIPS) .Xu, Y.; Zhang, Z.; Zhang, M.; Sheng, K.; Li, K.; Dong, W.; Zhang, L.; Xu, C.; and Sun, X. 2022. Evo-ViT: Slow-Fast Token Evolution for Dynamic Vision Transformer. In AAAI Conference on Artificial Intelligence (AAAI) .Zhou, B.; Zhao, H.; Puig, X.; Fidler, S.; Barriuso, A.; and Torralba, A. 2017. Scene Parsing Through ADE20K Dataset. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .

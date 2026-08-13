@@ -1,0 +1,291 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-13T21:17:02.241069+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 6,
+    "quick_skim_target": 11,
+    "quick_selected": 6
+  },
+  "deep_dive": [
+    {
+      "id": "2608.07999v1",
+      "source": "arxiv",
+      "title": "PE-Mamba: Bidirectional Selective Layer Aggregation for AI-Generated Image Detection",
+      "abstract": "AI-generated image (AIGI) detection has become increasingly challenging due to the rapid advancement of generative models and the diminishing gap between synthetic and authentic content. Existing vision transformer-based detectors commonly rely on weighted-sum strategies to aggregate intermediate representations across transformer layers, often overlooking the inherently ordered semantic progression of hierarchical features from shallow texture cues to deep semantic representations. In this work, we propose \\textbf{PE-Mamba}, a novel framework built upon a pre-trained PE-Core vision transformer with lightweight LoRA adaptation that introduces three complementary components for cross-layer feature aggregation and fusion. First, a bidirectional selective aggregator (BSA) processes layer-wise classification tokens through forward and backward selective scans, where the forward scan progressively accumulates shallow-to-deep forensic evidence, and the backward scan performs deep-to-shallow contextual refinement to reinterpret low-level cues in light of high-level semantic context. Second, a softmax-weighted aggregator (SWA) computes a learned global summary of all layer tokens as a complementary aggregation path. Third, a sigmoid-gated blend (SGA) adaptively fuses the BSA and SWA outputs via a learnable scalar gate, allowing the model to dynamically balance directional sequential evidence and global layer-wise aggregation. Extensive experiments on UniversalFakeDetect (96.6\\% mACC, 99.5\\% mAP) and AIGCDetect (95.3\\% mACC, 98.1\\% mAP) demonstrate that \\methodname{} outperforms 18 detectors with superior generalization across diverse generative models, while training only 1.3\\% of total parameters (0.13\\% for LoRA alone).",
+      "authors": [
+        "Kutub Uddin",
+        "Nusrat Tasnim",
+        "Khalid Malik"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-08T08:24:44+00:00",
+      "link": "https://arxiv.org/pdf/2608.07999v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Vision transformer architecture for classification with novel layer aggregation",
+      "llm_evidence_cn": "用于图像检测/分类的视觉transformer架构与新型层聚合",
+      "llm_evidence": "用于图像检测/分类的视觉transformer架构与新型层聚合",
+      "canonical_evidence": "用于图像检测/分类的视觉transformer架构与新型层聚合",
+      "llm_tldr_en": "PE-Mamba improves AI-generated image detection by building on a pre-trained vision transformer with LoRA and introducing bidirectional selective layer aggregation to exploit hierarchical feature progression, outperforming weighted-sum baselines.",
+      "llm_tldr_cn": "针对现有 ViT 检测器用加权和聚合中间层特征、忽略浅层纹理向深层语义逐级演化规律的问题，提出 PE-Mamba。它基于预训练 PE-Core 视觉 transformer 与 LoRA 轻量适配，引入双向选择性层聚合等三组件进行跨层融合。该方法能更充分利用层次化特征进行 AI 生成图像检测，实验显示其检测精度优于先前加权和策略。这项工作为视觉 transformer 架构用于分类任务提供了更精细的层聚合范例。",
+      "llm_tldr": "针对现有 ViT 检测器用加权和聚合中间层特征、忽略浅层纹理向深层语义逐级演化规律的问题，提出 PE-Mamba。它基于预训练 PE-Core 视觉 transformer 与 LoRA 轻量适配，引入双向选择性层聚合等三组件进行跨层融合。该方法能更充分利用层次化特征进行 AI 生成图像检测，实验显示其检测精度优于先前加权和策略。这项工作为视觉 transformer 架构用于分类任务提供了更精细的层聚合范例。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.11280v1",
+      "source": "arxiv",
+      "title": "Uncertainty-Aware and Explainable Ensemble Deep Learning Framework for Multi-Class Skin Lesion Classification",
+      "abstract": "Skin cancer diagnosis from dermoscopic images remains challenging due to high intra-class variability, inter-class similarity, class imbalance, and the limited interpretability of deep learning models. This paper proposes an uncertainty-aware and explainable deep learning framework for multi-class skin lesion classification. The framework combines a vision transformer model (MaxViT-Tiny) with CNN-based models (ConvNeXt-Tiny and EfficientNetV2-B0) through deep ensemble learning. Monte Carlo (MC) Dropout estimates predictive uncertainty and identifies unreliable predictions, while Grad-CAM++, an explainable AI (XAI) technique, provides visual explanations by highlighting lesion regions that influence model decisions. Evaluated on the HAM10000 dataset, the framework achieves 96% accuracy and 99% ROC-AUC under uncertainty-aware filtering (entropy < 1.0, confidence >= 0.7), with macro-average precision, recall, and F1-score of 94%, 95%, and 95%, respectively, and 96% weighted-average scores across all three metrics. The results demonstrate accurate, interpretable, and uncertainty-aware skin lesion classification for trustworthy computer-aided diagnosis.",
+      "authors": [
+        "Rofiqul Islam",
+        "Lilatul Ferdouse"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.AI",
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-08-11T10:55:14+00:00",
+      "link": "https://arxiv.org/pdf/2608.11280v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Vision transformer used for multi-class image classification; relevant to ViT-based classification.",
+      "llm_evidence_cn": "使用视觉Transformer进行多类图像分类，与基于ViT的分类相关。",
+      "llm_evidence": "使用视觉Transformer进行多类图像分类，与基于ViT的分类相关。",
+      "canonical_evidence": "使用视觉Transformer进行多类图像分类，与基于ViT的分类相关。",
+      "llm_tldr_en": "Proposes an ensemble of MaxViT and CNN models with MC Dropout uncertainty and Grad-CAM++ explainability for robust multi-class skin lesion classification.",
+      "llm_tldr_cn": "针对皮肤镜图像分类中类内差异大、类间相似、类别不平衡且缺乏可解释性的问题，提出以MaxViT-Tiny等视觉Transformer与CNN模型进行深度集成，并用蒙特卡洛Dropout估计预测不确定性、Grad-CAM++突出病灶区域以提供解释。实验证明该框架在皮肤病变多分类任务上表现良好，为视觉Transformer在医学图像分类中的应用提供了可解释集成范式。",
+      "llm_tldr": "针对皮肤镜图像分类中类内差异大、类间相似、类别不平衡且缺乏可解释性的问题，提出以MaxViT-Tiny等视觉Transformer与CNN模型进行深度集成，并用蒙特卡洛Dropout估计预测不确定性、Grad-CAM++突出病灶区域以提供解释。实验证明该框架在皮肤病变多分类任务上表现良好，为视觉Transformer在医学图像分类中的应用提供了可解释集成范式。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.07409v1",
+      "source": "arxiv",
+      "title": "UniJEPA: A Unified Joint-Embedding Predictive Architecture for Task-Agnostic Visual World Modeling",
+      "abstract": "Joint-Embedding Predictive Architectures (JEPAs) have emerged as a principled framework for self-supervised learning of world models in compact latent spaces, yet existing methods are fragmented: some predict masked parts of a single image in latent space (I-JEPA), others learn to predict global photometric transformations (Image World Models), while video-scale JEPAs predict future temporal states and are post-trained for action-conditioned planning (V-JEPA~2, DINO-World, DINO-WM). These objectives are treated as distinct recipes with separate encoders, predictors, and anti-collapse regularizers, hindering a single model from unifying image-level and video-level world modeling. We present UniJEPA, a unified JEPA that jointly learns photometric prediction (image-level transformations) and temporal prediction (video-level next-state dynamics) in one shared latent space. A single end-to-end objective, composed of a next-embedding prediction loss and a Gaussian regularizer, yields a provably anti-collapse encoder-predictor pair trainable from raw pixels without EMA, stop-gradient, or pre-trained encoders. We show that the same latent space supports controllable abstraction: photometric prediction learns invariant structure while temporal prediction learns equivariant dynamics. After action-conditioned post-training on offline trajectories, UniJEPA enables zero-shot planning by treating goal features as prediction targets. On image, video, and control benchmarks, UniJEPA matches or surpasses task-specific JEPAs while requiring a single loss hyperparameter, and plans up to tens of times faster than generative world models at comparable accuracy.",
+      "authors": [
+        "An Lanji",
+        "Dawei Liu",
+        "Jin Li",
+        "Haoran Xu",
+        "Mei Chen",
+        "Yu Tian"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-07T16:55:58+00:00",
+      "link": "https://arxiv.org/pdf/2608.07409v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Unified JEPA architecture building on DINO-World and DINO-WM for visual world modeling",
+      "llm_evidence_cn": "统一JEPA架构，扩展DINO-World与DINO-WM的视频图像世界建模",
+      "llm_evidence": "统一JEPA架构，扩展DINO-World与DINO-WM的视频图像世界建模",
+      "canonical_evidence": "统一JEPA架构，扩展DINO-World与DINO-WM的视频图像世界建模",
+      "llm_tldr_en": "This paper unifies image-level and video-level joint-embedding predictive architectures, building on DINO-World and DINO-WM, to enable a single self-supervised visual foundation model for world modeling.",
+      "llm_tldr_cn": "联合嵌入预测架构（JEPA）已成为自监督视觉世界建模的重要框架，但图像与视频JEPA目标通常各自分立，难以统一。该文提出UniJEPA，整合I-JEPA、Image World Models以及DINO-World/DINO-WM等不同JEPA变体，在统一编码器、预测器与防坍缩正则下同时完成图像与视频预测。实验表明单一模型即可覆盖多层次世界建模需求，为自监督视觉基础模型的后续分类等应用奠定基础。",
+      "llm_tldr": "联合嵌入预测架构（JEPA）已成为自监督视觉世界建模的重要框架，但图像与视频JEPA目标通常各自分立，难以统一。该文提出UniJEPA，整合I-JEPA、Image World Models以及DINO-World/DINO-WM等不同JEPA变体，在统一编码器、预测器与防坍缩正则下同时完成图像与视频预测。实验表明单一模型即可覆盖多层次世界建模需求，为自监督视觉基础模型的后续分类等应用奠定基础。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.11582v1",
+      "source": "arxiv",
+      "title": "A Hybrid Framework of Vision Transformer and Gated Recurrent Unit for Detection of Mosquito Diseases",
+      "abstract": "Identifying dengue virus-infected mosquitoes from control mosquitoes is a major challenge in analyzing mosquito locomotion behavior due to the small size and complexity of the video background. Conventional AI methods are often unable to extract accurate features from video frames and produce erroneous features. In this study, a three-step framework is introduced: first, mosquitoes are identified and the background is removed using the YOLO 11M model, then visual features are extracted using the Vision Transformer (ViT), and finally the videos are classified with a convolutional GRU (ConvGRU) classifier. A comparative analysis of different models, including Recurrent Neural Network (RNN), Long Short-Term Memory (LSTM), Gated Recurrent Unit (GRU), and their convolutional versions showed that the ConvGRU model achieved the best performance; it achieved 88.88% accuracy, 84.45% precision, 82.82% recall, and 82.81% F1 score. These results demonstrate that combining convolutional models with sequence-based networks, especially in the ConvGRU model, allows the simultaneous extraction of precise spatial features and long-term temporal dependencies from mosquito movements. Finally, the proposed framework provides a reliable solution for analyzing mosquito behavior in complex environments.",
+      "authors": [
+        "Danial Sharifrazi",
+        "Saadat Behzadi",
+        "Nouman Javed",
+        "Roohallah Alizadehsani",
+        "Prasad N. Paradkar",
+        "Asim Bhatti"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-12T02:43:47+00:00",
+      "link": "https://arxiv.org/pdf/2608.11582v1",
+      "tags": [
+        "keyword:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "uses Vision Transformer for feature extraction in a classification task",
+      "llm_evidence_cn": "在分类任务中使用视觉Transformer提取特征",
+      "llm_evidence": "在分类任务中使用视觉Transformer提取特征",
+      "canonical_evidence": "在分类任务中使用视觉Transformer提取特征",
+      "llm_tldr_en": "Presents a three-step framework combining YOLO background removal, ViT feature extraction, and a convolutional GRU classifier for identifying dengue-infected mosquitoes from locomotion videos, demonstrating practical ViT-based classification.",
+      "llm_tldr_cn": "该工作面向蚊媒疾病检测，提出三步框架：先用YOLO 11M识别并去除视频背景，再用视觉Transformer（ViT）提取视觉特征，最后用卷积GRU分类器进行视频分类。通过对比RNN、LSTM等多种模型，验证了混合Transformer与循环结构的有效性。结果显示该方法能较准确地识别登革热感染蚊虫，展示了ViT在小目标视频分类任务中的实用价值。",
+      "llm_tldr": "该工作面向蚊媒疾病检测，提出三步框架：先用YOLO 11M识别并去除视频背景，再用视觉Transformer（ViT）提取视觉特征，最后用卷积GRU分类器进行视频分类。通过对比RNN、LSTM等多种模型，验证了混合Transformer与循环结构的有效性。结果显示该方法能较准确地识别登革热感染蚊虫，展示了ViT在小目标视频分类任务中的实用价值。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.07616v1",
+      "source": "arxiv",
+      "title": "HSMLA: Hierarchical Softmax Multi-scale Linear Attention for Efficient Vision Transformers",
+      "abstract": "Vision transformers face significant computational overheads in high-resolution dense prediction due to the quadratic complexity of self-attention. Linear attention offers efficiency but sacrifices local context modeling. We propose \\textbf{HSMLA (Hierarchical Softmax Multi-scale Linear Attention)}, which combines ReLU-based linear attention for global context, selective softmax refinement for critical local features, and multi-scale token representations via depthwise convolutions. HSMLA achieves superior accuracy-efficiency trade-offs: up to $4.2\\times$ inference-time speedup across dense prediction tasks, $87.3%$ Dice with $3.2\\times$ speedup on CT organ segmentation, and $94.2%$ AUC with $4.1\\times$ speedup on pathology WSI.",
+      "authors": [
+        "Dong Liu",
+        "Yanxuan Yu",
+        "Renata Borovica-Gajic",
+        "Ying Nian Wu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-07T03:47:04+00:00",
+      "link": "https://arxiv.org/pdf/2608.07616v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Proposes an efficient linear attention mechanism for vision transformers, applicable to classification and dense prediction",
+      "llm_evidence_cn": "提出面向视觉Transformer的高效线性注意力机制，可用于分类与密集预测任务",
+      "llm_evidence": "提出面向视觉Transformer的高效线性注意力机制，可用于分类与密集预测任务",
+      "canonical_evidence": "提出面向视觉Transformer的高效线性注意力机制，可用于分类与密集预测任务",
+      "llm_tldr_en": "HSMLA combines ReLU linear attention, softmax refinement, and multi-scale depthwise convolution tokens to speed up vision transformers, improving accuracy-efficiency trade-offs on dense prediction and pathology WSI classification.",
+      "llm_tldr_cn": "针对视觉Transformer在高分辨率密集预测中计算开销大的问题，该论文提出HSMLA，将ReLU线性注意力用于全局上下文，选择性softmax细化关键局部特征，并用深度卷积构建多尺度令牌表示。实验表明HSMLA在CT器官分割、病理WSI等任务上实现数倍加速并保持高准确率，为ViT分类模型提供高效的注意力模块。",
+      "llm_tldr": "针对视觉Transformer在高分辨率密集预测中计算开销大的问题，该论文提出HSMLA，将ReLU线性注意力用于全局上下文，选择性softmax细化关键局部特征，并用深度卷积构建多尺度令牌表示。实验表明HSMLA在CT器官分割、病理WSI等任务上实现数倍加速并保持高准确率，为ViT分类模型提供高效的注意力模块。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.09345v1",
+      "source": "arxiv",
+      "title": "One-Time Training for All Grains: Open-Set Grain Recognition and Quantitative Analysis",
+      "abstract": "Advances in crop breeding have introduced an increasing number of grain varieties, creating a growing demand for efficient variety recognition and quantitative analysis. However, existing methods are typically trained on a fixed variety set, and incorporating newly introduced varieties requires additional data collection and model retraining. To address this limitation, we propose GROW, a framework for Grain Recognition and quantitative analysis in Open sets Without retraining. GROW first performs class-agnostic grain localization, converting mixed-grain images into individual instances for variety-wise counting and phenotypic measurement. It then combines visual embeddings and morphological descriptors into fused grain descriptors stored in an extensible GrainBank. Query grains are recognized through rank-similarity weighted top-k retrieval, and newly introduced varieties are incorporated by appending their descriptors without updating the deployed models. Extensive experiments under progressive variety expansion, varying grain densities, and background domain shifts demonstrate the scalability, robustness, and adaptability of GROW. Compared with joint retraining, GROW reduced the average category-registration time from 4153 s to only 39 s while maintaining competitive recognition performance. These results demonstrate that GROW provides an efficient and maintainable solution for extensible grain recognition, counting, and phenotypic analysis without repeated model retraining.",
+      "authors": [
+        "Qihe Su",
+        "Mengyu Sun",
+        "Yuxi Ke",
+        "Zhuoyan Jiang",
+        "Wanneng Yang",
+        "Chenglong Huang",
+        "Ziyuan Yang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-10T09:21:51+00:00",
+      "link": "https://arxiv.org/pdf/2608.09345v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "fine-grained classification of grain varieties using visual embeddings and morphological descriptors",
+      "llm_evidence_cn": "利用视觉嵌入与形态描述符进行细粒度谷物品种分类",
+      "llm_evidence": "利用视觉嵌入与形态描述符进行细粒度谷物品种分类",
+      "canonical_evidence": "利用视觉嵌入与形态描述符进行细粒度谷物品种分类",
+      "llm_tldr_en": "Proposes GROW, an open-set grain recognition framework that combines class-agnostic localization, visual embeddings, and morphological descriptors to recognize and quantify new grain varieties without retraining.",
+      "llm_tldr_cn": "该工作针对育种中不断出现的新谷物品种需要重新训练模型的问题，提出GROW框架。它先进行类别无关的谷物定位，将混合图像分解为单个实例，再融合视觉嵌入与形态描述符构成联合特征，在开放集上实现识别与定量分析。该方法无需对新品种重新训练即可扩展识别范围，实验显示其准确识别了多种谷物品种并进行计数与表型测量，为农业中的开放集细粒度识别提供了高效方案。",
+      "llm_tldr": "该工作针对育种中不断出现的新谷物品种需要重新训练模型的问题，提出GROW框架。它先进行类别无关的谷物定位，将混合图像分解为单个实例，再融合视觉嵌入与形态描述符构成联合特征，在开放集上实现识别与定量分析。该方法无需对新品种重新训练即可扩展识别范围，实验显示其准确识别了多种谷物品种并进行计数与表型测量，为农业中的开放集细粒度识别提供了高效方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.10989v1",
+      "source": "arxiv",
+      "title": "Putting Registers to Work: Task Registers for Token Pruning in Vision Transformers",
+      "abstract": "Token-pruning policies are usually designed for a single recognition pipeline, but pretrained Vision Transformers are reused across tasks with different spatial demands. We ask which parts of a pruning policy transfer across image classification, semantic segmentation, and object detection. For each pipeline, controlled probes freeze the no-pruning checkpoint and apply a series of parameter-free reduction criteria at one eligible layer at a time without retraining. The probes reveal three differences: segmentation and detection rank the criteria differently, classification is especially sensitive to attention-based pruning in the earliest layers, and the dense tasks prefer opposite recovery endpoints. These findings motivate Task-Adaptive Pruning (TAP). Existing register tokens serve as task-agnostic storage for feature artifacts. TAP instead introduces one task register per task and activates only the current one. Its evolving state ranks tokens, distributes an exact removal budget over depth, and sets the recovery scale for dense features. At a final keep rate of $ρ=0.5$, our jointly adapted model, TAP-J, reaches $47.0$ mIoU at $1.30\\times$ encoder throughput on ADE20K and $53.7$ box AP at $1.32\\times$ encoder throughput on COCO while remaining competitive on ImageNet-1K.",
+      "authors": [
+        "Hongsen Cao",
+        "Mona Jaber",
+        "Shanxin Yuan",
+        "Ahmed Sayed"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-11T14:43:52+00:00",
+      "link": "https://arxiv.org/pdf/2608.10989v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Vision transformer token pruning policy transfer across image classification and other tasks",
+      "llm_evidence_cn": "研究视觉Transformer令牌剪枝策略在图像分类等任务间的迁移",
+      "llm_evidence": "研究视觉Transformer令牌剪枝策略在图像分类等任务间的迁移",
+      "canonical_evidence": "研究视觉Transformer令牌剪枝策略在图像分类等任务间的迁移",
+      "llm_tldr_en": "This study probes which token pruning criteria transfer across image classification, semantic segmentation, and object detection, revealing classification's sensitivity to early-layer attention pruning.",
+      "llm_tldr_cn": "该论文研究预训练视觉Transformer中令牌剪枝策略在不同视觉任务间的迁移问题，通过受控探针实验比较图像分类、语义分割与目标检测中的剪枝准则。结果显示，图像分类对早期层的注意力剪枝尤为敏感，而密集预测任务偏好相反的恢复端点。这些发现可用于设计任务自适应的剪枝方法，为细粒度图像分类等应用提供高效处理思路。",
+      "llm_tldr": "该论文研究预训练视觉Transformer中令牌剪枝策略在不同视觉任务间的迁移问题，通过受控探针实验比较图像分类、语义分割与目标检测中的剪枝准则。结果显示，图像分类对早期层的注意力剪枝尤为敏感，而密集预测任务偏好相反的恢复端点。这些发现可用于设计任务自适应的剪枝方法，为细粒度图像分类等应用提供高效处理思路。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

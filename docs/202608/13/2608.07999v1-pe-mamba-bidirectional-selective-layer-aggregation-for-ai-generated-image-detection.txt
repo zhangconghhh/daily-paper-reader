@@ -1,0 +1,441 @@
+Title: PE-Mamba: Bidirectional Selective Layer Aggregation for AI-Generated Image Detection
+
+URL Source: https://arxiv.org/pdf/2608.07999v1
+
+Published Time: Tue, 11 Aug 2026 00:38:38 GMT
+
+Number of Pages: 21
+
+Markdown Content:
+> arXiv:2608.07999v1 [cs.CV] 8 Aug 2026
+
+UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 1
+
+# PE-Mamba: Bidirectional Selective Layer Aggregation for AI-Generated Image Detection 
+
+Kutub Uddin 1
+
+kutub@umich.edu 
+
+Nusrat Tasnim 2
+
+tasnim.nishu70@kau.kr 
+
+Khalid Malik 1
+
+drmalik@umich.edu  
+
+> 1
+
+College of Innovation & Technology, University of Michigan-Flint, Michigan, US  
+
+> 2
+
+School of Electronics and Information Engineering, Korea Aerospace University, Goyang, South Korea 
+
+Abstract 
+
+AI-generated image (AIGI) detection has become increasingly challenging due to the rapid advancement of generative models and the diminishing gap between synthetic and authentic content. Existing vision transformer-based detectors commonly rely on weighted-sum strategies to aggregate intermediate representations across transformer layers, often overlooking the inherently ordered semantic progression of hierarchical features from shallow texture cues to deep semantic representations. In this work, we propose PE-Mamba , a novel framework built upon a pre-trained PE-Core vision trans-former with lightweight LoRA adaptation that introduces three complementary com-ponents for cross-layer feature aggregation and fusion. First, a bidirectional selective aggregator (BSA) processes layer-wise classification tokens through forward and back-ward selective scans, where the forward scan progressively accumulates shallow-to-deep forensic evidence, and the backward scan performs deep-to-shallow contextual refine-ment to reinterpret low-level cues in light of high-level semantic context. Second, a softmax-weighted aggregator (SWA) computes a learned global summary of all layer tokens as a complementary aggregation path. Third, a sigmoid-gated blend (SGA) adap-tively fuses the BSA and SWA outputs via a learnable scalar gate, allowing the model to dynamically balance directional sequential evidence and global layer-wise aggrega-tion. Extensive experiments on UniversalFakeDetect (96.6% mACC, 99.5% mAP) and AIGCDetect (95.3% mACC, 98.1% mAP) demonstrate that PE-Mamba outperforms 18 detectors with superior generalization across diverse generative models, while training only 1.3% of total parameters (0.13% for LoRA alone). 
+
+# 1 Introduction 
+
+The rapid advancement of generative AI has fundamentally altered the landscape of digital media and enables the synthesis of photorealistic images that are increasingly indistinguish-able from authentic content. Generative adversarial networks (GANs) [25, 55, 56], diffusion models [43], and their derivatives have demonstrated the capacity to produce high-fidelity 
+
+© 2026. The copyright of this document resides with its authors. It may be distributed unchanged freely in print or electronic forms. 2 UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 
+
+images across domains, from natural scenes and human faces to complex compositions gen-erated from textual prompts [34, 41]. While these technologies enable powerful creative and scientific applications, they simultaneously pose a profound threat to information in-tegrity. Deepfakes have already been implicated in financial fraud exceeding $600,000 per incident on average [15, 18, 58, 62], with projected losses forecast to reach $40 billion by 2027 [14, 16, 64]. These figures underscore the urgent necessity for generalizable AIGI de-tectors. Early forensic approaches [52, 52, 59, 61, 63, 65, 67] to detecting synthetic images largely relied on domain-specific artifacts. Frequency-domain methods exploit spectral imprints left by upsampling operations in generative models [13, 17, 48, 55], while co-occurrence and gradient-based techniques capture low-level texture irregularities that distinguish synthetic from natural images [1, 33, 47]. Although effective within their training distribution, such methods generalize poorly to unseen generative architectures, as each new generative model introduces distinct artifact signatures. More recent work has shifted toward leveraging large pretrained visual representations, such as CLIP [38] and DINO [4], as universal feature ex-tractors, exploiting their broad semantic understanding to improve cross-model generaliza-tion [10, 35, 50]. A particularly promising direction concerns how intermediate representations within vision transformers (ViTs) carry complementary forensic cues across layers. Shallow transformer layers retain texture and frequency information, while deeper layers encode semantic and structural abstractions [27, 31, 54]. Prior work aggregating these multi-scale representations via weighted-average aggregation [27, 66] demonstrated that exploiting the full hierarchy of transformer features leads to improved detection performance. However, existing ag-gregation strategies typically treat intermediate features as an unordered set, discarding the meaningful sequential ordering inherent in the layer hierarchy. In this paper, we introduce PE-Mamba , a novel AIGI detection framework that addresses this limitation by modeling cross-layer dependencies as an ordered sequence using a bidirec-tional selective state space models (SSMs). The proposed approach is motivated by the key observation that layer ordering in a vision transformer is semantically meaningful. The pro-gression from low-level to high-level features constitutes a natural sequence that directional models are specifically designed to exploit. Selective SSMs, as introduced in the Mamba architecture [19], generalize classical state space models with content-adaptive gating. This selectivity is qualitatively distinct from static weighted-sum aggregation, and is particularly well suited to cross-layer aggregation where layer ordering carries meaningful forensic in-formation for AIGI detection. 
+
+PE-Mamba builds upon PE-Core [2], a large-scale vision transformer, and applies lightweight LoRA [23] to the query-key-value (QKV) projections to preserve general visual representa-tions while enabling task-specific tuning. Forward hooks registered on all second normaliza-tion layers extract intermediate classification (CLS) tokens, which are projected to a common dimensionality by a shared projection module and then processed by a bidirectional selec-tive SSM aggregator (BSA), where the forward scan accumulates shallow-to-deep forensic evidence, and the backward scan performs deep-to-shallow contextual reanalysis. The mean-pooled outputs of both scans are concatenated and adaptively fused with a softmax-weighted global aggregation branch (SWA) via a learned sigmoid gate (SGA), optimized with binary cross-entropy loss. The main contributions of this work are as follows: • We propose PE-Mamba , a novel AIGI detection framework that replaces conventional cross-layer aggregation (learnable weighted average) with a bidirectional selective SSM aggregator (BSA), explicitly modeling the ordered semantic progression of layer-wise CLS UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 3
+
+token representations in the pretrained vision transformer backbone. • We introduce a softmax-weighted aggregator (SWA) as a complementary global aggre-gation branch and a sigmoid gated blend (SGA) that adaptively fuses the directional SSM output with the global summary, enabling more effective fusion of complementary forensic cues across the layer hierarchy. • We demonstrate through extensive experiments that PE-Mamba achieves superior detec-tion and cross-model generalization on AIGI benchmarks, while maintaining parameter efficiency through LoRA fine-tuning. 
+
+# 2 Related Work 
+
+This section reviews prior work across four areas relevant to PE-Mamba : AIGI detection, SSMs, multi-scale feature aggregation, and parameter-efficient fine-tuning. 
+
+2.1 AI-Generated Image Detection 
+
+Early AIGI detection methods [53] focused on identifying statistical artifacts specific to par-ticular generative pipelines. Wang et al . [68] demonstrated that CNN-generated images are detectable due to shared upsampling artifacts, and proposed training on a single Pro-GAN [24] with aggressive data augmentation to improve generalization. Subsequent work extended this insight to the frequency domain, where GAN generators leave characteristic spectral footprints arising from periodic upsampling operations [13, 17, 48]. Gradient-based representations [47] and NPR [49], which rethinks up-sampling artifacts in CNN-based gen-erative networks, further characterize low-level texture anomalies that distinguish synthetic content. Co-occurrence features [1, 33] exploit pixel-level statistical dependencies as com-plementary forensic cues. While effective within their training distribution, these methods exhibit limited transferability to unseen generative architectures, particularly as the diver-sity of generative models has expanded with the proliferation of diffusion-based methods. Corvi et al . [9] specifically investigated detection of diffusion-generated images, revealing distinct challenges posed by score-based synthesis compared to GAN-based generation. The introduction of large pretrained vision-language models as feature extractors substan-tially improved cross-model generalization. UniD [35] demonstrated that CLIP features extracted without fine-tuning provide strong discriminative signals across a wide range of GAN architectures. CLIP-based detection was further advanced by Cozzolino et al . [10] and the C2PC framework [50], which injects category-common prompts into the CLIP embed-ding space to improve sensitivity to generation-specific artifacts. The DIRE method [69] reconstructs images through diffusion model inversion to expose diffusion-generated con-tent. AIDE [70] proposes a sanity-check evaluation protocol and reveals that many exist-ing methods overestimate their generalization capability across diverse generators. Rajan et al . [39, 40] further examine the role of training data alignment and real image feature sup-pression in improving detection generalization. Intermediate transformer representations have proven particularly discriminative for forensic detection. Koutlis et al . [27] demonstrated that weighted-average aggregation of multi-layer ViT features substantially outperforms single-layer approaches, establishing hierarchical fea-ture aggregation as a key design principle that directly motivates our work. The FatF frame-work [31] employs adaptive transformer blocks that attend to forgery-specific frequency cues extracted from multiple processing stages. More recent methods [7, 29, 30, 46, 71] push gen-eralization further. EFFT [71] applies orthogonal feature modeling to reduce inter-class inter-ference and showed promising generalization across unseen generative models. ForL [7] in-troduces data-efficient forgery focus based on a weight shared guidance module for improved 4 UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 
+
+cross-model transferability. SAFE [29] improves generalization by learning transformation-invariant features that remain discriminative under common post-processing operations. Mi-raGe [46] constructs multimodal discriminative representations by jointly modeling visual and semantic cues to improve robustness across unseen generators. IAPL [30] introduces image-adaptive prompt learning that conditions detection on instance-specific visual charac-teristics, enabling dynamic adjustment of decision boundaries at inference time. 
+
+2.2 Selective State Space Models 
+
+SSMs have a long history in signal processing and control theory. For instance, S4 [20] demonstrated that frequency-domain parameterization enables SSMs to match attention-based models on long-sequence tasks with linear complexity. Mamba [19] introduced selec-tive state space modeling, where the step size, input, and output matrices are all functions of the input token, enabling content-adaptive gating with linear complexity. Vision Mamba [73] and VMamba [32] extended bidirectional SSM processing to vision tasks by scanning im-age patches in multiple directions to capture spatial dependencies efficiently. In this work, we adapt the bidirectional selective SSM paradigm to cross-layer aggregation of interme-diate CLS tokens, applying it to the depth dimension of the network rather than the spatial token sequences. This is well motivated because layer ordering carries structured semantic meaning, shallow layers encode texture and frequency, deep layers encode semantics, which SSMs can exploit through their ordered processing inductive bias. 
+
+2.3 Multi-Scale Feature Aggregation 
+
+Aggregating features across multiple scales or hierarchical levels is well-established in com-puter vision. Feature pyramid networks [22] demonstrated the utility of multi-scale repre-sentations for detection and segmentation. In the context of forgery detection, Koutlis et al . [27] systematically studied the use of intermediate encoder block representations, finding that weighted-average aggregation of multi-layer features substantially outperforms single-layer approaches. Similarly, the FatF framework [31] employs adaptive transformer blocks that attend to forgery-specific frequency features extracted from multiple processing stages. Existing multi-scale aggregation strategies for ViT-based detectors predominantly employ simple learned weighted averaging, which treats the set of layer representations as an ex-changeable collection without explicit positional bias. By contrast, the recurrent structure of SSMs provides a hard inductive bias toward ordered processing, which we argue is particu-larly appropriate for the cross-layer aggregation problem, where the directionality of feature transformation from texture to semantics is a meaningful signal that should be explicitly modeled for AIGI detection. 
+
+2.4 Parameter-Efficient Fine-Tuning 
+
+Fine-tuning large pretrained vision models traditionally requires updating all model pa-rameters, which is computationally expensive and risks degrading general representations. LoRA [23] addresses this by injecting trainable low-rank decomposition matrices into spe-cific weight matrices while keeping the original weights frozen, achieving competitive fine-tuning performance with orders of magnitude fewer trainable parameters. In the context of AIGI detection, C2PC [50] demonstrated that prompt-based fine-tuning of CLIP can sub-stantially improve generalization by injecting category-common knowledge without modi-fying the backbone weights, highlighting the effectiveness of parameter-efficient adaptation strategies for forensic tasks. Similarly, applying LoRA to the QKV projections of a large pretrained ViT allows the model to adapt its attention patterns to forensic-specific features while preserving the broad visual understanding of the frozen backbone, which is the strategy UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 5
+
+Figure 1: Overview of the proposed PE-Mamba framework for AIGI detection. A frozen PE-Core vision transformer with LoRA adaptation on QKV projections extracts layer-wise CLS tokens from all second normalization layers, which are projected into a unified embed-ding space by the first projection layer. The BSA processes the projected tokens through forward (shallow to deep) and backward (deep to shallow) selective scans to produce zm,while the SWA computes a learned global summary zα . The SGA adaptively fuses zm and 
+
+zα via a learnable gate, and the resulting representation is refined by the second projection layer and passed to the detection head to detect images as real or AIGI. 
+
+# 3 Proposed Method 
+
+The overall architecture of PE-Mamba is illustrated in Figure 1. The framework consists of five principal modules: (i) a frozen PE-Core [2] vision transformer backbone with LoRA adaptation on the QKV projections; (ii) a layer-wise CLS token extraction mechanism via forward hooks; (iii) a bidirectional selective SSM aggregator that processes the ordered se-quence of projected CLS tokens; (iv) a softmax-weighted aggregator that uses learnable pa-rameters; and (v) a sigmoid-gated blend module that blends the SSM output with a learned alpha-weighted aggregation, followed by a binary detection head. 
+
+3.1 Backbone and LoRA Adaptation 
+
+PE-Mamba is built upon PE-Core-G14-448, a gigantic-scale vision transformer pretrained on large-scale image collections with a patch size 14 × 14 and input resolution 448 × 448. The backbone has embedding dimension D = 1536 and consists of L transformer blocks, each containing layer normalization, multi-head self-attention with QKV projections, a sec-ond layer normalization, and a feed-forward network. The backbone is initialized from pre-trained weights and kept frozen throughout training. To enable task-specific adaptation without full fine-tuning, we apply LoRA [23] to the QKV projection matrices of all attention layers. For a weight matrix W ∈ Rdout ×din , LoRA intro-duces trainable matrices A ∈ Rr×din and B ∈ Rdout ×r with rank r ≪ min (dout , din ), replacing the weight update as ∆W = BA . We set LoRA rank r = 8, scaling factor α = 8, and dropout probability p = 0.1, applied exclusively to the QKV projection modules. This restricts the trainable portion of the backbone to fewer than 0 .13% of total parameters with all train-able components (including SSM, projection heads, and gating) comprising 1.3% in total, preserving the broad visual representations of the pretrained model. 
+
+3.2 Layer-wise CLS Token Extraction 
+
+A key design principle of PE-Mamba is the exploitation of intermediate representations across all transformer layers rather than relying solely on the final output token. To achieve 6 UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 
+
+this, we register forward hooks on all normalization modules to extract the CLS token after each transformer block and stack them into a tensor g ∈ RL×D, where L is the number of transformer layers and D = 1536 is the embedding dimension. Shallow-layer CLS tokens predominantly reflect low-level features, such as local texture, edge statistics, and frequency patterns, cues known to be particularly diagnostic of GAN and diffusion model artifacts [13, 47], while deep-layer tokens encode higher-level semantic content capturing structural and compositional properties, making the full sequence g a rich multi-scale forensic representation whose ordering is semantically meaningful. Before aggregation, each layer’s CLS token is projected from D to a common dimension 
+
+D′ through a shared module consisting of a Dropout layer followed by n sequential Linear– LayerNorm–GELU blocks, mapping RD → RD′
+
+for the first block and RD′
+
+→ RD′
+
+thereafter, applied identically and independently to each of the L layer tokens to produce g′ ∈ RL×D′
+
+,with n = 2 and D′ = 1024 in all experiments. 
+
+3.3 Bidirectional Selective SSM Aggregator 
+
+The core contribution of PE-Mamba is the bidirectional selective SSM aggregator, which replaces the trainable importance estimation [27] with a directional, content-adaptive pro-cessing module consisting of two independent selective SSM blocks, one for the forward scan and one for the backward scan, followed by a mean-pooling step and a merge module. 
+
+3.3.1 Selective SSM Block 
+
+The selective SSM block [19] operates on the projected feature sequence g′ ∈ RL×D′
+
+. An input projection maps g′ to RL×2Din where Din = 2D′ is the inner dimension, then splits into a main path x′ ∈ RL×Din and a gating signal z ∈ RL×Din , followed by a depthwise convolution with kernel size 4 and SiLU activation to provide short-range local context. A linear projection maps x′ to input matrix B ∈ RL×dstate , output matrix C ∈ RL×dstate , and scalar step size ∆ ∈ RL×1, where dstate = 16 is the SSM state dimension, ∆ is further projected to Din and activated with Softplus. Since B, C, and ∆ are all functions of the input token, this constitutes the selective mechanism that content-adaptively gates each layer’s contribution. The continuous-time state matrix A ∈ RDin ×dstate is parameterized in log space and held fixed during training, with discrete transition matrix Ai and input matrix Bi computed via zero-order hold, defined as follows: 
+
+Ai = exp (∆i ⊙ A), Bi = ∆i ⊙ Bi (1) and the hidden state hi ∈ RDin ×dstate updated sequentially over i = 1, . . . , L as: 
+
+hi = Ai ⊙ hi−1 + Bi ⊙ x′
+
+> i
+
+, yi = hi · C⊤ 
+
+> i
+
+(2) where ⊙ denotes element-wise multiplication and yi ∈ RDin is the output at position i, giving the scan a hard causal inductive bias unlike learnable weighted average. The scan output y ∈ RL×Din is refined via a learned residual skip y ← y + D ⊙ x′, where 
+
+D ∈ RDin is a learnable skip scale, modulated by output gate y ← y⊙SiLU (z), projected back to D′ via a linear layer, and added to the original input g′ followed by layer normalization, producing output h f /b ∈ RL×D′
+
+for the forward ( f ) or backward ( b) scan respectively. 
+
+3.3.2 Bidirectional Processing and Pooling 
+
+The bidirectional selective SSM aggregator (BSA) blocks process the projected sequence 
+
+g′ ∈ RL×D′
+
+independently: forward scan processes g′ in natural layer order (Layer 1 to Layer L), accumulating evidence from shallow texture cues toward deep semantic repre-sentations, while backward scan processes the reversed sequence of g′, enabling top-down contextual reanalysis where deep semantic information is propagated back to reinterpret low-level forensic features. UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 7
+
+Both scans produce hidden state sequences of shape [L, D′]; rather than using only the termi-nal state, we apply mean pooling over the sequence dimension, defined as follows: 
+
+zfwd = 1
+
+L
+
+> L
+
+# ∑
+
+> i=1
+
+h fi , zbwd = 1
+
+L
+
+> L
+
+# ∑
+
+> i=1
+
+hbi (3) where h f , hb ∈ RL×D′
+
+are the forward and backward hidden state sequences, integrating evidence from all layer positions rather than privileging only the terminal state. The two pooled vectors are concatenated and merged: 
+
+zm = Merge ([ zfwd ; zbwd ]) ∈ RD′
+
+(4) where Merge consists of Linear (2D′ → D′), LayerNorm, and GELU. 
+
+3.4 Softmax-Weighted Aggregator 
+
+To complement the sequential inductive bias of the SSM, a parallel softmax-weighted aggre-gator (SWA) computes a global summary of all projected layer tokens, defined as follows: 
+
+zα =
+
+> L
+
+# ∑
+
+> ℓ=1
+
+σ (ααα)ℓ ⊙ g′ 
+
+> ℓ
+
+∈ RD′
+
+(5) where σ (·) denotes the softmax operation and ααα ∈ RL×D′
+
+is a learnable parameter initialized from N (0, 1), providing a global aggregation. 
+
+3.5 Sigmoid Gated Blend 
+
+The BSA output zm and the SWA output zα are adaptively fused via a learned scalar gate 
+
+γ ∈ R, initialized to zero so that δ (γ) = 0.5 gives equal weight to both branches at the start of training, defined as follows: 
+
+z = δ (γ) zm +  1 − δ (γ) zα ∈ RD′
+
+(6) allowing the model to adaptively emphasize directional sequential evidence or global layer-wise aggregation depending on the training signal. Here, δ (·) denotes the sigmoid function. The gated representation z ∈ RD′
+
+is passed through a second projection module with the same structure as the first projection, a Dropout layer followed by n sequential Linear– LayerNorm–GELU–Dropout blocks operating entirely in RD′
+
+. The detection head then ap-plies three Linear–GELU–Dropout blocks followed by a final Linear (D′ → 1), producing a single logit p ∈ R for binary prediction. 
+
+# 4 Results 
+
+This section presents the experimental setup, quantitative comparisons with 18 state-of-the-art detectors, robustness evaluation under image perturbations, qualitative Grad-CAM anal-ysis, and extensive ablation studies validating the key design choices. 
+
+4.1 Implementation Details 
+
+All experiments are conducted on a Linux 22.04 system equipped with two 48GB GPUs. Training uses AdamW with learning rate η = 10 −4, weight decay 5 × 10 −2, β1 = 0.9, β2 =
+
+0.999, and ε = 10 −8. Input images are resized to 448 × 448 and normalized to ImageNet mean and standard deviation. All experiments use D′ = 1024, n = 2, dstate = 16, dexpand = 2, LoRA rank r = 8, scaling factor α = 8, and dropout probability p = 0.1 throughout. 
+
+4.2 Datasets and Evaluation Protocol 
+
+PE-Mamba trains solely on ProGAN [24] and evaluates zero-shot on 19 unseen genera-tors spanning three families: GANs (CycleGAN [72], BigGAN [3], StyleGAN [25], Style-GAN2 [26], GauGAN [36], StarGAN [8]), other generative models (Deepfakes [44], SITD [5], SAN [11], CRN [6], IMLE [28]), and diffusion models (Guided [12], LDM [43], GLIDE [34], 8 UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 
+
+GAN Family Other Family Diffusion Family 
+
+> Method ProGAN CycleGAN BigGAN StyleGAN GauGAN StarGAN Deepfakes SITD SAN CRN IMLE Guided LDM 200 LDM 200 CFG LDM 100 Glide 100 27 Glide 50 27 Glide 100 10 DALL-E mACC
+
+UpCnv [13]* 53.1 69.7 67.2 60.1 53.8 92.8 53.6 85.0 50.5 52.5 51.6 57.5 49.0 51.3 49.5 54.5 58.1 59.7 55.1 59.2 CNND [68] 100.0 85.2 70.2 85.7 79.0 91.7 53.5 66.7 48.7 86.3 86.3 60.1 54.0 55.0 54.1 60.8 63.8 65.7 55.6 69.6 LGrad [47] 99.8 85.4 82.9 94.8 72.5 99.6 58.0 62.5 50.0 50.7 50.8 77.5 94.2 95.8 94.8 87.4 90.7 89.6 88.4 80.3 DMD [9]* 100.0 91.0 96.7 99.0 91.0 99.0 67.7 94.1 56.6 99.3 99.3 53.8 57.5 59.4 57.6 56.6 58.8 58.8 69.7 77.2 UniD [35] 100.0 98.5 94.5 82.0 99.5 97.0 66.6 63.0 57.5 59.5 72.0 70.0 94.2 73.8 94.4 79.1 79.9 78.1 86.8 81.4 NPR [49] 99.8 95.0 87.6 96.2 86.6 99.8 76.9 66.9 98.6 50.0 50.0 84.6 97.7 98.0 98.2 96.3 97.2 97.4 87.2 87.6 AlgnF [40]* 73.7 56.8 66.0 74.6 63.5 75.2 48.1 77.8 63.2 55.0 48.7 60.4 89.2 89.2 89.2 66.0 67.1 67.5 79.5 69.0 FrqNet [48] 97.9 95.8 90.5 97.6 50.2 93.4 97.4 88.9 59.0 71.9 67.4 86.7 84.6 99.6 65.6 85.7 97.4 88.2 59.1 83.0 EFFT [71] 100.0 99.9 99.6 95.1 99.6 100.0 87.6 92.5 81.5 98.9 98.9 69.2 99.3 96.8 99.5 97.5 97.8 97.2 98.1 95.2 FatF [31] 99.9 93.3 99.5 97.2 99.4 99.8 93.2 81.1 68.0 69.5 69.5 76.0 98.6 94.9 98.7 94.4 94.7 94.2 98.8 90.6 RINE [27] 100.0 99.3 99.6 88.9 99.8 99.5 80.6 90.6 68.3 89.2 90.6 76.1 98.3 88.2 98.6 88.9 92.6 90.7 95.0 91.3 AIDE [70] 99.9 98.5 83.9 99.7 73.2 99.9 54.1 68.1 71.1 60.9 61.0 88.5 98.2 97.5 98.4 98.2 98.4 97.9 97.5 86.6 StayP [39]* 54.0 51.9 54.1 59.5 54.6 79.4 53.0 55.0 68.5 50.3 49.9 51.5 98.6 98.6 97.6 62.6 65.7 64.0 91.5 66.3 C2PC [50] 99.9 97.3 99.1 96.4 99.2 99.6 93.8 95.6 64.4 93.3 93.3 69.1 99.3 97.3 99.3 95.3 95.3 96.1 98.9 93.8 ForL [7] 100.0 99.5 99.4 96.6 95.9 99.0 81.2 82.4 78.0 98.3 98.1 67.1 99.2 96.7 99.3 84.1 86.5 84.4 98.8 91.8 SAFE [29] 99.9 98.9 89.7 98.0 91.5 99.9 93.1 85.6 95.9 50.1 50.1 82.4 98.8 98.7 98.8 95.8 96.6 97.3 97.5 90.5 MiraGe [46] 100.0 94.3 96.5 96.8 93.6 96.1 88.7 75.8 71.9 92.9 92.9 82.0 98.3 94.6 98.6 97.5 97.5 98.0 98.6 92.9 IAPL [30] 100.0 98.6 98.7 94.9 99.4 96.7 95.9 90.8 93.8 92.5 92.7 72.8 99.5 97.7 99.2 98.0 98.3 98.4 98.9 95.6 
+
+PE-Mamba 99.9 99.9 99.9 86.6 100.0 100.0 90.4 99.4 98.2 99.8 99.8 75.5 98.1 92.7 97.9 98.9 99.2 99.5 99.0 96.6 
+
+Table 1: ACC (%) of all compared detectors on the UniversalFakeDetect [68] benchmark. All detectors are trained exclusively on ProGAN [24] (4 categories) and evaluated zero-shot on the remaining generators. * denotes methods retrained on ProGAN for a fair comparison. 
+
+GAN Family Other Family Diffusion Family 
+
+> Method ProGAN CycleGAN BigGAN StyleGAN GauGAN StarGAN Deepfakes SITD SAN CRN IMLE Guided LDM 200 LDM 200 CFG LDM 100 Glide 100 27 Glide 50 27 Glide 100 10 DALL-E mAP
+
+UpCnv [13]* 78.8 79.3 81.9 74.7 68.6 100.0 53.5 97.1 48.0 60.1 62.5 68.7 54.2 56.7 54.9 60.7 67.0 69.1 65.5 68.5 CNND [68] 100.0 93.5 84.5 99.5 89.5 98.2 89.0 73.8 59.5 98.2 98.4 73.7 70.6 71.0 70.5 80.7 84.9 82.1 70.6 83.6 LGrad [47] 100.0 94.0 90.7 99.9 79.4 99.9 67.9 59.4 51.4 63.5 69.6 87.1 99.0 99.2 99.2 93.2 95.1 94.9 97.2 86.3 UniD [35] 100.0 98.1 94.5 86.7 99.3 99.5 91.7 78.5 67.5 83.1 91.1 79.2 95.8 79.8 95.9 93.9 95.1 94.6 88.5 90.1 NPR [49] 100.0 99.5 94.5 99.9 88.8 100.0 84.4 97.9 99.9 50.2 50.2 98.3 99.9 99.9 99.9 99.9 99.9 99.9 99.3 92.8 AlgnF [40]* 84.1 60.4 73.3 87.4 74.0 83.9 42.8 85.8 70.7 66.6 41.7 66.6 99.9 99.9 99.9 73.5 73.6 74.4 90.3 76.3 DMD [9]* 100.0 98.3 99.7 100.0 96.8 100.0 97.5 99.9 87.2 100.0 100.0 74.5 87.6 89.2 87.8 87.4 90.3 89.4 95.7 93.8 FrqNet [48] 99.9 99.6 96.1 99.9 99.7 98.6 99.9 94.4 74.6 80.1 75.7 96.3 96.1 100.0 62.3 99.8 99.8 96.4 77.8 91.9 EFFT [71] 100.0 100.0 100.0 99.8 100.0 100.0 99.0 97.5 97.5 100.0 100.0 95.4 100.0 99.9 100.0 99.9 99.9 100.0 100.0 99.4 FatF [31] 100.0 100.0 99.9 99.8 100.0 100.0 97.9 97.9 81.2 99.8 99.9 91.9 99.8 99.1 99.9 99.1 99.4 99.2 99.8 98.1 RINE [27] 100.0 100.0 99.9 99.4 100.0 100.0 97.9 97.2 94.9 97.3 99.7 96.4 99.8 98.3 99.9 98.8 99.3 98.9 99.3 98.8 AIDE [70] 100.0 99.9 94.4 100.0 97.7 100.0 76.4 83.6 88.8 90.7 99.9 97.3 99.3 99.1 99.3 99.3 99.3 99.2 99.0 96.0 StayP [39]* 89.3 57.7 64.3 76.7 69.2 88.5 58.9 79.7 93.5 53.5 36.9 77.4 100.0 100.0 100.0 81.9 84.3 84.2 98.3 78.6 C2PC [50] 100.0 100.0 99.9 99.5 100.0 100.0 98.6 98.9 84.6 99.9 99.9 94.1 99.9 99.8 99.9 99.7 99.8 99.8 99.9 98.6 ForL [7] 100.0 100.0 99.9 99.2 99.5 100.0 95.1 94.7 98.6 99.8 100.0 93.3 99.9 99.8 99.9 99.7 99.8 99.9 99.9 98.9 SAFE [29] 100.0 99.8 95.9 99.9 97.2 100.0 97.5 85.1 99.3 41.3 47.2 95.8 99.9 99.9 99.9 98.9 99.2 99.4 99.7 92.4 MiraGe [46] 100.0 100.0 99.9 99.8 99.9 99.9 96.0 93.9 84.7 99.9 100.0 96.4 99.9 99.1 99.9 99.8 99.7 99.8 99.9 98.3 IAPL [30] 100.0 99.9 99.9 99.8 100.0 100.0 97.6 97.3 98.1 100.0 100.0 96.3 99.9 99.6 99.7 99.4 99.7 99.9 99.9 99.3 
+
+PE-Mamba 100.0 100.0 99.7 99.9 99.9 99.8 98.3 97.8 100.0 99.9 99.9 97.6 99.6 99.6 99.6 99.5 99.6 99.6 99.5 99.5 
+
+Table 2: AP (%) of all compared detectors on the UniversalFakeDetect [68] benchmark under the same training and evaluation protocol as Table 1. DALL-E [41]) on the UniversalFakeDetect [68] benchmark. AIGCDetect [70] is a fully out-of-distribution benchmark covering nine modern diffusion-based generators: ADM [12], DALL-E 2 [42], GLIDE [34], Midjourney [70], SD v1.4/v1.5 [43], SD-XL [37], VQDM [21], and Wukong [70], evaluated using the same ProGAN-trained model without any retraining or adaptation. For both benchmarks, we report per-generator ACC and AP along with mACC and mAP across all generators. 
+
+4.3 Results on UniversalFakeDetect Benchmark Dataset 
+
+Tables 1 and 2 report ACC and AP across all 19 generators under the UniversalFakeDetect benchmark, where detectors are trained solely on ProGAN and evaluated zero-shot on un-seen generators. PE-Mamba achieves the best overall performance with 96.6% mACC and 99.5% mAP, consistently outperforming prior detectors across GAN, diffusion, and other generator families. These results indicate strong cross-generator generalization and reliable score calibration despite substantial shifts in generation mechanisms. Among GAN-based generators, early artifact-oriented methods, including CNND [68] and LGrad [47], perform competitively on generators that preserve low-level synthesis artifacts, UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 9                                                                                                                                                                                                        
+
+> Method ADM DALL-E2 GLIDE Midjourney SD-XL SD v1.4 SD v1.5 VQDM Wukong mACC/mAP UpConv [13]* 58.6 / 70.0 53.3 / 66.7 57.1 / 65.3 70.7 / 82.9 56.5 / 69.1 54.3 / 62.5 54.5 / 63.2 65.0 / 79.1 57.0 / 68.2 58.6 / 69.7 CNND [68] 60.2 / 76.2 50.4 / 53.6 56.9 / 71.5 50.8 / 58.7 54.9 / 69.8 51.1 / 59.2 51.2 / 60.0 55.1 / 67.6 51.1 / 57.0 53.5 / 63.7 LGrad [47] 62.5 / 67.5 64.2 / 84.3 59.4 / 72.2 63.0 / 70.2 63.8 / 69.5 62.7 / 64.5 63.5 / 65.3 63.2 / 65.8 60.1 / 61.6 62.5 / 69.0 UniD [35] 66.9 / 87.1 50.7 / 63.2 62.5 / 84.3 56.3 / 74.6 60.1 / 88.0 63.8 / 86.6 63.5 / 86.2 85.4 / 96.7 71.0 / 91.3 64.5 / 84.2 NPR [49] 82.6 / 89.9 94.6 / 97.7 90.3 / 95.5 76.8 / 85.9 85.1 / 94.0 90.4 / 94.7 90.5 / 94.4 90.0 / 94.3 89.3 / 93.3 87.7 / 93.3 AlgnF [40]* 61.7 / 67.7 67.8 / 79.3 60.3 / 64.3 88.8 / 97.1 91.2 / 99.3 92.0 / 99.7 91.7 / 99.0 70.3 / 79.5 91.3 / 99.9 79.5 / 87.3 DMD [9]* 52.9 / 72.4 50.7 / 74.2 58.3 / 86.2 52.7 / 74.5 53.5 / 82.1 54.8 / 82.6 54.5 / 82.5 61.7 / 90.6 59.7 / 86.0 55.4 / 81.2 FrqNet [48] 78.8 / 85.0 59.2 / 61.8 77.5 / 83.5 62.5 / 66.8 80.5 / 87.5 85.9 / 91.1 85.2 / 90.5 77.0 / 83.1 85.4 / 90.4 76.9 / 82.2 EFFT [71] 93.7 / 93.7 90.7 / 94.8 92.2 / 92.0 82.1 / 96.8 85.4 / 97.9 95.3 / 95.2 96.1 / 93.8 88.7 / 94.7 93.3 / 97.8 90.8 / 95.2 FatF [31] 79.5 / 95.0 71.1 / 91.6 89.0 / 97.7 55.5 / 73.8 71.0 / 90.5 88.1 / 98.4 87.9 / 98.1 88.0 / 98.5 88.1 / 98.6 79.8 / 93.6 RINE [27] 74.6 / 96.3 54.8 / 89.8 80.7 / 97.9 57.1 / 87.7 64.3 / 96.3 83.9 / 98.4 83.3 / 98.3 89.8 / 99.2 84.9 / 98.6 74.8 / 95.8 AIDE [70] 93.8 / 97.1 81.9 / 88.4 95.2 / 98.6 89.3 / 95.0 91.2 / 95.4 84.7 / 90.2 78.3 / 95.2 92.5 / 96.6 88.9 / 96.3 88.3/94.8 StayP [39]* 53.3 / 80.7 53.3 / 89.9 61.6 / 86.7 97.8 / 99.7 92.6 / 99.1 89.8 / 99.8 79.6 / 99.9 88.1 / 98.8 89.6 / 99.4 78.4 / 94.9 C2PC [50] 65.1 / 92.2 69.6 / 97.3 89.0 / 99.0 54.9 / 80.4 63.7 / 91.4 84.2 / 98.7 84.3 / 98.6 79.1 / 97.9 81.9 / 98.2 74.6 / 94.9 ForL [7] 79.9 / 96.9 87.3 / 98.9 95.0 / 99.7 58.3 / 82.2 73.6 / 91.8 94.8 / 99.7 94.6 / 99.6 86.1 / 98.2 92.3 / 99.4 84.7 / 96.3 SAFE [29] 85.4 / 91.2 92.1 / 99.8 91.4 / 95.2 87.5 / 92.3 76.9 / 84.1 85.4 / 96.3 81.9 / 96.8 84.7 / 94.8 87.4 / 93.8 85.9 / 93.8 MiraGe [46] 91.2 / 96.7 86.4 / 90.2 92.4 / 94.8 85.2 / 94.1 86.4 / 93.6 93.2 / 97.1 89.4 / 95.9 90.5 / 96.2 93.1 / 97.4 89.8 / 95.1 IAPL [30] 90.4 / 95.3 89.1 / 94.2 94.7 / 97.4 93.1 / 97.4 91.4 / 95.1 90.3 / 97.8 93.1 / 98.5 88.9 / 96.1 92.4 / 96.8 91.5 / 96.5
+> PE-Mamba 86.6 / 93.8 97.6 / 99.4 99.7 / 99.9 78.2 / 90.3 99.5 / 99.9 99.7 / 100.0 99.6 / 99.9 98.4 / 99.5 99.7 / 99.9 95.3 / 98.1
+
+Table 3: ACC / AP (%) of PE-Mamba and competing detectors on the AIGCDetect [70] benchmark. To assess true generalization, all detectors use the same ProGAN [24]-trained weights from Tables 1 and 2 without any retraining or adaptation. such as ProGAN, StyleGAN, and StarGAN, but generalize poorly to unseen distributions and non-GAN families. For example, CNND drops to 48.7% ACC on SAN and 53.5% on Deep-fakes, while LGrad exhibits substantial degradation on SITD (62.5%) and SAN (50.0%). This behavior suggests an over-reliance on generator-specific frequency or upsampling arti-facts that do not transfer across synthesis paradigms. Recent methods designed for stronger generalization, such as NPR [49], FrqNet [48], EFFT [71], and RINE [27], achieve improved robustness but remain inconsistent across families. Al-though FrqNet attains strong AP values, its ACC collapses on GauGAN (50.2%) and SAN (59.0%), revealing unstable decision boundaries despite confident predictions. Likewise, RINE achieves competitive overall performance but exhibits notable weaknesses on SAN (68.3%) and SITD (90.6%), suggesting reduced generalization under semantic or structural distribution shifts. In contrast, PE-Mamba demonstrates highly stable behavior across all generator families. Within GAN-based generators, it achieves near-perfect detection on ProGAN, GauGAN, and StarGAN ( ≥99.9% ACC) while preserving strong performance on more challenging domains, such as Deepfakes (90.4%). More importantly, unlike many prior methods that de-teriorate under diffusion-based synthesis, PE-Mamba maintains consistently strong results across diffusion generators, including Glide, LDM variants, and DALL-E, achieving accu-racies ranging from 97.9% to 99.5%. This stability highlights the ability of the proposed directional selective SSM aggregation to capture transferable structural inconsistencies be-yond generator-specific artifacts. Compared with the strongest prior competitors, PE-Mamba surpasses RINE by +5.3% mACC and +0.7% mAP while also outperforming EFFT (95.2% mACC) and IAPL (95.6% mACC). Particularly large gains are observed on SAN (98.2% vs. 68.3% for RINE) and SITD (99.4% vs. 90.6% for RINE), suggesting that directional state-space aggregation better mod-els long-range dependencies and spatial relationships than weighted average mechanisms. The AP results in Table 2 further confirm the generalization of PE-Mamba . The proposed method achieves 99.5% mAP and maintains ≥99.5% AP on 17 out of 19 generators, ex-ceeding EFFT (99.4%) and RINE (98.8%). Unlike methods that exhibit high AP but un-stable classification accuracy, PE-Mamba simultaneously achieves strong ranking quality and consistent decision boundaries, indicating well-calibrated feature representations across diverse unseen generation processes. 10 UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION                                
+
+> JPEG Compression Gaussian Blur Additive Noise Combinations
+> q=90
+> q=75
+> q=65
+> σ =0.5
+> σ =1.0
+> σ =2.0
+> σ =0.01
+> σ =0.03
+> σ =0.05 JPEG-75 +Blur-1.0 JPEG-75 +Noise-0.03 Blur-1.0 +Noise-0.03 JPEG-75+ Blur-1.0+ Noise-0.03
+> Clean
+> mACC 92.5 91.2 88.3 92.4 93.6 86.3 90.2 89.3 88.0 90.8 90.6 90.0 88.4 96.6
+> mAP 96.2 96.4 94.3 97.6 97.5 96.1 95.9 94.4 93.1 97.7 95.9 95.4 94.5 99.5
+
+Table 4: Robustness of PE-Mamba to JPEG compression ( q ∈ { 90 , 75 , 65 }), Gaussian blur (σ ∈ { 0.5, 1.0, 2.0}), additive noise ( σ ∈ { 0.01 , 0.03 , 0.05 }), and their combinations on Uni-versalFakeDetect [68] benchmark dataset. 
+
+4.4 Results on AIGCDetect Benchmark Dataset 
+
+Table 3 reports ACC/AP on the AIGCDetect benchmark, where all detectors are evalu-ated zero-shot using the same ProGAN-trained weights, providing a strict test of out-of-distribution generalization to modern high-fidelity generators. 
+
+PE-Mamba achieves 95.3% mACC and 98.1% mAP, ranking first among all 18 methods, and representing a substantial gain over the closest competitors IAPL [30] (91.5%/96.5%) and EFFT [71] (90.8%/95.2%). Methods that perform well on UniversalFakeDetect suffer significant drops on AIGCDetect: RINE [27] falls to 74.8% mACC and FatF [31] to 79.8%, degradations of over 10 points, whereas PE-Mamba maintains 95.3% mACC, only 1.3 points below its UniversalFakeDe-tect score, demonstrating substantially better generalization. PE-Mamba achieves near-perfect detection on SD v1.4 (99.7%), SD v1.5 (99.6%), SD-XL (99.5%), GLIDE (99.7%), and Wukong (99.7%), outperforming all competing detectors. Midjourney (78.2% ACC / 90.3% AP) and ADM (86.6% ACC / 93.8% AP) remain the most challenging generators, as Midjourney’s proprietary aesthetic refinement pipeline sup-presses standard synthesis artifacts, making fake images visually closer to real photographs, while ADM’s classifier-guided synthesis produces artifact profiles that differ substantially from both the ProGAN-based training distribution and standard latent diffusion generators. Notably, while StayP [39] achieves the highest Midjourney ACC (97.8%), it does so by suppressing real image features entirely, a fundamentally different strategy that trades off performance on other generators, yielding only 78.4% mACC overall. PE-Mamba achieves a better balance, with competitive Midjourney AP (90.3%) and strong performance across all remaining generators. The most meaningful comparison is with RINE [27], which uses the same cross-layer ViT feature aggregation paradigm but relies on a weighted sum with trainable importance weights. 
+
+PE-Mamba surpasses RINE by +20.5% mACC and +2.3% mAP, directly validating that re-placing learnable weighted average with a bidirectional selective SSM provides substantially more generalizable forensic representations for out-of-distribution generators. 
+
+4.5 Robustness to Image Perturbations 
+
+To evaluate the robustness of PE-Mamba under real-world post-processing conditions, we apply three common perturbation types [60], JPEG compression [57], Gaussian blur [51], and additive Gaussian noise [51], at multiple severity levels, as well as their combinations, to the UniversalFakeDetect benchmark, as reported in Table 4. 
+
+PE-Mamba degrades gracefully under mild to moderate perturbations, retaining 92.5% mACC under JPEG q=90 and 93.6% under Blur σ =1.0, indicating that the bidirectional cross-layer representations are not overly sensitive to minor signal distortions. The most challenging single perturbation is Blur σ =2.0 (86.3% mACC), which significantly smooths UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 11 Input Pretrained         
+
+> Real PE-Mamba
+> Real ProGAN CycleGAN StyleGAN DeepFake CRN SITD Glide DALLE
+
+Figure 2: Grad-CAM visualizations comparing the pretrained PE-Core and the proposed 
+
+PE-Mamba across real and AIGIs from diverse generators. While the pretrained model pro-duces diffuse, semantically driven activations regardless of image authenticity, PE-Mamba 
+
+learns to suppress activations on real content and concentrate on the forensically discrimi-native regions in fake images, including object boundaries in GAN-generated images, facial artifacts in Deepfakes, and global synthesis patterns in diffusion-generated content. high-frequency texture artifacts that are particularly diagnostic for GAN-generated con-tent [13], followed by JPEG q=65 (88.3%) and Noise σ =0.05 (88.0%). Notably, AP re-mains consistently high ( ≥93.1%) across all single-perturbation conditions, indicating well-calibrated confidence scores even when accuracy degrades. Under the most challenging triple combination of JPEG-75 + Blur-1.0 + Noise-0.03, PE-Mamba retains 88.4% mACC and 94.5% mAP, a degradation of only 8.2 points in mACC from the baseline (96.6%), demonstrating that the model’s representations are sufficiently distributed across multiple cues to defend simultaneous multi-domain distortion. These results confirm that PE-Mamba maintains strong performance across a broad range of post-processing conditions without any adversarial training, suggesting that the hierarchi-cal cross-layer aggregation strategy captures forensic evidence at multiple abstraction levels, making it inherently more robust than detectors that rely on a single discriminative signal. 
+
+4.6 Qualitative Analysis via Grad-CAM 
+
+To provide interpretable insight into the decision-making of PE-Mamba , we visualize class activation maps using Grad-CAM [45] for both the pretrained PE-Core and PE-Mamba 
+
+across real and eight generators, as shown in Figure 2. The pretrained model produces diffuse, semantically driven activations that are largely con-sistent regardless of whether the image is real or synthetic. Activations are scattered across salient semantic regions, faces, objects, and textures, reflecting the model’s general visual understanding rather than any forensic specialization. Crucially, the pretrained backbone cannot distinguish between real and fake images at the activation level, as evidenced by sim-ilarly structured heatmaps across all columns. In contrast, PE-Mamba learns distinctly different activation patterns: for real images (columns 1–2), activations are sparse and suppressed, while for fake images (columns 3–10), PE-Mamba concentrates on generator-specific forensic regions, localized boundary artifacts in ProGAN; global style-transfer patterns in CycleGAN; structural edge artifacts in StyleGAN; facial skin texture and lip regions in DeepFake; wide-field synthesis patterns in CRN and SITD; and structured contours in diffusion-generated content (Glide, DALL-E). These vi-sualizations confirm that bidirectional cross-layer aggregation successfully specializes the representation toward artifact-discriminative features without any explicit spatial supervi-sion, demonstrating that ordered shallow-to-deep and deep-to-shallow scanning internalizes 12 UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION           
+
+> SSM Layers mACC (%) mAP (%) 196.6 99.5
+> 295.5 99.0 396.0 99.3 495.6 98.9
+
+Table 5: Number of SSM layers.           
+
+> dstate mACC (%) mAP (%)
+> 895.8 99.0
+> 16 96.6 99.5
+> 32 96.3 99.3 64 95.9 99.1
+
+Table 6: State dimension.           
+
+> dexpand mACC (%) mAP (%)
+> 195.7 98.9
+> 296.6 99.5
+> 396.4 99.3 496.1 99.1
+
+Table 7: SSM expansion. 4816 32 64   
+
+> LoRA Rank r
+> 87 90 93 96
+> Acc (%)
+> Acc AP 97 98 99 100
+> AP (%)
+
+(a) 4816 32 64   
+
+> LoRA
+> 87 90 93 96
+> Acc (%)
+> Acc AP 97 98 99 100
+> AP (%)
+
+(b) 00.05 0.1 0.2 0.3    
+
+> Dropout Rate p
+> 87 90 93 96
+> Acc (%)
+> Acc AP 97 98 99 100
+> AP (%)
+
+(c) Figure 3: Ablation on LoRA hyperparameters: (a) rank r, (b) scaling factor α, and (c) dropout probability p. Gold stars mark the best ACC. forensically meaningful spatial patterns across the full transformer hierarchy. 
+
+4.7 Ablation Study 
+
+We conduct an extensive ablation study to validate the key design choices of PE-Mamba ,covering SSM configurations (SSM layers, dstate , dexpand ), LoRA adaptation ( r, α, p), aggre-gation components (BSA, SWA, SGA), backbone selection, projection dimension D′, and number of projection layers n. All experiments follow the standard ProGAN-trained pro-tocol on UniversalFakeDetect [68], with a single variable changed at a time while all other settings are fixed to the defaults ( r=8, α=8, p=0.1, D′=1024, n=2, dstate =16, dexpand =2). 
+
+4.7.1 SSM Hyperparameter Analysis 
+
+We first ablate three SSM-specific hyperparameters, number of SSM layers, state dimension 
+
+dstate , and expansion factor dexpand , to justify the configuration used in PE-Mamba .Table 5 shows that a single SSM layer achieves the best performance (96.6% mACC / 99.5% mAP), with deeper stacking providing no benefit and slightly degrading accuracy. This suggests that the cross-layer forensic aggregation task is well-suited to a single sequential pass, the bidirectional forward and backward scans already provide sufficient representa-tional depth without requiring additional stacked recurrence, and deeper stacking likely in-troduces over-smoothing across the L layer positions. Table 6 evaluates dstate ∈ { 8, 16 , 32 , 64 }, where dstate = 16 achieves the best result (96.6% mACC / 99.5% mAP). Smaller values ( dstate = 8) slightly limit the hidden state capacity (95.8% mACC), while larger values ( dstate ≥ 32) do not improve performance, indicating that the forensic information compressed from L layers is low-dimensional and well-captured by a state of size 16. Table 7 shows that dexpand = 2 achieves the best trade-off (96.6% mACC / 99.5% mAP). A smaller expansion ( dexpand = 1) reduces the inner representation capacity (95.7% mACC), while larger values ( dexpand ≥ 3) offer marginal gains at increased computational cost. The standard Mamba expansion factor of 2 proves optimal for this task, consistent with its effec-tiveness in the original sequence modeling literature [19]. 
+
+4.7.2 LoRA Hyperparameter Ablation 
+
+We ablate the three key LoRA hyperparameters, rank r, scaling factor α, and dropout rate p,while keeping all other settings fixed. Results are summarized in Figures 3. UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 13 
+
+BSA SWA SGA mACC (%) mAP (%) 
+
+✗ ✗ ✗ 90.6 96.9 
+
+✓ ✗ ✗ 95.3 98.7 
+
+✗ ✓ ✗ 95.1 98.3 
+
+✓ ✓ ✗ 96.1 99.0 
+
+✓ ✓ ✓ 96.6 99.5 
+
+Table 8: Aggregation components. 
+
+Backbone mACC (%) mAP (%) 
+
+DINOv2-L14-448 91.7 98.3 CLIP-ViT-L14-224 94.8 98.5 CLIP-ViT-L14-336 93.6 98.4 PE-Core-L14-336 95.7 98.9 
+
+PE-Core-G14-448 96.6 99.5 
+
+Table 9: Different backbone selection. 01234 
+
+> Number of Projection Layers
+> 94 96 98 100
+> Performance (%)
+> Projection Layers n
+> Acc AP Best
+
+(a) 256 512 1024 1536 2048   
+
+> Projection Dimension
+> 94 96 98 100
+> Performance (%)
+> Projection Dim d
+> Acc AP Best
+
+(b) 500 1000 2000 3000 4000 5000  
+
+> Training Steps
+> 94 96 98 100
+> Performance (%)
+> Training Steps
+> Acc AP Best
+
+(c) Figure 4: Ablation on (a) projection layers n, (b), projection dimension d, and (c) training steps. Optimal settings are 2,000 steps, n=2, and d=1024. Gold stars mark the best ACC. As shown in Figure 3(a), r=8 achieves the best trade-off (96.6% mACC, 99.5% mAP). Lower rank ( r=4) slightly limits expressiveness (95.0% mACC), while higher ranks ( r≥16) do not improve and marginally reduce accuracy, likely due to overfitting to the training do-main. The narrow performance gap across r ∈ { 8, 16 , 32 , 64 } suggests that the task-relevant adaptation signal is low-dimensional and well-captured by a small rank. Figure 3(b) shows that performance peaks at α=8 with 96.6% mACC and 99.5% mAP. Smaller values ( e.g . α=4) slightly underperform (95.7% mACC), while larger values de-grade more noticeably ( α=64 drops to 91.2% mACC and 98.0% mAP), suggesting that an overly large scaling factor destabilizes fine-tuning by amplifying LoRA updates beyond the pretrained feature distribution. Figure 3(c) shows the model is largely robust to dropout rate, with all settings achieving be-tween 95.7% and 96.6% mACC. A moderate dropout of p=0.1 yields the best result (96.6% mACC, 99.5% mAP), providing a consistent regularization benefit, while both zero dropout and higher rates ( e.g . p=0.3) perform comparably, indicating that the low-rank constraint provides sufficient implicit regularization. Based on these results, we adopt r=8, α=8, and p=0.1 as the final LoRA configuration. 
+
+4.7.3 Impact of Aggregation Components 
+
+Table 8 progressively adds each aggregation component to isolate its individual contribu-tions. Removing all three components and simply concatenating yields the lowest perfor-mance (90.6% mACC / 96.9% mAP), confirming that the aggregation design is essential. BSA alone achieves 95.3% mACC, demonstrating that directional sequential scanning over the layer hierarchy already provides strong forensic representations. SWA alone reaches 95.1% mACC, showing that the softmax-weighted global summary is a competitive alterna-tive but lacks the ordered inductive bias of the SSM. Combining BSA and SWA improves to 96.1% mACC, confirming that the two branches capture complementary information, direc-tional sequential evidence, and global layer-wise aggregation, respectively. Adding SGA to adaptively blend the two outputs further improves to 96.6% mACC and 99.5% mAP, validat-ing that the learned scalar gate successfully exploits the complementarity of both branches rather than applying a fixed combination. 14 UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 
+
+4.7.4 Backbone Choice 
+
+Table 9 compares five backbone architectures under identical training conditions. DINO and CLIP-based backbones achieve competitive but lower performance (91.7–94.8% mACC), suggesting that their general-purpose visual representations are less well-suited to forensic feature extraction than PE-Core. PE-Core-L14-336 achieves 95.7% mACC, already out-performing all non-PE alternatives, while scaling to the gigantic PE-Core-G14-448 further improves to 96.6% mACC and 99.5% mAP, confirming that both the PE-Core pretraining objective and larger model capacity contribute meaningfully to detection performance. 
+
+4.7.5 Projection Configurations and Training Steps 
+
+Figure 4(a) shows that a single projection layer ( n=1) is insufficient (95.7% Acc), while two layers ( n=2) achieve the best result (96.6% Acc, 99.5% AP). Adding further layers ( n≥3) yields marginal degradation, indicating that the projection head has enough capacity at n=2and deeper stacking introduces unnecessary parameters. Figure 4(b) shows a clear optimum projection dimension at d=1024 (96.6% Acc, 99.5% AP). Smaller dimensions ( d=256, d=512) compress the features too aggressively, losing discriminative information. Larger dimensions ( d=1536, d=2048) do not improve accuracy and increase the parameter count without benefit. Therefore, we adopt d=1024 as our default projection dimension for the proposed PE-Mamba .As shown in Figure 4(c), performance improves steadily up to 2,000 training steps (96.6% Acc, 99.5% AP) and degrades slightly beyond, suggesting the model saturates early, given the low-rank adaptation regime. Running longer does not improve generalization and risks overfitting to the training domain. We therefore adopt 2,000 steps as our default. 
+
+4.7.6 Computational Cost Metric Value 
+
+Total parameters 1904.32 M Frozen (backbone) 1880.07 M Trainable (LoRA) 2.46 M (0.13%) Trainable (all) 24.25 M (1.3%) GFLOPs 1869.3 Inference time 62.5 ms/image Table 10: Computational cost of the pro-posed PE-Mamba configuration Table 10 summarizes the computational cost of PE-Mamba . The backbone contributes 1,880.07 M parameters, LoRA adds 2.46 M trainable weights (0.13%), the full trainable count including the SSM aggregator, projection heads, and gating is 24.25 M (1.3%), and the model requires 1,869.3 GFLOPs with 62.5 ms inference time, confirming a highly parameter-efficient and practically deployable design. 
+
+# 5 Conclusions 
+
+We presented PE-Mamba , a novel AIGI detection framework that replaces conventional cross-layer aggregation with three complementary components: a BSA that explicitly mod-els the ordered semantic progression of ViT layer representations through forward and back-ward selective scans, a SWA that provides a complementary global summary, and an SGA that adaptively fuses both. Built upon a frozen PE-Core backbone with lightweight LoRA adaptation, PE-Mamba achieves state-of-the-art performance of 96.6% mACC and 99.5% mAP on UniversalFakeDetect and 95.3% mACC and 98.1% mAP on AIGCDetect, sub-stantially outperforming the closest predecessor RINE by +5.3% and +20.5% mACC, re-spectively, while maintaining robustness under diverse image perturbations and parameter efficiency with only 1.3% (0.13% LoRA only) trainable parameters. These results validate that treating cross-layer ViT features as an ordered sequence and exploiting their directional structure via selective state space modeling is a more powerful and generalizable forensic aggregation strategy than the weighted average. The current framework processes each image independently, without exploiting inter-image UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 15 
+
+relationships, and Midjourney and ADM remain challenging generators whose proprietary and classifier-guided synthesis pipelines introduce artifact profiles not well covered by Pro-GAN training. Future work will explore multi-source training for broader artifact coverage, extend bidirectional SSM aggregation to video deepfake detection where temporal order-ing adds a second sequence dimension, and investigate parallel SSM implementations for improved inference efficiency. [Code will be released upon acceptance of the paper.] 
+
+# References 
+
+[1] Mauro Barni, Kassem Kallas, Ehsan Nowroozi, and Benedetta Tondi. CNN detec-tion of GAN-generated face images based on cross-band co-occurrences analysis. In 
+
+IEEE International Workshop on Information Forensics and Security (WIFS) , pages 1–6. IEEE, 2020. [2] Daniel Bolya, Po-Yao Huang, Peize Sun, Jang Hyun Cho, Andrea Madotto, Chen Wei, Tengyu Ma, Jiale Zhi, Jathushan Rajasegaran, Hanoona Rasheed, et al. Perception en-coder: The best visual embeddings are not at the output of the network. arXiv preprint arXiv:2504.13181 , 2025. [3] Andrew Brock, Jeff Donahue, and Karen Simonyan. Large scale GAN training for high fidelity natural image synthesis. arXiv preprint arXiv:1809.11096 , 2018. [4] Mathilde Caron, Hugo Touvron, Ishan Misra, Hervé Jégou, Julien Mairal, Piotr Bo-janowski, and Armand Joulin. Emerging properties in self-supervised vision trans-formers. In Proceedings of the IEEE/CVF International Conference on Computer Vi-sion (ICCV) , pages 9650–9660, 2021. [5] Chen Chen, Qifeng Chen, Jia Xu, and Vladlen Koltun. Learning to see in the dark. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , pages 3291–3300, 2018. [6] Qifeng Chen and Vladlen Koltun. Photographic image synthesis with cascaded refine-ment networks. In Proceedings of the IEEE International Conference on Computer Vision (ICCV) , pages 1511–1520, 2017. [7] Yingjian Chen, Lei Zhang, and Yakun Niu. ForgeLens: Data-efficient forgery focus for generalizable forgery image detection, 2025. [8] Yunjey Choi, Minje Choi, Munyoung Kim, Jung-Woo Ha, Sunghun Kim, and Jaegul Choo. StarGAN: Unified generative adversarial networks for multi-domain image-to-image translation. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , pages 8789–8797, 2018. [9] Riccardo Corvi, Davide Cozzolino, Giada Zingarini, Giovanni Poggi, Koki Nagano, and Luisa Verdoliva. On the detection of synthetic images generated by diffusion mod-els. In ICASSP 2023 – IEEE International Conference on Acoustics, Speech and Signal Processing , pages 1–5. IEEE, 2023. [10] Davide Cozzolino, Giovanni Poggi, Riccardo Corvi, Matthias Nießner, and Luisa Ver-doliva. Raising the bar of AI-generated image detection with CLIP. arXiv preprint arXiv:2312.00195 , 2024. 16 UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 
+
+[11] Tao Dai, Jianrui Cai, Yongbing Zhang, Shu-Tao Xia, and Lei Zhang. Second-order attention network for single image super-resolution. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 11065–11074, 2019. [12] Prafulla Dhariwal and Alexander Nichol. Diffusion models beat GANs on image syn-thesis. In Advances in Neural Information Processing Systems (NeurIPS) , volume 34, pages 8780–8794, 2021. [13] Ricard Durall, Margret Keuper, and Janis Keuper. Watch your up-convolution: CNN based generative deep neural networks are failing to reproduce spectral distributions. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 7890–7899, 2020. [14] Eftsure. Deepfake-related fraud forecast to hit $40b by 2027. https://www. eftsure.com/statistics/deepfake-statistics , 2025. [Online; ac-cessed 2026]. [15] Muhammad Umar Farooq, Awais Khan, Kutub Uddin, and Khalid Mahmood Malik. Transferable adversarial attacks on audio deepfake detection. In 2025 IEEE/CVF Win-ter Conference on Applications of Computer Vision Workshops (WACVW) , pages 1555– 1564. IEEE, 2025. [16] Muhammad Umar Farooq, Kutub Uddin, Awais Khan, and Khalid Malik. Uncertainty-aware deepfake detection via multi-view structural learning. arXiv preprint arXiv:2607.28769 , 2026. [17] Joshua Frank, Thorsten Eisenhofer, Lea Schönherr, Andreas Fischer, Dorothea Kolossa, and Thorsten Holz. Leveraging frequency analysis for deep fake image recog-nition. In International Conference on Machine Learning (ICML) , pages 3247–3258. PMLR, 2020. [18] Globe Newswire. Deepfake fraud costs the financial sector an average of $600,000 per company. https://www.businesswire.com/news/home/ 20241031656724/en/Deepfake-Fraud-Costs , 2024. [Online; accessed 2026]. [19] Albert Gu and Tri Dao. Mamba: Linear-time sequence modeling with selective state spaces. arXiv preprint arXiv:2312.00752 , 2023. [20] Albert Gu, Karan Goel, and Christopher Ré. Efficiently modeling long sequences with structured state spaces. arXiv preprint arXiv:2111.00396 , 2021. [21] Shuyang Gu, Dong Chen, Jianmin Bao, Fang Wen, Bo Zhang, Dongdong Chen, Lu Yuan, and Baining Guo. Vector quantized diffusion model for text-to-image syn-thesis. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 10696–10706, 2022. [22] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , pages 770–778, 2016. UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 17 
+
+[23] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. LoRA: Low-rank adaptation of large language models. Proceedings of the International Conference on Learning Representations (ICLR) , 2022. [24] Tero Karras, Timo Aila, Samuli Laine, and Jaakko Lehtinen. Progressive growing of gans for improved quality, stability, and variation. arXiv preprint arXiv:1710.10196 ,2017. [25] Tero Karras, Samuli Laine, and Timo Aila. A style-based generator architecture for generative adversarial networks. In Proceedings of the IEEE/CVF conference on com-puter vision and pattern recognition , pages 4401–4410, 2019. [26] Tero Karras, Samuli Laine, Miika Aittala, Janne Hellsten, Jaakko Lehtinen, and Timo Aila. Analyzing and improving the image quality of StyleGAN. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 8110–8119, 2020. [27] Christos Koutlis and Symeon Papadopoulos. Leveraging representations from inter-mediate encoder-blocks for synthetic image detection. In European Conference on Computer Vision (ECCV) , pages 394–411. Springer, 2024. [28] Ke Li, Tianhao Zhang, and Jitendra Malik. Diverse image synthesis from semantic lay-outs via conditional IMLE. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , pages 4220–4229, 2019. [29] Ouxiang Li, Jiayin Cai, Yanbin Hao, Xiaolong Jiang, Yao Hu, and Fuli Feng. Im-proving synthetic image detection towards generalization: An image transformation perspective. In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Dis-covery and Data Mining V. 1 , pages 2405–2414, 2025. [30] Yiheng Li, Zichang Tan, Guoqing Xu, Zhen Lei, Xu Zhou, and Yang Yang. Towards generalizable ai-generated image detection via image-adaptive prompt learning. arXiv preprint arXiv:2508.01603 , 2025. [31] Huan Liu, Zichang Tan, Chuangchuang Tan, Yunchao Wei, Jingdong Wang, and Yao Zhao. Forgery-aware adaptive transformer for generalizable synthetic image detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-nition (CVPR) , pages 10770–10780, 2024. [32] Yue Liu, Yunjie Tian, Yuzhong Zhao, Hongtian Yu, Lingxi Xie, Yaowei Wang, Qix-iang Shen, and Yunfan Liu. VMamba: Visual state space model. arXiv preprint arXiv:2401.10166 , 2024. [33] Lakshmanan Nataraj, Tajuddin Manhar Mohammed, Shivkumar Chandrasekaran, Ar-juna Flenner, Jawadul H Bappy, Amit K Roy-Chowdhury, and B S Manjunath. De-tecting GAN generated fake images using co-occurrence matrices. arXiv preprint arXiv:1903.06836 , 2019. [34] Alex Nichol, Prafulla Dhariwal, Aditya Ramesh, Pranav Shyam, Pamela Mishkin, Bob McGrew, Ilya Sutskever, and Mark Chen. GLIDE: Towards photorealistic image gener-ation and editing with text-guided diffusion models. arXiv preprint arXiv:2112.10741 ,2021. 18 UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 
+
+[35] Utkarsh Ojha, Yuheng Li, and Yong Jae Lee. Towards universal fake image detectors that generalize across generative models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 24480–24489, 2023. [36] Taesung Park, Ming-Yu Liu, Ting-Chun Wang, and Jun-Yan Zhu. Semantic image synthesis with spatially-adaptive normalization. In Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition (CVPR) , pages 2337–2346, 2019. [37] Dustin Podell, Zion English, Kyle Lacey, Andreas Blattmann, Tim Dockhorn, Jonas Müller, Joe Penna, and Robin Rombach. Sdxl: Improving latent diffusion models for high-resolution image synthesis. In International Conference on Learning Representa-tions , volume 2024, pages 1862–1874, 2024. [38] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sand-hini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever. Learning transferable visual models from natural lan-guage supervision. In International Conference on Machine Learning (ICML) , pages 8748–8763. PMLR, 2021. [39] Anirudh Sundara Rajan and Yong Jae Lee. Stay-positive: A case for ignoring real image features in fake image detection. Proceedings of the International Conference on Machine Learning (ICML) , 2025. [40] Anirudh Sundara Rajan, Utkarsh Ojha, Jedidiah Schloesser, and Yong Jae Lee. Aligned datasets improve detection of latent diffusion-generated images. Proceedings of the International Conference on Learning Representations (ICLR) , 2025. [41] Aditya Ramesh, Mikhail Pavlov, Gabriel Goh, Scott Gray, Chelsea Voss, Alec Radford, Mark Chen, and Ilya Sutskever. Zero-shot text-to-image generation. In International Conference on Machine Learning (ICML) , pages 8821–8831. PMLR, 2021. [42] Aditya Ramesh, Prafulla Dhariwal, Alex Nichol, Casey Chu, and Mark Chen. Hi-erarchical text-conditional image generation with CLIP latents. In arXiv preprint arXiv:2204.06125 , 2022. [43] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Om-mer. High-resolution image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) ,pages 10684–10695, 2022. [44] Andreas Rossler, Davide Cozzolino, Luisa Verdoliva, Christian Riess, Justus Thies, and Matthias Nießner. FaceForensics++: Learning to detect manipulated facial images. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) ,pages 1–11, 2019. [45] Ramprasaath R. Selvaraju, Michael Cogswell, Abhishek Das, Ramakrishna Vedantam, Devi Parikh, and Dhruv Batra. Grad-CAM: Visual explanations from deep networks via gradient-based localization. In Proceedings of the IEEE International Conference on Computer Vision (ICCV) , pages 618–626, 2017. UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 19 
+
+[46] Kuo Shi, Jie Lu, Shanshan Ye, Guangquan Zhang, and Zhen Fang. Mirage: Multimodal discriminative representation learning for generalizable ai-generated image detection. In Proceedings of the 33rd ACM International Conference on Multimedia , pages 353– 361, 2025. [47] Chuangchuang Tan, Yao Zhao, Shikui Wei, Guanghua Gu, and Yunchao Wei. Learning on gradients: Generalized artifacts representation for GAN-generated images detec-tion. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 12105–12114, 2023. [48] Chuangchuang Tan, Yao Zhao, Shikui Wei, Guanghua Gu, Ping Liu, and Yunchao Wei. Frequency-aware deepfake detection: Improving generalizability through fre-quency space domain learning. In Proceedings of the AAAI Conference on Artificial Intelligence , pages 5052–5060, 2024. [49] Chuangchuang Tan, Yao Zhao, Shikui Wei, Guanghua Gu, Ping Liu, and Yunchao Wei. Rethinking the up-sampling operations in CNN-based generative network for generalizable deepfake detection. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 28130–28139, 2024. [50] Chuangchuang Tan, Renshuai Tao, Huan Liu, Guanghua Gu, Baoyuan Wu, Yao Zhao, and Yunchao Wei. C2P-CLIP: Injecting category common prompt in CLIP to enhance generalization in deepfake detection. In Proceedings of the AAAI Conference on Artifi-cial Intelligence , pages 7184–7192, 2025. [51] Nusrat Tasnim, Kutub Uddin, and Khalid Mahmood Malik. AI-generated image de-tection: An empirical study and future research directions. Proceedings of the BMVC 2025 Workshop on Media Authenticity in the Age of Artificial Intelligence , 2025. [52] Nusrat Tasnim, Khalid Malik, et al. Grex-bench: Benchmarking gen-eralization, robustness, and explainability in ai-generated image detection. 
+
+https://doi.org/10.21203/rs.3.rs-8633550/v1 , 2026. [53] Nusrat Tasnim, Kutub Uddin, and Khalid Malik. A comprehensive survey, large-scale empirical study, and future insights on generalization, robustness, and explainability of ai-generated image detection. SSRN (January 06, 2026) , 2026. [54] Nusrat Tasnim, Kutub Uddin, and Khalid Malik. Diversity matters: Dataset diversi-fication and dual-branch network for generalized ai-generated image detection. Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2026. [55] Kutub Uddin and Byung Tae Oh. Enhanced adversarial attack for avoidance of fake image detection. Journal of Broadcast Engineering , 28(7):859–866, 2023. [56] Kutub Uddin, Yoonmo Yang, and Byung Tae Oh. Anti-forensic against double jpeg compression detection using adversarial generative network. Proceedings of the Korean Society of Broadcast Engineers Conference , pages 58–60, 2019. [57] Kutub Uddin, Yoonmo Yang, and Byung Tae Oh. Analysis of generative adversarial network targeting anti-forensic in jpeg compressed domain. In International Workshop on Advanced Imaging Technology (IWAIT) 2021 , volume 11766, pages 627–631. SPIE, 2021. 20 UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 
+
+[58] Kutub Uddin, Yoonmo Yang, and Byung Tae Oh. Double compression detection in hevc-coded video with the same coding parameters using picture partitioning informa-tion. Signal Processing: Image Communication , 103:116638, 2022. [59] Kutub Uddin, Yoonmo Yang, Tae Hyun Jeong, and Byung Tae Oh. A robust open-set multi-instance learning for defending adversarial attacks in digital image. IEEE Transactions on Information Forensics and Security , 19:2098–2111, 2023. [60] Kutub Uddin, Yoonmo Yang, and Byung Tae Oh. Deep learning-based counter anti-forensic of gan-based attack in hevc compressed domain using coding pattern analysis. 
+
+Expert Systems with Applications , 233:120912, 2023. [61] Kutub Uddin, Tae Hyun Jeong, and Byung Tae Oh. Counter-act against gan-based attacks: A collaborative learning approach for anti-forensic detection. Applied Soft Computing , 153:111287, 2024. [62] Kutub Uddin, Muhammad Umar Farooq, Awais Khan, and Khalid Mahmood Malik. Adversarial attacks on audio deepfake detection: A benchmark and comparative study. 
+
+arXiv preprint arXiv:2509.07132 , 2025. [63] Kutub Uddin, Muhammad Umar Farooq, Awais Khan, Muhammad Saad Saeed, Ijaz Ul Haq, Nusrat Tasnim, and Khalid Mahmood Malik. Advbench: A comprehensive benchmark of adversarial attacks on deepfake detectors in real-world consumer ap-plications. 2025. [64] Kutub Uddin, Awais Khan, Muhammad Umar Farooq, and Khalid Malik. SHIELD: A secure and highly enhanced integrated learning for robust deepfake detection against adversarial attacks. arXiv preprint arXiv:2507.13170 , 2025. [65] Kutub Uddin, Nusrat Tasnim, Muhammad Saad Saeed, and Khalid Mahmood Ma-lik. GUARD: Generative unmasking and adversarial-resistant deepfake detection using multi-model knowledge distillation. Authorea Preprints , 2025. [66] Kutub Uddin, Nusrat Tasnim, Awais Khan, Mohammad Umar Farooq, and Khalid Ma-lik. Do transformations reveal the truth? generative residual learning for generalized ai-generated image detection. arXiv preprint arXiv:2607.08674 , 2026. [67] Kutub Uddin, Nusrat Tasnim, and Byung Tae Oh. Face2parts: Exploring coarse-to-fine inter-regional facial dependencies for generalized deepfake detection. IEEE Access ,14:55111–55125, 2026. [68] Sheng-Yu Wang, Oliver Wang, Richard Zhang, Andrew Owens, and Alexei A Efros. CNN-generated images are surprisingly easy to spot. . . for now. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 8695–8704, 2020. [69] Zhendong Wang, Jianmin Bao, Wengang Zhou, Weilun Wang, Hezhen Hu, Hong Chen, and Houqiang Li. DIRE for diffusion-generated image detection. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , pages 22445–22455, 2023. UDDIN ET AL.: PE-MAMBA FOR AI-GENERATED IMAGE DETECTION 21 
+
+[70] Shilin Yan, Ouxiang Li, Jiayin Cai, Yanbin Hao, Xiaolong Jiang, Yao Hu, and Weidi Xie. A sanity check for AI-generated image detection. Proceedings of the International Conference on Learning Representations (ICLR) , 2025. [71] Zhiyuan Yan, Jiangming Wang, Zhendong Wang, Peng Jin, Ke-Yue Zhang, Shen Chen, Taiping Yao, Shouhong Ding, Baoyuan Wu, and Li Yuan. EFFORT: Efficient orthog-onal modeling for generalizable AI-generated image detection. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2024. [72] Jun-Yan Zhu, Taesung Park, Phillip Isola, and Alexei A Efros. Unpaired image-to-image translation using cycle-consistent adversarial networks. In Proceedings of the IEEE International Conference on Computer Vision (ICCV) , pages 2223–2232, 2017. [73] Lianghui Zhu, Bencheng Liao, Qian Zhang, Xinlong Wang, Wenyu Liu, and Xinggang Wang. Vision mamba: Efficient visual representation learning with bidirectional state space model. arXiv preprint arXiv:2401.13660 , 2024.
