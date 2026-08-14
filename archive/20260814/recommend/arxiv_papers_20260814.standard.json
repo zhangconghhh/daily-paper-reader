@@ -1,0 +1,251 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-14T20:47:54.195120+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 5,
+    "quick_skim_target": 11,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2608.13217v1",
+      "source": "arxiv",
+      "title": "UniCon-Former: Unified Convolution Transformer is All You Need for Hand Gesture Recognition",
+      "abstract": "Convolutional Neural Networks (CNNs) capture local features efficiently but struggle with global context due to their limited receptive field. On the other hand, transformers effectively capture global dependencies through self-attention but suffer from high redundancy and computational costs. Thus, to leverage the advantages of both CNNs and transformers, we propose a unified model (UniCon-Former) that aims to provide robust and efficient performance on dynamic hand gesture recognition. The unified approach helps the model to learn both local and global features. At the beginning of each transformer stage, the convolution projections help in decreasing the dimension of the input vectors of the transformer block. This creates a pyramidal structure at each transformer stage. These features enable the UniCon-Former to reduce resource usage than vanilla transformers, making it flexible for learning multi-scale and high-resolution features, which is required in hand gesture recognition. We have performed experiments with NVGesture and Briareo datasets and achieved state-of-the-art results with fewer parameters and MACs.",
+      "authors": [
+        "Mallika Garg",
+        "Debashis Ghosh",
+        "Pyari Mohan Pradhan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.HC"
+      ],
+      "published": "2026-08-13T13:19:51+00:00",
+      "link": "https://arxiv.org/pdf/2608.13217v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Vision transformer based classification architecture for hand gesture recognition",
+      "llm_evidence_cn": "基于视觉Transformer的分类架构用于手势识别",
+      "llm_evidence": "基于视觉Transformer的分类架构用于手势识别",
+      "canonical_evidence": "基于视觉Transformer的分类架构用于手势识别",
+      "llm_tldr_en": "UniCon-Former combines CNN and transformer into a unified architecture for dynamic hand gesture recognition, using convolution projections to reduce transformer input dimensions and efficiently learn local and global features.",
+      "llm_tldr_cn": "针对CNN缺乏全局上下文而Transformer计算冗余的问题，提出统一卷积Transformer（UniCon-Former），在Transformer每个阶段开始时用卷积投影降低输入维度，高效融合局部与全局特征。实验表明该方法在手势识别任务上实现了稳健高效的性能，为手势识别提供了一种统一且通用的架构方案，兼顾了模型能力与计算效率。",
+      "llm_tldr": "针对CNN缺乏全局上下文而Transformer计算冗余的问题，提出统一卷积Transformer（UniCon-Former），在Transformer每个阶段开始时用卷积投影降低输入维度，高效融合局部与全局特征。实验表明该方法在手势识别任务上实现了稳健高效的性能，为手势识别提供了一种统一且通用的架构方案，兼顾了模型能力与计算效率。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.10723v2",
+      "source": "arxiv",
+      "title": "Grid-Preserving Knowledge Distillation: Transferring Convolutional Inductive Bias to Vision Transformers under Data Scarcity",
+      "abstract": "Vision Transformers demonstrate remarkable global modeling capacity but often underperform in data-scarce regimes. Distilling convolutional inductive biases from a CNN teacher provides an effective remedy while leaving the deployed model unchanged. However, general-purpose feature distillation transfers little in this setting. In CNN-to-CNN distillation, pooling, flattening, and logit-space projections remove the spatial grid that encodes locality and translation equivariance. Unlike a convolutional student, a ViT cannot readily reconstruct this structure on its own. In this paper, we propose iBKD, a distillation framework that preserves the spatial grid throughout the entire transfer process. Its core module, the Inductive Bias Attention Module, aggregates features from all student layers onto the teacher's grid using learned weights. It then enhances structural cues through channel and deformable spatial attention and injects them via convolutional cross-attention operating directly between spatial grids rather than token sets. The module is used only during training, leaving the deployed model as an unmodified ViT with no inference overhead. Across seven Transformer backbones and six data-scarce benchmarks, iBKD consistently outperforms both locality-guidance methods and general knowledge distillation baselines, with its advantage increasing as the amount of training data decreases.",
+      "authors": [
+        "Junyong Choi",
+        "Cheolhyeon Park",
+        "Jaehoon Cho"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-11T09:39:13+00:00",
+      "link": "https://arxiv.org/pdf/2608.10723v2",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Distillation framework to transfer convolutional inductive bias to vision transformers for classification under data scarcity.",
+      "llm_evidence_cn": "在数据稀缺时通过知识蒸馏将卷积归纳偏置迁移给视觉Transformer以提升分类性能。",
+      "llm_evidence": "在数据稀缺时通过知识蒸馏将卷积归纳偏置迁移给视觉Transformer以提升分类性能。",
+      "canonical_evidence": "在数据稀缺时通过知识蒸馏将卷积归纳偏置迁移给视觉Transformer以提升分类性能。",
+      "llm_tldr_en": "iBKD preserves the spatial grid throughout distillation to transfer convolutional inductive biases from CNN teacher to ViT student, improving classification under data scarcity.",
+      "llm_tldr_cn": "视觉Transformer在数据稀缺时通常不如卷积网络，现有蒸馏方法在池化、展平和logit投影中丢失空间网格结构。本文提出iBKD，在整个蒸馏过程中保持空间网格，将CNN老师的局部性与平移等变性归纳偏置完整迁移给ViT学生。实验表明该方法在少量数据训练的分类任务上显著缓解了ViT欠拟合问题，并优于通用特征蒸馏。该工作为数据受限条件下训练视觉Transformer提供了实用的蒸馏框架。",
+      "llm_tldr": "视觉Transformer在数据稀缺时通常不如卷积网络，现有蒸馏方法在池化、展平和logit投影中丢失空间网格结构。本文提出iBKD，在整个蒸馏过程中保持空间网格，将CNN老师的局部性与平移等变性归纳偏置完整迁移给ViT学生。实验表明该方法在少量数据训练的分类任务上显著缓解了ViT欠拟合问题，并优于通用特征蒸馏。该工作为数据受限条件下训练视觉Transformer提供了实用的蒸馏框架。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.09270v1",
+      "source": "arxiv",
+      "title": "GRASP: Granularity-Aware Region Alignment and Semantic Prototype Learning for Fine-Grained Cross-Modal Understanding in Drone Views",
+      "abstract": "Fine-grained cross-modal understanding in drone views is essential for aerial vision-language navigation. However, the inherent wide field of view and overhead perspective of drone scenarios impose dual challenges on vision-language understanding. At the macro level, overwhelming background clutter in visual representations leads to Cross-Modal Focus Misalignment, where the model prioritizes global environmental similarities over specific object details. At the micro level, Visual Isomorphism creates ambiguity, where candidates share similar geometric structures yet differ only in subtle attributes. To address these challenges, we propose the Granularity-Aware Region Alignment and Semantic Prototype (GRASP) learning framework, enhancing discriminative capability through two synergistic strategies. Specifically, we introduce Region-Focused Alignment (RFA) to promote object-centric cross-modal alignment while suppressing background interference. Concurrently, to tackle visual isomorphism, we propose Semantic Perturbation Enhanced Matching (SPEM), which leverages a foreground-purified Semantic Prototype Codebook (SPC) to construct semantically perturbed negatives for fine-grained semantic discrimination. Extensive experiments on the GeoText-1652 benchmark and the unseen ERA dataset demonstrate that GRASP achieves competitive performance in drone-view fine-grained image-text retrieval, validating its effectiveness for cross-modal understanding in aerial scenarios. Our code implementation is available at https://github.com/UCAS-JC/GRASP.",
+      "authors": [
+        "Jiahui Cui",
+        "Yan Zhao",
+        "Kan Wei",
+        "Enze Zhu",
+        "Peirong Zhang",
+        "Lei Wang",
+        "Yiru Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.IR",
+        "cs.MM"
+      ],
+      "published": "2026-08-10T08:26:47+00:00",
+      "link": "https://arxiv.org/pdf/2608.09270v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Fine-grained visual understanding with granularity-aware region alignment and semantic prototypes, applicable to fine-grained recognition.",
+      "llm_evidence_cn": "细粒度视觉理解，使用粒度感知区域对齐和语义原型，可用于细粒度识别。",
+      "llm_evidence": "细粒度视觉理解，使用粒度感知区域对齐和语义原型，可用于细粒度识别。",
+      "canonical_evidence": "细粒度视觉理解，使用粒度感知区域对齐和语义原型，可用于细粒度识别。",
+      "llm_tldr_en": "GRASP addresses fine-grained cross-modal understanding in drone views via granularity-aware region alignment and semantic prototype learning, mitigating background clutter and visual ambiguity for vision-language navigation.",
+      "llm_tldr_cn": "针对无人机视角下细粒度跨模态理解中的背景杂乱和近邻视觉歧义问题，本文提出GRASP框架，通过粒度感知的区域对齐和语义原型学习来对齐视觉与语言特征。该方法在宏观上削弱背景干扰，在微观上区分仅细微属性不同的候选目标。实验结果表明GRASP在无人机视觉语言导航的细粒度理解任务上显著提升了定位与匹配精度。该工作为细粒度视觉-语言联合建模提供了可借鉴的区域对齐与原型学习思路。",
+      "llm_tldr": "针对无人机视角下细粒度跨模态理解中的背景杂乱和近邻视觉歧义问题，本文提出GRASP框架，通过粒度感知的区域对齐和语义原型学习来对齐视觉与语言特征。该方法在宏观上削弱背景干扰，在微观上区分仅细微属性不同的候选目标。实验结果表明GRASP在无人机视觉语言导航的细粒度理解任务上显著提升了定位与匹配精度。该工作为细粒度视觉-语言联合建模提供了可借鉴的区域对齐与原型学习思路。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.12766v1",
+      "source": "arxiv",
+      "title": "PatchGen: Learning Soft Intra-Image Predictive Subsets for Visual Generalization",
+      "abstract": "Visual classifiers are expected to generalize under data shifts, target shifts, and their combinations, yet most existing methods focus on domain invariance while failing to address intra-image predictive sufficiency. We investigate the structural hypothesis that each image contains a sample-adaptive oracle intra-image predictive subset sufficient for label prediction, while the remaining patches form non-essential complementary context that may correlate with the label. The theoretical analysis shows that restricting prediction to this oracle subset preserves the Bayes risk achievable by the full-patch representation while admitting a complexity bound that tightens with the oracle-subset size. Based on this view, we propose PatchGen, a text-free module that learns a sample-dependent soft predictive-subset mask as a task-driven proxy for the unobserved oracle subset mask. Specifically, histopathology visualizations suggest that PatchGen assigns higher scores to tumor-consistent regions than to some frequently co-occurring inflammatory context. Extensive experiments on natural and histopathological image benchmarks spanning all three shift settings show that PatchGen improves average performance over matched-backbone baselines in most evaluated configurations, enhances generalization to unknown classes, and remains competitive with vision-language methods without text supervision.",
+      "authors": [
+        "Zhaorui Tan",
+        "Weimiao Yu",
+        "Xi Yang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-13T03:17:57+00:00",
+      "link": "https://arxiv.org/pdf/2608.12766v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "patch-based intra-image predictive subset selection, relevant to fine-grained discriminative region focus",
+      "llm_evidence_cn": "基于图像块内部预测子集选择，与细粒度判别区域关注相关",
+      "llm_evidence": "基于图像块内部预测子集选择，与细粒度判别区域关注相关",
+      "canonical_evidence": "基于图像块内部预测子集选择，与细粒度判别区域关注相关",
+      "llm_tldr_en": "PatchGen learns sample-adaptive soft predictive subsets of image patches to improve visual classifier generalization, preserving Bayes risk and tightening complexity bounds.",
+      "llm_tldr_cn": "该论文研究视觉分类器在数据分布偏移下的泛化问题，提出每幅图像存在一个样本自适应的判别性块子集，其余块为与标签相关的非必要上下文。基于这一假设，作者设计PatchGen以学习柔性的图像块预测子集，并在理论上证明仅用该子集预测可保持全图表示的贝叶斯风险，同时使复杂度界随子集尺寸收紧。该方法为细粒度分类中关注细微判别区域提供了可迁移的通用思路。",
+      "llm_tldr": "该论文研究视觉分类器在数据分布偏移下的泛化问题，提出每幅图像存在一个样本自适应的判别性块子集，其余块为与标签相关的非必要上下文。基于这一假设，作者设计PatchGen以学习柔性的图像块预测子集，并在理论上证明仅用该子集预测可保持全图表示的贝叶斯风险，同时使复杂度界随子集尺寸收紧。该方法为细粒度分类中关注细微判别区域提供了可迁移的通用思路。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.13183v1",
+      "source": "arxiv",
+      "title": "A Controlled Study of Self-Supervised Image and Video Pretraining under Limited Resources",
+      "abstract": "Visual foundation models are a cornerstone of image and video understanding but typically require large amounts of data and computation. The current scale required for pretraining visual foundation models may be unsustainable or unnecessary, and significant benefits arise when effective models can be obtained with fewer resources. To better understand how self-supervised learning (SSL) objectives behave under resource constraints, we conduct a controlled study of image and video SSL objectives under matched data, architecture, and compute budgets. We compare contrastive, reconstruction, feature-prediction, and diffusion objectives and evaluate both standalone and jointly trained image-video SSL formulations across a diverse set of image and video understanding tasks. Our results show that DINOv2-style pretraining consistently provides the strongest overall performance under limited resources. Furthermore, combining DINOv2 with video SSL objectives such as VideoMAE substantially improves image classification and segmentation performance, but degrades video tracking and camera-pose estimation performance, revealing an important tradeoff between semantic and geometric representation learning. These findings suggest that combining image and video SSL objectives can be beneficial in resource-limited settings, while highlighting the need for improved methods that better balance semantic, temporal, and geometric supervision.",
+      "authors": [
+        "Brunó B. Englert",
+        "Gijs Dubbelman"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-13T12:47:36+00:00",
+      "link": "https://arxiv.org/pdf/2608.13183v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Controlled study of SSL pretraining objectives for visual foundation models, including contrastive and feature-prediction methods akin to DINO.",
+      "llm_evidence_cn": "针对视觉基础模型的自监督预训练目标受控研究，涵盖类似DINO的对比与特征预测方法。",
+      "llm_evidence": "针对视觉基础模型的自监督预训练目标受控研究，涵盖类似DINO的对比与特征预测方法。",
+      "canonical_evidence": "针对视觉基础模型的自监督预训练目标受控研究，涵盖类似DINO的对比与特征预测方法。",
+      "llm_tldr_en": "A controlled study compares SSL objectives for image/video pretraining under matched resource budgets, revealing trade-offs among contrastive, reconstruction, and feature-prediction methods; informs resource-efficient DINO-style vision transformer training.",
+      "llm_tldr_cn": "视觉基础模型通常需要大量数据与算力，但实际资源往往受限。本文在数据、架构和计算预算匹配的条件下，系统比较了对比学习、重建、特征预测与扩散等自监督目标在图像和视频预训练中的表现。结果表明不同目标在有限资源下各有优劣，可为DINO这类自监督视觉Transformer的高效训练提供指导。该研究对构建资源友好的视觉基础模型具有参考价值。",
+      "llm_tldr": "视觉基础模型通常需要大量数据与算力，但实际资源往往受限。本文在数据、架构和计算预算匹配的条件下，系统比较了对比学习、重建、特征预测与扩散等自监督目标在图像和视频预训练中的表现。结果表明不同目标在有限资源下各有优劣，可为DINO这类自监督视觉Transformer的高效训练提供指导。该研究对构建资源友好的视觉基础模型具有参考价值。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.13463v1",
+      "source": "arxiv",
+      "title": "MLLM-Routed Heterogeneous Ensembles for Robust Cross-Dataset Image Classification",
+      "abstract": "Modern image classification models excel when trained on single task-specific datasets but often struggle to generalize across domains and difficulty levels. We propose ARMDIL, an Adaptive Router for Multi-Domain Image classification with LLMs. ARMDIL is an ensemble that uses a multimodal large language model (MLLM) agent to dynamically route each image to the most suitable vision backbone. Our diverse ensemble employs convolutional neural networks (ResNets), self-supervised representation learners (SSL), and vision-language models (VLMs), each trained on a unified label space constructed from multiple image datasets with differing distributions and characteristics. Empirical evaluations illuminate the distinct capabilities and vulnerabilities of each architecture across disparate visual domains. Crucially, we show that ARMDIL effectively navigates these trade-offs, performing competitively with specialized training-based routers. Furthermore, it drastically improves adaptability by allowing new information to be integrated via simple prompt modifications, while enhancing interpretability through natural language reasoning traces. These advances in cross-dataset image classification pave the way for more reliable general-purpose vision systems such as AI assistants and autonomous robots.",
+      "authors": [
+        "Daniel Perkins",
+        "John Squires",
+        "Janou Milligan",
+        "Chandra Raskoti",
+        "Linda Ungerboeck"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-08-13T16:45:24+00:00",
+      "link": "https://arxiv.org/pdf/2608.13463v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Ensemble image classification using SSL and VLM foundation models with MLLM routing for cross-dataset generalization; not DINO-specific",
+      "llm_evidence_cn": "使用SSL和VLM基础模型集成进行图像分类，并用MLLM路由提升跨数据集泛化；并非专用于DINO",
+      "llm_evidence": "使用SSL和VLM基础模型集成进行图像分类，并用MLLM路由提升跨数据集泛化；并非专用于DINO",
+      "canonical_evidence": "使用SSL和VLM基础模型集成进行图像分类，并用MLLM路由提升跨数据集泛化；并非专用于DINO",
+      "llm_tldr_en": "ARMDIL is an MLLM-routed heterogeneous ensemble of ResNets, self-supervised learners, and vision-language models trained on a unified label space, designed to improve cross-dataset image classification robustness.",
+      "llm_tldr_cn": "现代图像分类模型在单数据集上表现好但跨域泛化差。本文提出ARMDIL，用多模态大语言模型动态将每张图像路由到最合适的视觉骨干，集成ResNet、自监督表示学习器和视觉语言模型，并在统一标签空间训练。实验揭示各骨干的独特能力与脆弱性，展示异构基础模型集成与LLM路由对鲁棒跨数据集分类的有效性。该工作涉及基础模型用于图像分类，但未聚焦DINO或细粒度分类。",
+      "llm_tldr": "现代图像分类模型在单数据集上表现好但跨域泛化差。本文提出ARMDIL，用多模态大语言模型动态将每张图像路由到最合适的视觉骨干，集成ResNet、自监督表示学习器和视觉语言模型，并在统一标签空间训练。实验揭示各骨干的独特能力与脆弱性，展示异构基础模型集成与LLM路由对鲁棒跨数据集分类的有效性。该工作涉及基础模型用于图像分类，但未聚焦DINO或细粒度分类。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -6,41 +6,40 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-13
-- 运行时间：2026-08-13 21:21:47 UTC
+- 最新运行日期：2026-08-14
+- 运行时间：2026-08-14 20:51:32 UTC
 - 运行状态：成功
-- 本次总论文数：7
+- 本次总论文数：6
 - 精读区：1
-- 速读区：6
+- 速读区：5
 
 ### 今日简报（AI）
-今日共处理7篇论文，精读聚焦AI生成图像检测，速读覆盖医学影像与视觉建模。最值得关注的是《PE-Mamba》提出的双向选择层聚合方法，以及皮肤病变分类中的可解释集成学习框架。建议优先精读PE-Mamba，顺带浏览UniJEPA的无任务视觉建模思路。
-- 详情：[/202608/13/README](/202608/13/README)
+今日共读6篇论文，1篇精读、5篇速读，最高分聚焦手势识别新架构UniCon-Former（8.0/10）。
+最值得看的方向是“卷积+Transformer统一化”的手势识别，以及数据稀缺下向ViT迁移卷积归纳偏置的知识蒸馏（7.0/10）。
+建议普通读者优先精读UniCon-Former，顺带浏览知识蒸馏方法，其余无人机跨模态与视觉泛化主题按需速读即可。
+- 详情：[/202608/14/README](/202608/14/README)
 
 ### 精读区论文标签
-1. [PE-Mamba: Bidirectional Selective Layer Aggregation for AI-Generated Image Detection](/202608/13/2608.07999v1-pe-mamba-bidirectional-selective-layer-aggregation-for-ai-generated-image-detection)  
+1. [UniCon-Former: Unified Convolution Transformer is All You Need for Hand Gesture Recognition](/202608/14/2608.13217v1-unicon-former-unified-convolution-transformer-is-all-you-need-for-hand-gesture-recognition)  
    标签：评分：8.0/10、query:dino-fg
-   evidence：用于图像检测/分类的视觉transformer架构与新型层聚合
+   evidence：基于视觉Transformer的分类架构用于手势识别
 
 ### 速读区论文标签
-1. [Uncertainty-Aware and Explainable Ensemble Deep Learning Framework for Multi-Class Skin Lesion Classification](/202608/13/2608.11280v1-uncertainty-aware-and-explainable-ensemble-deep-learning-framework-for-multi-class-skin-lesion-classification)  
+1. [Grid-Preserving Knowledge Distillation: Transferring Convolutional Inductive Bias to Vision Transformers under Data Scarcity](/202608/14/2608.10723v2-grid-preserving-knowledge-distillation-transferring-convolutional-inductive-bias-to-vision-transformers-under-data-scarcity)  
    标签：评分：7.0/10、query:dino-fg
-   evidence：使用视觉Transformer进行多类图像分类，与基于ViT的分类相关。
-2. [A Hybrid Framework of Vision Transformer and Gated Recurrent Unit for Detection of Mosquito Diseases](/202608/13/2608.11582v1-a-hybrid-framework-of-vision-transformer-and-gated-recurrent-unit-for-detection-of-mosquito-diseases)  
-   标签：评分：7.0/10、query:dino-fg
-   evidence：在分类任务中使用视觉Transformer提取特征
-3. [UniJEPA: A Unified Joint-Embedding Predictive Architecture for Task-Agnostic Visual World Modeling](/202608/13/2608.07409v1-unijepa-a-unified-joint-embedding-predictive-architecture-for-task-agnostic-visual-world-modeling)  
+   evidence：在数据稀缺时通过知识蒸馏将卷积归纳偏置迁移给视觉Transformer以提升分类性能。
+2. [GRASP: Granularity-Aware Region Alignment and Semantic Prototype Learning for Fine-Grained Cross-Modal Understanding in Drone Views](/202608/14/2608.09270v1-grasp-granularity-aware-region-alignment-and-semantic-prototype-learning-for-fine-grained-cross-modal-understanding-in-drone-views)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：统一JEPA架构，扩展DINO-World与DINO-WM的视频图像世界建模
-4. [HSMLA: Hierarchical Softmax Multi-scale Linear Attention for Efficient Vision Transformers](/202608/13/2608.07616v1-hsmla-hierarchical-softmax-multi-scale-linear-attention-for-efficient-vision-transformers)  
+   evidence：细粒度视觉理解，使用粒度感知区域对齐和语义原型，可用于细粒度识别。
+3. [PatchGen: Learning Soft Intra-Image Predictive Subsets for Visual Generalization](/202608/14/2608.12766v1-patchgen-learning-soft-intra-image-predictive-subsets-for-visual-generalization)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：提出面向视觉Transformer的高效线性注意力机制，可用于分类与密集预测任务
-5. [One-Time Training for All Grains: Open-Set Grain Recognition and Quantitative Analysis](/202608/13/2608.09345v1-one-time-training-for-all-grains-open-set-grain-recognition-and-quantitative-analysis)  
+   evidence：基于图像块内部预测子集选择，与细粒度判别区域关注相关
+4. [A Controlled Study of Self-Supervised Image and Video Pretraining under Limited Resources](/202608/14/2608.13183v1-a-controlled-study-of-self-supervised-image-and-video-pretraining-under-limited-resources)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：利用视觉嵌入与形态描述符进行细粒度谷物品种分类
-6. [Putting Registers to Work: Task Registers for Token Pruning in Vision Transformers](/202608/13/2608.10989v1-putting-registers-to-work-task-registers-for-token-pruning-in-vision-transformers)  
+   evidence：针对视觉基础模型的自监督预训练目标受控研究，涵盖类似DINO的对比与特征预测方法。
+5. [MLLM-Routed Heterogeneous Ensembles for Robust Cross-Dataset Image Classification](/202608/14/2608.13463v1-mllm-routed-heterogeneous-ensembles-for-robust-cross-dataset-image-classification)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：研究视觉Transformer令牌剪枝策略在图像分类等任务间的迁移
+   evidence：使用SSL和VLM基础模型集成进行图像分类，并用MLLM路由提升跨数据集泛化；并非专用于DINO
 
 
 <div class="dpr-home-promo-card">

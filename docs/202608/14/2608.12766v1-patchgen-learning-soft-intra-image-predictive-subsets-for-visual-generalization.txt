@@ -1,0 +1,1029 @@
+Title: PatchGen: Learning Soft Intra-Image Predictive Subsets for Visual Generalization
+
+URL Source: https://arxiv.org/pdf/2608.12766v1
+
+Published Time: Fri, 14 Aug 2026 00:35:03 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+# PatchGen: Learning Soft Intra-Image Predictive Subsets for Visual Generalization 
+
+## Zhaorui Tan 1∗, Weimiao Yu 1, Xi Yang 2∗
+
+> 1
+
+Agency for Science, Technology and Research (A*STAR), Singapore 
+
+> 2
+
+Xi’an Jiaotong-Liverpool University, Suzhou, China 
+
+Abstract 
+
+Visual classifiers are expected to generalize under data shifts, target shifts, and their combinations, yet most existing methods focus on domain invariance while failing to address intra-image predictive sufficiency. We investigate the structural hypothesis that each image contains a sample-adaptive oracle intra-image predictive subset sufficient for label prediction, while the re-maining patches form non-essential complementary context that may correlate with the label. The theoretical analysis shows that restricting prediction to this oracle subset preserves the Bayes risk achievable by the full-patch representation while ad-mitting a complexity bound that tightens with the oracle-subset size. Based on this view, we propose PatchGen, a text-free module that learns a sample-dependent soft predictive-subset mask as a task-driven proxy for the unobserved oracle subset mask. Specifically, histopathology visualizations suggest that PatchGen assigns higher scores to tumor-consistent regions than to some frequently co-occurring inflammatory context. Extensive experiments on natural and histopathological image benchmarks spanning all three shift settings show that Patch-Gen improves average performance over matched-backbone baselines in most evaluated configurations, enhances gener-alization to unknown classes, and remains competitive with vision-language methods without text supervision. 
+
+## 1 Introduction 
+
+Generalization remains a longstanding challenge in visual clas-sification (Gulrajani and Lopez-Paz 2020; Kukleva, Kuehne, and Schiele 2021; Liu et al. 2021; Vaze et al. 2022; Cha et al. 2022; Abbe et al. 2024; Tan, Yang, and Huang 2024; Tan et al. 2024), particularly because real-world distribution shifts rarely stem from a single factor. Instead, they often involve both data shifts , such as domain changes, and target shifts ,such as novel or evolving categories, which are collectively referred to as all shifts (Tan et al. 2024). Existing visual generalization methods primarily address data shifts by suppressing domain-dependent spurious cor-relations. Typical approaches learn domain-invariant repre-sentations through statistical alignment (Yuan et al. 2023; Li et al. 2018c; Hu et al. 2020; Cha et al. 2022; Tan, Yang, and Huang 2024) or causal-inspired formulations (Gong et al. 2025; Wang et al. 2025; Liu et al. 2025). However, domain invariance alone may not distinguish prediction-sufficient 
+
+> ∗
+
+Corresponding author. 
+
+Figure 1: Qualitative histopathology visualization on an unseen-domain tumor image: PatchGen’s learned soft predictive-subset mask compared with the corresponding attention maps of previous methods. evidence from a complementary context that repeatedly co-occurs with predictive evidence in the source data but becomes unreliable under domain or label-space shifts. For example, a model may exploit inflammation, which may usually ac-company tumor-specific morphology in a source dataset, yet it is a non-specific response that can also arise from non-neoplastic injury. Meanwhile, vision-language models such as CLIP (Radford et al. 2021) offer strong transferability, but their dependence on image-text alignment may limit their applicability to category-discovery settings in which novel classes lack reliable textual specifications. These observations motivate an intra-image predictive view of visual generalization. As shown in Figure 2 (a), we hy-pothesize that, in one image, there exists a sample-adaptive oracle intra-image predictive subset ( C⋆(X)) that contains evidence sufficient for label prediction, while the remain-ing complementary context subset ( R⋆(X)) is non-essential. Specifically, R⋆(X) may be heterogeneous, comprising label-correlated co-occurring regions, domain-varying shortcuts, domain-stable but conditionally redundant regions, and re-gions with little or no marginal label information. Despite their different properties, these patches provide no additional label information once the oracle predictive-subset representation 
+
+ΦC (X) is given. Under explicit stable predictive-sufficiency and bounded oracle-subset-size assumptions, we show that an oracle predictive subset containing at most s of the P patches (s ≤ P ) preserves the Bayes risk achievable by the full-patch representation Φall while admitting an oracle-subset-size-dependent complexity upper bound that is no larger than its all-patch counterpart, and is strictly tighter whenever s < P .Based on this perspective, we propose PatchGen , which learns a sample-dependent soft predictive-subset mask as a task-driven proxy for the unobserved oracle subset mask arXiv:2608.12766v1 [cs.CV] 13 Aug 2026 associated with C⋆(X). This subset is not assumed to have a fixed size: it may be small when evidence is localized and may equal the full patch set when predictive evidence occupies the whole image, as in tumor-dominant histopathology tiles. The mask is derived from cross-patch interactions and jointly optimized through low-score mask suppression, selected-confidence regularization, and class-conditional feature align-ment. Histopathological images provide a morphology-rich setting for inspecting the learned patch-selection maps. In Figure 1, PatchGen assigns relatively higher weights to re-gions morphologically consistent with tumor tissue and lower weights to some surrounding inflammatory regions that dis-tract other methods. PatchGen is validated across three challenging tasks (details in Appendix A): 1) Multi-domain generalization (mDG) 
+
+for data shifts, 2) Continual category discovery (CCD) for target shifts, and 3) Multi-domain generalization with GCD (mDG+GCD) for all-shift scenario. Extensive experiments on natural and histopathological image benchmarks show that PatchGen improves matched-backbone baselines in most evaluated configurations, yields positive average gains in the reported matched comparisons, and remains competitive with methods built on vision-language backbones, without requiring text inputs or text-side adaptation objectives. 
+
+## 2 Related Work 
+
+We summarize the most relevant literature here and defer a broader discussion to Appendix B. Generalization under multiple shifts. Multi-domain generalization transfers from source to unseen domains through alignment or pretrained-feature regularization (Ganin et al. 2016; Li et al. 2018c; Cha et al. 2022; Tan, Yang, and Huang 2024). CCD addresses sequential novel category discovery, while mDG+GCD jointly considers unseen domains and unknown classes (Zhang et al. 2022; Kim et al. 2023; Wu et al. 2023; Cendra, Zhao, and Han 2024; Tan et al. 2024). PatchGen provides a shared sample-dependent patch-selection mechanism across these settings. Causal generalization and patch selection. Causal DG mainly models invariant mechanisms at the domain or representation level (Liu et al. 2025; Wang et al. 2025; Gong et al. 2025), whereas token pruning and attention visualization primarily target efficiency or post-hoc interpretation (Rao et al. 2021; Abnar and Zuidema 2020). PatchGen instead jointly learns soft patch masks for generalization through task supervision and regularization. 
+
+## 3 Theoretical Motivation 
+
+Setup and structural assumptions. Let X ∈ X , Y ∈ Y , and 
+
+D ∈ D denote an input image, its class label, and its domain, respectively. Let [P ] = {1, . . . , P } denote the patch-index set. A backbone fθ produces the patch representations 
+
+Z(X) = [ z1(X), . . . , z P (X)] ⊤ ∈ RP ×dz ,
+
+where zp(X) ∈ Rdz is the representation of patch p. We use Pd and Ed to denote probability and expectation under domain D = d. For each image, we posit an unobserved sample-dependent partition 
+
+C⋆(X) ˙ ∪ R⋆(X) = [ P ], (1) where C⋆(X) is the oracle intra-image predictive sub-set and R⋆(X) is its complementary context. For a mask 
+
+m ∈ [0 , 1] P , define the masked concatenation Φm(X) = vec ( m1z1(X), . . . , m P zP (X)) ∈ RP d z . Let m⋆C (X) ∈{0, 1}P denote the oracle predictive-subset mask, and let 
+
+1P denote the all-ones vector. We define ΦC (X) := Φm⋆C (X)(X), ΦR(X) := Φ1P −m⋆C (X)(X), Φall (X) := Φ1P (X). We omit the argument X when no ambiguity arises. 
+
+Shift taxonomy. To align the analysis with our evaluation settings, we consider: (i) data shifts , modeled as changes in the complementary-context distribution while the joint law of (Φ C , Y ) remains fixed; (ii) target shifts , modeled through a partition into known and unknown classes under an oracle clusterability condition; and (iii) all shifts , in which these two modeled components occur simultaneously. The following results apply only to these explicit shift models and do not provide guarantees for arbitrary distribution shifts. 
+
+Assumption 3.1 (Representation-measurable oracle parti-tion) . The oracle mask m⋆C (X) is a deterministic function of Φall (X).Assumption 3.1 prevents the oracle mask from introducing side information unavailable in the full patch representation. 
+
+Assumption 3.2 (Stable predictive sufficiency) . For every do-main d ∈ D , Pd (Y | Φall ) = Pd (Y | ΦC ) = P (Y | ΦC ) .
+
+The first equality states that the full patch representa-tion provides no additional label information beyond ΦC .Thus, complementary context may remain marginally label-correlated, but is conditionally redundant once ΦC is given. The second equality states that the label-predictive mecha-nism based on ΦC is shared across domains. Complementary context may therefore include both domain-varying shortcuts and domain-stable but conditionally redundant regions. 
+
+Assumption 3.3 (Bounded oracle-subset size) . There ex-ist constants s ≤ P and B > 0 such that |C⋆(X)| ≤ 
+
+s, ∥zp(X)∥2 ≤ B for every image X and patch p ∈ [P ].
+
+Oracle predictive-subset advantage. For a norm bound Λ > 0, define the scalar-valued score classes 
+
+HC = {X 7 → ⟨ v, ΦC (X)⟩ : ∥v∥2 ≤ Λ} , and Hall =
+
+{X 7 → ⟨ v, Φall (X)⟩ : ∥v∥2 ≤ Λ} .
+
+Proposition 3.1 (Oracle sufficiency and oracle-subset-size-de-pendent complexity) . Under Assumptions 3.2 and 3.3, for every domain d ∈ D , the unrestricted Bayes risk based on 
+
+ΦC equals that based on Φall . Moreover, their empirical Rademacher complexities satisfy 
+
+bRn(HC ) ≤ ΛB√s/ √n, bRn(Hall ) ≤ ΛB√P / √n. (2) Here, bRn denotes empirical Rademacher complexity. Thus, restricting prediction to the oracle subset preserves optimal predictive information while admitting an oracle-subset-size-dependent complexity bound. The oracle-subset bound is no larger than the all-patch bound and is strictly tighter whenever 
+
+s < P . The full proof is provided in Appendix C.3. 
+
+Data shifts: complementary-context variation. PatchGen learns a sample-dependent soft mask mϕ(X) ∈ [0 , 1] P . Let 
+
+G : RP d z → Rdg be a fixed non-expansive map satisfying 𝒎 𝜙  on patch → 1                   
+
+> 𝒎 𝜙 on patch → 0
+> 𝐶 ∗𝑋
+> 𝑅 ∗𝑋
+> …
+> 𝑟 𝜙
+> +
+> …
+> Attention map
+> Calculate 𝒎 𝜙
+> 𝑟 𝜙
+> −
+> If 𝒎 𝜙 for patches < 𝜏 ℒ𝑚𝑠
+> ෤𝒛 𝝓 +
+> ෤𝒛 𝝓 −
+> Depthwise
+> patch aggregation
+> Sample-dependent channel gate
+> Shared refinement
+> 𝟏 − 𝒎 𝜙
+> 𝒎 𝜙 ℒ𝑚𝑎𝑖𝑛
+> ℒ𝑠𝑖𝑚
+> ℒ𝑐𝑜𝑛𝑓
+> Classifier
+> (a) Structural
+> hypothesis Selected oracle intra-image predictive subset
+> (b). PatchGen
+> 𝐶 ∗𝑋
+> 𝑅 ∗𝑋
+> …
+> Calculate 𝒎 𝜙
+> …
+> 𝑟 𝜙 −
+> If 𝒎 𝜙 for patches < 𝜏 ℒ𝑚𝑠
+> ෤𝒛 𝝓 −
+> Dep p
+> agg
+> Sa
+> dep
+> chan
+> S
+> ref
+> ℒ𝑐𝑜𝑛𝑓
+> Cl
+
+Figure 2: Overview of PatchGen. (a) The structural hypothe-sis. (b) PatchGen learns a soft mask as a task-driven proxy for the oracle intra-image predictive subset. 
+
+∥G(u) − G(v)∥2 ≤ ∥ u − v∥2. Let h be a fixed classifier operating on Rdg , and let ℓ denote its loss. Define the learned selected representation and the oracle representation as 
+
+ez+ 
+
+> ϕ
+
+(X) = G Φmϕ(X)(X) , ezC (X) = G
+
+
+
+Φm⋆C (X)(X)
+
+
+
+.
+
+For domain d, define the normalized mask-approximation error ϵd(ϕ) = Ed [∥mϕ(X) − m⋆C (X)∥1/P ] , and define the corresponding risk as Rd(h, ϕ ) = Ed
+
+h
+
+ℓ
+
+
+
+h(ez+ 
+
+> ϕ
+
+(X)) , Y 
+
+i 
+
+.
+
+Proposition 3.2 (Robustness under complementary-con-text data shifts) . Consider two domains d, d ′ ∈ D satis-fying Pd(Φ C , Y ) = Pd′ (Φ C , Y ), but potentially differing in their complementary-context distributions. If the map-ping u 7 → ℓ(h(u), y ) is L-Lipschitz for every y ∈ Y , then 
+
+|Rd(h, ϕ ) − Rd′ (h, ϕ )| ≤ LBP (ϵd(ϕ) + ϵd′ (ϕ)) .
+
+Here, L is the Lipschitz constant, B is the patch-feature norm bound, and P is the total number of patches. Thus, under the modeled data shift, the risk discrepancy of the learned predictor is controlled by its mask-approximation error in the two domains. The full proof is provided in Appendix C.4. 
+
+Target shifts: preservation of class separation. Let the complete label space be partitioned as Y = Yknown ˙∪Yunknown . Predictive sufficiency alone does not guarantee geometric separation of known and unknown classes. We therefore impose an explicit clusterability condition on the oracle representation. 
+
+Proposition 3.3 (Preservation of class separation under target shifts) . Suppose that there exist r ≥ 0, γ > 0, and class centers μc ∈ Rdg , c ∈ Y known ∪ Y unknown , such that, for every sample with Y = c, ∥ezC (X) − μc∥2 ≤ r, and ∥μc −
+
+μc′ ∥2 ≥ γ for all c̸ = c′. Assume further that there exists η ≥ 0 such that ∥ez+ 
+
+> ϕ
+
+(X) − ezC (X)∥2 ≤ η for every sample. Then learned representations from distinct classes are separated by at least γ − 2( r + η). In particular, the learned class-conditional representation sets remain pairwise disjoint whenever γ > 2( r + η).
+
+The result establishes the stability of an assumed oracle class geometry under representation approximation. Note that it does not state that predictive sufficiency alone guarantees unknown-class discovery. See full proof in Appendix C.5. 
+
+All shifts: Componentwise implications. Now, we have: 
+
+Corollary 3.1 (Componentwise implications under all shifts) .
+
+Suppose the assumptions of Propositions 3.2 and 3.3 hold simultaneously for the modeled data- and target-shift compo-nents. Then the learned predictor satisfies the complementary-context risk-discrepancy bound of Proposition 3.2, while the distance between learned representations from distinct classes remains at least γ − 2( r + η).
+
+This corollary provides componentwise implications for the all-shift setting. It is not a unified joint-risk bound and does not control interactions between the two shift components. See full proof and additional discussion in Appendix C.6. 
+
+## 4 Learning a Soft Predictive-Subset Proxy 
+
+Figure 2 summarizes the oracle structural hypothesis and its operationalization in PatchGen. The oracle intra-image predictive subset C⋆(X) and its mask m⋆C (X) are unob-served. PatchGen therefore learns a sample-dependent soft predictive-subset mask mϕ(X) as a task-driven proxy for 
+
+m⋆C (X). The learned mask and its complement are used to construct the selected and complementary representations, respectively. Additional design and implementation details are provided in Appendix D. 
+
+Soft predictive-subset mask estimation. Under the struc-tural hypothesis, the oracle predictive-subset representation 
+
+ΦC (X) is sufficient for label prediction. Because m⋆C (X)
+
+is unavailable during training, we estimate the learned soft predictive-subset mask mϕ(X) from cross-patch interac-tion scores. Let S(a) 
+
+> ϕ
+
+(X) ∈ RP ×P denote the pre-softmax interaction-score matrix of attention head a, where H is the number of heads and dk is the query/key dimension of each head: S(a) 
+
+> ϕ,p →q
+
+(X) = 
+
+D
+
+q(a)
+
+> ϕ,p
+
+(X), k (a) 
+
+> ϕ,q
+
+(X)
+
+E
+
+/√dk. The patch-selection score is obtained by averaging the outgoing interaction scores over heads and target patches: 
+
+mϕ,p (X) = σ
+
+
+
+1/HP XHa=1 
+
+XPq=1 S(a) 
+
+> ϕ,p →q
+
+(X)
+
+
+
+, (3) where σ(·) denotes the sigmoid function. The resulting soft mask is mϕ(X) = ( mϕ, 1(X), . . . , m ϕ,P (X)) ∈ (0 , 1) P .The query and key projections are initialized so that the raw interaction scores begin in a moderate, non-saturated regime, allowing patch selectivity to emerge progressively during op-timization. Crucially, unlike post-hoc attention visualization methods (Abnar and Zuidema 2020), the attention parame-ters and mϕ(X) are jointly optimized by the generalization objectives below. The ablation in Appendix Figure 2 supports this distinction: standard attention and attention with only 
+
+Lms (Tasks 2.3–2.4) underperform the complete PatchGen objective (Tasks 3.3–3.5). The softmax-normalized interaction scores are used to construct attention-contextualized patch representations 
+
+Uϕ(X) = [ uϕ, 1(X), . . . , u ϕ,P (X)] ⊤. Specifically, for each head, A(a) 
+
+> ϕ,p →q
+
+(X) = softmax q
+
+
+
+S(a) 
+
+> ϕ,p →q
+
+(X)/exp( tϕ)
+
+
+
+,
+
+where tϕ is a learned log-temperature parameter and the multi-head attention output defines Uϕ(X). We then use a learnable channel-wise patch aggregator Aρ to construct the selected and complementary aggregates: r+ 
+
+> ϕ
+
+= Aρ (Uϕ, mϕ) , r − 
+
+> ϕ
+
+=
+
+Aρ (Uϕ, 1P − mϕ) . The aggregator is implemented as a depthwise full-width one-dimensional convolution over the patch dimension, with kernel size equal to the total patch count P . It therefore performs a channel-specific learnable global aggregation of the masked patch features. For feature channel 
+
+j ∈ { 1, . . . , d z }, [Aρ(U, m)] j = PPp=1 ρj,p mp up,j , where 
+
+ρ ∈ Rdz ×P contains learnable channel- and patch-position-specific aggregation weights. The same parameters ρ are shared by the selected and complementary branches, and no bias or additional normalization is used within Aρ. A sample-dependent channel gate is computed from the se-lected aggregate: wψ (X) = gψ (r+ 
+
+> ϕ
+
+) ∈ (0 , 1) dz . With Fω
+
+as the shared feature-refinement map, the final selected and complementary representations are 
+
+ez+ 
+
+> ϕ
+
+= Fω
+
+
+
+wψ (X) ⊙ r+
+
+> ϕ
+
+
+
+, ez− 
+
+> ϕ
+
+= Fω
+
+
+
+wψ (X) ⊙ r−
+
+> ϕ
+
+
+
+,
+
+where the classifier operates on ez+ 
+
+> ϕ
+
+.
+
+Low-score mask suppression. For a mini-batch B, define the set of weak mask entries 
+
+Wτ (B) = {(i, p ) : i ∈ B , p ∈ [P ], m ϕ,i,p < τ } . The mask-suppression loss is 
+
+Lms = 1 /|W τ (B)| · X  
+
+> (i,p )∈W τ(B)
+
+mϕ,i,p , (4) when |W τ (B)| > 0, otherwise Lms = 0 . We use τ = 0 .25 
+
+in all experiments. It pushes weak mask responses toward zero and sharpens the separation between weakly and strongly weighted patches. Importantly, it imposes no fixed sparsity, allowing the mask to select all patches when the entire image is task-relevant, as in tumor-dominant histopathology tiles. 
+
+Selected-confidence regularization. Let ph(y | z) denote the softmax probability assigned to class y. For labeled sam-ples, the target is the ground-truth label; for unlabeled samples in CCD and mDG+GCD, we use the same non-differentiable pseudo-label ¯Yi as in the host discovery objective. Let ¯B
+
+denote the samples for which either a label or pseudo-label is available. We use the bounded confidence objective 
+
+Lconf = −1/| ¯B| X  
+
+> i∈¯B
+
+ph( ¯Yi | ez+
+
+> ϕ,i
+
+). (5) This objective encourages the selected representation ez+ 
+
+> ϕ
+
+to retain sufficient label evidence. Together with Lms , it prevents the mask from becoming trivially sparse: weak responses are suppressed, but the selected subset must still support confident task prediction. See details in Appendix D. 
+
+Class-conditional feature alignment. For a minibatch B,let ¯Yi = Yi for labeled samples and let ¯Yi be the task-specific pseudo-label for unlabeled samples. Define the active label set ¯YB = { ¯Yi : i ∈ B} and the corresponding sample index set Ic = {i ∈ B : ¯Yi = c}. The loss is 
+
+Lsim = 1
+
+| ¯YB|
+
+X 
+
+> c∈¯YB
+
+1 − 1
+
+|I c|2
+
+X
+
+> i,j ∈I c
+
+cos 
+
+ez+
+
+> ϕ,i
+
+, ez+
+
+> ϕ,j
+
+ ,
+
+which is termed class-conditional similarity loss. The summa-tion includes self-pairs, so a singleton class contributes zero. For multi-domain tasks, minibatches draw from all source domains, enabling cross-domain same-class alignment when such pairs are available. Thus, Lsim serves as an empirical class-conditional alignment surrogate, but does not directly minimize or guarantee zero conditional mutual information. It requires no explicit class prototypes and extends to unla-beled samples using pseudo-labels from L-Reg for CCD and mDG+GCD, respectively. 
+
+Overall learning objective. Using ez+ 
+
+> ϕ
+
+as the task rep-resentation, the overall objective is LPatchGen = Lmain +
+
+λms Lms + λsim Lsim + Lconf . Here, Lmain denotes the task-specific objective for mDG, CCD, or mDG+GCD, while Lms 
+
+suppresses weak mask responses, Lsim promotes within-class alignment, and Lconf regularizes confidence on the selected representation with a gradient equivalent to that of a detached complementary-confidence reference. Unlike standard attention, PatchGen distinguishes an oracle intra-image predictive subset from complementary context, which may be domain-varying, domain-stable but label-correlated, or marginally uninformative. It therefore learns a sample-dependent soft predictive-subset proxy rather than relying on domain invariance alone. 
+
+## 5 Experiments 
+
+For all experiments, we fix the random seed to 1 (stability across seeds and hyperparameters is reported in Appendix Table 10) and use the same hyperparameters across datasets unless stated otherwise. To preserve the pretrained repre-sentation while enabling parameter-efficient adaptation, we fine-tune only the layer-normalization parameters of the back-bone, following (De Min et al. 2023; Tan et al. 2025). Results that are re-implemented or re-evaluated using the officially released code are marked with *. We will release the training code and associated files upon publication to support repro-duction. Appendix G reports 1) PatchGen with full-model fine-tuning, 2) Comparisons with other masking strate-gies and 3) Standard attention, 4) Ablation of proposed components, 5) Sensitivity and robustness analysis, and 6) More histopathological visualizations. 
+
+5.1 MDG experiments for natural images 
+
+We compare PatchGen with representative VLM-based, VM-based, and causal-inspired DG methods. The comparison methods are grouped as follows. VLM-based methods :SWAD (Cha et al. 2021) with VLM, KAdaptation (Lee et al. 2025), GESTUR (Lew, Son, and Chang 2023), DPR (Cheng et al. 2024), CLIPCEIL++ (Yu, Yoo, and Lin 2024). VM-based methods : ERM (Vapnik 1999), SagNet (Nam et al. 2021), SelfReg (Kim et al. 2021), CORAL (Sun and Saenko 2016), mDSDI (Bui et al. 2021), GMDG (Tan, Yang, and Huang 2024), L-Reg (Tan et al. 2024). Causal-based meth-ods : CI-DGA (Gong et al. 2025), SMIDG (Wang et al. 2025), BFMix (Zhang et al. 2024), CauRDG (Liu et al. 2025). A complete list of all 36 methods is given in Appendix E. Fol-lowing methods like CLIPCEIL++, we report results of a single seed. See across-seed results in Appendix Table 10. 
+
+Experimental settings. We conduct experiments using the DomainBed benchmark suite (Gulrajani and Lopez-Paz 2020) under the standard leave-one-domain-out evaluation protocol. Our method is evaluated with DINOv2 (Oquab et al. 2023) (ViT-B/14 and ViT-L/14) and MAE (He et al. 2022) backbones on five real-world datasets: PACS (Li et al. 2017), VLCS (Fang, Figure 3: Main MDG results for natural images : Main comparison between PatchGen and previous MDG methods, including VLM-based and VM-based methods. Detailed results for all 36 methods are in Appendix Table 1. Xu, and Rockmore 2013), OfficeHome (Venkateswara et al. 2017), TerraIncognita (Beery, Van Horn, and Perona 2018), and DomainNet (Peng et al. 2019). For fair comparison, we include the following comparisons using the same backbones and identical shared hyperparameters as our method: (1) linear probing (LP); (2) LP with layer-normalization fine-tuning (LP + LN); (3) GMDG (Tan, Yang, and Huang 2024) under the matched DINOv2 ViT-L/14 setting reported in Appendix Table 1. Where applicable, we additionally report results obtained by integrating SWAD (Cha et al. 2021). 
+
+λms and λsim are selected from {0.01 , 0.001 , 0.0001 } using source-domain validation splits only. 
+
+Results. Matched comparisons. Figure 3 shows that, for natural images under identical backbones and hyperparame-ters, PatchGen improves the reported averages over LP+LN baselines. It improves over comparable VM-based DG meth-ods such as GMDG. Reference comparisons. Figure 3 also shows that PatchGen is competitive with previously reported methods using different backbones and adaptation protocols. Specifically, DINOv2 ViT-L/14 + PatchGen achieves 79.2% without SWAD and 80.9% with SWAD, the highest reported average in our reference comparison. Figure 4 shows that, with comparable backbones, our method matches or surpasses previous causal-inspired mDG approaches. These results em-pirically support PatchGen’s effectiveness under data shifts and are consistent with Proposition 3.2. 
+
+5.2 MDG experiments for histopathological images 
+
+Datasets. We evaluate PatchGen on HISTOPANTUM (Za-manitajeddin et al. 2024), where four organs define domains sharing a binary normal/tumor label space, and on HIS-TOCOLON, constructed from CRC-TP (Javed et al. 2020), K-16 (Kather et al. 2016), and K-19 (Kather et al. 2019). HIS-
+
+Figure 4: MDG results for natural images : Reference com-parison between the proposed and selected causal-inspired DG methods using VMs. See details in Appendix Table 2. TOCOLON is treated as a harder partial-label histopathology DG benchmark rather than a fully closed-set mDG proto-col. All experiments follow leave-one-domain-out evaluation, with model selection restricted to source data to prevent any leakage. More details are in Appendix E.3. 
+
+Experimental settings. We conduct experiments on the aforementioned datasets under the standard leave-one-domain-out protocol in the mDG setting, with large-scale pretrained Vision Transformers as backbones: DINOv2 (Oquab et al. 2023) (ViT-B/14, ViT-L/14) and MAE (He et al. 2022). For fair comparison, we include: (1) linear probing (LP); (2) LP with layer-norm fine-tuning (LP + LN); (3) MIRO (Cha et al. 2022) with DINOv2 ViT-B/14; and (4) GMDG (Tan, Yang, and Huang 2024) with DINOv2 ViT-B/14. VLM-based meth-ods such as DPR (Cheng et al. 2024) and CLIPCEIL++ (Yu, Yoo, and Lin 2024) rely on refining text-image alignment. This partial-label limitation applies to HISTOCOLON, whose domains have partially overlapping label spaces; HISTOPAN-TUM uses a shared binary label space, so CLIP-based GES-TUR is reported there as a reference VLM-compatible base-line. For comparisons under a VLM backbone, we report CLIP-based GESTUR (Lew, Son, and Chang 2023), which does not rely on text–image alignment, and also apply Patch-Gen to CLIP (Radford et al. 2021) to compare against purely VM-based methods. All experiments use identical experimen-tal settings whenever applicable; otherwise, method-specific settings follow their official implementations. Where applica-ble, we also report results with SWAD (Cha et al. 2021). For all experiments, λms = 0 .001 , λsim = 0 .001 .
+
+Results. As shown in Figure 5, our method improves the matched baselines in average performance across most back-bone and evaluation settings, achieving the best or tied-best average results in the reported comparisons. Although primar-ily designed for purely visual models, where image features are well preserved, it also yields clear gains when applied to CLIP. PatchGen substantially improves the matched CLIP LP+LN baseline and remains competitive with GESTUR on HISTOCOLON. Figures 1 and Appendix Figure 4 provide qualitative morphological evidence from histopathology. Figure 5: MDG results for histopathological images : Com-parison between the baselines and PatchGen with average and per-domain results across different backbones on the histopathological datasets (HISTOPANTUM and HISTO-COLON). Detailed results are in Appendix Table 3&4. 
+
+5.3 Experiments on CCD tasks 
+
+Experimental settings. Following PromptCCD’s experimen-tal protocol (Cendra, Zhao, and Han 2024), we conduct experiments on CIFAR-100 (Krizhevsky, Hinton et al. 2009) and CUB (Wah et al. 2011) using DINO ViT-B/16 and DI-NOv2 ViT-B/14. We reproduce PromptCCD with its official code and then apply our method in the same framework. For each comparison, methods share identical settings whenever applicable; otherwise, method-specific settings follow their official implementations. We set λms = 1 e−3, λ sim = 1 e−3
+
+in all experiments. PatchGen does not introduce a new pseudo-labeling rule in CCD; it uses the detached pseudo-labels from the PromptCCD host objective. 
+
+Results. As shown in Figure 6, PatchGen yields its largest 
+
+Figure 6: CCD results (A/K/U = all/known/unknown classes) : Unknown-class accuracy across CCD sessions and average A/K/U gains of PatchGen over PromptCCD for DI-NO/DINOv2. Detailed results for each dataset, backbone, and session are in Appendix Table 5. average gains on unknown classes. The gains are more evident in several of the more challenging later-session settings. The lower panel shows that the largest average improvements occur on unknown classes, while all-class accuracy also improves, and known-class performance is largely preserved. These results support the practical value of the soft predictive-subset proxy for unknown-class generalization, consistent with the class-separation motivation of Proposition 3.3. 
+
+5.4 Experiments on mDG+GCD tasks 
+
+Experimental settings. Following L-Reg (Tan et al. 2024), we use the same natural image datasets originally designed for mDG to construct the mDG+GCD setting. Half of the classes are designated as unknown, and their training sam-ples are provided without labels. Although the unlabeled set in this protocol contains only samples from unknown classes, the learner is not given their semantic identities or class assignments. Thus, this is an unknown-class-only unlabeled-pool protocol following L-Reg, rather than a mixed known/unknown unlabeled-pool GCD protocol. We follow the evaluation protocol of L-Reg for direct comparison, and report baseline results using various backbones, including L-Reg with DINOv2 ViT-B/14. We set λms = 0 .001 and 
+
+λsim = 0 .001 for all experiments. As in CCD, pseudo-labels are inherited from the L-Reg host protocol and are treated as non-differentiable targets for PatchGen-specific losses. 
+
+Results. Figure 7 summarizes the mDG+GCD compar-isons, where models must handle both unseen test domains and unknown classes. PatchGen improves average all-class accuracy for all three matched backbones. Unknown-class accuracy also improves on average, while the MAE setting shows a modest trade-off in known-class accuracy. 
+
+5.5 Patch-selection diagnostics and efficiency 
+
+To further examine whether PatchGen selects decision-relevant patches beyond post-hoc attribution, we perform a comprehensive suite of diagnostic tests on VLCS (unseen domain: SUN09) using DINOv2-ViT-S/14 under the mDG setting. Results are visualized in Figure 8. 
+
+A. Patch perturbation test. Let bCϕ(X) where bCϕ(X) = Figure 7: MDG+GCD results : Stacked per-dataset compari-son across prior methods, matched baselines, and PatchGen under simultaneous unseen-domain and unknown-class shifts. See numeric results in Appendix Tables 6&7. 
+
+{p : mϕ,p (X) ≥ 0.5} denote the thresholded selected patch set, and let bRϕ(X) = [ P ] \ bCϕ(X) denote its thresholded complement. We assess approximate sufficiency by preserv-ing bCϕ(X) while perturbing bRϕ(X), and assess empirical decision necessity for the trained classifier by perturbing 
+
+bCϕ(X) while preserving bRϕ(X). A small accuracy drop in the first test and a large drop in the second provide evidence of approximate sufficiency and decision relevance for the trained classifier under this perturbation protocol. B. Deletion/inser-tion. Patches are ranked by each method and progressively inserted or deleted. We report insertion AUC ( ↑), for which faster confidence recovery is better, and deletion AUC ( ↓), for which faster confidence removal is better. PatchGen achieves stronger insertion and deletion performance than the base-lines, indicating a more decision-relevant patch ranking. C. Cross-domain representation geometry. The UMAP visual-ization shows more compact class clusters with less apparent domain-wise separation, a geometry consistent with reduced domain-related variation. D. Natural image visualizations. 
+
+Visualization of patch-selection maps shows that PatchGen places greater emphasis on object-relevant regions while reducing attention to surrounding context. These qualitative results support the decision relevance of the learned patch ranking, but do not validate the oracle structural assumption Original Robustness Sufficiency 
+
+> Fraction of patches removed (high score to low)
+> Fraction of patches inserted (high score to low)
+
+Figure 8: Patch-selection diagnostics on VLCS (SUN09 un-seen) with DINOv2-ViT-S/14. (A) Patch perturbation: keeping selected patches is robust, while replacing selected patches causes a sharp accuracy drop. (B) Insertion/deletion AUC curves. (C) UMAP of baseline vs. PatchGen features showing tighter cross-domain clusters. (D) Visualization on natural images: PatchGen focuses on label-relevant objects while the baseline is distracted by spurious context. (E) Training efficiency comparison. or identify C⋆(X). E. Computational efficiency. Relative to the matched LP+LN baseline with DINOv2-ViT-S/14 on a single NVIDIA RTX 3090 GPU, PatchGen introduces approx-imately 4% additional trainable parameters and increases the per-epoch training time by roughly 8% under the same batch size. The peak GPU memory consumption is comparable to the baseline. See the efficiency comparison in Figure 8 E. Taken together, these diagnostics provide empirical evi-dence that the learned soft predictive-subset mask yields a decision-relevant patch ranking for the trained classifier. 
+
+## 6 Discussion and Conclusion 
+
+Conclusion. This work theoretically motivates an oracle intra-image predictive subset and empirically evaluates learn-ing a soft predictive-subset proxy for visual generalization. Empirical results show that PatchGen yields competitive or improved performance relative to matched-backbone base-lines across data-shift, target-shift, and all-shift benchmarks in the evaluated settings while producing sample-dependent patch-selection maps and decision-relevance diagnostics. 
+
+Limitations. Because the oracle intra-image predictive subset and its mask are unobserved, neither the training objectives nor the diagnostic experiments guarantee that the learned soft predictive-subset mask recovers m⋆C (X).For vision-language backbones, image–text pretraining may already emphasize class-semantic regions, potentially leaving less room for additional patch selection. References 
+
+Abbe, E.; Bengio, S.; Lotfi, A.; and Rizk, K. 2024. General-ization on the unseen, logic reasoning and degree curriculum. 
+
+Journal of Machine Learning Research , 25(331): 1–58. Abnar, S.; and Zuidema, W. 2020. Quantifying attention flow in transformers. In Proceedings of the 58th annual meeting of the association for computational linguistics , 4190–4197. Arjovsky, M.; Bottou, L.; Gulrajani, I.; and Lopez-Paz, D. 2019. Invariant risk minimization. arXiv preprint arXiv:1907.02893 .Arpit, D.; Wang, H.; Zhou, Y.; and Xiong, C. 2022. En-semble of averages: Improving model selection and boosting performance in domain generalization. Advances in Neural Information Processing Systems , 35: 8265–8277. Beery, S.; Van Horn, G.; and Perona, P. 2018. Recognition in terra incognita. In Proceedings of the European conference on computer vision (ECCV) , 456–473. Blanchard, G.; Deshmukh, A. A.; Dogan, U.; Lee, G.; and Scott, C. 2021. Domain generalization by marginal transfer learning. Journal of machine learning research , 22(2): 1–55. Bui, M.-H.; Tran, T.; Tran, A.; and Phung, D. 2021. Exploiting domain-specific features to enhance domain generalization. 
+
+Advances in Neural Information Processing Systems , 34: 21189–21201. Cendra, F. J.; Zhao, B.; and Han, K. 2024. Promptccd: Learning gaussian mixture prompt pool for continual category discovery. In European conference on computer vision , 188– 205. Springer. Cha, J.; Chun, S.; Lee, K.; Cho, H.-C.; Park, S.; Lee, Y.; and Park, S. 2021. Swad: Domain generalization by seeking flat minima. Advances in Neural Information Processing Systems ,34: 22405–22418. Cha, J.; Lee, K.; Park, S.; and Chun, S. 2022. Domain generalization by mutual-information regularization with pre-trained models. In European conference on computer vision ,440–457. Springer. Cheng, D.; Xu, Z.; Jiang, X.; Wang, N.; Li, D.; and Gao, X. 2024. Disentangled prompt representation for domain generalization. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 23595–23604. Chiaroni, F.; Dolz, J.; Masud, Z. I.; Mitiche, A.; and Ben Ayed, I. 2023. Parametric information maximization for general-ized category discovery. In Proceedings of the IEEE/CVF international conference on computer vision , 1729–1739. Cho, J.; Nam, G.; Kim, S.; Yang, H.; and Kwak, S. 2023. Promptstyler: Prompt-driven style generation for source-free domain generalization. In Proceedings of the IEEE/CVF International Conference on Computer Vision , 15702–15712. De Min, T.; Mancini, M.; Alahari, K.; Alameda-Pineda, X.; and Ricci, E. 2023. On the effectiveness of layernorm tuning for continual learning in vision transformers. In 2023 IEEE/CVF International Conference on Computer Vision Workshops (ICCVW) , 3577–3586. IEEE. Fang, C.; Xu, Y.; and Rockmore, D. N. 2013. Unbiased metric learning: On the utilization of multiple datasets and web images for softening bias. In Proceedings of the IEEE international conference on computer vision , 1657–1664. Ganin, Y.; Ustinova, E.; Ajakan, H.; Germain, P.; Larochelle, H.; Laviolette, F.; March, M.; and Lempitsky, V. 2016. Domain-adversarial training of neural networks. Journal of machine learning research , 17(59): 1–35. Gong, Q.; Pan, Y.; Lai, H.; and Yin, J. 2025. A Causal Intervention Method for Domain Generalization with a Self-Supervised Auxiliary Task. International Journal of Com-puter Vision , 133(10): 7110–7127. Gulrajani, I.; and Lopez-Paz, D. 2020. In search of lost domain generalization. arXiv preprint arXiv:2007.01434 .He, K.; Chen, X.; Xie, S.; Li, Y.; Dollár, P.; and Girshick, R. 2022. Masked autoencoders are scalable vision learners. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 16000–16009. Hu, S.; Zhang, K.; Chen, Z.; and Chan, L. 2020. Domain generalization via multidomain discriminant analysis. In 
+
+Uncertainty in artificial intelligence , 292–302. PMLR. Huang, Z.; Wang, H.; Xing, E. P.; and Huang, D. 2020. Self-challenging improves cross-domain generalization. In 
+
+European conference on computer vision , 124–140. Springer. Javed, S.; Mahmood, A.; Fraz, M. M.; Koohbanani, N. A.; Benes, K.; Tsang, Y.-W.; Hewitt, K.; Epstein, D.; Snead, D.; and Rajpoot, N. 2020. Cellular community detection for tissue phenotyping in colorectal cancer histology images. Medical image analysis , 63: 101696. Kather, J. N.; Krisam, J.; Charoentong, P.; Luedde, T.; Herpel, E.; Weis, C.-A.; Gaiser, T.; Marx, A.; Valous, N. A.; Ferber, D.; et al. 2019. Predicting survival from colorectal cancer his-tology slides using deep learning: A retrospective multicenter study. PLoS medicine , 16(1): e1002730. Kather, J. N.; Weis, C.-A.; Bianconi, F.; Melchers, S. M.; Schad, L. R.; Gaiser, T.; Marx, A.; and Zöllner, F. G. 2016. Multi-class texture analysis in colorectal cancer histology. 
+
+Scientific reports , 6(1): 27988. Kim, D.; Yoo, Y.; Park, S.; Kim, J.; and Lee, J. 2021. Selfreg: Self-supervised contrastive regularization for domain gen-eralization. In Proceedings of the IEEE/CVF international conference on computer vision , 9619–9628. Kim, H.; Suh, S.; Kim, D.; Jeong, D.; Cho, H.; and Kim, J. 2023. Proxy anchor-based unsupervised learning for con-tinuous generalized category discovery. In Proceedings of the IEEE/CVF international conference on computer vision ,16688–16697. Krizhevsky, A.; Hinton, G.; et al. 2009. Learning multiple layers of features from tiny images. Krueger, D.; Caballero, E.; Jacobsen, J.-H.; Zhang, A.; Binas, J.; Zhang, D.; Le Priol, R.; and Courville, A. 2021. Out-of-distribution generalization via risk extrapolation (rex). In 
+
+International conference on machine learning , 5815–5826. PMLR. Kukleva, A.; Kuehne, H.; and Schiele, B. 2021. Generalized and incremental few-shot learning by explicit learning and cal-ibration without forgetting. In Proceedings of the IEEE/CVF International Conference on Computer Vision , 9020–9029. Lee, G.; Jang, W.; Kim, J.; Jung, J.; and Kim, S. 2025. Domain generalization using large pretrained models with mixture-of-adapters. In 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) , 8259–8269. IEEE. Lew, B.; Son, D.; and Chang, B. 2023. Gradient estimation for unseen domain risk minimization with pre-trained models. 4436–4446. Li, D.; Yang, Y.; Song, Y.-Z.; and Hospedales, T. 2018a. Learning to generalize: Meta-learning for domain general-ization. In Proceedings of the AAAI conference on artificial intelligence , volume 32. Li, D.; Yang, Y.; Song, Y.-Z.; and Hospedales, T. M. 2017. Deeper, broader and artier domain generalization. In Pro-ceedings of the IEEE international conference on computer vision , 5542–5550. Li, H.; Pan, S. J.; Wang, S.; and Kot, A. C. 2018b. Domain generalization with adversarial feature learning. In Proceed-ings of the IEEE conference on computer vision and pattern recognition , 5400–5409. Li, Y.; Gong, M.; Tian, X.; Liu, T.; and Tao, D. 2018c. Domain generalization via conditional invariant representations. In 
+
+Proceedings of the AAAI conference on artificial intelligence ,volume 32. Li, Y.; Tian, X.; Gong, M.; Liu, Y.; Liu, T.; Zhang, K.; and Tao, D. 2018d. Deep domain generalization via conditional in-variant adversarial networks. In Proceedings of the European conference on computer vision (ECCV) , 624–639. Liu, L.; Zhou, T.; Long, G.; Jiang, J.; Dong, X.; and Zhang, C. 2021. Isometric propagation network for generalized zero-shot learning. arXiv preprint arXiv:2102.02038 .Liu, Z.; Liu, Y.; Lu, G.; Luo, X.; and Chen, B. 2025. Cau-RDG: Enhancing Domain Generalization with Causal-Driven Semantic Consistency Reasoning. In Proceedings of the 33rd ACM International Conference on Multimedia , 11101–11110. Nam, H.; Lee, H.; Park, J.; Yoon, W.; and Yoo, D. 2021. Reducing domain gap by reducing style bias. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 8690–8699. Niu, H.; Li, H.; Zhao, F.; and Li, B. 2022. Domain-unified prompt representations for source-free domain generalization. 
+
+arXiv preprint arXiv:2209.14926 .Oquab, M.; Darcet, T.; Moutakanni, T.; Vo, H.; Szafraniec, M.; Khalidov, V.; Fernandez, P.; Haziza, D.; Massa, F.; El-Nouby, A.; et al. 2023. Dinov2: Learning robust visual features without supervision. arXiv preprint arXiv:2304.07193 .Peng, X.; Bai, Q.; Xia, X.; Huang, Z.; Saenko, K.; and Wang, B. 2019. Moment matching for multi-source domain adaptation. In Proceedings of the IEEE/CVF international conference on computer vision , 1406–1415. Radford, A.; Kim, J. W.; Hallacy, C.; Ramesh, A.; Goh, G.; Agarwal, S.; Sastry, G.; Askell, A.; Mishkin, P.; Clark, J.; et al. 2021. Learning transferable visual models from natural language supervision. In International conference on machine learning , 8748–8763. PmLR. Rao, Y.; Zhao, W.; Liu, B.; Lu, J.; Zhou, J.; and Hsieh, C.-J. 2021. Dynamicvit: Efficient vision transformers with dynamic token sparsification. Advances in neural information processing systems , 34: 13937–13949. Sagawa, S.; Koh, P. W.; Hashimoto, T. B.; and Liang, P. 2019. Distributionally robust neural networks for group shifts: On the importance of regularization for worst-case generalization. 
+
+arXiv preprint arXiv:1911.08731 .Shi, Y.; Seely, J.; Torr, P. H.; Siddharth, N.; Hannun, A.; Usunier, N.; and Synnaeve, G. 2021. Gradient matching for domain generalization. arXiv preprint arXiv:2104.09937 .Shu, Y.; Guo, X.; Wu, J.; Wang, X.; Wang, J.; and Long, M. 2023. Clipood: Generalizing clip to out-of-distributions. In 
+
+International conference on machine learning , 31716–31731. PMLR. Sun, B.; and Saenko, K. 2016. Deep coral: Correlation align-ment for deep domain adaptation. In European conference on computer vision , 443–450. Springer. Tan, Z.; Pan, T.; Huang, K.; Yu, W.; Yao, K.; Jiang, C.; Wang, Q.; Nguyen, A.; Guo, X.; Cheng, Y.; et al. 2025. Exploiting Layer Normalization Fine-tuning in Visual Trans-former Foundation Models for Classification. arXiv preprint arXiv:2508.07577 .Tan, Z.; Yang, X.; and Huang, K. 2024. Rethinking multi-domain generalization with a general learning objective. In 
+
+proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 23512–23522. Tan, Z.; Yang, X.; Wang, Q.; Nguyen, A.; and Huang, K. 2024. Interpret your decision: Logical reasoning regularization for generalization in visual classification. Advances in Neural Information Processing Systems , 37: 18166–18204. Vapnik, V. N. 1999. An overview of statistical learning theory. 
+
+IEEE transactions on neural networks , 10(5): 988–999. Vaze, S.; Han, K.; Vedaldi, A.; and Zisserman, A. 2022. Gen-eralized category discovery. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 7492– 7501. Venkateswara, H.; Eusebio, J.; Chakraborty, S.; and Pan-chanathan, S. 2017. Deep hashing network for unsupervised domain adaptation. In Proceedings of the IEEE conference on computer vision and pattern recognition , 5018–5027. Wah, C.; Branson, S.; Welinder, P.; Perona, P.; Belongie, S.; et al. 2011. The caltech-ucsd birds-200-2011 dataset. Techni-cal report, Technical Report CNS-TR-2011-001, California Institute of Technology. Wang, F.; Yang, T.; Yu, Y.; Ren, S.; Wei, G.; Wang, A.; Shao, W.; Zhou, Y.; Yuille, A.; and Xie, C. 2024. Causal image modeling for efficient visual understanding. Wang, S.; He, H.; Yang, X.; Liu, Z.; Zhong, Y.; Zhang, X.; and Wang, M. 2025. Exploring invariance matters for domain generalization. IEEE Transactions on Image Processing .Wu, Y.; Chi, Z.; Wang, Y.; and Feng, S. 2023. Metagcd: Learn-ing to continually learn in generalized category discovery. In 
+
+Proceedings of the IEEE/CVF International Conference on Computer Vision , 1655–1665. Yu, X.; Yoo, S.; and Lin, Y. 2024. Clipceil: Domain general-ization through clip via channel refinement and image-text alignment. Advances in Neural Information Processing Sys-tems , 37: 4267–4294. Yuan, J.; Ma, X.; Chen, D.; Kuang, K.; Wu, F.; and Lin, L. 2023. Domain-specific bias filtering for single labeled domain generalization. International Journal of Computer Vision , 131(2): 552–571. Zamanitajeddin, N.; Jahanifar, M.; Xu, K.; Siraj, F.; and Rajpoot, N. 2024. Benchmarking domain generalization algorithms in computational pathology. arXiv preprint arXiv:2409.17063 .Zhang, M.; Marklund, H.; Dhawan, N.; Gupta, A.; Levine, S.; and Finn, C. 2021. Adaptive risk minimization: Learning to adapt to domain shift. Advances in neural information processing systems , 34: 23664–23678. Zhang, X.; Gu, S. S.; Matsuo, Y.; and Iwasawa, Y. 2023. Domain prompt learning for efficiently adapting clip to unseen domains. Transactions of the Japanese Society for Artificial Intelligence , 38(6): B–MC2_1. Zhang, X.; Jiang, J.; Feng, Y.; Wu, Z.-F.; Zhao, X.; Wan, H.; Tang, M.; Jin, R.; and Gao, Y. 2022. Grow and merge: A unified framework for continuous categories discovery. 
+
+Advances in Neural Information Processing Systems , 35: 27455–27468. Zhang, Z.; Cai, F.; Liu, D.; Liu, G.; and Fang, X. 2024. Mix background and foreground separately: Transformer-based Augmentation Strategies for Domain Generalization. In 2024 IEEE International Conference on Multimedia and Expo (ICME) , 1–6. IEEE. Zhou, K.; Yang, J.; Loy, C. C.; and Liu, Z. 2022. Learning to prompt for vision-language models. International journal of computer vision , 130(9): 2337–2348. Zhou, K.; Yang, Y.; Qiao, Y.; and Xiang, T. 2021. Domain gen-eralization with mixstyle. arXiv preprint arXiv:2104.02008 .
+
+## A Details of different generalization tasks 
+
+To provide a comprehensive evaluation of generalization under diverse and challenging conditions, we conduct experiments on the following tasks to validate our method: 
+
+• Multi-domain generalization (mDG) (Yuan et al. 2023; Li et al. 2018c; Hu et al. 2020; Cha et al. 2022; Tan, Yang, and Huang 2024). The mDG task aims to learn a classifier from labeled data collected across multiple 
+
+seen domains , such that it generalizes to unseen domains 
+
+whose data distributions are inaccessible during training. The central challenge lies in handling severe domain shifts while preserving class-discriminative semantics. 
+
+• Continual category discovery (CCD) (Cendra, Zhao, and Han 2024). In CCD, the model is first trained on labeled data in an initial session, followed by a sequence of unlabeled data streams in subsequent sessions. The goal is to progressively discover novel categories while retaining performance on previously learned classes. 
+
+• Multi-domain generalization with generalized cate-gory discovery (mDG+GCD) (Tan et al. 2024). The mDG+GCD task extends mDG by additionally account-ing for unknown categories, i.e., Generalized category discovery (GCD). During training, the model has access to labeled and unlabeled samples from multiple seen do-mains, and is required to classify samples from known classes while clustering those from unknown classes. At test time, the model is evaluated on unseen domains, where it must simultaneously generalize across domains and handle open-set category shifts without access to target-domain data. 
+
+## B Full related work 
+
+Data-shift scenario. Multi-domain generalization (mDG) 
+
+addresses learning models that generalize to unseen domains with potentially large domain shifts , assuming no target-domain data is available during training, unlike domain adap-tation. Existing mDG methods for image classification mainly learn domain-invariant representations across multiple source domains (Yuan et al. 2023). The original DANN (Ganin et al. 2016) was proposed for domain adaptation with unlabeled target-domain data; multi-source adversarial variants adapt this idea to mDG by aligning source-domain feature distri-butions. Later methods, including CDANN (Li et al. 2018d), CIDG (Li et al. 2018c), and MDA (Hu et al. 2020), incor-porate class labels to learn conditionally invariant features. More recent approaches such as MIRO (Cha et al. 2022) and GMDG (Tan, Yang, and Huang 2024) exploit large-scale pre-trained models and representation regularization to further improve generalization under severe domain shifts. 
+
+Target-shift scenario. Continual category discovery (CCD) combines generalized category discovery (GCD) with continual learning (CL) to incrementally discover new categories over time while mitigating catastrophic forget-ting (Zhang et al. 2022; Kim et al. 2023; Wu et al. 2023; Cendra, Zhao, and Han 2024). Unlike standard GCD, CCD must handle sequential data streams without knowing the total number of categories in advance. PromptCCD (Cendra, Zhao, and Han 2024) addresses this using dynamic prompt-based representation updates, enabling concurrent novel category discovery and knowledge retention. By decoupling category expansion from fixed classifier architectures, it avoids re-liance on pre-defined category counts and performs well in long-term continual discovery. 
+
+All-shift scenario. Multi-domain generalization and generalized category discovery (mDG+GCD) , a more chal-lenging setting, was introduced by (Tan et al. 2024). Here, models are trained on partially labeled data from multiple seen domains and evaluated on unseen domains, where they must both classify samples from known categories and discover and cluster samples from unknown categories. 
+
+Causal-based multi-domain generalization methods. To isolate invariant mechanisms from domain-specific spuri-ous factors, recent causal DG approaches employ prototype-guided causal disentanglement (CauRDG (Liu et al. 2025)), latent confounders and causal intervention (SMIDG (Wang et al. 2025)), and structural causal alignment across domains (CI-DGA (Gong et al. 2025)). However, these methods focus on domain-level causality but ignore fine-grained, sample-specific structure. Mix-based methods (Zhang et al. 2024) mitigate spurious background correlations by separating fore-ground and background, but rely on clear object–context boundaries, which are often absent in histopathological im-ages. Causal image modeling and explanation methods also study how visual factors affect model behavior (Wang et al. 2024). Unlike causal identification, we do not estimate causal variables or effects. Instead, we use predictive sufficiency to structurally guide learning decision-relevant patch masks that improve classification generalization. 
+
+Improving generalization across diverse scenarios. Anotable study, L-Reg (Tan et al. 2024), adopts a logic-based framework to enhance generalization under various settings. In contrast, PatchGen improves pretrained visual representa-tions through sample-dependent patch selection. 
+
+Token pruning and attention-based patch selection. 
+
+Different from token pruning approaches such as Dynam-icViT (Rao et al. 2021) for improving efficiency or post-hoc attention visualization methods (Abnar and Zuidema 2020) for interpretability, PatchGen jointly optimizes attention-derived masks using generalization-oriented objectives. 
+
+## C Theoretical Details 
+
+This appendix separates three levels of analysis. First, we study the statistical benefit of a sample-adaptive oracle intra-image predictive subset. Second, we quantify how learned-mask approximation affects robustness to shifts in complementary context. Third, we analyze preservation of class separation under target shift. The results do not claim exact recovery of the oracle predictive-subset mask or bound the capacity of the complete learned selector. 
+
+C.1 Interpretation of the structural assumptions 
+
+Assumption 3.1 prevents the oracle mask from introducing side information unavailable in Φall . Under this assumption, 
+
+ΦC and ΦR are deterministic functions of Φall , while Φall =ΦC + Φ R.Together with Assumption 3.2, this implies 
+
+Id(Y ; Φ R | ΦC ) = 0 ,
+
+although Id(Y ; Φ R) may remain positive. Thus, complemen-tary context may be label-correlated, domain-varying, or domain-stable, while providing no additional label informa-tion once ΦC is given. The assumptions do not require C⋆(X) to be unique or minimal. Moreover, the theoretical analysis concerns idealized masked concatenations and does not bound the capacity of the complete learned PatchGen architecture. 
+
+C.2 Stability of masked representations 
+
+Lemma C.1 (Stability of masked concatenations) . Assume 
+
+∥zp(X)∥2 ≤ B for every patch, and let G be a fixed non-expansive map. Then, for any m, m′ ∈ [0 , 1] P ,
+
+∥G(Φ m(X)) − G(Φ m′ (X)) ∥2
+
+≤ B∥m − m′∥2 ≤ B∥m − m′∥1. (6) 
+
+Proof. By non-expansiveness of G,
+
+∥G(Φ m(X)) − G(Φ m′ (X)) ∥2
+
+≤ ∥ Φm(X) − Φm′ (X)∥2 . (7) Moreover, 
+
+∥Φm(X) − Φm′ (X)∥22 =
+
+> P
+
+X
+
+> p=1
+
+(mp − m′
+
+> p
+
+)2∥zp(X)∥22
+
+≤ B2∥m − m′∥22. (8) Taking square roots and using ∥a∥2 ≤ ∥ a∥1 completes the proof. 
+
+C.3 Proof of Paper Proposition 3.1 
+
+Let HC := Hm⋆C and Hall := H1P denote the hypothesis classes of norm-bounded linear predictors from the main text. Formally, for a fixed mask function m(X),
+
+Hm = {X 7 → ⟨ v, Φm(X)⟩ : ∥v∥2 ≤ Λ} . (9) For clarity, we state the argument for scalar scores; the standard vector contraction argument gives the corresponding multiclass extension. 
+
+Proof. Stable predictive sufficiency gives 
+
+P(Y | Φall ) = P(Y | ΦC ).
+
+Hence the conditional label law, and therefore the Bayes decision, depends only on ΦC . The unrestricted Bayes risks based on ΦC and Φall are equal. For the complexity bound, let 
+
+ui = Φ m⋆C (Xi)(Xi).
+
+Since at most s patches are selected and each has norm at most B,
+
+∥ui∥2 ≤ B√s. 
+
+Therefore, 
+
+bRn
+
+ Hm⋆C
+
+ = Eσ
+
+"
+
+sup 
+
+> ∥v∥2≤Λ
+
+1
+
+n
+
+> n
+
+X
+
+> i=1
+
+σi⟨v, u i⟩
+
+#
+
+= Λ
+
+n Eσ
+
+> n
+
+X
+
+> i=1
+
+σiui
+
+> 2
+
+≤ Λ
+
+n
+
+vuutEσ
+
+> n
+
+X
+
+> i=1
+
+σiui
+
+> 22
+
+= Λ
+
+n
+
+vuut nX
+
+> i=1
+
+∥ui∥22
+
+≤ ΛB√s
+
+√n . (10) For the all-patch mask, ∥ui∥2 ≤ B√P , yielding the second bound. Note. The following corollary extends the result with a standard generalization bound; it is not stated in the main text. 
+
+Corollary C.1 (Oracle-subset generalization bound) . Un-der the same conditions, if ℓ ∈ [0 , 1] is ρ-Lipschitz in the prediction score, then with probability at least 1 − δ, every 
+
+h ∈ H m⋆C satisfies 
+
+R(h) ≤ bR(h) + 2ρΛB√s
+
+√n + 3 
+
+r log(2 /δ )2n . (11) 
+
+The analogous all-patch bound replaces s by P .Proof of Corollary C.1. The result follows by applying the contraction inequality to the ρ-Lipschitz loss and then the stan-dard Rademacher generalization bound using the complexity estimate established in Paper Proposition 3.1. 
+
+Scope. This comparison keeps the predictor class and norm bound fixed, and only changes the input representation: us-ing the oracle predictive subset ΦC versus using all patches 
+
+Φall . Under the same predictor capacity, restricting the rep-resentation to at most s oracle predictive patches yields a Rademacher-complexity upper bound scaling with √s,whereas the all-patch representation scales with √P . There-fore, when s < P , the oracle-subset representation admits a strictly tighter complexity upper bound. This result concerns the ideal oracle representation. Our ablations include Task 3.1, which uses the same sample-dependent selector as PatchGen but removes the proposed predictive-subset constraints; this equal-parameter comparison shows that the constrained se-lector gives better empirical generalization. 
+
+C.4 Proof of Paper Proposition 3.2 
+
+For a fixed classifier h, define 
+
+Rd(h, ϕ ) = Ed
+
+h
+
+ℓ
+
+
+
+h(ez+ 
+
+> ϕ
+
+(X)) , Y 
+
+i 
+
+,
+
+and define the corresponding oracle risk 
+
+Rd(h, C ) = Ed [ℓ (h(ezC (X)) , Y )] .
+
+Lemma C.2 (Risk deviation from the oracle predictive-subset mask) . Suppose u 7 → ℓ(h(u), y ) is L-Lipschitz. Then 
+
+|Rd(h, ϕ ) − Rd(h, C )| ≤ LBP ϵ d(ϕ). (12) 
+
+Proof. By Lemma C.1, 
+
+ez+ 
+
+> ϕ
+
+(X) − ezC (X) 2
+
+≤ B ∥mϕ(X) − m⋆C (X)∥1 .
+
+The Lipschitz condition therefore gives 
+
+|Rd(h, ϕ ) − Rd(h, C )| ≤ LB Ed
+
+∥mϕ(X) − m⋆C (X)∥1
+
+
+
+= LBP ϵ d(ϕ). (13) This completes the proof. 
+
+Proof of Paper Proposition 3.2. Because ezC is a determinis-tic function of ΦC and the same fixed refinement map is used in both domains, 
+
+Rd(h, C ) = Rd′ (h, C ).
+
+Using the triangle inequality and Lemma C.2, 
+
+|Rd(h, ϕ ) − Rd′ (h, ϕ )| ≤ | Rd(h, ϕ ) − Rd(h, C )|
+
++ |Rd(h, C ) − Rd′ (h, C )|
+
++ |Rd′ (h, C ) − Rd′ (h, ϕ )|≤ LBP (ϵd(ϕ) + ϵd′ (ϕ)) . (14) This completes the proof. 
+
+Note. This result isolates shifts in complementary context while keeping the joint distribution of the oracle predictive-subset representation and label fixed. It does not cover changes in P(Φ C , Y ), label noise, or changes in the predictive mecha-nism. 
+
+C.5 Proof of Paper Proposition 3.3 
+
+Proof. Consider any two samples X and X′ with labels 
+
+Y = c and Y ′ = c′, where c̸ = c′. For a sample X with 
+
+Y = c,
+
+∥ez+ 
+
+> ϕ
+
+(X) − μc∥2 ≤∥ez+ 
+
+> ϕ
+
+(X) − ezC (X)∥2 + ∥ezC (X) − μc∥2 ≤ η + r. (15) Likewise, ∥ez+ 
+
+> ϕ
+
+(X′) − μc′ ∥2 ≤ η + r. The reverse triangle inequality gives 
+
+ez+ 
+
+> ϕ
+
+(X) − ez+ 
+
+> ϕ
+
+(X′) 2
+
+≥ ∥ μc − μc′ ∥2 − ∥ ez+ 
+
+> ϕ
+
+(X) − μc∥2 − ∥ ez+ 
+
+> ϕ
+
+(X′) − μc′ ∥2
+
+≥ γ − 2( r + η). (16) This completes the proof. 
+
+Corollary C.2 (Mask-error condition for separation) . If 
+
+∥mϕ(X) − m⋆C (X)∥1 ≤ q for every sample, then η ≤ Bq 
+
+and the learned class-separation margin is at least 
+
+γ − 2( r + Bq ). (17) 
+
+Proof. The result follows immediately from Lemma C.1 and Paper Proposition 3.3. The expected mask error ϵd(ϕ) used in the complementary-context-shift result does not by itself imply the uniform error condition required here. Target-shift preservation, therefore, relies on an additional, explicitly stated approximation as-sumption. 
+
+C.6 Proof of Paper Corollary 3.1 
+
+Proof. The risk-discrepancy conclusion follows by applying Paper Proposition 3.2 to the modeled data-shift component, while the class-separation conclusion follows from Paper Proposition 3.3 for the target-shift component. No interac-tion term between the two components is bounded; hence, the result is componentwise rather than a unified joint-risk guarantee. D Additional design and implementation details 
+
+More details of soft predictive-subset mask estimation. 
+
+Task 3.1 outperforms the channel-only variant in Task 2.2, showing that sample-dependent spatial patch selection pro-vides additional value beyond channel-wise refinement. 
+
+More details of selected-confidence regularization. In the implementation, the confidence objective is expressed using a detached complementary-confidence reference. For unlabeled samples in CCD and mDG+GCD, ¯Yi denotes the non-differentiable pseudo-label supplied by the host discovery objective: 
+
+Lneg = 1
+
+| ¯B| 
+
+X 
+
+> i∈¯B
+
+h
+
+sg 
+
+
+
+ph( ¯Yi | ez−
+
+> ϕ,i
+
+)
+
+
+
+− ph( ¯Yi | ez+
+
+> ϕ,i
+
+)
+
+i
+
+.
+
+(18) Because the complementary term is detached, 
+
+∇L neg = ∇
+
+− 1
+
+| ¯B| 
+
+X 
+
+> i∈¯B
+
+ph( ¯Yi | ez+
+
+> ϕ,i
+
+)
+
+ .
+
+Thus, the trainable effect is identical to Lconf (defined in Paper Eq. (5)). The complementary confidence acts as a detached, sample-dependent reference that contributes no gradient. The objective does not directly train the complementary branch to produce lower confidence. 
+
+## E More experimental details 
+
+Detailed reproducibility settings, including hyperparameters and implementation configurations, are documented in the 
+
+reproducibility_parameters.md file. 
+
+E.1 Shared details. 
+
+All PatchGen results are reported with seed 1, consistent with the re-implemented baselines. Table 10 reports results under seeds {0, 1, 2} and varying λms and λsim on TerraIncognita in the mDG setting. Across seeds {0, 1, 2}, the standard deviation of average accuracy is below 0.3 percentage points. Across the tested loss weights, average accuracy varies within 
+
+1.4 percentage points without SWAD and 1.6 percentage points with SWAD when the default setting is included. For CCD and mDG+GCD, we follow the same single-seed convention as the compared baselines (Cendra, Zhao, and Han 2024; Tan et al. 2024). Please refer to results across seeds in Table 10. For mDG and mDG+GCD, hyperparameters and check-points are selected using source-domain validation splits only; no samples, labels, or statistics from the held-out test domain are used for model selection. For CCD, we follow the PromptCCD protocol and use only the validation data available up to the current session for checkpoint and hyperpa-rameter selection; future-session test labels are never used. For CCD and mDG+GCD, PatchGen follows the pseudo-labeling rules of the corresponding host methods, PromptCCD and L-Reg. The pseudo-labels are treated as detached targets for PatchGen-specific losses; analyzing alternative pseudo-label generators is outside the scope of this work. We will release the training code, configuration files, and data-split scripts upon publication. The optional original-feature contrast, MIRO oracle regu-larization, and domain-invariance regularization available in the codebase are disabled in all main PatchGen experiments. Their coefficients are set to zero, and these terms are not part of the main-paper overall objective. 
+
+Patch-selection diagnostic protocol. For the patch per-turbation diagnostics, the learned mask satisfies mϕ(X) ∈
+
+[0 , 1] P , and we define the selected set as bCϕ(X) = {p :
+
+mϕ,p (X) ≥ 0.5} using a fixed mask threshold of 0.5. The same perturbation operator is then applied to the selected or complementary set for all methods. 
+
+E.2 Detailed method list for mDG natural-image experiments 
+
+We compare PatchGen with the following methods. 
+
+VLM-based methods : SWAD (Cha et al. 2021) with VLM, CLIP (Radford et al. 2021), SMA (Arpit et al. 2022), DUPRG (Niu et al. 2022), CoOp (Zhou et al. 2022), MIRO (Cha et al. 2022), DPL (Zhang et al. 2023), CLIPOOD (Shu et al. 2023), Promptstyler (Cho et al. 2023), KAdaptation (Lee et al. 2025), GESTUR (Lew, Son, and Chang 2023), DPR (Cheng et al. 2024), CLIPCEIL++ (Yu, Yoo, and Lin 2024). 
+
+VM-based methods : MMD (Li et al. 2018b), Mixstyle (Zhou et al. 2021), GroupDRO (Sagawa et al. 2019), IRM (Arjovsky et al. 2019), ARM (Zhang et al. 2021), VREx (Krueger et al. 2021), CDANN (Li et al. 2018d), DANN (Ganin et al. 2016), RSC (Huang et al. 2020), MTL (Blanchard et al. 2021), MLDG (Li et al. 2018a), Fish (Shi et al. 2021), ERM (Vapnik 1999), SagNet (Nam et al. 2021), SelfReg (Kim et al. 2021), CORAL (Sun and Saenko 2016), mDSDI (Bui et al. 2021), GMDG (Tan, Yang, and Huang 2024), L-Reg (Tan et al. 2024). 
+
+Causal-based methods : CI-DGA (Gong et al. 2025), SMIDG (Wang et al. 2025), BFMix (Zhang et al. 2024), CauRDG (Liu et al. 2025). 
+
+E.3 More details of mDG histopathological image datasets 
+
+To evaluate whether our method captures diagnosis-relevant visual patterns, we use histopathological image datasets with validated links between visual patterns and diagnostic labels. 
+
+1) HISTOPANTUM (Zamanitajeddin et al. 2024). HISTOPANTUM contains histopathology images of nor-mal and tumor tissues from four organs. Each organ defines a domain, and all domains share the same two classes, yielding fully aligned binary label spaces. This provides a controlled setting with shared label support; any remaining shifts may include organ appearance and possible label-prior differences. 
+
+2) HISTOCOLON. We construct HISTOCOLON, a new benchmark formed by combining three colon histopathol-ogy datasets from different institutions and time periods: CRC-TP (Javed et al. 2020), K-16 (Kather et al. 2016), and K-19 (Kather et al. 2019). Across these sub-datasets, there are ten semantic classes, but some classes are missing from certain sub-datasets. HISTOCOLON thus exhibits both do-main shifts and partial class misalignment. Each constituent dataset is treated as a separate domain. In every leave-one-domain-out fold, one entire dataset is reserved as the unseen test domain, while the other two datasets are used exclusively as source domains. Consequently, no image, slide, or patient from the held-out dataset appears in source-domain train-ing or validation. Model selection is performed using splits constructed only from the two source datasets. This protocol prevents patient-level leakage between the source and unseen test domains. 
+
+## F Detailed numeric results of main experiments 
+
+This section presents detailed results of the figures in the paper’s Experiments Section. The following tables preserve the exact numeric values used to generate the main-paper visual summaries. We keep these tables in the appendix to avoid shrinking dense tables in the main text while retaining a complete audit trail from each plotted value to its original result. Table 1 reports the full mDG comparison across VLM-based, VM-based, and our baseline methods. Table 2 compares with causal-inspired DG methods. Tables 3 and 4 report histopathology mDG results. Table 5 reports the CCD session-wise results. Tables 6 and 7 give the per-dataset and averaged mDG+GCD results. Table 8 provides the full ablation numeric values. Specifically, we provides the full results visualization as Figure 9 of Table 1 for a clear exhibition. 
+
+## G Additional results 
+
+G.1 Patch-selection design analysis 
+
+Figure 10 reports additional results analyzing the contribution of each framework component; exact numeric values are provided in Table 8. The first block (Tasks 1.1–1.2) presents baseline methods. The second block (Tasks 2.1–2.4) evaluates alternative design choices to justify our formulation: • B + Ms: Baseline with a learnable patch mask Ms shared across all samples (static). • B + Md: Baseline with a learnable dimension-wise mask on feature channels. • B + Attn : Baseline with an additional standard attention module. • B + Attn + Lms :Attention-based variant further optimized with our mask-sharpening loss Lms , where attention maps are normalized to 
+
+[0 , 1] before applying the loss. For this variant, the scalar patch score is computed from the pre-softmax attention logits using the same outgoing-score reduction as main-paper Eq. (3), followed by min–max normalization over patches within each image before applying Lms .The third block (Tasks 3.1–3.5) presents ablations of our proposed components, where Mp denotes the sample-dependent mask module that outputs mϕ(X), and mϕ,p (X)
+
+denotes the weight assigned to patch p. Note that B + Mp
+
+(Task 3.1) is an equal-parameter selector control: it uses the same sample-dependent mask module as PatchGen but omits the predictive-subset constraints. This comparison helps iso-late the effect of the proposed constraints from added trainable capacity. 
+
+Figure 9: MDG results for natural images : Comparison between PatchGen and previous MDG methods, including VLM-based, VM-based methods, and causal-based methods using VMs. The detailed results are in Appendix Table 1. 
+
+Comparison with other masking strategies. Compared with static patch masking ( Ms) and dimension-wise masking (Md), our learned patch-wise masking Mp yields higher average accuracy in both SWAD settings, although the gain is not uniform for every individual dataset. This suggests that sample-adaptive patch modeling is more effective than globally shared or channel-level masking at learning a useful soft proxy for the oracle intra-image predictive subset. 
+
+Comparison with standard attention. The sample-dependent mask module is competitive with standard attention without SWAD and provides a small average advantage with SWAD. Applying Lms directly to standard attention does Figure 10: Ablation results : Average-accuracy trend as components are added, plus per-dataset gains of the full model over the baseline. The detailed results of each dataset are in Appendix Table 8. not improve its average performance, indicating that low-score suppression alone is insufficient. The strongest results are obtained when the proposed selector is combined with mask suppression, selected-confidence regularization, and class-conditional feature alignment. 
+
+Ablation of proposed components. Tasks 3.1 and 3.3–3.5 form the principal incremental ablation, whereas Task 3.2 eval-uates an increased weight on Lms . The selected-confidence and class-conditional objectives provide modest additional average gains, and the complete model achieves the strongest overall result, although individual intermediate variants do not improve monotonically. This suggests that the objectives are most effective when combined. 
+
+G.2 Other results and analysis 
+
+PatchGen with full-model fine-tune. Table 9 reports the performance of PatchGen under full model fine-tuning across all mDG datasets. We observe that full fine-tuning may disturb the pretrained knowledge of the backbone, leading to inferior performance compared to LN fine-tuning. With full-model fine-tuning and SWAD, PatchGen improves the corresponding baseline average by 0.3 percentage points, although the gains are not uniform across individual datasets. 
+
+Sensitivity and robustness analysis. As shown in Table 10, our method exhibits stable performance across different loss weights and random seeds without and with SWAD, indicating the robustness of PatchGen to hyperparameter choices and initialization. Across seeds {0, 1, 2}, the standard deviation of average accuracy is below 0.3 percentage points. Across the tested loss weights, average accuracy varies within 1.4
+
+percentage points without SWAD and 1.6 percentage points with SWAD when the default setting is included. The numeric results are shown in Table 10. 
+
+More histopathology visualizations. Figure 11 presents additional learned patch-selection maps under the mDG set-ting. In the displayed examples, PatchGen assigns higher weights to regions that are morphologically consistent with diagnostic tissue patterns, whereas the compared baselines more frequently emphasize surrounding contextual regions. These visualizations provide qualitative evidence about the learned selector but do not constitute clinical or causal valida-tion. The displayed pathology examples were reviewed by a pathology expert for morphological plausibility. This review supports the qualitative description of the highlighted regions, but the heatmaps are still model-selection maps rather than pixel-level clinical annotations or a diagnostic gold standard. Figure 11: Additional pathology tumor examples under the mDG setting. Highlighted regions correspond to regions visually consistent with diagnostic tissue morphology. Please check datasets’s official metadata for details. Table 1: MDG results for natural images : Comparison between the proposed and previous MDG methods, including VLM-based, VM-based methods, and causal-based methods using VMs. Dataset notation: P: PACS, V: VLCS, O: OfficeHome, 
+
+T: TerraIncognita, D: DomainNet. Note: For DINOv2 ViT-L/14, LP and LP+LN have identical values after rounding; their unrounded averages differ by less than 0.1 percentage points. 
+
+Test domain P V O T D Avg. 
+
+Method Pretrain VLM-based methods 
+
+SWAD (Cha et al. 2021) (NIPS21) CLIP ViT-B/16 91.3 79.4 76.9 45.4 51.7 68.9 CLIP (Radford et al. 2021) (ICML21) CLIP ViT-B/16 96.2 81.7 82.0 33.4 57.5 70.2 SMA (Arpit et al. 2022) (NIPS22) CLIP ViT-B/16 92.1 79.7 78.1 48.3 55.9 70.8 DUPRG (Niu et al. 2022) (ICLR23) CLIP ViT-B/16 97.1 83.9 83.6 42.0 59.6 73.2 CoOp (Zhou et al. 2022) (IJCV22) CLIP ViT-B/16 96.2 77.6 83.9 48.8 59.8 73.3 MIRO (Cha et al. 2022) (ECCV22) CLIP ViT-B/16 95.6 82.2 82.5 54.3 54.0 73.7 DPL (Zhang et al. 2023) (TAI23) CLIP ViT-B/16 97.3 84.3 84.2 52.6 56.7 75.0 CLIPOOD (Shu et al. 2023) (ICML23) CLIP ViT-B/16 97.3 85.0 87.0 60.4 63.5 78.6 Promptstyler (Cho et al. 2023) (ICCV23) CLIP ViT-B/16 97.2 82.9 83.6 - 59.4 -KAdaptation (Lee et al. 2025) (WACV25) CLIP ViT-B/16 97.5 83.0 90.3 51.9 62.7 77.1 GESTUR (Lew, Son, and Chang 2023) (ICCV23) CLIP ViT-B/16 96.0 82.8 84.2 55.7 58.9 75.5 DPR (Cheng et al. 2024) (CVPR24) CLIP ViT-B/16 97.5 86.4 86.1 57.1 62.1 77.8 CLIPCEIL++ (Yu, Yoo, and Lin 2024) (NeurIPS24) CLIP ViT-B/16 97.2 85.2 87.7 62.0 63.6 79.1 Method Pretrain VM-based methods 
+
+MMD (Li et al. 2018b) ResNet50 84.7 ±0.5 77.5 ±0.9 66.3 ±0.1 42.2 ±1.6 23.4 ±9.5 58.8 Mixstyle (Zhou et al. 2021) ResNet50 85.2 ±0.3 77.9 ±0.5 60.4 ±0.3 44.0 ±0.7 34.0 ±0.1 60.3 GroupDRO (Sagawa et al. 2019) ResNet50 84.4 ±0.8 76.7 ±0.6 66.0 ±0.7 43.2 ±1.1 33.3 ±0.2 60.7 IRM (Arjovsky et al. 2019) ResNet50 83.5 ±0.8 78.5 ±0.5 64.3 ±2.2 47.6 ±0.8 33.9 ±2.8 61.6 ARM (Zhang et al. 2021) ResNet50 85.1 ±0.4 77.6 ±0.3 64.8 ±0.3 45.5 ±0.3 35.5 ±0.2 61.7 VREx (Krueger et al. 2021) ResNet50 84.9 ±0.6 78.3 ±0.2 66.4 ±0.6 46.4 ±0.6 33.6 ±2.9 61.9 CDANN (Li et al. 2018d) ResNet50 82.6 ±0.9 77.5 ±0.1 65.8 ±1.3 45.8 ±1.6 38.3 ±0.3 62.0 DANN (Ganin et al. 2016) ResNet50 83.6 ±0.4 78.6 ±0.4 65.9 ±0.6 46.7 ±0.5 38.3 ±0.1 62.6 RSC (Huang et al. 2020) ResNet50 85.2 ±0.9 77.1 ±0.5 65.5 ±0.9 46.6 ±1.0 38.9 ±0.5 62.7 MTL (Blanchard et al. 2021) ResNet50 84.6 ±0.5 77.2 ±0.4 66.4 ±0.5 45.6 ±1.2 40.6 ±0.1 62.9 MLDG (Li et al. 2018a) ResNet50 84.9 ±1.0 77.2 ±0.4 66.8 ±0.6 47.7 ±0.9 41.2 ±0.1 63.6 Fish (Shi et al. 2021) ResNet50 85.5 ±0.3 77.8 ±0.3 68.6 ±0.4 45.1 ±1.3 42.7 ±0.2 63.9 ERM (Vapnik 1999) ResNet50 84.2 ±0.1 77.3 ±0.1 67.6 ±0.2 47.8 ±0.6 44.0 ±0.1 64.2 SagNet (Nam et al. 2021) ResNet50 86.3 ±0.2 77.8 ±0.5 68.1 ±0.1 48.6 ±1.0 40.3 ±0.1 64.2 SelfReg (Kim et al. 2021) ResNet50 85.6 ±0.4 77.8 ±0.9 67.9 ±0.7 47.0 ±0.3 42.8 ±0.0 64.2 CORAL (Sun and Saenko 2016) ResNet50 86.2 ±0.3 78.8 ±0.6 68.7 ±0.3 47.6 ±1.0 41.5 ±0.1 64.5 mDSDI (Bui et al. 2021) ResNet50 86.2 ±0.2 79.0 ±0.3 69.2 ±0.4 48.1 ±1.4 42.8 ±0.1 65.1 MIRO + SWAD (Cha et al. 2022) (ECCV22) RegNetY-16GF 97.4 ±0.2 79.9 ±0.6 80.4 ±0.2 58.9 ±1.3 53.8 ±0.1 74.1 GMDG + SWAD (Tan, Yang, and Huang 2024) (CVPR24) RegNetY-16GF 97.3 ±0.1 82.4 ±0.6 80.8 ±0.6 60.7 ±1.8 54.6 ±0.1 75.1 L-Reg + SWAD (Tan et al. 2024) (NeurIPS24) RegNetY-16GF 97.4 ±0.2 82.4 ±0.0 80.9 ±0.5 62.9 ±0.9 55.3 ±0.0 75.8 Method Pretrain Results of baselines and ours 
+
+LP* DINOv2 ViT-B/14 93.0 77.0 84.2 56.7 53.5 72.9 LP+LN finetune (Baseline)* DINOv2 ViT-B/14 96.2 80.0 86.1 61.5 56.3 76.0 
+
+PatchGen DINOv2 ViT-B/14 96.4 82.4 83.7 65.8 56.0 76.9 LP+LN finetune (Baseline) + SWAD* DINOv2 ViT-B/14 96.7 80.3 86.8 64.7 58.3 77.4 
+
+PatchGen + SWAD DINOv2 ViT-B/14 97.1 82.5 87.5 69.7 59.2 79.2 LP* MAE ViT-B/16 58.4 75.9 49.5 26.1 17.0 45.4 LP+LN finetune (Baseline)* MAE ViT-B/16 70.1 78.5 53.2 25.0 25.2 50.4 
+
+PatchGen MAE ViT-B/16 72.5 77.5 50.7 32.0 25.6 51.7 LP+LN finetune (Baseline) + SWAD* MAE ViT-B/16 72.1 78.5 56.3 24.5 26.6 51.6 
+
+PatchGen + SWAD MAE ViT-B/16 73.9 79.0 55.1 27.3 27.2 52.5 LP* DINOv2 ViT-L/14 97.0 78.6 86.7 65.7 54.3 76.5 LP+LN finetune (Baseline)* DINOv2 ViT-L/14 97.0 78.6 86.7 65.7 54.3 76.5 LP+LN finetune (Baseline) + SWAD* DINOv2 ViT-L/14 97.5 81.0 89.7 67.4 58.1 78.7 Baseline + GMDG* DINOv2 ViT-L/14 96.1 79.2 85.7 67.9 54.0 76.6 
+
+PatchGen DINOv2 ViT-L/14 97.1 83.6 88.0 68.1 59.2 79.2 Baseline + GMDG + SWAD* DINOv2 ViT-L/14 96.8 81.1 89.5 68.5 57.7 78.7 
+
+PatchGen + SWAD DINOv2 ViT-L/14 97.6 83.4 90.6 70.2 62.7 80.9 Table 2: MDG results for natural images : Comparison between the proposed and selected causal-inspired DG methods using VMs. Dataset notation: P: PACS, V: VLCS, O: OfficeHome, T: TerraIncognita, D: DomainNet. Test domain Backbone P V O T D Avg. 
+
+CI-DGA (Gong et al. 2025) (IJCV25) DeiT-S 88.3 80.6 72.6 - - -SMIDG (Wang et al. 2025) (TPAMI25) ResNet50 90.4 80.8 72.1 52.8 45.5 68.3 BFMix (Zhang et al. 2024) (ICME25) ViT-S/16 82.3 90.1 82.3 51.5 53.2 71.9 CauRDG (Liu et al. 2025) (ACMMM25) ViT-B/16 89.8 - 75.3 - 49.8 -
+
+PatchGen ViT-S/14 93.8 81.8 79.1 54.4 50.7 72.0 
+
+PatchGen + SWAD ViT-S/14 94.8 82.9 82.0 55.8 52.3 73.6 
+
+PatchGen ViT-B/14 93.9 82.6 84.0 56.1 55.3 74.4 
+
+PatchGen + SWAD ViT-B/14 96.6 82.7 85.3 62.3 59.5 77.3 Table 3: MDG results for histopathological images : Comparison between the proposed and baselines with average and per-domain results across different backbones on the HISTOPANTUM dataset (two fully aligned classes).                                                                                                                                                                     
+
+> Without SWAD (Cha et al. 2021) With SWAD (Cha et al. 2021) Method Backbone Colon Ovarian Stomach Uterus Avg. Colon Ovarian Stomach Uterus Avg. GESTUR* CLIP ViT-B/16 90.1 96.6 87.4 90.1 91.0 -----LP* CLIP ViT-B/16 80.3 91.4 79.0 91.0 85.4 81.1 91.3 79.2 89.9 85.4 LP + LN finetune (Baseline)* CLIP ViT-B/16 83.5 95.1 86.6 89.9 88.8 84.5 94.9 86.0 89.6 88.8
+> PatchGen CLIP ViT-B/16 86.9 95.1 86.2 85.6 88.5 87.2 95.6 85.1 90.7 89.6 LP* DINOv2 ViT-B/14 87.3 93.8 84.1 90.8 89.0 88.4 94.6 85.0 87.2 88.8 LP + LN finetune (Baseline)* DINOv2 ViT-B/14 91.4 96.7 88.8 88.5 91.4 90.7 96.7 88.5 89.9 91.4 Baseline + MIRO* DINOv2 ViT-B/14 89.1 96.2 87.6 91.8 91.2 90.8 96.8 87.8 88.8 91.0 Baseline + GMDG* DINOv2 ViT-B/14 88.9 96.2 88.0 90.1 90.8 90.3 96.5 87.2 85.5 89.9
+> PatchGen DINOv2 ViT-B/14 91.0 96.2 89.0 94.9 92.8 92.1 97.0 88.3 93.9 92.8 LP* DINOv2 ViT-L/14 90.3 92.4 84.5 93.1 90.1 88.9 94.5 84.2 90.9 89.6 LP + LN finetune (Baseline)* DINOv2 ViT-L/14 92.8 97.1 88.5 90.1 92.1 93.4 96.7 88.6 88.2 91.7
+> PatchGen DINOv2 ViT-L/14 92.3 96.8 87.8 93.7 92.6 93.0 97.1 87.0 93.8 92.7 LP* MAE ViT-B/16 80.8 88.7 81.9 75.1 81.6 82.3 86.8 81.8 75.0 81.5 LP + LN finetune (Baseline)* MAE ViT-B/16 84.5 94.1 86.5 87.6 88.2 85.4 93.4 85.5 88.3 88.2
+> PatchGen MAE ViT-B/16 86.9 95.6 85.9 89.0 89.3 88.3 95.1 86.0 90.4 89.9
+
+Table 4: MDG results for histopathological images : Comparison between the proposed and baselines with average and per-domain results across different backbones on the HISTOCOLON dataset (ten partially aligned classes). Without SWAD With SWAD Method Backbone CRC-TP K-16 K-19 Avg. CRC-TP K-16 K-19 Avg. GESTUR* CLIP ViT-B/16 39.0 63.6 53.7 52.1 - - - -LP* CLIP ViT-B/16 29.9 49.8 37.4 39.0 29.2 51.7 38.8 39.9 LP + LN finetune (Baseline)* CLIP ViT-B/16 37.1 55.8 44.2 45.7 37.7 56.2 43.9 45.9 
+
+PatchGen CLIP ViT-B/16 42.0 58.3 52.8 51.0 42.7 63.9 54.5 53.7 LP* DINOv2 ViT-B/14 49.1 52.4 55.3 52.2 48.8 51.3 55.9 52.0 LP + LN finetune (Baseline)* DINOv2 ViT-B/14 52.5 53.3 52.7 52.8 50.8 52.1 55.5 52.8 Baseline + MIRO* DINOv2 ViT-B/14 51.9 50.5 56.6 53.0 51.5 52.4 57.3 53.7 Baseline + GMDG* DINOv2 ViT-B/14 51.9 53.6 56.6 54.0 51.7 52.4 57.1 53.7 
+
+PatchGen DINOv2 ViT-B/14 50.7 52.9 59.8 54.4 50.2 54.1 57.9 54.1 LP* DINOv2 ViT-L/14 51.6 52.6 55.5 53.2 53.1 52.2 59.2 54.8 LP + LN finetune (Baseline)* DINOv2 ViT-L/14 51.9 54.6 56.6 54.3 51.7 52.4 57.1 53.7 
+
+PatchGen DINOv2 ViT-L/14 52.9 51.7 60.1 54.9 53.6 52.8 65.2 57.2 LP* MAE ViT-B/16 37.2 47.6 39.6 41.5 35.7 47.6 39.6 41.0 LP + LN finetune (Baseline)* MAE ViT-B/16 38.9 55.4 39.9 44.7 38.2 57.0 41.6 45.6 
+
+PatchGen MAE ViT-B/16 43.9 42.3 48.5 44.9 39.0 52.6 45.3 45.6 Table 5: CCD results : Results of applying our method to PromptCCD with various backbones. A: All classes; K: Known classes; 
+
+U: Unknown classes. 
+
+Backbone DINO DINOv2 Method PromptCCD* +PatchGen PromptCCD* +PatchGen 
+
+Datasets Session A K U A K U A K U A K UCIFAR-100 1 72.0 81.8 65.2 75.3 84.0 69.2 77.2 89.1 68.9 76.3 86.9 68.9 2 57.7 77.9 53.8 62.6 74.6 60.3 59.6 78.6 55.9 73.1 82.8 71.3 3 48.2 73.2 43.8 47.9 72.8 43.5 49.9 75.0 45.5 49.6 74.9 45.2 Avg. 59.3 77.6 54.3 61.9 77.1 57.7 62.2 80.9 56.8 66.4 81.5 61.8 CUB 1 56.5 76.1 43.4 55.7 73.6 43.7 70.4 89.3 57.8 70.5 88.2 58.7 2 46.3 70.0 41.2 50.3 72.9 45.5 64.1 81.4 60.5 69.6 84.3 66.5 3 56.3 77.9 52.1 59.9 75.0 57.0 68.2 82.1 65.5 66.4 84.3 63.0 Avg. 53.0 74.6 45.6 55.3 73.8 48.7 67.6 84.3 61.2 68.9 85.6 62.7 
+
+Table 6: MDG+GCD results : Accuracy scores of each dataset. A: All classes; K: Known classes; U: Unknown classes. 
+
+Test domain PACS OfficeHome VLCS TerraIncognita DomainNet 
+
+Method Backbone A K U A K U A K U A K U A K UERM (Vapnik 1999) RegNetY-16GF 57.26 77.77 22.33 44.80 74.67 8.50 61.51 82.89 34.88 37.34 20.46 45.15 22.56 40.89 6.85 PIM (Chiaroni et al. 2023) RegNetY-16GF 56.35 71.06 27.43 43.42 72.44 8.13 63.19 80.34 40.24 47.75 35.31 50.85 24.03 42.59 7.86 MIRO (Cha et al. 2022) RegNetY-16GF 56.83 85.62 24.85 48.28 80.61 9.03 61.53 82.72 35.03 50.22 39.92 49.45 31.49 55.44 10.57 GMDG (Tan, Yang, and Huang 2024) RegNetY-16GF 58.33 91.46 10.18 48.85 81.41 9.22 61.36 83.31 33.75 40.02 32.38 40.07 31.15 55.17 10.18 L-Reg (Tan et al. 2024) RegNetY-16GF 67.82 91.86 31.33 51.96 79.74 18.15 62.32 82.77 36.09 45.86 39.77 41.55 31.75 55.18 11.30 Baseline* DINOv2 ViT-B/14 96.18 96.38 96.45 79.26 87.52 72.02 85.22 87.45 82.52 63.32 58.80 67.82 56.44 56.96 56.38 L-Reg* DINOv2 ViT-B/14 96.13 95.63 96.98 81.36 91.72 72.11 84.00 86.46 80.89 59.54 47.36 67.69 55.74 55.76 56.11 
+
+PatchGen DINOv2 ViT-B/14 96.48 96.81 96.28 82.55 92.84 72.97 85.66 88.39 82.33 63.87 53.98 69.85 56.38 56.68 56.53 Baseline* DINOv2 ViT-L/14 96.82 97.73 96.21 79.49 85.02 74.44 88.78 90.38 86.89 68.55 58.79 76.11 59.53 59.78 59.73 
+
+PatchGen DINOv2 ViT-L/14 97.11 97.50 96.91 82.92 91.84 74.98 89.08 90.92 86.90 68.66 61.46 75.34 59.85 59.95 60.13 Baseline* MAE ViT-B/16 69.79 72.74 62.67 76.91 87.71 65.60 53.93 59.77 46.86 40.84 28.70 49.74 26.47 25.84 27.11 
+
+PatchGen MAE ViT-B/16 70.73 74.86 61.37 76.24 85.11 65.97 54.97 59.82 49.11 45.41 24.28 59.30 27.16 26.32 27.93 
+
+Table 7: MDG+GCD results : Accuracy scores averaged across all datasets. A: All classes; K: Known classes; U: Unknown classes. Detailed results of each dataset are presented in Table 6. 
+
+Method Backbone A K UERM RegNetY-16GF 44.69 59.34 23.54 PIM RegNetY-16GF 46.95 60.35 26.90 MIRO RegNetY-16GF 49.67 68.86 25.79 GMDG RegNetY-16GF 47.94 68.75 20.68 L-Reg RegNetY-16GF 51.94 69.86 27.68 Baseline* DINOv2 ViT-B/14 76.08 77.42 75.04 L-Reg* DINOv2 ViT-B/14 75.35 75.39 74.76 
+
+PatchGen DINOv2 ViT-B/14 76.99 77.74 75.59 Baseline* DINOv2 ViT-L/14 78.63 78.34 78.68 
+
+PatchGen DINOv2 ViT-L/14 79.52 80.33 78.85 Baseline* MAE ViT-B/16 53.59 54.95 50.40 
+
+PatchGen MAE ViT-B/16 54.90 54.08 52.74 Table 8: Ablation results across five mDG datasets. P: PACS, V: VLCS, O: OfficeHome, T: TerraIncognita, D: DomainNet.                                                                           
+
+> Without SWAD With SWAD Task ID PVOTDAvg. PVOTDAvg.
+> 1.1 LP + LN finetune (Baseline: B) 97.0 78.6 86.7 65.7 54.3 76.5 97.5 81.0 89.7 67.4 58.1 78.7 1.2 B + GMDG 96.1 79.2 85.7 67.9 54.0 76.6 96.8 81.1 89.5 68.5 57.7 78.7 2.1 B + Ms96.8 81.4 85.3 64.7 57.4 77.1 97.4 81.4 88.9 66.8 60.1 78.9 2.2 B + Md96.7 80.9 86.3 65.9 56.7 77.3 97.7 81.1 88.9 67.1 60.5 79.1 2.3 B + Attn 96.8 82.1 86.7 67.3 56.9 78.0 97.5 82.0 89.1 69.2 60.5 79.7 2.4 B + Attn +Lms 97.8 81.9 86.4 65.8 57.7 77.9 97.8 81.6 89.6 69.0 60.5 79.7 3.1 B + Mp96.7 82.2 86.6 66.5 57.3 77.9 97.9 82.4 89.7 69.0 60.6 79.9 3.2 B + Mp+10 ×Lms 96.9 81.5 86.7 66.2 57.9 77.8 97.5 83.3 90.0 70.2 60.9 80.4 3.3 B + Mp+Lms 96.8 83.4 86.8 68.4 58.4 78.7 97.0 83.1 90.0 70.6 62.2 80.6 3.4 B + Mp+Lms +Lconf 97.5 82.6 87.4 67.4 58.9 78.8 97.5 83.0 90.2 70.5 62.5 80.7 3.5 B + Mp+Lms +Lconf +Lsim (PatchGen ) 97.1 83.6 88.0 68.1 59.2 79.2 97.6 83.4 90.6 70.2 62.7 80.9
+> Improvements from the baseline 0.1 ↑5.0 ↑1.3 ↑2.5 ↑4.9 ↑2.7 ↑0.1 ↑2.4 ↑0.9 ↑2.8 ↑4.6 ↑2.2 ↑
+
+Table 9: Additional mDG results comparing LN and full finetuning. P: PACS, V: VLCS, O: OfficeHome, T: TerraIncognita, D:DomainNet. 
+
+Test domain P V O T D Avg. 
+
+Method Pretrain Results of baselines and ours 
+
+LP* DINOv2 ViT-B/14 93.0 77.0 84.2 56.7 53.5 72.9 LP+LN finetune (Baseline)* DINOv2 ViT-B/14 96.2 80.0 86.1 61.5 56.3 76.0 LP+LN finetune (Baseline) + SWAD* DINOv2 ViT-B/14 96.7 80.3 86.8 64.7 58.3 77.4 LP+full finetune (Baseline)* DINOv2 ViT-B/14 95.9 82.6 82.2 61.6 56.2 75.7 LP+full finetune (Baseline) + SWAD* DINOv2 ViT-B/14 96.5 82.2 82.3 64.8 59.3 77.0 
+
+PatchGen +full finetune + SWAD DINOv2 ViT-B/14 96.6 82.7 85.3 62.3 59.5 77.3 
+
+Table 10: Sensitivity and robustness analysis on TerraIncognita for mDG. 
+
+Without SWAD With SWAD Seed λms λsim Location100 Location38 Location43 Location46 Avg. Location100 Location38 Location43 Location46 Avg. Sensitivity to weight of λsim 
+
+1 0.001 0.01 75.8 63.4 71.0 62.0 68.1 76.6 64.7 72.7 64.5 69.6 1 0.001 0.001 76.1 61.8 68.8 60.1 66.7 79.1 63.8 71.6 66.3 70.2 1 0.001 0.0001 76.2 61.2 70.2 64.8 68.1 77.2 64.0 71.1 65.9 69.6 Sensitivity to weight of λms 
+
+1 0.01 0.001 74.5 61.1 70.4 63.3 67.3 78.8 59.5 72.3 65.0 68.9 1 0.001 0.001 76.1 61.8 68.8 60.1 66.7 79.1 63.8 71.6 66.3 70.2 1 0.0001 0.001 78.2 61.9 69.6 62.8 68.1 77.2 62.5 69.8 65.0 68.6 Results acorss different seeds 0 0.001 0.001 75.7 61.5 71.3 60.0 67.1 79.3 64.0 72.1 64.4 70.0 1 0.001 0.001 76.1 61.8 68.8 60.1 66.7 79.1 63.8 71.6 66.3 70.2 2 0.001 0.001 76.0 63.2 68.6 58.8 66.6 77.7 65.0 70.2 66.1 69.8
