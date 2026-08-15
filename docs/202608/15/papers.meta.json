@@ -1,0 +1,54 @@
+{
+  "label": "2026-08-15",
+  "date": "2026-08-15",
+  "generated_at": "2026-08-15T20:32:03",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202608/15/2608.07982v1-adadino-pair-aware-in-backbone-adaptation-of-frozen-dino-for-efficient-remote-sensing-change-detection",
+      "section": "quick",
+      "title_en": "AdaDINO: Pair-Aware In-Backbone Adaptation of Frozen DINO for Efficient Remote Sensing Change Detection",
+      "authors": "Xu Zhang, Xinqing Li, Jianpeng Xie, Zeshuai Zhu, Xin He, Yun Liu",
+      "date": "2026-08-08",
+      "pdf": "https://arxiv.org/pdf/2608.07982v1",
+      "score": "6.0",
+      "evidence": "冻结DINO基础模型的适配",
+      "tldr": "遥感变化检测需关联双时相图像对，而视觉基础模型如DINO仅习得单图表示，骨干缺失跨时相感知。AdaDINO在冻结DINO内部实现成对感知适应，其核心CGLA在选定块后耦合双流并注入共享但反向的时间残差，增强真实变化并保持中点；BSCS通过批次共享通道块减少前馈计算，CPGR解码器复用变化先验做从粗到细预测。在四个基准上验证显示具有竞争力，其中SYSU-CD提升最大；即使移除62.5%隐藏宽度，仍达85.29% F1与1.41倍吞吐加速。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Vision foundation models (VFMs) such as DINO are pretrained for single-image representation, whereas remote sensing change detection requires reasoning over a bi-temporal pair. Existing VFM-based methods usually encode the two images independently and compare them only afterward, leaving the VFM backbone unaware of cross-temporal relations. To bridge this mismatch, we present AdaDINO, a pair-aware in-backbone adaptation framework that equips a frozen DINO encoder with bi-temporal interaction for efficient change detection. Its core component, Change-aware Gated Local Adaptation (CGLA), couples the two streams after selected frozen blocks and injects a shared temporal residual into them with opposite signs, enhancing genuine change responses while preserving the pair midpoint. Batch-Shared Chunk Selection (BSCS) further reduces feed-forward network (FFN) computation by retaining a batch-shared subset of channel chunks that can be executed as a compact dense FFN. A CGLA-Prior-Guided Refinement (CPGR) decoder reuses encoder-side change responses for coarse-to-fine prediction. Experiments on four remote sensing change detection benchmarks show that AdaDINO achieves competitive or superior performance against VFM-based baselines, with the largest gain on the category-agnostic SYSU-CD dataset. With 62.5% of the FFN hidden width removed, AdaDINO still achieves an F1 score of 85.29% on SYSU-CD while delivering a 1.41$\\times$ throughput speedup. The code will be released.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/15/2608.08873v1-sparse-attention-to-emotion-efficient-facial-emotion-recognition-via-token-reduction",
+      "section": "quick",
+      "title_en": "Sparse Attention to Emotion: Efficient Facial Emotion Recognition via Token Reduction",
+      "authors": "Aya Manel Zitouni, Aicha Zenakhri, Karim Haroun, Larbi Boubchir",
+      "date": "2026-08-09",
+      "pdf": "https://arxiv.org/pdf/2608.08873v1",
+      "score": "6.0",
+      "evidence": "将视觉变换器应用于面部情绪识别这一细粒度分类问题，并通过令牌缩减提升效率",
+      "tldr": "面部情绪识别中，基于Vision Transformer的方法因计算复杂度随令牌数二次增长而难以在边缘设备部署。本文提出SAE模型，依据眼部、嘴部等区域携带判别信息的假设，通过稀疏注意力评估令牌贡献并主动丢弃冗余图像令牌。实验结果表明，即使抑制90%的图像令牌，模型仍能保持与现有方法相当的精度，同时计算量降低约90%，并在RAF-DB基准上取得最先进结果。这为资源受限场景下的高效面部情感识别提供了新方案。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Facial Emotion Recognition (FER) is an important task that has significant implications across various fields such as biometrics, health, and human-computer interaction. Current Vision Transformer-based approaches display quadratic complexity $\\mathcal{O}(N^2)$, with N being the input sequence length, making them cumbersome to deploy at the edge. In this paper, we hypothesize that the FER task does not necessarily require all facial information to correctly interpret emotional states, as specific regions such as the eyes, the mouth, and parts of the cheeks carry discriminative information that can be sufficient to recognize emotions. Based on this, we propose Sparse Attention to Emotion (SAE), a model that discards image tokens that have no added value to the emotional context, while preserving good accuracy and achieving a significant gain in computational cost. Surprisingly, even after suppressing 90\\% of the image tokens, our model achieves competitive accuracy to state of the art methods at much lower cost, providing a lightweight Facial Emotion Recognition approach. Experimental results demonstrate that SAE achieves new state of the art results on the RAF-DB dataset while reducing the computational complexity by up to 90\\%.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/15/2608.12725v1-a-generative-approach-for-improving-multi-label-defect-classification-in-photovoltaic-modules",
+      "section": "quick",
+      "title_en": "A Generative Approach for Improving Multi-Label Defect Classification in Photovoltaic Modules",
+      "authors": "Abdul Mueez, Yogesh S. Rawat, Shruti Vyas",
+      "date": "2026-08-13",
+      "pdf": "https://arxiv.org/pdf/2608.12725v1",
+      "score": "6.0",
+      "evidence": "使用Vision Transformer进行多标签缺陷分类，与基于ViT的分类需求相关。",
+      "tldr": "光伏组件EL图像中多缺陷共现导致多标签分类学习歧义，且罕见缺陷样本稀缺。提出生成式缺陷隔离方法GDI，利用LaMa修复模型移除选定缺陷以生成单缺陷训练样本。实验表明GDI显著提升分类性能，尤其在低数据场景下罕见缺陷F1最高提升63.6%，共现分类错误减少26%，为多标签缺陷分类树立新基准。",
+      "tags": "query:dino-fg",
+      "abstract_en": "This paper addresses the challenge of multi-label defect classification in electroluminescence (EL) images of photovoltaic (PV) cells. Training models on images where multiple defects co-occur creates learning ambiguity, making it difficult to disentangle visual features for specific defect types, a problem compounded by the scarcity of examples for individual classes. To tackle this, we introduce Generative Defect Isolation (GDI), utilizing the LaMa inpainting model with Fast Fourier Convolutions to remove selected defects and generate realistic, single-defect training samples. Extensive experiments on Vision Transformer (ViT-S, ViT-L) and EfficientNetV2-L architectures demonstrate that GDI significantly outperforms baselines. The performance gains are most pronounced in low-data scenarios; class-wise analysis shows substantial improvements, boosting the F1-Score for rare defect classes by up to 63.6%. Furthermore, GDI effectively resolves learning ambiguity from co-occurring defects, yielding a 26% reduction in such co-occurring classification errors. Our work establishes GDI as an effective method for maximizing the value of existing segmentation datasets and sets a new performance benchmark for multi-label classification in this domain.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

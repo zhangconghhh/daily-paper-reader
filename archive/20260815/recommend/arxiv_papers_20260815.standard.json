@@ -1,0 +1,133 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-15T20:29:49.468804+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2608.07982v1",
+      "source": "arxiv",
+      "title": "AdaDINO: Pair-Aware In-Backbone Adaptation of Frozen DINO for Efficient Remote Sensing Change Detection",
+      "abstract": "Vision foundation models (VFMs) such as DINO are pretrained for single-image representation, whereas remote sensing change detection requires reasoning over a bi-temporal pair. Existing VFM-based methods usually encode the two images independently and compare them only afterward, leaving the VFM backbone unaware of cross-temporal relations. To bridge this mismatch, we present AdaDINO, a pair-aware in-backbone adaptation framework that equips a frozen DINO encoder with bi-temporal interaction for efficient change detection. Its core component, Change-aware Gated Local Adaptation (CGLA), couples the two streams after selected frozen blocks and injects a shared temporal residual into them with opposite signs, enhancing genuine change responses while preserving the pair midpoint. Batch-Shared Chunk Selection (BSCS) further reduces feed-forward network (FFN) computation by retaining a batch-shared subset of channel chunks that can be executed as a compact dense FFN. A CGLA-Prior-Guided Refinement (CPGR) decoder reuses encoder-side change responses for coarse-to-fine prediction. Experiments on four remote sensing change detection benchmarks show that AdaDINO achieves competitive or superior performance against VFM-based baselines, with the largest gain on the category-agnostic SYSU-CD dataset. With 62.5% of the FFN hidden width removed, AdaDINO still achieves an F1 score of 85.29% on SYSU-CD while delivering a 1.41$\\times$ throughput speedup. The code will be released.",
+      "authors": [
+        "Xu Zhang",
+        "Xinqing Li",
+        "Jianpeng Xie",
+        "Zeshuai Zhu",
+        "Xin He",
+        "Yun Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-08T07:36:51+00:00",
+      "link": "https://arxiv.org/pdf/2608.07982v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "frozen DINO foundation model adaptation",
+      "llm_evidence_cn": "冻结DINO基础模型的适配",
+      "llm_evidence": "冻结DINO基础模型的适配",
+      "canonical_evidence": "冻结DINO基础模型的适配",
+      "llm_tldr_en": "AdaDINO equips a frozen DINO encoder with bi-temporal interaction via Change-aware Gated Local Adaptation for efficient remote sensing change detection.",
+      "llm_tldr_cn": "针对遥感变化检测需要推理双时相影像对而DINO等视觉基础模型仅用于单图表示的问题，提出AdaDINO框架，通过变化感知门控局部适配模块在冻结DINO编码器中进行双时相互动，注入共享时间残差以增强跨时相特征。在保持高效的同时显著提升变化检测性能，展示了冻结DINO适配到下游稠密预测任务的可行性。",
+      "llm_tldr": "针对遥感变化检测需要推理双时相影像对而DINO等视觉基础模型仅用于单图表示的问题，提出AdaDINO框架，通过变化感知门控局部适配模块在冻结DINO编码器中进行双时相互动，注入共享时间残差以增强跨时相特征。在保持高效的同时显著提升变化检测性能，展示了冻结DINO适配到下游稠密预测任务的可行性。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.08873v1",
+      "source": "arxiv",
+      "title": "Sparse Attention to Emotion: Efficient Facial Emotion Recognition via Token Reduction",
+      "abstract": "Facial Emotion Recognition (FER) is an important task that has significant implications across various fields such as biometrics, health, and human-computer interaction. Current Vision Transformer-based approaches display quadratic complexity $\\mathcal{O}(N^2)$, with N being the input sequence length, making them cumbersome to deploy at the edge. In this paper, we hypothesize that the FER task does not necessarily require all facial information to correctly interpret emotional states, as specific regions such as the eyes, the mouth, and parts of the cheeks carry discriminative information that can be sufficient to recognize emotions. Based on this, we propose Sparse Attention to Emotion (SAE), a model that discards image tokens that have no added value to the emotional context, while preserving good accuracy and achieving a significant gain in computational cost. Surprisingly, even after suppressing 90\\% of the image tokens, our model achieves competitive accuracy to state of the art methods at much lower cost, providing a lightweight Facial Emotion Recognition approach. Experimental results demonstrate that SAE achieves new state of the art results on the RAF-DB dataset while reducing the computational complexity by up to 90\\%.",
+      "authors": [
+        "Aya Manel Zitouni",
+        "Aicha Zenakhri",
+        "Karim Haroun",
+        "Larbi Boubchir"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-08-09T19:28:27+00:00",
+      "link": "https://arxiv.org/pdf/2608.08873v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Applies Vision Transformers to facial emotion recognition, a fine-grained classification problem, with token reduction for efficiency",
+      "llm_evidence_cn": "将视觉变换器应用于面部情绪识别这一细粒度分类问题，并通过令牌缩减提升效率",
+      "llm_evidence": "将视觉变换器应用于面部情绪识别这一细粒度分类问题，并通过令牌缩减提升效率",
+      "canonical_evidence": "将视觉变换器应用于面部情绪识别这一细粒度分类问题，并通过令牌缩减提升效率",
+      "llm_tldr_en": "Proposes Sparse Attention to Emotion (SAE), a token-reduction ViT for efficient facial emotion recognition, discarding non-discriminative tokens.",
+      "llm_tldr_cn": "面部情绪识别中的视觉变换器计算复杂度高，难以部署在边缘设备。本文假设并非所有面部区域都对情绪识别有贡献，提出SAE模型，通过丢弃眼睛、嘴巴等重要区域之外的令牌来缩减输入序列，从而降低复杂度并保持识别精度。实验表明SAE在不牺牲精度的前提下显著提升推理效率，可部署于资源受限场景。",
+      "llm_tldr": "面部情绪识别中的视觉变换器计算复杂度高，难以部署在边缘设备。本文假设并非所有面部区域都对情绪识别有贡献，提出SAE模型，通过丢弃眼睛、嘴巴等重要区域之外的令牌来缩减输入序列，从而降低复杂度并保持识别精度。实验表明SAE在不牺牲精度的前提下显著提升推理效率，可部署于资源受限场景。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.12725v1",
+      "source": "arxiv",
+      "title": "A Generative Approach for Improving Multi-Label Defect Classification in Photovoltaic Modules",
+      "abstract": "This paper addresses the challenge of multi-label defect classification in electroluminescence (EL) images of photovoltaic (PV) cells. Training models on images where multiple defects co-occur creates learning ambiguity, making it difficult to disentangle visual features for specific defect types, a problem compounded by the scarcity of examples for individual classes. To tackle this, we introduce Generative Defect Isolation (GDI), utilizing the LaMa inpainting model with Fast Fourier Convolutions to remove selected defects and generate realistic, single-defect training samples. Extensive experiments on Vision Transformer (ViT-S, ViT-L) and EfficientNetV2-L architectures demonstrate that GDI significantly outperforms baselines. The performance gains are most pronounced in low-data scenarios; class-wise analysis shows substantial improvements, boosting the F1-Score for rare defect classes by up to 63.6%. Furthermore, GDI effectively resolves learning ambiguity from co-occurring defects, yielding a 26% reduction in such co-occurring classification errors. Our work establishes GDI as an effective method for maximizing the value of existing segmentation datasets and sets a new performance benchmark for multi-label classification in this domain.",
+      "authors": [
+        "Abdul Mueez",
+        "Yogesh S. Rawat",
+        "Shruti Vyas"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-13T02:12:57+00:00",
+      "link": "https://arxiv.org/pdf/2608.12725v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Uses Vision Transformer ViT-S and ViT-L for multi-label defect classification, relevant to ViT-based classification.",
+      "llm_evidence_cn": "使用Vision Transformer进行多标签缺陷分类，与基于ViT的分类需求相关。",
+      "llm_evidence": "使用Vision Transformer进行多标签缺陷分类，与基于ViT的分类需求相关。",
+      "canonical_evidence": "使用Vision Transformer进行多标签缺陷分类，与基于ViT的分类需求相关。",
+      "llm_tldr_en": "Proposes Generative Defect Isolation (GDI) using LaMa inpainting to generate single-defect samples, improving multi-label defect classification on ViT and EfficientNet backbones.",
+      "llm_tldr_cn": "针对光伏组件电致发光图像中多标签缺陷共现导致的学习模糊问题，提出生成式缺陷隔离（GDI），利用LaMa修复模型去除缺陷并生成单缺陷训练样本。在ViT-S、ViT-L和EfficientNetV2-L上实验，GDI显著优于基线。该工作展示了生成数据增强对视觉Transformer分类的促进作用，可迁移至细粒度分类场景。",
+      "llm_tldr": "针对光伏组件电致发光图像中多标签缺陷共现导致的学习模糊问题，提出生成式缺陷隔离（GDI），利用LaMa修复模型去除缺陷并生成单缺陷训练样本。在ViT-S、ViT-L和EfficientNetV2-L上实验，GDI显著优于基线。该工作展示了生成数据增强对视觉Transformer分类的促进作用，可迁移至细粒度分类场景。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

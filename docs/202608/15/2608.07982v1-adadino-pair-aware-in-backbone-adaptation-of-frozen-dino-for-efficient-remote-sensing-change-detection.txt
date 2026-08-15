@@ -1,0 +1,1601 @@
+AdaDINO: Pair-Aware In-Backbone Adaptation of Frozen DINO
+for Efficient Remote Sensing Change Detection
+Xu Zhang1, Xinqing Li1, Jianpeng Xie1, Zeshuai Zhu1, Xin He2, Yun Liu1,3,4∗
+1VCIP, College of Computer Science, Nankai University
+2School of Computer Science and Engineering, Tianjin University of Technology
+3Academy for Advanced Interdisciplinary Studies, Nankai University
+4Nankai International Advanced Research Institute, Shenzhen Futian
+Abstract
+Vision foundation models (VFMs) such as DINO are pre-
+trained for single-image representation, whereas remote sens-
+ing change detection requires reasoning over a bi-temporal
+pair. Existing VFM-based methods usually encode the two im-
+ages independently and compare them only afterward, leaving
+the VFM backbone unaware of cross-temporal relations. To
+bridge this mismatch, we present AdaDINO, a pair-aware in-
+backbone adaptation framework that equips a frozen DINO en-
+coder with bi-temporal interaction for efficient change detec-
+tion. Its core component, Change-aware Gated Local Adap-
+tation (CGLA), couples the two streams after selected frozen
+blocks and injects a shared temporal residual into them with
+opposite signs, enhancing genuine change responses while
+preserving the pair midpoint. Batch-Shared Chunk Selec-
+tion (BSCS) further reduces feed-forward network (FFN)
+computation by retaining a batch-shared subset of channel
+chunks that can be executed as a compact dense FFN. A
+CGLA-Prior-Guided Refinement (CPGR) decoder reuses
+encoder-side change responses for coarse-to-fine prediction.
+Experiments on four remote sensing change detection bench-
+marks show that AdaDINO achieves competitive or superior
+performance against VFM-based baselines, with the largest
+gain on the category-agnostic SYSU-CD dataset. With 62.5%
+of the FFN hidden width removed, AdaDINO still achieves an
+F1 score of 85.29% on SYSU-CD while delivering a 1.41×
+throughput speedup. The code will be released.
+Introduction
+Remote sensing change detection aims to locate meaning-
+ful changes between two co-registered images of the same
+scene taken at different times. Change detection is challeng-
+ing because genuine changes are often sparse, whereas most
+scene content remains unchanged. Meanwhile, variations
+in illumination, season, and imaging conditions can intro-
+duce pseudo-changes that are visually more salient than the
+changes of interest (Hussain et al. 2013; Chen and Shi 2020;
+Zang et al. 2025). Consequently, meaningful change evidence
+forms a sparse signal within a highly redundant image pair,
+requiring the model to directly capture bi-temporal interac-
+tions, suppress nuisance variation, and allocate its capacity
+to change-relevant cues.
+The modeling of bi-temporal image pairs has progressed
+from post-hoc feature comparison toward more explicit
+∗Corresponding author: Yun Liu (liuyun@nankai.edu.cn)
+(a)  Conventional models
+(b)  Conventional
+       DINO transfer
+(c)  AdaDINO (ours)
+I1
+I2
+Siamese
+Encoder
+Feature
+differencing 
+Change
+decoder
+Change mask
+I1
+I2
+Frozen DINO
++adapter
+difference
+decoder
+I1
+I2
+Pair-aware
+ DINO 
+CGLA
+BSCS
+paired
+ features
+CGLA 
+priors
+Change mask
+CPGR
+decoder
+Change mask
+Frozen DINO
++adapter
+Figure 1: Comparison of bi-temporal change-detection
+paradigms. (a) Conventional Siamese detection. (b) Conven-
+tional DINO transfer with independent stream adaptation. (c)
+AdaDINO with pair-aware in-backbone adaptation.
+cross-temporal interaction. Early Siamese convolutional neu-
+ral networks (CNNs) process the two images with weight-
+shared encoders and compare the resulting features mainly
+through decoder-side fusion or differencing (Daudt, Le Saux,
+and Boulch 2018). Transformer-based methods subsequently
+introduce long-range spatial modeling and more explicit in-
+teraction between the two temporal streams (Chen, Qi, and
+Shi 2022; Bandara and Patel 2022). More recently, vision
+foundationmodels(VFMs) haveprovidedstrongerpretrained
+representations and have been transferred to change detec-
+tion through task-specific bridging modules (Li, Cao, and
+Meng 2024), differential decoders (Cheng and Hsu 2026),
+and parameter-efficient tuning strategies (Dong et al. 2026;
+Hu et al. 2022; Chen et al. 2023c). However, as illustrated
+in Fig. 1(b), many VFM-based approaches retain the image-
+wise operation of the pretrained backbone. Since the pre-
+trained backbone is designed for single-image representa-
+tion learning, the two observations are still encoded largely
+independently within the backbone: adaptation is performed
+largely within each stream, while explicit pairwise interaction
+is deferred to external fusion modules or the decoder. Con-
+sequently, cross-temporal evidence cannot directly shape in-
+termediate backbone representations, limiting the encoder’s
+ability to suppress nuisance variations and preserve subtle
+arXiv:2608.07982v1  [cs.CV]  8 Aug 2026
+
+
+change cues before decoding.
+The key limitation is therefore not the representation qual-
+ity of DINO itself, but where and how the two temporal obser-
+vations interact. Under independent encoding, subtle changes
+must survive two separate feature hierarchies before compar-
+ison, while nuisance variations cannot be jointly suppressed
+during feature formation. The highly redundant pair struc-
+ture also suggests an opportunity for more selective compu-
+tation: because most scene content remains unchanged, ex-
+ecuting every feed-forward network (FFN) at its full hidden
+width may devote substantial computation to pair-irrelevant
+responses. Existing dynamic vision transformers, however,
+mainly rely on token- or sample-wise routing, whose irreg-
+ular sparsity is difficult to translate into practical speedups.
+They also do not address pair-conditioned FFN channel se-
+lection while preserving regular batched execution (Meng
+et al. 2022; Rao et al. 2021; Yin et al. 2022). An effec-
+tive solution should therefore make the frozen encoder pair-
+aware while reducing FFN computation in a structured and
+hardware-friendly manner.
+To this end, we present AdaDINO (shown in Fig. 1), a
+pair-aware in-backbone adaptation framework that moves
+bi-temporal reasoning into the frozen DINO encoder while
+making its FFN computation responsive to the input batch.
+Change-aware Gated Local Adaptation (CGLA) is at-
+tached after selected frozen blocks, where it derives pair-
+conditioned change cues and injects an antisymmetric tem-
+poral residual into the two streams, strengthening change-
+sensitive representations without shifting their midpoint.
+Batch-Shared Chunk Selection (BSCS) then uses pooled
+pair statistics to select a batch-shared top-k set of con-
+tiguous FFN chunks, allowing the retained computation
+to be executed as a compact dense FFN at inference. Fi-
+nally, CGLA-Prior-Guided Refinement (CPGR) converts
+the multi-depth CGLA responses into stage-aligned priors
+for coarse-to-fine decoding, directly carrying encoder-side
+change evidence into mask refinement instead of relying
+solely on decoder-side bi-temporal differences.
+On four benchmarks AdaDINO is competitive with or bet-
+ter than VFM-based baselines, and on the category-agnostic
+SYSU-CD (Shi et al. 2022) it stays the most accurate even
+after 62.5% of the FFN hidden width is removed.
+Our main contributions are summarized as follows:
+• We introduce Change-aware Gated Local Adaptation
+(CGLA), which couples the two temporal streams after se-
+lected frozen DINO blocks through pair-conditioned an-
+tisymmetric residuals, enabling in-backbone change rea-
+soning while keeping the pretrained parameters fixed.
+• We propose Batch-Shared Chunk Selection (BSCS),
+which selects a batch-shared subset of contiguous FFN
+chunks from pooled pair statistics, enabling input-
+adaptive width reduction with compact dense execution.
+We further find that the CGLA-adapted backbone with-
+stands this pruning far better than an unadapted one.
+• We develop CGLA-Prior-Guided Refinement (CPGR),
+which propagates multi-depth encoder-side change re-
+sponses as stage-aligned priors, guiding coarse-to-fine
+mask refinement beyond conventional decoder-side bi-
+temporal differences.
+Related Work
+Bi-temporal Encoding and Interaction
+Modern change detectors commonly adopt Siamese archi-
+tectures, processing co-registered images with weight-shared
+encoders and constructing change evidence through feature
+comparison or fusion (Daudt, Le Saux, and Boulch 2018;
+Chen, Qi, and Shi 2022; Bandara and Patel 2022). CNN-
+based models emphasize local patterns (Daudt, Le Saux,
+and Boulch 2018; Fang et al. 2022), whereas transformer-
+based approaches (Chen, Qi, and Shi 2022; Bandara and
+Patel 2022) capture longer-range spatial and temporal depen-
+dencies. In many such designs, however, explicit interaction
+occurs mainly after feature extraction, leaving intermediate
+representations weakly conditioned on cross-temporal rela-
+tions. Recent methods therefore move interaction into the en-
+coder: MetaChanger (Fang, Li, and Li 2023) inserts feature-
+exchange layers between the two streams, while SARAS-
+Net (Chen et al. 2023a) applies relation-aware cross-attention
+before feature subtraction. AdaDINO extends this direction
+to VFMs through CGLA, which injects a pair-conditioned
+temporal residual into the two streams with opposite signs
+after selected DINO blocks, reshaping their cross-temporal
+discrepancy while preserving the pair midpoint.
+Vision Foundation Models for Change Detection
+VFMs provide transferable representations for change detec-
+tion, but existing methods differ in where bi-temporal interac-
+tion occurs. BAN (Li, Cao, and Meng 2024) keeps the back-
+bone frozen and injects aligned pretrained features into a task-
+specific branch, leaving explicit interaction outside the back-
+bone. ChangeDINO (Cheng and Hsu 2026) combines frozen
+DINOv3features withalightweight convolutionalstreamand
+performs comparison in a differential decoder, while PeftCD
+(Dong et al. 2026) inserts LoRA (Hu et al. 2022) adapters
+into a shared VFM encoder before cross-temporal exchange
+and lightweight decoding. TTP (Chen et al. 2024b) brings in-
+teraction into VFM encoding through time-traveling gates in
+a SAM backbone (Kirillov et al. 2023). GenCD (Zhang et al.
+2026b) inserts a low-rank exchange branch into the QKV
+projections of a frozen VFM, adapting each stream with a
+compressed view of the other. The proposed AdaDINO in-
+stead injects a shared pair-conditioned residual with opposite
+signs after selected frozen DINO blocks, reshaping the cross-
+temporal discrepancy while preserving the pair midpoint.
+This design addresses the mismatch between single-image
+VFM pretraining and pairwise change reasoning.
+Efficient Change Detection
+Efficient change detection has been explored through com-
+pact architectures with lightweight backbones and fusion
+modules (Liu et al. 2025), as well as static filter pruning
+of trained detectors (Zhang et al. 2026a). Although effective
+for resource-constrained deployment (Zhang et al. 2026a),
+these approaches fix the network structure before inference
+and apply the same computation to every bi-temporal pair.
+
+
+Self-
+Attention
+BSCS
+…
+…
+Shared Frozen DINO Block i
+T1 Token
+T2 Token
+Top-k FFN chunk mask
+…
+Pruned
+FFN
+Chunk 1
+Chunk 2
+Chunk n
+Chunk 3
+⋮
+…
+T1 Out
+T2 Out
+…
+Time 1
+Time 2
+…
+…
+…
+Difference Pyramid
+Stage 2
+Stage 3
+antisymmetric delta
+injection
+CGLA Priors
+Stage 3
+CPGR Decoder
+Pred. 5
+Pred. 4
+Pred. 3
+Mask
+…
+F1
+…
+F2
+floc
+floc
+Pair Relation
+Encoding
+u1
+u2
+Δ
+⊙
+⊕
+⊕
+T1 Token
+T2 Token
+Stage 4
+Δ
+CGLA
+main token
+flow
+gated local
+residual
++Δ
+-Δ
+Pred. 2
+Delta Branch
+Spatial-Channel
+Gate
+⊕
+Stage 5
+|F1-F2| F1⊙F2
+F2
+F1
+⊕
+Stage 4
+Stage 2
+g
+g
+g
+⊙
+Figure 2: Overview of AdaDINO. Left: a shared frozen DINOv3 block with BSCS chunk selection. Middle: CGLA, which
+couples the two streams and caches its change responses. Right: the CPGR decoder guided by stage-aligned CGLA priors.
+Arrow styles distinguish the main token flow, the gated local residual, and the antisymmetric delta injection.
+Input-adaptive vision transformers instead reduce compu-
+tation through token pruning, layer skipping, early exiting,
+or gating (Meng et al. 2022; Rao et al. 2021; Yin et al.
+2022; Bolya et al. 2023; Chen et al. 2023b), while related
+remote sensing methods route tokens to exploit spatial re-
+dundancy (Chen et al. 2025). However, token- or sample-
+specific sparsity often complicates regular batched execution.
+Parameter-efficient methods reduce trainable parameters (Hu
+et al. 2022; Chen et al. 2023c; Yin et al. 2023; He et al. 2023),
+but do not directly reduce dense FFN inference cost.
+Structured MLP pruning assigns fixed per-block FFN
+widths based on neuron importance (Shen 2026). In con-
+trast, the proposed BSCS predicts pair-conditioned impor-
+tance for contiguous FFN chunks and selects a batch-shared
+top-k subset. This design adapts the selected computation
+to each input batch while retaining compact dense execution
+and preserving all spatial tokens for change-mask prediction.
+Method
+Framework Overview
+Given a co-registered bi-temporal image pair (I1, I2), our
+goal is to predict a binary change map matching the ground-
+truth annotation Y
+∈{0, 1}H×W . We employ a shared
+frozen DINOv3 (Siméoni et al. 2025) backbone as the
+Siamese encoder. Let E(·) denote the patch-embedding op-
+eration and Bl(·) denote the l-th frozen Transformer block.
+The blockwise encoding process is written as
+x0
+i = E(Ii), ˜xl
+i = Bl xl−1
+i
+
+, i ∈{1, 2}, l = 1, . . . , L,
+(1)
+where L is the number of backbone blocks. In a vanilla
+Siamese configuration, xl
+i = ˜xl
+i, and the two temporal
+streams are processed independently throughout the back-
+bone. Explicit change reasoning is therefore deferred to
+subsequent feature-comparison and decoding stages. Con-
+sequently, cross-temporal evidence cannot directly influence
+the formation of intermediate representations, while every
+FFN is executed at its full hidden width for each input pair.
+AdaDINO comprises three complementary components
+(Fig. 2). CGLA couples the two temporal streams after se-
+lected frozen blocks, allowing pair-conditioned residual up-
+dates to reshape subsequent backbone representations. It also
+produces multi-depth change responses that can be reused
+during decoding. BSCS predicts FFN chunk importance
+from the paired representations and executes a batch-shared
+top-k subset at inference. Finally, CPGR aggregates the
+CGLA responses into stage-aligned priors to guide coarse-
+to-fine change-mask decoding.
+Change-aware Gated Local Adaptation
+DINO processes I1 and I2 independently, so its interme-
+diate representations are not explicitly conditioned on their
+cross-temporal relations. To address this limitation, CGLA
+is inserted after selected frozen DINO blocks indexed by
+Lc. At each selected depth, the original DINO block is ex-
+ecuted unchanged, after which CGLA applies a lightweight
+pair-conditioned residual update to the paired token states
+before they enter the subsequent block. All pretrained DINO
+parameters remain frozen throughout.
+For an adapted depth l ∈Lc, let ˜xl
+i denote the output of
+the l-th frozen DINO block for stream i ∈{1, 2}. We ap-
+ply layer normalization to ˜xl
+i, extract its patch tokens, and
+reshape them into a spatial feature map Fl
+i. Prefix tokens, in-
+cluding the class and register tokens, are excluded from this
+spatial processing and remain unchanged by CGLA. The
+two appearance features are then combined with their abso-
+lute discrepancy and multiplicative agreement to construct a
+pairwise relation descriptor:
+zl = [ Fl
+1, Fl
+2, Dl, Al ],
+cl = fctx
+ frel(zl)
+
+,
+(2)
+where [·] denotes channel-wise concatenation, Dl = |Fl
+1 −
+Fl
+2|, and Al = Fl
+1⊙Fl
+2. The lightweight module frel projects
+the concatenated relation cues into a compact hidden repre-
+sentation, while fctx further captures local spatial context to
+produce the change-context feature cl. This process corre-
+sponds to the pair relation encoding block in Fig. 2.
+From the change-context feature cl, CGLA derives a spa-
+tial gate and a channel gate, whose broadcasted product forms
+
+
+a joint local gate:
+gl
+s = σ
+ Wscl
+, gl
+c = σ
+ Wc GAP(cl)
+
+, gl = gl
+s ⊙gl
+c.
+(3)
+Here, Ws and Wc denote the 1 × 1 convolutions used by
+the spatial and channel gating branches, respectively. The
+sigmoid function σ(·) bounds the gate values, and GAP(·)
+denotes global average pooling over the spatial dimensions.
+The spatial gate gl
+s captures location-dependent responses
+and the channel gate gl
+c provides channel-wise modulation.
+A gated delta branch then produces a pair-conditioned
+temporal update:
+dl = gl ⊙f∆(cl),
+∆l = γ∆⊙dl,
+(4)
+where f∆denotes the convolutional delta branch and γ∆is
+a learnable channel-wise scaling vector, broadcast over the
+spatial dimensions. In parallel, a shared local operator floc
+is applied separately to the two streams, yielding stream-
+specific local updates
+ul
+i = floc(Fl
+i),
+i ∈{1, 2}.
+(5)
+The gated local and temporal updates are fused on the spatial
+grid and then written back to the patch-token positions:
+rl
+i = η
+ gl ⊙γself ⊙ul
+i + si∆l
+,
+xl
+i = ˜xl
+i + Tok
+ rl
+i
+
+.
+(6)
+Here, s1 = 1 and s2 = −1 in the antisymmetric mode, η is a
+learnable residual scale, and γself is a learnable channel-wise
+scale for the local updates. The operator Tok(·) maps a spa-
+tial residual back to the corresponding patch-token positions,
+while leaving the prefix tokens unchanged. Because the tem-
+poral residual is injected with opposite signs, its contribution
+cancels in the midpoint of the bi-temporal feature pair and
+contributes 2η∆l to their cross-temporal difference.
+The stream-specific local updates are not constrained to be
+antisymmetric, allowing each temporal stream to retain its
+own local refinement. Beyond updating the token represen-
+tations, CGLA also exposes its intermediate change-aware
+responses as spatial priors for decoding. At each adapted
+depth, we record
+ql
+s = gl
+s,
+ql
+loc = meanc
+gl ,
+ql
+∆= meanc
+dl ,
+(7)
+where meanc(·) denotes averaging over the channel dimen-
+sion. These response maps are direct byproducts of CGLA
+and therefore require no additional feature-extraction pass.
+In the main configuration, CPGR uses the spatial response
+ql
+s and the delta response ql
+∆, whereas ql
+loc is retained to
+support alternative prior configurations. CGLA thus gener-
+ates change-aware responses during backbone encoding and
+makes them directly available to the decoder.
+Batch-Shared Chunk Selection
+A standard DINO block executes its feed-forward network at
+the full hidden width for every bi-temporal input, although
+different image pairs and encoder depths may not require
+the same FFN channels. To reduce this unnecessary com-
+putation, BSCS partitions the FFN hidden dimension into
+structured chunks and employs a lightweight block-specific
+policy to select an input-dependent subset for execution. The
+selection is shared across all samples in a batch, allowing the
+retained chunks to be assembled into compact dense projec-
+tions for efficient inference.
+We divide the FFN hidden dimension into C contiguous
+chunks. Let xl−1
+i,b denote the token sequence of stream i for
+sample b entering the l-th block. Before the FFN is executed,
+a lightweight block-specific policy network summarizes the
+paired token streams and predicts chunk scores sl
+b ∈RC:
+hl
+b = PoolPair
+
+xl−1
+1,b , xl−1
+2,b
+
+,
+sl
+b = πl hl
+b
+
+,
+(8)
+where πl denotes the policy network associated with the
+l-th block. After excluding the prefix tokens, PoolPair(·)
+concatenates the mean-pooled features of the two streams,
+their mean absolute token-wise difference, and their mean
+token-wise multiplicative agreement. The resulting score is
+therefore conditioned jointly on the bi-temporal pair rather
+than on either observation alone.
+To obtain a batch-shared selection, we first average the
+per-sample chunk logits within the batch and convert the
+aggregated logits into soft selection probabilities:
+¯sl = 1
+B
+B
+X
+b=1
+sl
+b,
+pl = σ
+ ¯sl/τ
+
+,
+(9)
+where τ is a temperature hyperparameter controlling the
+sharpness of the probabilities. We then retain the k highest-
+scoring chunks:
+ml
+hard = TopK
+ pl, k
+
+,
+(10)
+where TopK(·, k) returns a k-hot binary mask ml
+hard ∈
+{0, 1}C. All samples in the batch share the same mask. Be-
+cause the top-k operation is non-differentiable, we use a
+straight-through estimator:
+˜ml = sg
+ ml
+hard −pl
++ pl,
+(11)
+where sg(·) denotes stop-gradient. Thus, the forward pass
+follows the discrete top-k decision, while the backward pass
+propagates gradients through the soft probabilities pl.
+Let the FFN of the l-th block be written as FFNl(x) =
+Wl
+2ρ(Wl
+1x), where Wl
+1 and Wl
+2 denote the input and output
+projections, respectively, and ρ(·) is the activation function.
+For clarity, biases and dropout are omitted from the notation.
+During training, the full hidden representation is first com-
+puted, after which the chunk-level mask is expanded over the
+corresponding hidden channels:
+FFNl
+˜
+m(x) = Wl
+2
+ Expand( ˜ml) ⊙ρ(Wl
+1x)
+
+.
+(12)
+Here, Expand(·) assigns each chunk-level gate to all hidden
+channels belonging to that chunk. Because both full-width
+projections are still evaluated, this masked training proce-
+dure does not reduce the training cost. We therefore keep all
+chunks active during an initial warm-up period and enable
+the learned selection afterward to stabilize optimization.
+At inference time, the batch-shared binary mask allows the
+active rows of Wl
+1 and the corresponding active columns of
+Wl
+2 to be gathered into compact submatrices. The selected
+chunks can thus be evaluated using reduced-width dense
+projections, while the inactive chunks are skipped entirely.
+
+
+Figure 3: Qualitative comparison on SYSU-CD. Rows show different change regimes: small-object, boundary-sensitive, and
+large-area changes. Prediction maps use white/black/red/green for TP/TN/FP/FN, respectively. “Ours+BSCS” retains 6 of 16
+FFN chunks (37.5%) and preserves predictions close to the full model while reducing computation.
+CGLA-Prior-Guided Refinement
+Conventional coarse-to-fine decoders derive refinement cues
+mainly from decoder features and coarser predictions. CPGR
+additionally reuses the multi-depth change-aware responses
+generated from CGLA, directly connecting pair-aware en-
+coder adaptation with change-mask refinement.
+The paired multi-scale features are first converted into a
+difference pyramid, Dr = |F1,r −F2,r|, r ∈{2, 3, 4, 5},
+where Fi,r denotes the feature of temporal stream i at pyra-
+mid level r. The difference pyramid is then decoded from
+coarse to fine. To align the CGLA responses with this hier-
+archy, we partition the ordered adapted depths Lc into four
+consecutive groups {Gr}5
+r=2 and aggregate the spatial and
+delta responses within each group:
+Qr,s =
+1
+|Gr|
+X
+l∈Gr
+ql
+s,
+Qr,∆=
+1
+|Gr|
+X
+l∈Gr
+ql
+∆.
+(13)
+This maps shallow-to-deep CGLA responses to four stage-
+aligned prior groups. Only the priors for r ∈{2, 3, 4} are
+injected into the decoder, since P5 serves as the initial predic-
+tion and receives no prior guidance. At refinement stage r, the
+aligned responses are detached from the encoder-side com-
+putation graph, resized, concatenated, and projected through
+a zero-initialized 1 × 1 convolution:
+Gprior
+r
+= αprior Wprior [Rr(sg(Qr,s)) , Rr(sg(Qr,∆))] ,
+(14)
+where [·] denotes channel-wise concatenation, Rr(·) re-
+sizes a response map to the spatial resolution of stage r,
+and sg(·) denotes stop-gradient. Wprior is the weight of
+a zero-initialized 1 × 1 convolution without normalization
+or activation, and αprior is a learnable scaling factor. The
+encoder-derived prior is combined with guidance from the
+next coarser prediction:
+Gr = αpred fpred(Ψ(sg(Pr+1))) + Gprior
+r
+,
+(15)
+where Pr+1 denotes the logits predicted at the coarser level
+r + 1, fpred is a lightweight projection, and αpred is a learn-
+able scaling factor. Ψ(·) derives the change probability p, un-
+certainty 4p(1 −p), and boundary response |∇2p| from the
+coarse prediction. The resulting guidance modulates feature
+routing and fusion within each refinement stage. Predictions
+at all levels are supervised, and a lightweight morphological
+refiner is finally applied to the finest prediction to obtain the
+final change map ˆP.
+Experiments
+Experimental Setup
+Datasets.
+We evaluate on the category-agnostic SYSU-
+CD (Shi et al. 2022) and three building-change bench-
+marks: WHU-CD (Ji, Wei, and Lu 2019), LEVIR-CD (Chen
+and Shi 2020), and LEVIR-CD+ (Shen et al. 2021). This
+benchmark suite evaluates complementary forms of gen-
+eralization: SYSU-CD tests pair-aware adaptation across
+diverse change categories, while WHU-CD, LEVIR-CD,
+and LEVIR-CD+ examine whether the same design re-
+mains effective across established building-change bench-
+marks. Images are cropped into non-overlapping 256 ×
+256 pairs. Following common splits (Zhang et al. 2025;
+Zhao et al. 2025), SYSU-CD, WHU-CD, and LEVIR-
+CD contain 12,000/4,000/4,000, 6,096/762/762, and
+7,120/1,024/2,048 train/validation/test pairs, respectively;
+LEVIR-CD+ contains 10,192/5,568 train/test pairs. SYSU-
+CD and LEVIR-CD use their official splits. Following com-
+mon practice, we report F1 score and Intersection-over-Union
+(IoU) on the change class as our primary metrics.
+Compared methods.
+We compare against representa-
+tive methods spanning four families: CNN-based Siamese
+networks (FC-EF, FC-Siam-Diff, FC-Siam-Conc (Daudt,
+Le Saux, and Boulch 2018), SNUNet (Fang et al.
+2022)), transformer detectors (BIT (Chen, Qi, and Shi
+
+
+Table 1: Comparison on four change-detection benchmarks (F1/IoU, %). Best and
+second-best results are shown in bold and underlined, respectively. ‡ denotes our re-
+production; “–” indicates results unavailable under a comparable split.
+SYSU-CD
+WHU-CD
+LEVIR-CD
+LEVIR-CD+
+Type
+Method
+F1
+IoU
+F1
+IoU
+F1
+IoU
+F1
+IoU
+CNN
+FC-EF
+75.81
+61.04
+84.89
+73.74
+88.90
+80.03
+76.41
+61.82
+FC-Siam-Diff
+75.79
+61.01
+87.67
+78.04
+89.69
+81.31
+79.23
+65.61
+FC-Siam-Conc
+75.18
+60.23
+85.83
+75.18
+89.89
+81.64
+79.09
+65.42
+SNUNet
+73.14
+57.66
+87.70
+78.09
+88.59
+79.51
+78.56
+64.70
+Transformer
+BIT
+79.62
+66.14
+90.01
+81.84
+90.03
+81.87
+80.95
+68.00
+ChangeFormer
+–
+–
+90.30
+82.32
+88.83
+79.90
+77.54
+63.31
+ChangeTitans
+83.24
+71.18
+–
+–
+91.52
+84.36
+86.37
+75.84
+Mamba
+ChangeMamba
+83.11
+71.10
+92.55
+86.13
+90.16
+82.09
+82.68
+70.47
+RS-Mamba
+78.99
+65.28
+91.97
+85.14
+90.82
+83.18
+81.07
+68.16
+CDMamba
+79.07
+65.38
+91.10
+83.65
+90.75
+83.07
+81.77
+69.16
+ST-Mamba
+83.39
+71.50
+94.72
+90.15
+91.92
+85.05
+84.01
+72.44
+VFM
+BAN
+–
+–
+94.49
+89.56
+91.70
+84.67
+–
+–
+FAEWNet
+–
+–
+94.99
+90.45
+92.41
+85.89
+–
+–
+ChangeDINO
+84.70
+73.46
+94.88‡
+90.26‡
+92.31
+85.72
+86.99‡
+76.98‡
+PeftCD
+84.93
+73.81
+95.86
+92.05
+92.25
+85.62
+85.89‡
+75.26‡
+Ours
+86.12
+75.62
+95.30
+91.02
+92.35
+85.79
+87.78
+78.21
+Ours + BSCS
+85.29
+74.35
+94.31
+89.24
+91.90
+85.01
+86.60
+76.36
+Table 2: Ablation on SYSU-CD
+(F1/IoU, %). Pair-blind uses
+matched insertion depths and a
+comparable trainable-parameter
+budget. Static Top-6 fixes
+training-set-derived masks; all
+k=6 variants are retrained.
+Configuration
+F1
+IoU
+Frozen baseline
+83.77
+72.07
++ Pair-blind
+84.64
+73.37
++ CGLA
+85.61
+74.84
++ CGLA + CPGR
+86.12
+75.62
+CGLA design
+w/o ∆injection
+85.18
+74.19
+symmetric ∆
+85.48
+74.65
+FFN selection (k=6)
+BSCS Top-6
+85.29
+74.35
+Static Top-6
+84.58
+73.28
+Random-6
+83.26
+71.32
+Bottom-6
+82.77
+70.61
+2022), ChangeFormer (Bandara and Patel 2022), ChangeTi-
+tans (Yang et al. 2025)), Mamba/state-space models
+(ChangeMamba (Chen et al. 2024a), RS-Mamba (Zhao
+et
+al.
+2024),
+CDMamba
+(Zhang
+et
+al.
+2025),
+ST-
+Mamba (Zhao et al. 2025)), and VFM-based detectors
+(BAN (Li, Cao, and Meng 2024), FAEWNet (Li et al. 2025),
+ChangeDINO (Cheng and Hsu 2026), PeftCD (Dong et al.
+2026)). For baselines evaluated under the same protocol we
+quote published numbers: most are taken from (Zhao et al.
+2025; Zhang et al. 2025), which share our splits; ChangeTi-
+tans is quoted from its own paper, while BAN and FAEWNet
+are from (Li et al. 2025).
+Implementation details.
+CGLA is inserted at eight uni-
+formly spaced depths, Lc = {2, 5, 8, 11, 14, 17, 20, 23}.
+Each FFN is divided into C = 16 chunks. BSCS uses τ = 1
+and is enabled after a three-epoch all-chunk warm-up. We
+use a frozen DINOv3 ViT-L/16 pretrained on SAT-493M
+(Siméoni et al. 2025), training only CGLA, BSCS, CPGR,
+and the decoder. Inputs are cropped to 256 × 256 and re-
+sized to 512 × 512 before entering the backbone. We train
+for 100 epochs with AdamW (lr = 5 × 10−4, weight decay
+5 × 10−4), cosine decay to 10−7, and an effective batch size
+of 16. The objective combines focal loss (α = 0.25, γ = 4)
+and Dice loss over the final and four pyramid predictions
+after upsampling, plus an auxiliary term on the CGLA re-
+sponses. The exact weighting is provided in Appendix A. We
+apply temporal swapping, flips, right-angle rotations, color
+jitter, and random resized cropping (p = 0.5 each), without
+test-time augmentation.
+Main Results
+Table 1 reports F1 and IoU on the four benchmarks. Unless
+otherwise noted, “Ours + BSCS” retains 6 of the 16 feed-
+forward chunks (37.5%). AdaDINO attains the best F1 on
+SYSU-CD (86.12%, 1.19 F1 points above the strongest base-
+line) and on LEVIR-CD+ (87.78%, 0.79 F1 points above the
+strongest baseline), and is within 0.60 and 0.06 F1 points
+of the best method on WHU-CD and LEVIR-CD. Figure 3
+shows the same contrast qualitatively across three change
+regimes on SYSU-CD: the baselines tend to either flag un-
+changed content or miss genuine changes, while our predic-
+tions track the annotated regions more closely and degrade
+only slightly once BSCS removes most of the FFN channels.
+Ablation Study
+We study each design choice on the category-agnostic SYSU-
+CD benchmark, where adaptation matters most (Table 2).
+Component build-up.
+A pair-blind variant, in which each
+stream is adapted independently so the adapter never sees
+the other observation, improves over the frozen baseline by
+0.87 F1 points. Making the adaptation pair-aware adds a fur-
+ther 0.97 F1 points, more than the pair-blind adapter itself
+contributes, which indicates that the gain originates from
+pair-conditioned reshaping rather than from extra trainable
+capacity. CPGR then adds 0.51 F1 points by reusing the
+cached change responses during decoding. Additional prior
+ablations in Appendix B show that the spatial and delta re-
+sponses are individually beneficial, while their combination
+achieves the best result (86.12% F1).
+What makes CGLA work.
+We probe CGLA’s two central
+choices at identical parameter count. Removing the signed
+temporal residual (“w/o ∆injection”) leaves only the gated
+local self-update and isolates the pairwise injection; replac-
+ing it with a symmetric one (s1=s2=+1) discards the oppo-
+site signs and isolates the antisymmetry. Both trail the full
+model, by 0.94 and 0.64 F1 points, so neither the injection
+nor its antisymmetry is incidental.
+
+
+Table 3: Accuracy–efficiency trade-off on SYSU-CD. All
+profiled models use the same 512 × 512 backbone input
+resolution and are measured under the same hardware and
+batch-size setting.
+Method
+F1
+GFLOPs
+FFN Time
+Thr.
+Speed
+%
+(ms/pair)
+(pairs/s)
+(×)
+DINO baseline
+83.77
+1278.66
+45.17
+11.38
+1.03
+Ours
+86.12
+1360.83
+45.17
+11.00
+1.00
+ChangeDINO
+84.70
+1269.10
+45.17
+11.32
+1.03
+Ours+BSCS (k=10)
+85.75
+1050.15
+29.15
+13.20
+1.20
+Ours+BSCS (k=8)
+85.60
+946.57
+23.48
+14.23
+1.29
+Ours+BSCS (k=6)
+85.29
+842.99
+17.84
+15.48
+1.41
+Ours+BSCS (k=4)
+84.71
+739.41
+12.31
+16.90
+1.54
+Chunk-selection quality.
+At the same retention budget
+k=6, we compare four selection rules, each retrained with
+its own retained subset so that the comparison measures the
+chunks rather than a test-time mismatch. BSCS Top-6 selects
+per batch from the learned scores; Static Top-6 keeps one
+globally fixed mask per block for all inputs; Random-6 keeps
+a fixed random subset; and Bottom-6 keeps the six lowest-
+ranked chunks. The corresponding F1 scores are 85.29%,
+84.58%, 83.26%, and 82.77%, respectively. The 0.71-point
+F1 gap between Top-6 and Static Top-6 isolates the value of
+selecting per input, and the 1.32-point F1 gap between Static
+Top-6 and Random-6 shows that the learned ranking matters
+even when frozen; Bottom-6 confirms its direction.
+Accuracy–Efficiency Trade-off of BSCS
+The retention level k sets the computational budget of BSCS.
+Table 3 reports the resulting trade-off on SYSU-CD, where
+each operating point is trained at its own budget so that
+the selection policy and the remaining parameters are fully
+adapted to it. All efficiency numbers are measured on a single
+NVIDIA A800 GPU with batch size 16, using 5 warm-up
+batches and 20 measured batches. The measured time in-
+cludes the policy forward pass and the per-batch gathering
+of the retained submatrices. GFLOPs are estimated with the
+PyTorch profiler, FFN time is the total feed-forward time
+across all blocks amortized per pair, and speed-up is com-
+puted relative to our unpruned model.
+Adaptation is inexpensive: over the frozen DINO base-
+line, CGLA and CPGR add 6% GFLOPs for a 2.35-point F1
+gain. BSCS more than recovers this cost: k=10 lifts through-
+put to 13.20 pairs/s at almost no accuracy loss, the default
+k=6 reaches 1.41× at 85.29% F1, and k=4 trades accuracy
+for 1.54×. Against ChangeDINO, our k=6 model is 0.59
+F1 points more accurate, 1.37× faster, and uses 34% fewer
+GFLOPs. The FFN time locates the saving: feed-forward lay-
+ers are about half of the unpruned forward pass, and at k=6
+their cost falls to 17.84 ms per pair, realizing 97% of the
+ideal reduction. All three unpruned models share the same
+FFN time, confirming that CGLA and CPGR leave the feed-
+forward path untouched. Appendix B further evaluates the
+same Top-6 checkpoint with inference batch sizes from 1 to
+16. The maximum F1 variation is only 0.05 points, indicat-
+ing that the batch-shared selection is stable across different
+batch sizes.
+Table 4: FFN prunability on SYSU-CD and LEVIR-CD. ∆F1
+is relative to each arm’s unpruned setting.
+w/o CGLA
+w/ CGLA
+Dataset
+Retention
+F1
+∆F1
+F1
+∆F1
+SYSU-CD
+16/16 (100%)
+83.77
+–
+85.59
+–
+8/16 (50%)
+82.88
+−0.89
+85.45
+−0.14
+4/16 (25%)
+81.01
+−2.76
+84.80
+−0.79
+LEVIR-CD
+16/16 (100%)
+91.85
+–
+92.19
+–
+8/16 (50%)
+90.98
+−0.87
+91.72
+−0.46
+4/16 (25%)
+90.13
+−1.72
+91.38
+−0.80
+Adaptation and FFN Prunability
+BSCS never observes CGLA response maps; it selects FFN
+chunks only from pooled token statistics. This raises a natural
+question: does adapting the backbone also make its FFN com-
+putation easier to prune? To test this, we disable the CPGR
+prior in both arms, keep the decoder fixed, and compare an
+unadapted backbone with a CGLA-adapted one under the
+same batch-shared pruning budgets.
+Table 4 gives a consistent answer. As retention decreases,
+the CGLA-adapted backbone loses substantially less accu-
+racy than the unadapted one. On SYSU-CD, pruning to 25%
+retention reduces the unadapted backbone by 2.76 F1 points,
+but the adapted backbone drops by only 0.79 F1 points. On
+LEVIR-CD, the corresponding drops are 1.72 and 0.80 F1
+points. The advantage grows under stronger pruning, indicat-
+ing that the task-adapted representation is more compatible
+with aggressive FFN chunk selection.
+The result suggests an indirect coupling: once CGLA re-
+shapes the token states passed to later blocks, the policy
+operates on a feature distribution that is easier to approx-
+imate with fewer FFN chunks. Because the two arms are
+trained separately, we treat this as evidence of system-level
+compatibility rather than a strict causal isolation.
+Conclusion
+We revisited how a frozen VFM can be turned into a change
+detector and argued that the pair should be encoded as a
+change inside the backbone, not compared after it. AdaDINO
+realizes this with three lightweight parts. CGLA couples the
+two temporal streams after selected frozen blocks through
+a gated local update and an antisymmetric residual; BSCS
+keeps only a shared subset of feed-forward chunks so that
+inference stays dense; and CPGR reuses the change re-
+sponses cached in the encoder to guide coarse-to-fine de-
+coding. Across four benchmarks AdaDINO matches or ex-
+ceeds VFM-based detectors, with the largest margin on the
+category-agnostic SYSU-CD. There it remains the most ac-
+curate method even after most of the feed-forward width is
+removed, while running faster than the baselines we profile.
+One limitation remains: our evidence for improved prunabil-
+ity rests on a matched comparison of separately trained mod-
+els. Disentangling why the adapted representation is easier
+to prune, and extending the approach to semantic and multi-
+class change, are natural next steps.
+
+
+Acknowledgements
+This work is supported by the National Natural Science
+Foundation of China (No. 62576176). The computational
+resources are supported by the Supercomputing Center of
+Nankai University (NKSC).
+References
+Bandara, W. G. C.; and Patel, V. M. 2022. A Transformer-
+Based Siamese Network for Change Detection.
+In IEEE
+International Geoscience and Remote Sensing Symposium,
+207–210.
+Bolya, D.; Fu, C.-Y.; Dai, X.; Zhang, P.; Feichtenhofer, C.;
+and Hoffman, J. 2023. Token Merging: Your ViT But Faster.
+In International Conference on Learning Representations,
+1–12.
+Chen, C.-P.; Hsieh, J.-W.; Chen, P.-Y.; Hsieh, Y.-K.; and
+Wang, B.-S. 2023a. SARAS-Net: Scale and Relation Aware
+Siamese Network for Change Detection.
+In Proceedings
+of the AAAI Conference on Artificial Intelligence, 14187–
+14195.
+Chen, H.; Qi, Z.; and Shi, Z. 2022. Remote Sensing Image
+Change Detection with Transformers. IEEE Transactions on
+Geoscience and Remote Sensing, 60: 1–14.
+Chen, H.; and Shi, Z. 2020. A Spatial-Temporal Attention-
+Based Method and a New Dataset for Remote Sensing Image
+Change Detection. Remote Sensing, 12(10): 1662.
+Chen, H.; Song, J.; Han, C.; Xia, J.; and Yokoya, N. 2024a.
+ChangeMamba: Remote Sensing Change Detection with
+Spatiotemporal State Space Model. IEEE Transactions on
+Geoscience and Remote Sensing, 62: 1–20.
+Chen, K.; Liu, C.; Chen, B.; Li, W.; Zou, Z.; and Shi, Z.
+2025. DynamicVis: An Efficient and General Visual Foun-
+dation Model for Remote Sensing Image Understanding.
+arXiv:2503.16426.
+Chen, K.; Liu, C.; Li, W.; Liu, Z.; Chen, H.; Zhang, H.; Zou,
+Z.; and Shi, Z. 2024b. Time Travelling Pixels: Bitempo-
+ral Features Integration with Foundation Model for Remote
+Sensing Image Change Detection. In IEEE International
+Geoscience and Remote Sensing Symposium, 8581–8584.
+Chen, X.; Liu, Z.; Tang, H.; Yi, L.; Zhao, H.; and Han, S.
+2023b. SparseViT: Revisiting Activation Sparsity for Effi-
+cient High-Resolution Vision Transformer. In Proceedings
+of the IEEE/CVF Conference on Computer Vision and Pat-
+tern Recognition, 2061–2070.
+Chen, Z.; Duan, Y.; Wang, W.; He, J.; Lu, T.; Dai, J.; and
+Qiao, Y. 2023c. Vision Transformer Adapter for Dense Pre-
+dictions. In International Conference on Learning Repre-
+sentations, 1–14.
+Cheng, C.-H.; and Hsu, C. C. 2026. ChangeDINO: DINOv3-
+Driven Building Change Detection in Optical Remote Sens-
+ing Imagery. ISPRS Annals of the Photogrammetry, Remote
+Sensing and Spatial Information Sciences, XI-3-2026: 523–
+530.
+Daudt, R. C.; Le Saux, B.; and Boulch, A. 2018.
+Fully
+Convolutional Siamese Networks for Change Detection. In
+IEEE International Conference on Image Processing, 4063–
+4067.
+Dong, S.; Hu, Y.; Wang, L.; Chen, G.; and Meng, X.
+2026. PeftCD: Leveraging Vision Foundation Models with
+Parameter-Efficient Fine-Tuning for Remote Sensing Change
+Detection. IEEE Journal of Selected Topics in Applied Earth
+Observations and Remote Sensing, 1–16.
+Fang, S.; Li, K.; and Li, Z. 2023. Changer: Feature Interaction
+Is What You Need for Change Detection. IEEE Transactions
+on Geoscience and Remote Sensing, 61: 1–11.
+Fang, S.; Li, K.; Shao, J.; and Li, Z. 2022. SNUNet-CD: A
+Densely Connected Siamese Network for Change Detection
+of VHR Images.
+IEEE Geoscience and Remote Sensing
+Letters, 19: 1–5.
+He, X.; Li, C.; Zhang, P.; Yang, J.; and Wang, X. E. 2023.
+Parameter-Efficient Model Adaptation for Vision Transform-
+ers. In Proceedings of the AAAI Conference on Artificial
+Intelligence, 817–825.
+Hu, E. J.; Shen, Y.; Wallis, P.; Allen-Zhu, Z.; Li, Y.; Wang, S.;
+Wang, L.; and Chen, W. 2022. LoRA: Low-Rank Adaptation
+of Large Language Models. In International Conference on
+Learning Representations, 1–16.
+Hussain, M.; Chen, D.; Cheng, A.; Wei, H.; and Stanley,
+D. 2013. Change Detection from Remotely Sensed Images:
+From Pixel-Based to Object-Based Approaches. ISPRS Jour-
+nal of Photogrammetry and Remote Sensing, 80: 91–106.
+Ji, S.; Wei, S.; and Lu, M. 2019. Fully Convolutional Net-
+works for Multisource Building Extraction from an Open
+Aerial and Satellite Imagery Data Set. IEEE Transactions on
+Geoscience and Remote Sensing, 57(1): 574–586.
+Kirillov, A.; Mintun, E.; Ravi, N.; Mao, H.; Rolland, C.;
+Gustafson, L.; Xiao, T.; Whitehead, S.; Berg, A. C.; Lo, W.-
+Y.; Dollar, P.; and Girshick, R. 2023. Segment Anything. In
+Proceedings of the IEEE/CVF International Conference on
+Computer Vision, 4015–4026.
+Li, K.; Cao, X.; and Meng, D. 2024.
+A New Learn-
+ing Paradigm for Foundation Model-Based Remote-Sensing
+Change Detection. IEEE Transactions on Geoscience and
+Remote Sensing, 62: 1–12.
+Li, Y.-C.; Lei, S.; Zhao, Y.-T.; Li, H.-C.; Li, J.; and
+Plaza, A. 2025.
+SAM-Based Building Change Detec-
+tion with Distribution-Aware Fourier Adaptation and Edge-
+Constrained Warping. IEEE Transactions on Geoscience and
+Remote Sensing, 63: 1–14.
+Liu, W.; Li, J.; Wang, H.; Tan, R.; Fu, Y.; and Tian, Q.
+2025. LCD-Net: A Lightweight Remote Sensing Change
+Detection Network Combining Feature Fusion and Gating
+Mechanism. IEEE Journal of Selected Topics in Applied
+Earth Observations and Remote Sensing, 18: 7769–7780.
+Meng, L.; Li, H.; Chen, B.-C.; Lan, S.; Wu, Z.; Jiang, Y.-
+G.; and Lim, S.-N. 2022. AdaViT: Adaptive Vision Trans-
+formers for Efficient Image Recognition. In Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition, 12309–12318.
+Rao, Y.; Zhao, W.; Liu, B.; Lu, J.; Zhou, J.; and Hsieh, C.-
+J. 2021. DynamicViT: Efficient Vision Transformers with
+Dynamic Token Sparsification. In Advances in Neural Infor-
+mation Processing Systems, 13937–13949.
+
+
+Shen, C. 2026. Adaptive MLP Pruning for Large Vision
+Transformers. arXiv:2603.08100.
+Shen, L.; Lu, Y.; Chen, H.; Wei, H.; Xie, D.; Yue, J.; Chen,
+R.; Lv, S.; and Jiang, B. 2021. S2Looking: A Satellite Side-
+Looking Dataset for Building Change Detection. Remote
+Sensing, 13(24): 5094.
+Shi, Q.; Liu, M.; Li, S.; Liu, X.; Wang, F.; and Zhang, L. 2022.
+A Deeply Supervised Attention Metric-Based Network and
+an Open Aerial Image Dataset for Remote Sensing Change
+Detection. IEEE Transactions on Geoscience and Remote
+Sensing, 60: 1–16.
+Siméoni, O.; Vo, H. V.; Seitzer, M.; Baldassarre, F.; Oquab,
+M.; Jose, C.; Khalidov, V.; Szafraniec, M.; Yi, S.; Rama-
+monjisoa, M.; Massa, F.; Haziza, D.; Wehrstedt, L.; Wang,
+J.; Darcet, T.; Moutakanni, T.; Sentana, L.; Roberts, C.;
+Vedaldi, A.; Tolan, J.; Brandt, J.; Couprie, C.; Mairal, J.;
+Jégou, H.; Labatut, P.; and Bojanowski, P. 2025. DINOv3.
+arXiv:2508.10104.
+Yang, Z.; Pei, G.; Yao, Y.; Zhou, T.; Ding, L.; and Shen, F.
+2025. ChangeTitans: Toward Remote Sensing Change Detec-
+tion with Neural Memory. IEEE Transactions on Geoscience
+and Remote Sensing, 63: 1–14.
+Yin, D.; Yang, Y.; Wang, Z.; Yu, H.; Wei, K.; and Sun, X.
+2023. 1% VS 100%: Parameter-Efficient Low Rank Adapter
+for Dense Predictions.
+In Proceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition,
+20116–20126.
+Yin, H.; Vahdat, A.; Alvarez, J. M.; Mallya, A.; Kautz, J.;
+and Molchanov, P. 2022. A-ViT: Adaptive Tokens for Effi-
+cient Vision Transformer. In Proceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition,
+10809–10818.
+Zang, Q.; Zhao, D.; Wang, S.; Quan, D.; and Zhong, Z. 2025.
+Feature Spectrum Learning for Remote Sensing Change De-
+tection. In Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition, 12647–12657.
+Zhang, C.; Wang, X.; Li, W.; Li, G.; Song, H.; Song, Z.;
+Zhao, J.; and Plaza, A. 2026a. Lightweight Change Detection
+in Heterogeneous Remote Sensing Images with Online All-
+Integer Pruning Training. IEEE Journal of Selected Topics in
+Applied Earth Observations and Remote Sensing, 19: 8719–
+8739.
+Zhang, H.; Chen, K.; Liu, C.; Chen, H.; Zou, Z.; and Shi, Z.
+2025. CDMamba: Incorporating Local Clues into Mamba
+for Remote Sensing Image Binary Change Detection. IEEE
+Transactions on Geoscience and Remote Sensing, 63: 1–16.
+Zhang, M.; Hu, J.; Li, Q.; and Wang, Q. 2026b. Exploring
+Generalizable Remote Sensing Change Detection via Low-
+Rank Exchange Adaptation of Vision Foundation Model. In
+Proceedings of the AAAI Conference on Artificial Intelli-
+gence, 12663–12671.
+Zhao, J.; Xie, J.; Zhou, Y.; Du, W.-L.; Yao, R.; and El Saddik,
+A. 2025. ST-Mamba: Spatio-Temporal Synergistic Model for
+Remote Sensing Change Detection. IEEE Transactions on
+Geoscience and Remote Sensing, 63: 1–13.
+Zhao, S.; Chen, H.; Zhang, X.; Xiao, P.; Bai, L.; and Ouyang,
+W. 2024. RS-Mamba for Large Remote Sensing Image Dense
+Prediction. IEEE Transactions on Geoscience and Remote
+Sensing, 62: 1–14.
+
+
+A
+Additional Implementation Details
+A.1
+Training Objective
+Let bP denote the final refined prediction and {Pr}5
+r=2 the
+four pyramid predictions, all upsampled to the ground-truth
+resolution before supervision. The complete training objec-
+tive is
+Ltotal = 1
+2Lfoc(bP, Y) + Ldice(bP, Y)
++ 1
+2
+5
+X
+r=2
+Lfoc(Pr, Y)
++ 1
+2
+5
+X
+r=2
+Ldice(Pr, Y)
++ λcgla(e)Lcgla.
+(S1)
+The focal loss operates on two-class logits with α = 0.25
+and γ = 4. The Dice term is the multi-class micro Dice loss.
+The CGLA auxiliary term supervises the channel-averaged
+absolute delta response ql
+∆at each adapted depth. With the
+resized change mask M l and margin m = 0.1, it is
+Lcgla =
+1
+|Lc|
+X
+l∈Lc
+ Ll
+chg + Ll
+unchg
+
+,
+(S2)
+Ll
+chg =
+P M l[max(0, m −ql
+∆)]2
+max(P M l, 1)
+,
+(S3)
+Ll
+unchg =
+P(1 −M l)(ql
+∆)2
+max(P(1 −M l), 1).
+(S4)
+The coefficient λcgla(e) is zero during the first five epochs
+and then increases linearly over ten epochs to 0.01.
+A.2
+Architecture Specifications
+Table S1 lists implementation-specific settings omitted from
+the main paper. The frozen backbone is DINOv3 ViT-L/16
+with embedding width D = 1024.
+A.3
+Training Configuration
+We use AdamW with betas (0.9, 0.999), without gradi-
+ent clipping or mixed precision. The physical batch size
+is eight image pairs and gradients are accumulated over
+two steps, yielding an effective batch size of 16. Input
+patches are prepared at 256 × 256 and resized inside the
+encoder to 512 × 512 using bilinear interpolation with
+align_corners=True and antialiasing. Images are nor-
+malized with mean (0.430, 0.411, 0.296) and standard devi-
+ation (0.213, 0.156, 0.143).
+Training augmentation includes temporal swapping, hor-
+izontal flipping, vertical flipping, right-angle rotation, color
+jitter, and random resized cropping, each with probability
+0.5. Rotation angles are sampled from {90◦, 180◦, 270◦}.
+Color-jitter brightness, contrast, and saturation factors are
+independently sampled from [0.75, 1.25] and the same jitter
+is applied to both temporal images. Random resized cropping
+outputs 256 × 256 patches with scale [0.333, 1.0] and aspect
+ratio [0.75, 1.333]; bilinear interpolation is used for images
+and nearest-neighbor interpolation for labels.
+B
+Additional Ablation Studies
+B.1
+CPGR Prior Ablation
+We evaluate the spatial and delta CGLA responses used to
+guide decoder refinement. As shown in Table S2, each re-
+sponse improves over the CGLA-only model without prior-
+guided refinement, and their combination performs best.
+Table S2: Ablation of CGLA priors used by CPGR on SYSU-
+CD (F1/IoU, %).
+Prior configuration
+F1
+IoU
+CGLA only
+85.61
+74.84
+Spatial only
+85.94
+75.35
+Delta only
+86.01
+75.45
+Spatial + delta
+86.12
+75.62
+B.2
+BSCS Stability across Inference Batch Sizes
+Table S3 evaluates the same Top-6 checkpoint under four
+inference batch sizes on the SYSU-CD test set. Accuracy
+is nearly unchanged: the maximum F1 spread is only 0.05
+points. This indicates that the batch-shared selection is not
+strongly dependent on a particular inference batch size.
+Throughput increases with batch size and begins to saturate
+near batch size 16.
+Table S3: BSCS batch-size stability on SYSU-CD (F1/IoU,
+%), measured on one NVIDIA A800 GPU. Throughput is
+measured in bi-temporal pairs per second.
+Batch size
+F1
+IoU
+pairs/s
+1
+85.24
+74.28
+7.33
+4
+85.27
+74.32
+12.30
+8
+85.25
+74.29
+13.91
+16
+85.29
+74.35
+15.48
+B.3
+BSCS Stability across Batch Compositions
+Because BSCS uses one chunk mask shared across a batch,
+the mask applied to a given pair can vary with the composi-
+tion of that batch. We therefore re-evaluate the same Top-6
+checkpoint under five random orderings of the SYSU-CD
+test set at a fixed inference batch size of 16. As reported in
+Table S4, F1 stays within a range of 0.04 points across the
+five orderings, and even the least favorable ordering differs
+from the default evaluation by less than 0.1 points. Together
+with Table S3, this indicates that the batch-shared selection
+is insensitive both to the inference batch size and to how the
+test set is partitioned into batches.
+Table S4: Robustness of the Top-6 checkpoint to test-set
+ordering and to temporal order on SYSU-CD (F1/IoU, %),
+evaluated at inference batch size 16.
+Test setting
+F1
+IoU
+∆F1
+Default ordering
+85.29
+74.35
+0
+Shuffled ordering, mean of five
+85.23
+74.26
+−0.06
+Shuffled ordering, worst of five
+85.20
+74.22
+−0.09
+Temporal swap
+85.15
+74.14
+−0.14
+
+
+Table S1: Implementation-specific architecture settings of AdaDINO.
+Component
+Item
+Configuration
+CGLA
+Insertion depths
+{2, 5, 8, 11, 14, 17, 20, 23}
+Hidden width
+H = 0.5D = 512
+frel
+1×1 Conv (4D→H), GN(8), SiLU
+fctx
+depthwise 3×3 Conv, GN(8), SiLU
+f∆
+1×1 Conv, GN, SiLU, DWConv 3×3, GN, SiLU, 1×1 Conv to D
+floc
+shared DWConv 3×3, GELU, 1×1 Conv
+Scale initialization
+η = 0.05, γ∆= 0.05, γself = 0
+Trainable parameters
+4.48M per module; 35.88M over eight modules
+BSCS
+Applied blocks
+all 24 DINO blocks
+FFN partition
+width 4096, C = 16, 256 channels per chunk
+Policy input
+pooled [x1, x2, |x1 −x2|, x1 ⊙x2]
+Policy MLP
+Linear(4096, 256)–GELU–Linear(256, 16)
+Selection settings
+τ = 1, three-epoch warm-up, default k = 6
+Trainable parameters
+1.05M per block; 25.27M over 24 blocks
+CPGR
+Input features
+four bi-temporal scales, 256 channels per stream and scale
+Prior mode
+spatial and delta responses; local response unused
+Depth grouping
+{2, 5}→P2, {8, 11}→P3, {14, 17}→P4, {20, 23}→P5; P5 prior is not injected
+Decoder width
+256 channels at all stages
+Prior/refiner settings
+prior scale initialized to 0.05; soft opening 3×3 and closing 5×5
+Trainable parameters
+9.41M including the final morphological refiner
+B.4
+Sensitivity to Temporal Order
+Because the pairwise relation descriptor uses an ordered con-
+catenation of the two appearance features, the resulting model
+is not strictly invariant to temporal order by construction. To
+quantify the residual asymmetry, we evaluate the same Top-
+6 checkpoint after exchanging I1 and I2 at test time, while
+keeping all other settings fixed. F1 decreases by 0.14 points
+(Table S4). The effect is small in absolute terms, although
+larger than the variation across batch compositions reported
+above. This is consistent with temporal swapping being en-
+couraged through data augmentation rather than enforced by
+the architecture.
