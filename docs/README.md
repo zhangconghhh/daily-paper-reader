@@ -6,30 +6,26 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-15
-- 运行时间：2026-08-15 20:31:58 UTC
+- 最新运行日期：2026-08-16
+- 运行时间：2026-08-16 20:25:08 UTC
 - 运行状态：成功
-- 本次总论文数：3
+- 本次总论文数：1
 - 精读区：0
-- 速读区：3
+- 速读区：1
 
 ### 今日简报（AI）
-今日速读3篇论文，均聚焦高效视觉感知与工业应用。最值得关注的是遥感变化检测的冻结骨干适配方案，以及光伏缺陷分类的生成式多标签方法。建议下一步优先精读前两篇，探索token稀疏化在边缘设备上的部署潜力。
-- 详情：[/202608/15/README](/202608/15/README)
+今日仅速读1篇，聚焦肺结节恶性预测的模型蒸馏。  
+值得关注：将CT基础模型蒸馏为可编辑概念瓶颈，为肺癌预测提供可解释性新思路。  
+建议后续关注该方法的临床验证与可编辑性实际效果。
+- 详情：[/202608/16/README](/202608/16/README)
 
 ### 精读区论文标签
 - 本次无精读推荐。
 
 ### 速读区论文标签
-1. [AdaDINO: Pair-Aware In-Backbone Adaptation of Frozen DINO for Efficient Remote Sensing Change Detection](/202608/15/2608.07982v1-adadino-pair-aware-in-backbone-adaptation-of-frozen-dino-for-efficient-remote-sensing-change-detection)  
+1. [Distilling CT Foundation Models into Editable Concept Bottlenecks for Lung Nodule Malignancy Prediction](/202608/16/2608.07857v1-distilling-ct-foundation-models-into-editable-concept-bottlenecks-for-lung-nodule-malignancy-prediction)  
    标签：评分：6.0/10、query:dino-fg
-   evidence：冻结DINO基础模型的适配
-2. [Sparse Attention to Emotion: Efficient Facial Emotion Recognition via Token Reduction](/202608/15/2608.08873v1-sparse-attention-to-emotion-efficient-facial-emotion-recognition-via-token-reduction)  
-   标签：评分：6.0/10、query:dino-fg
-   evidence：将视觉变换器应用于面部情绪识别这一细粒度分类问题，并通过令牌缩减提升效率
-3. [A Generative Approach for Improving Multi-Label Defect Classification in Photovoltaic Modules](/202608/15/2608.12725v1-a-generative-approach-for-improving-multi-label-defect-classification-in-photovoltaic-modules)  
-   标签：评分：6.0/10、query:dino-fg
-   evidence：使用Vision Transformer进行多标签缺陷分类，与基于ViT的分类需求相关。
+   evidence：将两个冻结CT基础模型蒸馏为可编辑概念瓶颈用于肺结节恶性分类
 
 
 <div class="dpr-home-promo-card">

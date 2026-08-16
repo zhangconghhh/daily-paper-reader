@@ -1,0 +1,54 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-16T20:23:50.922191+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2608.07857v1",
+      "source": "arxiv",
+      "title": "Distilling CT Foundation Models into Editable Concept Bottlenecks for Lung Nodule Malignancy Prediction",
+      "abstract": "Foundation models provide transferable CT representations, but predictions based directly on these embeddings are difficult to interpret. We developed concept bottleneck models that map two frozen CT foundation-model representations to eight radiologist-defined pulmonary-nodule attributes and predict malignancy from the estimated concepts and nodule size. The models included CT-FM, a whole-CT self-supervised encoder using a 96^3-voxel nodule-centered patch, and FMCIB, a nodule-focused contrastive encoder using a 50-mm crop. Eight ridge-regression concept heads were trained on 2,610 LIDC-IDRI nodules. Malignancy models were trained on LUNA25 and evaluated on a held-out internal test set and the external DLCS cohort. Concept fidelity was assessed using five-fold cross-validated R^2, and malignancy discrimination was assessed using AUROC with 95% confidence intervals estimated by patient-grouped bootstrap resampling. Concept fidelity was modest but higher for FMCIB than CT-FM for subtlety (R2, 0.24 vs. 0.11), spiculation (0.17 vs. 0.08), texture (0.17 vs. 0.07), and lobulation (0.15 vs. 0.05). Internally, the CT-FM and FMCIB concept+size models achieved AUROCs of 0.86 (95% CI, 0.80-0.92) and 0.86 (0.79-0.92), respectively. Externally, AUROCs were 0.72 (0.68-0.75) and 0.73 (0.70-0.76), compared with 0.73 for nodule size alone and 0.60 and 0.67 for the corresponding embedding only probes. Additive predictions could be decomposed into feature-level contributions and modified through controlled concept interventions. Concept bottlenecks provided transparent malignancy predictions with discrimination similar to nodule size alone, while differences in concept fidelity suggest that concept recovery depends on the underlying foundation-model representation.",
+      "authors": [
+        "Fakrul Islam Tushar",
+        "Stephen Adamo",
+        "Geoffrey D. Rubin"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-08T01:54:03+00:00",
+      "link": "https://arxiv.org/pdf/2608.07857v1",
+      "tags": [
+        "keyword:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Distills two frozen CT foundation models into editable concept bottlenecks for lung nodule malignancy classification",
+      "llm_evidence_cn": "将两个冻结CT基础模型蒸馏为可编辑概念瓶颈用于肺结节恶性分类",
+      "llm_evidence": "将两个冻结CT基础模型蒸馏为可编辑概念瓶颈用于肺结节恶性分类",
+      "canonical_evidence": "将两个冻结CT基础模型蒸馏为可编辑概念瓶颈用于肺结节恶性分类",
+      "llm_tldr_en": "Develops concept bottleneck models that distill two frozen CT foundation models into eight interpretable nodule attributes to predict malignancy, improving interpretability without sacrificing accuracy.",
+      "llm_tldr_cn": "CT基础模型为肺结节分析提供可迁移表示，但直接基于嵌入的预测难以解释。本文构建概念瓶颈模型，利用两个冻结的CT基础模型（CT-FM与FMCIB）映射到放射科医生定义的八个结节属性，再结合结节大小预测恶性。在LIDC-IDRI上训练并内外验证，结果表明概念瓶颈模型能够在保持强大性能的同时给出可编辑的医学解释。该研究为基础模型在医学图像分类中的可解释应用提供了一个有效范式，也为细粒度视觉识别中的概念化预测提供了参考。",
+      "llm_tldr": "CT基础模型为肺结节分析提供可迁移表示，但直接基于嵌入的预测难以解释。本文构建概念瓶颈模型，利用两个冻结的CT基础模型（CT-FM与FMCIB）映射到放射科医生定义的八个结节属性，再结合结节大小预测恶性。在LIDC-IDRI上训练并内外验证，结果表明概念瓶颈模型能够在保持强大性能的同时给出可编辑的医学解释。该研究为基础模型在医学图像分类中的可解释应用提供了一个有效范式，也为细粒度视觉识别中的概念化预测提供了参考。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
