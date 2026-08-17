@@ -1,0 +1,242 @@
+Title: PPOM: Marginalizing Patch-Grid Phase for CLIP-Based Generalizable Vision-Language Prompt Tuning
+
+URL Source: https://arxiv.org/pdf/2608.13969v1
+
+Published Time: Mon, 17 Aug 2026 00:30:55 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+## PPOM: MARGINALIZING PATCH-GRID PHASE FOR CLIP-BASED GENERALIZABLE VISION-LANGUAGE PROMPT TUNING 
+
+## Liang Wang 1,2, Haoyang Li 1,2, Chao Wang 1,∗, Guodong Long 2,∗, Jing Jiang 2,∗, Yan Peng 1,∗
+
+> 1
+
+## Shanghai University, Shanghai, China 2University of Technology Sydney, Sydney, Australia 
+
+ABSTRACT 
+
+Prompt tuning adapts CLIP-based vision-language models with few trainable parameters, yet its predictions remain sensitive to the spatial sampling imposed by a frozen vision transformer. In particular, non-overlapping patch tokeniza-tion makes predictions depend on the alignment ( phase )between image and the patch lattice. To reduce prediction sensitivity to patch-grid alignment, we introduce Patch-Phase 
+
+Orbit Marginalization ( PPOM ), a training-free inference op-erator that treats phase shift as a nuisance variable. Given a patch stride, PPOM evaluates the identity view and reflection-padded translations, pairs opposite shifts into horizontal, ver-tical, and diagonal antithetic families, and assigns equal mass to these families and the identity prediction to avoid view-count bias during phase integration. In summary, PPOM provides a deterministic interface between prompt adaptation and patch-grid sensitivity. Across multiple prompt-learning hosts, PPOM improves host performance without re-training. 
+
+Index Terms — vision-language models, prompt tuning, patch phase, test-time marginalization 
+
+1. INTRODUCTION 
+
+CLIP transfers visual recognition through the similarity be-tween image and text representations [1]. Building on this paradigm, prompt learning replaces fixed prompt templates with lightweight learnable tokens while keeping the CLIP backbone frozen [2], enabling efficient adaptation to target (base) tasks while preserving generalization to unseen (new) tasks. Existing studies improve prompt learning from multi-ple perspectives, including prompt design [3, 4], cross-modal prompting [5, 6], objective design [7, 8, 9], mid-layer plu-gin modules [10, 11], and external information augmentation [12, 13]. Despite these advances, existing methods pay lim-ited attention to the visual sampling and encoding process. Specifically, the vision transformer (ViT) in frozen CLIP tokenizes an image into non-overlapping tokens on a fixed patch lattice [14]. A small translation can change the relative alignment between the image and this lattice (i.e., phase ), and alter which pixels share a patch even when the seman-tic content is preserved [15]. As shown in Fig. 1(a), shift-         
+
+> ∗Corresponding authors. Disagreement with dx=0 (%)
+> HM Accuracy (%)
+> (a) Horizontal phase shift 𝑑 𝑥 in host MMRL (pixels)
+> Disagreement with dx=0 (%)
+> HM Accuracy (%)
+> (b) Horizontal phase shift 𝑑 𝑥 in PPOM (pixels)
+
+Fig. 1 . Impact of horizontal patch phase shift on the test set of prompt learner: (a) Host predictions show substantial phase disagreement rate, while (b) PPOM significantly reduces dis-agreement and improves harmonic mean (HM) accuracy. ing the image by only a few pixels substantially increases prediction disagreement and can reduce the accuracy of host prompt learners. This sensitivity means that prompt learning optimizes semantic adaptation under only a fixed tokeniza-tion phase , leaving the classifier exposed to phase-dependent prediction variance at inference. Consequently, even a well-trained prompt cannot explicitly remove the sampling-origin dependency inherited from the frozen visual encoder. To mitigate patch-grid-induced interference at test time, we introduce Patch-Phase Orbit Marginalization (PPOM) .Unlike generic test-time augmentation [16] based on man-ually chosen transforms, PPOM isolates the architecture-defined patch-phase variable induced by the frozen CLIP backbone, requiring neither policy selection nor an addi-tional tuning stage. Its support discretely approximates the patch-grid phase cell with identity, horizontal, vertical, and diagonal families; the displacement is fixed by the ViT patch stride, while equal family mass avoids over-weighting fami-lies with more enumerated views. This design preserves the prompt learner’s adaptation while reducing phase-dependent prediction variance at inference. Our contributions are: • We formulate the patch-grid phase as an inference nui-sance inherited from frozen ViT tokenization, comple-mentary to semantic prompt adaptation. • We propose PPOM, a test-time operator with an ar-chitecture derived phase orbit and family-balanced marginalization to reduce patch-grid sensitivity. • Evaluation across 4 hosts shows that PPOM improves host-level performance without re-training. arXiv:2608.13969v1 [cs.CV] 14 Aug 2026 −𝑟, 0  −𝑟, 𝑟                    
+
+> 0, −𝑟 0,0 0, 𝑟
+> 𝑟, −𝑟 𝑟, 0 𝑟, 𝑟
+> Original patches PPOM patches
+> Reflection padding
+> 𝑟 = 𝑠/2
+> 𝑟
+> 𝑠
+> −𝑟, −𝑟
+> Antithetic views
+> Architecture -derived Phase Orbit
+> finite orbit 𝒪 𝑠
+> 𝑃 𝑟 𝑥
+> Unchanged Host
+> Image
+> Encoder
+> Text
+> Encoder
+> 𝛿
+> Tuned
+> prompt
+> vector
+> Host Model
+> (CoOp, MMRL, …)
+> native logit path
+> ℓ𝛿
+> Horizontal
+> Family -balanced Orbit Marginalization
+> Vertical
+> Diagonal
+> 𝒉 = 12ℓ0,−𝑟 + ℓ 0,𝑟
+> 𝒗 = 12ℓ−𝑟,0 + ℓ 𝑟,0
+> 𝒅 = 14෍
+> 𝑑 𝑦 ,𝑑 𝑥 ∈−𝑟,𝑟
+> ℓ𝑑 𝑦 ,𝑑 𝑥
+> Family -balanced margin
+> Prediction
+> ො𝑦 = arg max
+> 𝑐 ℓ𝑐
+> class scores
+
+Fig. 2 . Framework of PPOM. Architecture-derived Phase Orbit (Sec. 2.2) constructs stride-defined patch phases via reflection padding and half-patch translations δ, evaluated by the unchanged prompt-tuned host. Family-balanced Orbit Marginalization 
+
+(Sec. 2.3) then assigns equal mass to identity, horizontal, vertical, and diagonal families for final prediction ˆy.
+
+2. PATCH-PHASE ORBIT MARGINALIZATION 2.1. Preliminaries 
+
+Let frozen image and text encoders be fθ and gθ . For class c,a generic prompt learner inserts trainable context p around its class embedding ec to form qc(p) = [ p1, . . . , p M , e c] [2]. Vi-sual or intermediate prompts can be absorbed into the image path. The native logit of the host prompt learner is 
+
+ℓH (x; p)c = τ −1 sim( fθ (x; p), g θ (qc(p))) , (1) The host learns p only from a base-class set DB by 
+
+p∗ = arg min  
+
+> p
+
+− X
+
+> (x,y )∈D B
+
+log exp ℓH (x; p)y
+
+P 
+
+> c∈C B
+
+exp ℓH (x; p)c
+
+, (2) while θ remains frozen. Visual prompts, intermediate tokens, and host-specific fused representations are absorbed into ℓH .Plug-and-play PPOM is applied after the host has fixed p∗ and always calls the same native logit function. 
+
+2.2. Architecture-derived Phase Orbit Patch-phase Cell. Let the ViT patch embedding have an even, non-overlapping kernel and stride s. Token member-ship depends on the image origin modulo s. Rather than enu-merate all s2 pixel phases, PPOM selects the representative midpoint r = s/ 2 on each axis. For ViT-B/16, r = 8 . s is predefined by the ViT patch embedder. 
+
+Antithetic Views. Define the finite orbit 
+
+Os = {(0 , 0) , (0 , ±r), (±r, 0) , (±r, ±r)}. (3) For sampled offset δ = ( dy , d x), let Pr (x) reflection-pad ev-ery boundary by r. With input height H and width W , trans-lation is the shape-preserving crop for obtaining offset views: 
+
+Tδ (x) = Pr (x)[: , r + dy : r + dy + H, r + dx : r + dx + W ].
+
+(4) Reflection avoids the artificial constant bands introduced by zero-padding while keeping visual input compatible with the hosts’ pre-processing path. The views are concatenated on the batch dimension and passed through the unchanged host, giving ℓδ = ℓH (Tδ (x); p∗). The offsets depend on neither labels nor confidence, so the same operation applies to base, new, source, and target examples. Sampling the midpoint and its antithetic signs covers the two axial phase directions and their joint displacement with a fixed nine-view budget. 
+
+2.3. Family-balanced Orbit Marginalization Directional Cancellation. Opposite translations are paired into horizontal, vertical, and diagonal evidence families. To avoid over-weighting families with more sampled views (e.g., diagonal with 4 views), we marginalize evidence uniformly: 
+
+h = 12 (ℓ0,−r + ℓ0,r ), v = 12 (ℓ−r, 0 + ℓr, 0), (5) 
+
+d = 14
+
+X 
+
+> dy,d x∈{− r,r }
+
+ℓdy ,d x . (6) Pairing treats the sign of a displacement as a nuisance and cancels directional first-order effects under a locally smooth logit response. It also prevents a single padded boundary from defining a phase-family prediction. This deterministic inte-gration process can reduce sensitivity to patch-grid alignment. 
+
+Family-balanced Margin. With identity i = ℓ0,0, PPOM predicts on test sets of base or new tasks from 
+
+¯ℓ = 14 (i + h + v + d), ˆy = arg max 
+
+> c
+
+¯ℓc. (7) Equal family mass further avoids the 1:2:2:4 bias of a flat nine-view mean. Logits are averaged before softmax, so each view retains the host’s shared temperature. In addition, in-dependently normalized probabilities would introduce view-specific calibration prior to integration. 
+
+Host-preserving Execution. PPOM modifies only the test-time visual sampling and encoding of prompt learners. For a Table 1 . Base-to-new generalization performance (%) of 4 host models w/ or w/o our PPOM on 11 datasets.                                                                                                                                                                                             
+
+> Average (11) ImageNet Caltech101 Oxford Pets Stanford Cars Flowers102 Method Base New HM Base New HM Base New HM Base New HM Base New HM Base New HM CoOp 80.91 70.01 75.07 75.96 68.93 72.27 97.81 94.65 96.20 95.11 97.04 96.06 68.97 69.67 69.32 96.77 71.42 82.18
+> +PPOM 81.50 70.59 75.65 76.93 69.49 73.02 98.32 94.76 96.51 95.48 97.26 96.36 70.61 70.46 70.54 96.58 72.13 82.58
+> KgCoOp 80.32 72.16 76.02 76.18 70.26 73.10 98.06 95.63 96.83 95.06 97.93 96.47 71.84 74.77 73.28 95.92 71.42 81.87
+> +PPOM 80.87 72.54 76.48 77.08 70.78 73.80 98.39 96.07 97.21 95.37 98.15 96.74 73.44 75.61 74.51 96.49 72.13 82.55
+> PromptSRC 81.25 73.66 77.27 77.00 70.60 73.66 97.93 94.54 96.21 95.32 97.43 96.36 71.51 75.51 73.46 96.87 73.83 83.79 +PPOM 81.77 74.24 77.82 77.96 71.10 74.37 98.32 94.98 96.62 95.48 97.43 96.44 72.61 76.80 74.65 96.87 73.76 83.75 MMRL 85.51 75.33 80.10 78.52 70.84 74.48 98.52 94.43 96.43 95.32 97.32 96.31 82.11 73.98 77.83 98.67 76.95 86.47 +PPOM 86.18 75.91 80.72 79.41 71.42 75.20 98.64 94.32 96.44 95.69 97.76 96.72 83.31 75.39 79.15 98.58 76.95 86.43
+> Food101 FGVC Aircraft SUN397 DTD EuroSAT UCF101 Method Base New HM Base New HM Base New HM Base New HM Base New HM Base New HM CoOp 90.14 91.46 90.80 35.47 30.95 33.06 80.26 73.84 76.92 78.13 48.67 59.98 88.45 45.87 60.41 82.94 77.61 80.18
+> +PPOM 90.67 91.71 91.19 37.52 30.29 33.52 80.43 74.20 77.19 78.13 48.91 60.16 88.45 48.77 62.87 83.35 78.47 80.84
+> KgCoOp 90.67 91.87 91.26 34.39 35.15 34.77 80.63 77.30 78.93 78.70 56.64 65.88 77.76 47.82 59.22 84.33 75.01 79.40
+> +PPOM 91.24 92.28 91.75 36.55 36.29 36.42 80.95 77.61 79.25 77.89 56.76 65.67 77.76 46.64 58.31 84.38 75.66 79.79
+> PromptSRC 90.70 91.71 91.20 35.17 34.31 34.74 81.72 77.46 79.53 80.32 56.52 66.35 83.60 59.82 69.74 83.61 78.58 81.02
+> +PPOM 91.14 92.21 91.67 37.52 35.21 36.33 81.95 77.80 79.82 80.09 57.49 66.93 83.59 60.18 69.98 83.92 79.66 81.74
+> MMRL 90.05 91.47 90.75 45.44 35.03 39.56 82.69 79.21 80.92 85.19 65.46 74.03 95.98 64.08 76.85 88.11 79.88 83.79
+> +PPOM 90.45 92.11 91.27 47.84 36.23 41.23 82.85 79.47 81.13 86.00 65.58 74.41 95.98 64.44 77.11 89.19 81.29 85.06
+
+batch of size b, it processes all 9b views in one concatenated call, each through the host’s native logit path, while leaving training parameters, optimizer, shots, and epochs unchanged. PPOM is therefore a training-free, plug-and-play operator 
+
+for prompt learning. 
+
+3. EXPERIMENTS 3.1. Experimental Setup Datasets. Following mainstream prompt learning approaches, we evaluate PPOM on ImageNet, Caltech101, Oxford Pets, Stanford Cars, Flowers102, Food101, FGVC Aircraft, SUN397, DTD, EuroSAT, and UCF101. PPOM only accesses the same test sets available to each host, preventing data leakage. 
+
+Host Models. We integrate PPOM into four prompt learn-ing hosts with distinct prompt designs and feature interaction mechanisms: CoOp [2], KgCoOp [7], PromptSRC [8], and MMRL [11], to evaluate its plug-and-play compatibility. 
+
+Implementation Details. All experiments apply CLIP ViT-B/16 as backbone and follow the 16-shot protocol. PPOM and tuned host model share the same checkpoints and parameters. 
+
+3.2. Experimental Results Base-to-New Generalization. Following the standard base-to-new protocol in prompt learners [3, 7, 17], the categories of each dataset are evenly divided into base and new subsets. All prompt-learning hosts are trained exclusively on the base-class training data, while the new classes remain unseen until evaluation. PPOM is then applied to the resulting checkpoint in evaluation-only mode, so its comparison with the native host is strictly checkpoint-paired and introduces no additional training data or optimization. We report Base accuracy, New accuracy, and their harmonic mean (HM). As shown in Ta-ble 1, PPOM improves the average HM of CoOp [2], Kg-CoOp [7], PromptSRC [8], and MMRL [11] under the same training setup, demonstrating consistent host-level comple-mentarity despite heterogeneous per-dataset changes. 
+
+Cross-dataset Transfer. We fine-tune 4 host models on all ImageNet source classes and directly evaluate the same checkpoint on 10 target datasets under a zero-shot setting. The training-free PPOM is applied to both target and source datasets. As shown in Table 2, across all hosts, PPOM im-proves both ImageNet source accuracy and average target performance, with gains on most targets. This indicates that its stride-derived phase integration transfers across datasets without target labels or dataset-specific coefficient selection. 
+
+3.3. Ablation Study Validity of Proposed Components. Table 3 examines the contribution of each PPOM component. We discover that (1) removing the Phase Orbit in Sec. 2.2 by repeating the identity view nine times reduces PPOM to native MMRL per-formance, indicating that the gain of PPOM comes from ex-Table 2 . Cross-dataset transfer of PPOM across 4 hosts on ImageNet source and the other 10 evaluation-only target datasets. 
+
+Source Target Method ImageNet Average Caltech Pets Cars Flowers Food Aircraft SUN DTD EuroSAT UCF CoOp 71.64 64.91 93.71 90.08 64.47 69.47 85.94 20.28 66.24 42.26 49.30 67.30 
+
++PPOM 72.14 65.32 93.67 90.24 65.43 69.22 86.51 21.00 66.67 42.38 49.77 68.36 
+
+KgCoOp 70.86 65.36 93.96 90.35 65.99 70.89 86.41 23.13 67.17 47.99 40.47 67.20 
+
++PPOM 71.53 65.80 94.16 90.68 67.02 71.50 86.87 23.76 67.79 47.46 40.46 68.36 
+
+PromptSRC 71.88 65.42 93.02 90.98 65.53 70.08 86.14 23.91 67.54 46.22 41.69 69.10 
+
++PPOM 72.40 66.05 93.55 90.84 66.38 70.04 86.80 25.47 68.08 46.93 42.68 69.76 
+
+MMRL 73.58 66.72 94.20 91.14 66.21 72.88 85.34 26.19 67.36 45.57 49.85 68.46 
+
++PPOM 74.28 67.33 94.56 91.09 67.54 72.92 85.82 26.37 67.85 45.51 51.38 70.26 
+
+Table 3 . Ablation study of components in PPOM+MMRL. 
+
+Modules Average (11) 
+
+Phase Orbit Family Balance Base New HM (1) × ✓ 85.51 75.33 80.10 (2) ✓ × 85.89 75.55 80.39 (3) ✓ ✓ 86.18 75.91 80.72 
+
+Table 4 . Ablation study of orbit family in PPOM+MMRL. 
+
+Families Average (11) 
+
+Horizontal Vertical Diagonal Base New HM 
+
+× ✓ ✓ 85.85 75.74 80.47 
+
+✓ × ✓ 85.63 75.59 80.30 
+
+✓ ✓ × 85.87 75.36 80.27 
+
+✓ ✓ ✓ 86.18 75.91 80.72 
+
+posing complementary patch phases. (2) Removing Family-balanced Orbit Marginalization in Sec. 2.3 by retaining all views but averaging them uniformly weakens the im-provement of PPOM, confirming that balanced phase-family weighting is effective rather than view multiplicity alone. (3) The PPOM with full configuration performs best, which confirms the effectiveness of each component. 
+
+Orbit Family. In Table 4, we remove each phase family in turn while retaining the identity and remaining families. Re-moving any family degrades overall HM, whereas the com-plete orbit achieves the strongest performance. This further indicates that different directions provide non-redundant ev-idence: axial and joint displacements induce distinct patch-token assignments, so combining all families captures com-plementary phase responses and enables more effective direc-tional cancellation during marginalization. 
+
+Patch-Phase Robustness. We further extend Fig. 1 with a case study in Fig. 3. Native MMRL prediction varies sharply across horizontal patch phases of ViT and frequently outputs incorrect predictions ( 13/16 ), whereas PPOM maintains sta-ble true-class confidence and correct predictions across shifts. (a)  Phase  shift  𝑑 𝑥  in  host  MMRL (pixels)  (b) Phase shift  𝑑 𝑥  in  PPOM  (pixels)  
+
+> 2012 Hyundai
+> Sonata Seda n
+
+Fig. 3 . Case study of horizontal patch phase shift of ViT. 
+
+Table 5 . Computation cost of PPOM on ImageNet dataset. 
+
+Model Learnable Params Memory (MB) Base Task Time Effective FPS HM Acc. 
+
+CoOp 8K 8114.6 106m52s 12.48 72.27 
+
++PPOM +0 1609.2 +11m4s 37.68 73.02 
+
+MMRL 4.99M 6913.8 105m26s 12.65 74.48 
+
++PPOM +0 3216.6 +17m58s 23.15 75.20 
+
+This example further supports PPOM’s ability to suppress phase-dependent instability and improve overall robustness. 
+
+Computational Cost. Table 5 shows that PPOM adds no learnable parameters in the test-time stage and incurs sub-stantially lower memory and task time costs than host fine-tuning, while improving HM. Although multi-view inference increases test-time computation, PPOM requires neither re-training nor test-time adaptation, keeping its overall compu-tational overhead lower than adaptation-based methods. 
+
+4. CONCLUSION 
+
+Empirical analysis shows that prompt learning is sensitive to phase shifts in visual sampling. To reduce this sensitivity at test time, PPOM separates semantic prompt adaptation from the spatial phase of patch tokenization. Its stride-derived orbit and family-balanced marginal preserve the trained host while integrating complementary visual evidence. The consistent host performance enhancement, tuning-free target transfer, and plug-and-play characteristics together establish the patch phase as a useful post-training operator. 5. ACKNOWLEDGEMENTS 
+
+This work is supported by the China Scholarship Council (CSC) and the UTS Top-Up Scholarship. Liang Wang and Haoyang Li have equal 50% contributions on this paper. 
+
+6. REFERENCES 
+
+[1] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya Sutskever, “Learning transferable vi-sual models from natural language supervision,” in Pro-ceedings of the 38th International Conference on Ma-chine Learning . 2021, pp. 8748–8763, PMLR. [2] Kaiyang Zhou, Jingkang Yang, Chen Change Loy, and Ziwei Liu, “Learning to prompt for vision-language models,” International Journal of Computer Vision , vol. 130, no. 9, pp. 2337–2348, 2022. [3] Haoyang Li, Liang Wang, Chao Wang, Jing Jiang, Yan Peng, and Guodong Long, “DPC: Dual-prompt collab-oration for tuning vision-language models,” in Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2025, pp. 25623–25632. [4] Ge Wu, Xin Zhang, Zheng Li, Zhaowei Chen, Jiajun Liang, Jian Yang, and Xiang Li, “Cascade prompt learn-ing for vision-language model adaptation,” in Euro-pean Conference on Computer Vision . Springer, 2024, pp. 304–321. [5] Muhammad Uzair Khattak, Hanoona Rasheed, Muham-mad Maaz, Salman Khan, and Fahad Shahbaz Khan, “MaPLe: Multi-modal prompt learning,” in Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2023, pp. 19113–19122. [6] Haoyang Li, Liang Wang, Chao Wang, Siyu Zhou, Jing Jiang, Yan Peng, and Guodong Long, “Raw data matters: enhancing prompt tuning by internal aug-mentation on vision-language models,” arXiv preprint arXiv:2508.02671 , 2025. [7] Hantao Yao, Rui Zhang, and Changsheng Xu, “Visual-language prompt tuning with knowledge-guided context optimization,” in Proceedings of the IEEE/CVF Con-ference on Computer Vision and Pattern Recognition ,2023, pp. 6757–6767. [8] Muhammad Uzair Khattak, Syed Talal Wasim, Muzam-mal Naseer, Salman Khan, Ming-Hsuan Yang, and Fa-had Shahbaz Khan, “Self-regulating prompts: Foun-dational model adaptation without forgetting,” in Pro-ceedings of the IEEE/CVF International Conference on Computer Vision , 2023, pp. 15190–15200. [9] Ji Zhang, Shihan Wu, Lianli Gao, Heng Tao Shen, and Jingkuan Song, “Dept: Decoupled prompt tuning,” in Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition , 2024, pp. 12924– 12933. [10] Lingxiao Yang, Ru-Yuan Zhang, Yanchen Wang, and Xiaohua Xie, “MMA: Multi-modal adapter for vision-language models,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion , 2024, pp. 23826–23837. [11] Yuncheng Guo and Xiaodong Gu, “MMRL: Multi-modal representation learning for vision-language mod-els,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2025, pp. 25015–25025. [12] Zheng Li, Yibing Song, Ming-Ming Cheng, Xiang Li, and Jian Yang, “Advancing textual prompt learning with anchored attributes,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2025, pp. 3618–3627. [13] Haoyang Li, Liang Wang, Siyu Zhou, Jiacheng Sun, Jing Jiang, Chao Wang, Guodong Long, and Yan Peng, “Fvg-pt: Adaptive foreground view-guided prompt tuning for vision-language models,” arXiv preprint arXiv:2603.08708 , 2026. [14] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Sylvain Gelly, Jakob Uszkoreit, and Neil Houlsby, “An image is worth 16x16 words: Trans-formers for image recognition at scale,” in International Conference on Learning Representations , 2021. [15] Renan A. Rojas-Gomez, Teck Yian Lim, Minh N. Do, and Raymond A. Yeh, “Making vision trans-formers truly shift-equivariant,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 5568–5577. [16] Alexander Lyzhov, Yuliya Molchanova, Arsenii Ashukha, Dmitry Molchanov, and Dmitry Vetrov, “Greedy policy search: A simple baseline for learnable test-time augmentation,” in Conference on uncertainty in artificial intelligence . PMLR, 2020, pp. 1308–1317. [17] Haoyang Li, Siyu Zhou, Liang Wang, and Guodong Long, “Mao: Efficient model-agnostic optimization of prompt tuning for vision-language models,” in 
+
+2025 IEEE International Conference on Multimedia and Expo (ICME) , 2025, pp. 1–6.

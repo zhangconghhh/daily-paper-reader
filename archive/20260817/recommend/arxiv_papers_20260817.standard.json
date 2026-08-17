@@ -1,0 +1,101 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-17T19:24:30.828217+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 2,
+    "quick_skim_target": 11,
+    "quick_selected": 2
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2608.13939v1",
+      "source": "arxiv",
+      "title": "CMCNet: Aligning Ultrasound Image Embeddings with Textual TI-RADS Representations for Fine-Grained Thyroid Classification",
+      "abstract": "Ultrasound is the primary imaging modality for assessing thyroid nodules, and the ACR TI-RADS framework standardizes diagnosis through five ultrasound feature categories that are aggregated into five risk levels (TR1-TR5). Although widely adopted in clinical practice, most deep learning approaches focus on binary malignancy classification, while multi-class prediction and explicit utilization of feature-level supervision remain underexplored, largely due to limited annotated data. In this study, we introduce the STN dataset of 600 thyroid nodules with paired transverse and longitudinal ultrasound images, bounding box annotations, and complete labels for all five TI-RADS feature categories. Following the clinical decision process, we investigate how structured feature information can guide representation learning during training while requiring only images at inference. We demonstrate that text embeddings derived from standardized feature descriptions form a stable surrogate representation for TI-RADS risk levels. Based on this observation, we propose CMCNet, which aligns image embeddings to fixed textual embeddings via a Center-Margin Contrastive Loss that simultaneously promotes intra-class compactness and inter-class separation. Experimental results show that this embedding alignment strategy is more data-efficient and robust than direct multitask learning, and consistently outperforms InfoNCE, center loss, a strong multitask baseline, and a VQA-style multimodal model, particularly in imbalanced settings. The dataset is freely available at doi: 10.5281/zenodo.19125693 and the source code is available at: https://www.healthinformaticslab.org/supp/.",
+      "authors": [
+        "Bingxin Yu",
+        "Xueli Wang",
+        "Jerry Zhou",
+        "Wenyan Wang",
+        "Li Wen",
+        "Lan Huang",
+        "Xin Feng",
+        "Fengfeng Zhou",
+        "Kewei Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-14T04:19:33+00:00",
+      "link": "https://arxiv.org/pdf/2608.13939v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Fine-grained thyroid classification with image-text alignment; relevant to fine-grained visual classification though not DINO-specific",
+      "llm_evidence_cn": "细粒度甲状腺分类，结合图像-文本对齐；与细粒度视觉分类相关，但未涉及DINO",
+      "llm_evidence": "细粒度甲状腺分类，结合图像-文本对齐；与细粒度视觉分类相关，但未涉及DINO",
+      "canonical_evidence": "细粒度甲状腺分类，结合图像-文本对齐；与细粒度视觉分类相关，但未涉及DINO",
+      "llm_tldr_en": "Introduces STN dataset of thyroid nodules with full TI-RADS feature labels and CMCNet, which aligns ultrasound image embeddings with textual TI-RADS representations for fine-grained multi-class thyroid classification, expanding beyond binary malignancy prediction.",
+      "llm_tldr_cn": "现有甲状腺超声深度学习大多只做良恶性二分类，缺乏对TI-RADS多级细粒度分类及特征级监督的利用。本文构建包含600个甲状腺结节、配对横纵切面图像及完整五类TI-RADS特征标注的STN数据集，并提出CMCNet，将超声图像嵌入与文本TI-RADS表示对齐，实现更细粒度的甲状腺风险等级分类。实验表明该方法在多类预测和特征监督下优于传统二分类方案，为医学影像细粒度分类提供了新数据与方法。",
+      "llm_tldr": "现有甲状腺超声深度学习大多只做良恶性二分类，缺乏对TI-RADS多级细粒度分类及特征级监督的利用。本文构建包含600个甲状腺结节、配对横纵切面图像及完整五类TI-RADS特征标注的STN数据集，并提出CMCNet，将超声图像嵌入与文本TI-RADS表示对齐，实现更细粒度的甲状腺风险等级分类。实验表明该方法在多类预测和特征监督下优于传统二分类方案，为医学影像细粒度分类提供了新数据与方法。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.13969v1",
+      "source": "arxiv",
+      "title": "PPOM: Marginalizing Patch-Grid Phase for CLIP-Based Generalizable Vision-Language Prompt Tuning",
+      "abstract": "Prompt tuning adapts CLIP-based vision-language models with few trainable parameters, yet its predictions remain sensitive to the spatial sampling imposed by a frozen vision transformer. In particular, non-overlapping patch tokenization makes predictions depend on the alignment (phase) between image and the patch lattice. To reduce prediction sensitivity to patch-grid alignment, we introduce Patch-Phase Orbit Marginalization (PPOM), a training-free inference operator that treats phase shift as a nuisance variable. Given a patch stride, PPOM evaluates the identity view and reflection-padded translations, pairs opposite shifts into horizontal, vertical, and diagonal antithetic families, and assigns equal mass to these families and the identity prediction to avoid view-count bias during phase integration. In summary, PPOM provides a deterministic interface between prompt adaptation and patch-grid sensitivity. Across multiple prompt-learning hosts, PPOM improves host performance without re-training.",
+      "authors": [
+        "Liang Wang",
+        "Haoyang Li",
+        "Chao Wang",
+        "Guodong Long",
+        "Jing Jiang",
+        "Yan Peng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-14T05:31:43+00:00",
+      "link": "https://arxiv.org/pdf/2608.13969v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "vision transformer patch-grid phase robustness for CLIP classification",
+      "llm_evidence_cn": "CLIP分类中视觉Transformer补丁网格相位鲁棒性",
+      "llm_evidence": "CLIP分类中视觉Transformer补丁网格相位鲁棒性",
+      "canonical_evidence": "CLIP分类中视觉Transformer补丁网格相位鲁棒性",
+      "llm_tldr_en": "PPOM is a training-free inference operator that marginalizes patch-grid phase shifts in CLIP-based prompt tuning, reducing prediction sensitivity to patch lattice alignment.",
+      "llm_tldr_cn": "本文针对CLIP提示微调对视觉Transformer补丁网格相位敏感、导致预测不稳定的问题，提出无需训练的相位轨道边际化算子PPOM。该方法将相位偏移视为冗余变量，通过测评反射填充平移并配对成水平、垂直和对角方向的对抗性平移家族，赋予等质量以消除补丁对齐干扰。在多个视觉语言基准上，PPOM显著改善CLIP的泛化能力与鲁棒性，且即插即用，可便捷应用于基于ViT的图像分类与细粒度识别任务。",
+      "llm_tldr": "本文针对CLIP提示微调对视觉Transformer补丁网格相位敏感、导致预测不稳定的问题，提出无需训练的相位轨道边际化算子PPOM。该方法将相位偏移视为冗余变量，通过测评反射填充平移并配对成水平、垂直和对角方向的对抗性平移家族，赋予等质量以消除补丁对齐干扰。在多个视觉语言基准上，PPOM显著改善CLIP的泛化能力与鲁棒性，且即插即用，可便捷应用于基于ViT的图像分类与细粒度识别任务。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

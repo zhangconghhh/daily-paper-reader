@@ -1,0 +1,39 @@
+{
+  "label": "2026-08-17",
+  "date": "2026-08-17",
+  "generated_at": "2026-08-17T19:26:52",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202608/17/2608.13939v1-cmcnet-aligning-ultrasound-image-embeddings-with-textual-ti-rads-representations-for-fine-grained-thyroid-classification",
+      "section": "quick",
+      "title_en": "CMCNet: Aligning Ultrasound Image Embeddings with Textual TI-RADS Representations for Fine-Grained Thyroid Classification",
+      "authors": "Bingxin Yu, Xueli Wang, Jerry Zhou, Wenyan Wang, Li Wen, Lan Huang, Xin Feng, Fengfeng Zhou, Kewei Li",
+      "date": "2026-08-14",
+      "pdf": "https://arxiv.org/pdf/2608.13939v1",
+      "score": "6.0",
+      "evidence": "细粒度甲状腺分类，结合图像-文本对齐；与细粒度视觉分类相关，但未涉及DINO",
+      "tldr": "针对甲状腺结节超声诊断中 ACR TI-RADS 多分类因细粒度标注稀缺而难以训练的问题，本文引入含 600 个结节配对图像与五类完整标签的 STN 数据集，提出 CMCNet，将标准化特征描述文本嵌入作为固定原型，用中心边界对比损失对齐图像嵌入，促进类内紧凑与类间分离。实验表明该策略比直接多任务学习更数据高效、更稳健，在不平衡场景下显著优于 InfoNCE、中心损失等强基线。论文公开数据集与代码，为细粒度甲状腺分类提供新范式。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Ultrasound is the primary imaging modality for assessing thyroid nodules, and the ACR TI-RADS framework standardizes diagnosis through five ultrasound feature categories that are aggregated into five risk levels (TR1-TR5). Although widely adopted in clinical practice, most deep learning approaches focus on binary malignancy classification, while multi-class prediction and explicit utilization of feature-level supervision remain underexplored, largely due to limited annotated data. In this study, we introduce the STN dataset of 600 thyroid nodules with paired transverse and longitudinal ultrasound images, bounding box annotations, and complete labels for all five TI-RADS feature categories. Following the clinical decision process, we investigate how structured feature information can guide representation learning during training while requiring only images at inference. We demonstrate that text embeddings derived from standardized feature descriptions form a stable surrogate representation for TI-RADS risk levels. Based on this observation, we propose CMCNet, which aligns image embeddings to fixed textual embeddings via a Center-Margin Contrastive Loss that simultaneously promotes intra-class compactness and inter-class separation. Experimental results show that this embedding alignment strategy is more data-efficient and robust than direct multitask learning, and consistently outperforms InfoNCE, center loss, a strong multitask baseline, and a VQA-style multimodal model, particularly in imbalanced settings. The dataset is freely available at doi: 10.5281/zenodo.19125693 and the source code is available at: https://www.healthinformaticslab.org/supp/.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/17/2608.13969v1-ppom-marginalizing-patch-grid-phase-for-clip-based-generalizable-vision-language-prompt-tuning",
+      "section": "quick",
+      "title_en": "PPOM: Marginalizing Patch-Grid Phase for CLIP-Based Generalizable Vision-Language Prompt Tuning",
+      "authors": "Liang Wang, Haoyang Li, Chao Wang, Guodong Long, Jing Jiang, Yan Peng",
+      "date": "2026-08-14",
+      "pdf": "https://arxiv.org/pdf/2608.13969v1",
+      "score": "6.0",
+      "evidence": "CLIP分类中视觉Transformer补丁网格相位鲁棒性",
+      "tldr": "针对CLIP视觉语言模型在提示调优时对图像分块网格相位敏感的问题，提出无需训练的补丁相位轨道边缘化方法。通过配对反演平移和权重分配，在推理阶段消除相位影响，提升多种提示学习主干的性能，无需重新训练。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Prompt tuning adapts CLIP-based vision-language models with few trainable parameters, yet its predictions remain sensitive to the spatial sampling imposed by a frozen vision transformer. In particular, non-overlapping patch tokenization makes predictions depend on the alignment (phase) between image and the patch lattice. To reduce prediction sensitivity to patch-grid alignment, we introduce Patch-Phase Orbit Marginalization (PPOM), a training-free inference operator that treats phase shift as a nuisance variable. Given a patch stride, PPOM evaluates the identity view and reflection-padded translations, pairs opposite shifts into horizontal, vertical, and diagonal antithetic families, and assigns equal mass to these families and the identity prediction to avoid view-count bias during phase integration. In summary, PPOM provides a deterministic interface between prompt adaptation and patch-grid sensitivity. Across multiple prompt-learning hosts, PPOM improves host performance without re-training.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
