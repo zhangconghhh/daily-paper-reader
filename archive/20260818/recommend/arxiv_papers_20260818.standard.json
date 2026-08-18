@@ -1,0 +1,93 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-18T20:52:17.100642+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 1,
+    "deep_cap": 6,
+    "deep_selected": 1,
+    "quick_candidates": 1,
+    "quick_skim_target": 11,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2608.14922v1",
+      "source": "arxiv",
+      "title": "SpIn-ViT: Designing a Sparsity-Induced Vision Transformer That Is Mechanistically Interpretable",
+      "abstract": "Mechanistic interpretability has recently expanded to Vision Transformers (ViTs), with Sparse Autoencoders (SAEs) increasingly used as post-hoc tools to decompose internal representations into sparse and more interpretable features. However, because post-hoc SAEs are trained on frozen representations after the ViT has already been optimized, their latent features are not directly aligned with the downstream classification objective. We introduce SpIn-ViT, a framework that jointly trains a pretrained ViT and a modified SAE end-to-end, directly aligning sparse patch-level representations with image classification. SpIn-ViT learns semantically coherent neuron activations that localize meaningful image regions while maintaining competitive predictive performance. We evaluate SpIn-ViT across nine image-classification benchmarks using classification accuracy, quantitative interpretability metrics, AI-based and Human evaluations. Compared with the previous state-of-the-art post-hoc SAE method, SpIn-ViT achieves 8.84% higher average classification accuracy, an AI-based interpretability score nearly four times as high, and a human-evaluation score more than twice as high. We further extract interpretable rule-sets using the SAE neurons to create neurosymbolic models which achieve 5.97% higher average classification accuracy while requiring a 58.8\\% smaller rule-set than the neurosymbolic models created from the SOTA post-hoc SAE method.",
+      "authors": [
+        "Philip H. Lee",
+        "Parth Padalkar"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-08-14T22:19:47+00:00",
+      "link": "https://arxiv.org/pdf/2608.14922v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Vision transformer architecture for image classification with sparse interpretable representations",
+      "llm_evidence_cn": "用于图像分类的视觉Transformer架构，具备稀疏可解释表示",
+      "llm_evidence": "用于图像分类的视觉Transformer架构，具备稀疏可解释表示",
+      "canonical_evidence": "用于图像分类的视觉Transformer架构，具备稀疏可解释表示",
+      "llm_tldr_en": "SpIn-ViT jointly trains a pretrained vision transformer with a modified sparse autoencoder end-to-end, aligning sparse patch-level features with image classification and learning interpretable, semantically coherent neuron activations that localize meaningful image regions.",
+      "llm_tldr_cn": "稀疏自编码器通常作为事后工具分解已训练视觉Transformer的表示，但其潜在特征并未与下游分类目标对齐。针对该问题，提出SpIn-ViT框架，将预训练视觉Transformer与改进的稀疏自编码器进行端到端联合训练，使稀疏补丁级表示直接与图像分类任务对齐。该方法能学习语义连贯的神经元激活，准确定位有意义的图像区域，同时保持分类性能，为可解释视觉Transformer分类提供了新的研究方向。",
+      "llm_tldr": "稀疏自编码器通常作为事后工具分解已训练视觉Transformer的表示，但其潜在特征并未与下游分类目标对齐。针对该问题，提出SpIn-ViT框架，将预训练视觉Transformer与改进的稀疏自编码器进行端到端联合训练，使稀疏补丁级表示直接与图像分类任务对齐。该方法能学习语义连贯的神经元激活，准确定位有意义的图像区域，同时保持分类性能，为可解释视觉Transformer分类提供了新的研究方向。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.15196v1",
+      "source": "arxiv",
+      "title": "Anchor-Regularized Adaptation for Generalizable AI-Generated Image Detection with DINOv3",
+      "abstract": "Recent works in AI-generated image detection have shown that careful training data alignment can improve generalization by removing spurious correlations. However, linear probes on frozen DINOv3 representations achieve remarkably strong performance even when trained on misaligned datasets. Motivated by this result, we analyze the underlying rationale and the limits of this generalization. We find that frozen DINOv3 performs well because its decisions rely on features that faithfully represent the space of authentic images. At the same time, its final layer is less effective at capturing the subtle pixel-artifact cues that can be emphasized by aligned training data. We further observe that naively mixing aligned and misaligned data during adaptation improves sensitivity to such cues but at the cost of distorting the pre-trained representation, limiting generalization. To address this issue, we propose Anchor-Regularized Adaptation (ARA). We apply Low-Rank Adaptation to capture pixel-level artifacts while leveraging a frozen anchor classifier to avoid deviations from the original representation structure. This allows the model to exploit pixel-artifact cues without sacrificing generalization. Our method achieves state-of-the-art performance on nine diverse and challenging benchmarks, indicating that ARA enables complementary supervision from misaligned and aligned data for more effective detection.",
+      "authors": [
+        "Hyeongjun Choi",
+        "Juhun Lee",
+        "Davide Cozzolino",
+        "Luisa Verdoliva",
+        "Simon S. Woo"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-15T12:26:28+00:00",
+      "link": "https://arxiv.org/pdf/2608.15196v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "DINOv3 frozen representations for generalizable AI-generated image detection; applies DINO as foundation model to image classification",
+      "llm_evidence_cn": "使用DINOv3冻结表征进行可泛化的AI生成图像检测，将DINO基础模型用于图像分类任务",
+      "llm_evidence": "使用DINOv3冻结表征进行可泛化的AI生成图像检测，将DINO基础模型用于图像分类任务",
+      "canonical_evidence": "使用DINOv3冻结表征进行可泛化的AI生成图像检测，将DINO基础模型用于图像分类任务",
+      "llm_tldr_en": "This paper studies why frozen DINOv3 representations generalize surprisingly well for AI-generated image detection, and proposes anchor-regularized adaptation that improves robustness by aligning features to authentic image space while preserving artifact-detection cues.",
+      "llm_tldr_cn": "AI生成图像检测中，冻结的DINOv3表示即使在不对齐的训练数据上也能取得很强的泛化性能。本文通过分析发现，其决策依赖的忠实刻画真实图像空间的特征，但最后一层对细微像素伪影线索不够敏感。为此提出基于锚点正则化的自适应方法，在不破坏特征空间结构的前提下增强伪影感知，从而提升检测器的泛化能力。",
+      "llm_tldr": "AI生成图像检测中，冻结的DINOv3表示即使在不对齐的训练数据上也能取得很强的泛化性能。本文通过分析发现，其决策依赖的忠实刻画真实图像空间的特征，但最后一层对细微像素伪影线索不够敏感。为此提出基于锚点正则化的自适应方法，在不破坏特征空间结构的前提下增强伪影感知，从而提升检测器的泛化能力。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

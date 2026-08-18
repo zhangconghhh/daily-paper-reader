@@ -1,0 +1,422 @@
+Title: SpIn-ViT: Designing a Sparsity-Induced Vision Transformer That Is Mechanistically Interpretable
+
+URL Source: https://arxiv.org/pdf/2608.14922v1
+
+Published Time: Tue, 18 Aug 2026 00:16:59 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# SpIn-ViT: Designing a Sparsity-Induced Vision Transformer That Is Mechanistically Interpretable 
+
+## Philip H. Lee 1, Parth Padalkar 2 
+
+> 1
+
+Independent Researcher  
+
+> 2
+
+Texas State University leephiliphl@gmail.com, padalkar@txstate.edu 
+
+Abstract 
+
+Mechanistic interpretability has recently expanded to Vision Transformers (ViTs), with Sparse Autoencoders (SAEs) in-creasingly used as post-hoc tools to decompose internal rep-resentations into sparse and more interpretable features. How-ever, because post-hoc SAEs are trained on frozen represen-tations after the ViT has already been optimized, their latent features are not directly aligned with the downstream classi-fication objective. We introduce SpIn-ViT, a framework that jointly trains a pretrained ViT and a modified SAE end-to-end, directly aligning sparse patch-level representations with im-age classification. SpIn-ViT learns semantically coherent neu-ron activations that localize meaningful image regions while maintaining competitive predictive performance. We evaluate SpIn-ViT across nine image-classification benchmarks using classification accuracy, quantitative interpretability metrics, AI-based and Human evaluations. Compared with the previ-ous state-of-the-art post-hoc SAE method, SpIn-ViT achieves 
+
+8.84% higher average classification accuracy, an AI-based interpretability score nearly four times as high, and a human-evaluation score more than twice as high. We further extract interpretable rule-sets using the SAE neurons to create neu-rosymbolic models which achieve 5.97% higher average clas-sification accuracy while requiring a 58.85% smaller rule-set than the neurosymbolic models created from the SOTA post-hoc SAE method. 
+
+## Introduction 
+
+Transformers have been adapted to images, providing a pow-erful backbone for modern computer vision (Dosovitskiy et al. 2021). By processing images as patch tokens through multi-head self-attention, Vision Transformers (ViTs) offer a general framework that performs well across diverse tasks, including image classification (Dosovitskiy et al. 2021; Tou-vron et al. 2021), object detection (Zhu et al. 2021; Carion et al. 2020), and image segmentation (Strudel et al. 2021; Xie et al. 2021). However, their internal mechanisms re-main incompletely understood, motivating growing interest in methods for interpreting their predictions. In ViTs, multiple concepts may be entangled within simi-lar internal representations, giving rise to polysemantic fea-tures that are difficult to interpret. Furthermore, ViTs are commonly fine-tuned using only the class token. Conse-quently, patch-level representations receive no direct super-vision from the classification objective, making it difficult to 
+
+Copyright © 2027, Association for the Advancement of Artificial Intelligence (www.aaai.org). All rights reserved. 
+
+extract interpretable features from them in isolation. These challenges motivate the study of ViTs through the lens of mechanistic interpretability. Mechanistic interpretability seeks to understand how ma-chine learning models arrive at their predictions by analyz-ing their internal representations and computations (Sharkey et al. 2025). A prevalent approach is to use Sparse Autoen-coders (SAEs) (Ng et al. 2011) to disentangle polysemantic features into more monosemantic components that are easier to interpret. Extensive work has applied SAEs as post-hoc interpretability methods for large language models (LLMs) (Chughtai et al. 2023; Bricken et al. 2023; Rajamanoharan et al. 2024), with recent efforts extending this approach to ViTs (Lim et al. 2025a). However, post-hoc SAE methods introduce an important limitation. In a typical post-hoc setting, the SAE is trained on frozen representations from a pretrained model. Conse-quently, its latent features are learned independently of the downstream classification objective and may not adequately reflect the class-discriminative concepts required for the tar-get task. Although such features may be sparse or visually coherent, they are not explicitly optimized to support the model’s predictions. To address this limitation, we propose SpIn-ViT, a machine learning framework that jointly trains a pretrained ViT and a modified SAE end-to-end. By directly coupling sparse repre-sentation learning with the classification objective, SpIn-ViT learns patch-level latent features that are both interpretable and aligned with the model’s predictions. We further assess whether SpIn-ViT’s features support symbolic rule extraction. We binarize SpIn-ViT’s latent acti-vations and use FOLD-SE-M algorithm (Wang and Gupta 2022) to induce a stratified Answer Set Program (Baral 2003). Combined with the neural feature extractor, these rules form a neurosymbolic classifier. Compared with alternative SAE representations, SpIn-ViT yields more compact rules that preserve more classification accuracy, indicating greater suitability for symbolic composition and reasoning. Across 9 benchmarks, SpIn-ViT achieves 88.30% average classification accuracy, improving over the state-of-the-art post-hoc SAE by 8.84% while remaining competitive with vanilla ViT. It also attains nearly 4× higher AI-based and over 
+
+2× higher human interpretability scores. Its neurosymbolic models achieve 5.97% higher accuracy with 58.85% smaller arXiv:2608.14922v1 [cs.CV] 14 Aug 2026 Figure 1: Training SpIn-ViT. ViT patch embeddings are encoded into a sparse latent space, reconstructed through an SAE decoder, and aligned with CLS-token predictions using reconstruction, sparsity, and alignment losses. rule sets than the post-hoc SAE baseline. We summarize our contributions as follows: 1. We propose SpIn-ViT, which jointly trains a pretrained ViT and modified SAE to align sparse patch-level repre-sentations with classification. 2. We show that its latent features support compact rule ex-traction and accurate, interpretable neurosymbolic clas-sifiers. 3. We evaluate SpIn-ViT across 9 benchmark datasets using quantitative, AI-based and human evaluations, demon-strating improved interpretability and high accuracy. 
+
+## Methodology 
+
+In this section, we present the SpIn-ViT architecture and training objectives, quantitative and qualitative interpretabil-ity evaluations and neurosymbolic model creation. The framework is illustrated in Figure 1. 
+
+Architecture Overview: A Sparse Autoencoder (SAE) en-codes dense representations into a higher-dimensional sparse latent space and reconstructs them through a decoder. Re-stricting each input to a few active neurons encourages dis-tinct, potentially monosemantic features. In SpIn-ViT, the SAE processes ViT patch-token representations. Unlike standard post-hoc SAEs trained unsupervised on frozen features, SpIn-ViT jointly fine-tunes the ViT and SAE with supervision, aligning sparse representations with the downstream task while improving interpretability without sacrificing classification performance. SpIn-ViT builds on a trainable ViT encoder that maps an input image X ∈ RCin ×H×W to a sequence of patch-token representations z = [ z1, z2, . . . , zn] ∈ Rn×d, where 
+
+Cin denotes the number of input channels, H and W de-note the image height and width, respectively, n denotes the number of image patches, and d = 768 is the embedding dimension. After the final transformer layer, the [CLS] to-ken representation is passed through a linear classification head to produce the final class logits. The remaining patch-token representations are passed to the SAE module, whose encoder projects them into a sparse latent space and whose decoder reconstructs the original embeddings: 
+
+h = TopK ( zW enc + benc ) , (1) 
+
+ˆz = hW dec + bdec . (2) The patch-token representations z are first projected into an m-dimensional latent pre-activation space using the SAE encoder weights Wenc ∈ Rd×m and bias benc ∈ Rm, where 
+
+m = 10 × C and C denotes the number of classes. SpIn-ViT then applies a TopK operator independently to each patch token. The operator retains the k largest latent activations and sets all remaining entries to zero, producing the sparse latent representation h ∈ Rn×m.TopK fixes the number of active neurons per patch, pre-venting dense activations and restricting each region to a small set of salient features. It complements the L1 penalty: TopK selects which neurons remain active, whereas L1 reg-ularizes their magnitudes. Together, they promote sparse, semantically disentangled representations. The SAE decoder subsequently maps h back to the ViT embedding space using Wdec ∈ Rm×d and bdec ∈ Rd, pro-ducing reconstructed patch-token representations ˆz ∈ Rn×d
+
+that approximate the original embeddings z.
+
+Learning Objectives: SpIn-ViT is trained using four com-plementary learning objectives. The classification objec-tive promotes accurate class predictions and aligns the learned representations with the downstream task. The in-terpretability objective encourages sparse latent activations while preserving the information contained in the original ViT patch embeddings. The intra-class objective reduces variation among representations belonging to the same class, thereby improving class-level coherence. Finally, the inter-class objective organizes the latent space into class-specific subspaces and encourages distinct, non-redundant features across classes. Figure 2: Interpretability analysis performed after training. (a) Reference images for a given neuron (e.g., Neuron 50) are selected by ranking [CLS] token activations from the trained TopK SAE encoder. (b) Patch-token activations for that neuron are then used to localize the specific image regions responsible for the activation. (c) Neuron activations across images are binarized into tabular data, over which FOLD-SE-M creates neurosymbolic rules for explainability of the TopK SAE encoder. 
+
+Classification Objective: The classification objective trains SpIn-ViT to produce accurate image-level predictions. Given a mini-batch of B images and C classes, we minimize the categorical cross-entropy loss 
+
+Lcls = − 1
+
+B
+
+> B
+
+X
+
+> i=1
+> C
+
+X
+
+> c=1
+
+yi,c log pi,c (3) where yi,c is the ground-truth indicator specifying whether image Xi belongs to class c. The predicted class-probability distribution is given by pi = softmax( fθ (Xi)) .fθ denotes the SpIn-ViT classifier parameterized by the trainable parameters θ, and pi,c denotes its predicted proba-bility that image Xi belongs to class c. The classifier applies a linear classification head to the final [CLS] token represen-tation to produce the class logits. Minimizing Lcls aligns the learned representations with the downstream classification task. 
+
+Interpretability Objective: The interpretability objective encourages the SAE to preserve information from the ViT patch-token representations while learning sparse and se-mantically disentangled latent features. Given a mini-batch of B images, we define the SAE objective as 
+
+LSAE = 1
+
+B
+
+> B
+
+X
+
+> i=1
+
+∥zi − ˆzi∥2
+
+> F
+
+| {z }
+
+> Lrecon
+
++λ 1
+
+B
+
+> B
+
+X
+
+> i=1
+
+∥hi∥1
+
+| {z }
+
+> Lsparse
+
+. (4) where zi and ˆzi denote the original and reconstructed patch-token representations for image Xi, respectively, and 
+
+hi denotes the corresponding sparse latent representation. The reconstruction term Lrecon minimizes the discrepancy between the original and reconstructed ViT representations, thereby preserving information required to represent the in-put features. The regularization term Lsparse penalizes the magnitudes of the latent activations retained by the TopK operator. The coefficient λ controls the balance between re-construction fidelity and latent activation regularization. To-gether, TopK and the L1 penalty encourage compact latent representations whose active neurons capture salient visual features. 
+
+Intra-Class Objective: To improve class-level coherence in the reconstructed patch-token space, we introduce a center loss Lcenter that encourages samples from the same class to have similar representations: 
+
+Lcenter = 12B
+
+> B
+
+X
+
+> i=1
+
+∥pi − cyi ∥22 , (5) where B denotes the mini-batch size, pi ∈ Rd is the mean-pooled SAE reconstruction for image Xi, yi is its ground-truth class label, and cyi ∈ Rd denotes the center associated with class yi. Specifically, pi is obtained by averaging the reconstructed patch-token representations ˆzi across the patch dimension. Minimizing Lcenter reduces intra-class variation by draw-ing reconstructed representations toward their corresponding class centers. This encourages patch-level representations from the same class to form coherent clusters while preserv-ing distinctions between classes. Because gradients propa-gate through the SAE and ViT encoder, the center loss also indirectly structures the latent representation hi and aligns it with class-discriminative information. 
+
+Inter-Class Objective: As the dimensionality of the SAE latent space increases, different latent neurons may learn redundant features. To structure the latent space and encour-age feature diversity, we divide its m dimensions into C
+
+non-overlapping, class-indexed blocks, where C denotes the number of classes and r = m/C denotes the number of la-tent dimensions assigned to each block. For a mini-batch, we stack the patch-level latent representations across all images and patches to obtain H ∈ RBn ×m, where B is the mini-batch size and n is the number of patches per image. We then partition H = S(1) , S(2) , . . . , S(C) ,
+
+where each block S(c) ∈ RBn ×r contains the latent acti-vations associated with class-indexed subspace c.To discourage redundant latent dimensions within each block, we apply the orthogonality regularizer 
+
+Lortho = 1
+
+C
+
+> C
+
+X
+
+> c=1
+
+
+
+S(c)⊤
+
+S(c) − Ir
+
+> 2
+> F
+
+, (6) where Ir ∈ Rr×r is the identity matrix and ∥ · ∥ F denotes the Frobenius norm. Minimizing Lortho reduces correlations among latent dimensions within each class-indexed block, encouraging the neurons in each subspace to capture diverse and non-redundant visual features. Total Learning Objective: The total learning objective in-tegrates all components into a single unified loss function: 
+
+L = αLcls + βLSAE + δLcenter + γLortho 
+
+where α, β, δ, γ ∈ [0 , 1] are scalar weights. α controls the contribution of the classification loss, β controls the contri-bution of the SAE loss, δ controls the contribution of the center loss, and γ controls the contribution of the orthogo-nality regularizer. This balance ensures that SpIn-ViT jointly optimizes for prediction accuracy and interpretability. 
+
+Quantitative Analysis Formulation: After training, we evaluate interpretability by selecting each neuron’s strongest reference images, localizing its patch-level responses, and measuring whether the highlighted regions are prediction-relevant and semantically meaningful. 
+
+Selecting Reference Images: As shown in Fig. 2, we ag-gregate the SAE activations across all patches in each image to obtain a global activation vector p(i) 
+
+> patch
+
+= 1
+
+> n
+
+Pnj=1 hi,j ,
+
+where hi,j ∈ Rm denotes the SAE latent representation associated with the j-th patch of image Xi, and n denotes the number of image patches. Each entry of p(i) 
+
+> patch
+
+therefore represents the aggregate response of a latent neuron across the image. For each latent neuron, we rank all images according to the corresponding values in p(i) 
+
+> patch
+
+and select the top-Kref 
+
+images with the strongest responses as reference images. Examining the neuron’s activations across the patches of these reference images reveals the visual patterns that most consistently evoke its response. 
+
+Patch Segmentation: After selecting the reference images, we localize the image regions associated with each SAE neuron by examining its activation across individual patches, as shown in Fig. 2. For an image Xi, let hi ∈ Rn×m denote its SAE latent representation, where n is the number of image patches and m is the number of SAE neurons. The activation of neuron q for patch j is denoted by hi,j,q .During inference, we apply a Sigmoid function to the la-tent activations to map them to the interval [0 , 1] . We then threshold the normalized activations at τ = 0 .5 to obtain a binary patch-activation mask: 
+
+˜hi,j,q = σ(hi,j,q ) , A(q) 
+
+> i,j
+
+=
+
+1, if ˜hi,j,q > 0.5,
+
+0, otherwise , (7) where σ(·) denotes the Sigmoid function. The corresponding segmented patch is given by S(q) 
+
+> i,j
+
+= A(q) 
+
+> i,j
+
+⊙ Xi,j , where Xi,j 
+
+denotes the j-th image patch of Xi, and ⊙ denotes element-wise multiplication. The binary mask A(q) 
+
+> i
+
+identifies the patches associated with neuron q, while S(q) 
+
+> i
+
+retains the cor-responding image regions. Reassembling the masked patches in their original spatial arrangement produces a patch-wise segmentation map that visualizes the regions associated with the neuron’s response. 
+
+Insertion and Deletion: Insertion and Deletion metrics evaluate whether the neuron’s responses are spatially grounded in image regions that influence the model’s pre-diction (Petsiuk, Das, and Saenko 2018). Deletion measures the decrease in model confidence as the most relevant image patches are progressively removed, whereas insertion mea-sures the increase in confidence as those patches are pro-gressively revealed from a blank image. We rank the patches according to their continuous neuron activation scores ˜hi,j,q 
+
+and use the corresponding patch-wise segmentation map S(q)
+
+> i
+
+to perform the insertion and deletion procedures. A lower deletion score and a higher insertion score indicate that the neuron activations identify image regions that are more faith-ful to the model’s prediction. 
+
+Qualitative Analysis Formulation: Quantitative metrics do not establish whether explanations correspond to human-meaningful visual concepts. We therefore complement them with a human study of SAE-highlighted regions and an AI-based evaluation across all nine datasets. 
+
+Human Evaluation: We selected 50 images each from the datasets with the highest and lowest SpIn-ViT classification accuracy, yielding 100 images evaluated by 12 participants. For each image, participants rated whether the patch-wise segmentation map S(q) 
+
+> i
+
+from the most active SAE neuron 
+
+q highlighted a coherent, recognizable visual concept. This evaluates perceptual interpretability under both strong and weak classification performance. 
+
+AI-Based Evaluation: To extend beyond the limited hu-man study, we conduct an automated evaluation across all nine datasets. For each image, SAM3 (Carion et al. 2025) generates a reference mask from a text prompt describing the target concept. We compute the mean Intersection over Union (mIoU) between this mask and each method’s patch-wise segmentation map S(q) 
+
+> i
+
+, where higher mIoU indicates stronger spatial agreement. This evaluation provides broader coverage and tests whether the trends observed in the hu-man study generalize across datasets. Additional details are provided in the supplementary material. 
+
+## Neurosymbolic Model Creation 
+
+Prior work combines neural feature extractors with sym-bolic rules induced from internal representations, yielding human-readable predicates grounded in neurons (Townsend, Kasioumis, and Inakoshi 2021; Padalkar, Wang, and Gupta 2024; Padalkar and Gupta 2025). Although these neurosym-bolic models often trail the original network in accuracy, sparse, distinct, and class-discriminative features can reduce both this gap and rule-set size (Padalkar and Gupta 2025). Because SpIn-ViT learns sparse, semantically coherent SAE neurons aligned with classification, we evaluate their suitability for symbolic rule extraction. Although compatible with other induction algorithms, we use FOLD-SE-M (Wang and Gupta 2022) for consistency with prior frameworks. FOLD-SE-M is a rule-learning algorithm that induces classification rules from labeled tabular data as a stratified Answer Set Program (ASP); Fig. 2 shows an example. It learns default rules covering positive examples while lim-iting false positives, then recursively learns exceptions by swapping positive and negative examples. Exceptions are represented by abnormality predicates such as ab x, where 
+
+x is a unique identifier. Figure 3: Insertion and Deletion Plots of each model for average of all datasets Table 1: Classification accuracy (%) across nine benchmark datasets (mean ± std). Best results per dataset are highlighted in 
+
+bold .                                                                                                                                                                                          
+
+> Dataset PatchSAE Vanilla ViT SpIn-ViT (Separate) SpIn-ViT (Frozen) SpIn-ViT (Vanilla) SpIn-ViT (Ours)
+> Flowers102 94.99 ±0.42 98.54 ±0.21 97.94 ±0.38 98.71 ±0.29 98.90 ±0.19 99.88 ±0.28
+> Caltech101 95.10 ±0.31 96.80 ±0.58 95.70 ±0.24 93.47 ±0.62 96.81 ±0.23 97.02 ±0.18
+> Stanford Cars 75.71 ±1.53 82.37 ±1.24 82.57 ±1.39 66.46 ±1.64 82.14 ±1.21 84.61 ±1.02
+> FGVC 55.43 ±2.18 71.11 ±1.67 68.32 ±2.01 70.12 ±1.75 67.63 ±1.82 68.43 ±1.79 EuroSAT 78.58 ±1.08 97.41 ±0.22 97.31 ±0.21 62.42 ±1.88 98.62 ±0.18 98.58 ±0.21 DTD 76.42 ±1.32 80.90 ±0.93 80.78 ±0.98 53.44 ±2.31 82.59 ±1.11 84.42 ±1.28
+> Sun397 77.14 ±1.27 76.54 ±1.12 76.43 ±1.22 72.27 ±1.89 78.01 ±1.04 80.00 ±1.38
+> Food101 84.81 ±1.14 85.08 ±1.25 85.13 ±0.82 86.65 ±1.12 85.55 ±1.22 86.81 ±1.11
+> OxfordPet 91.96 ±0.65 90.32 ±0.96 90.22 ±0.85 92.48 ±1.02 92.09 ±0.30 94.96 ±0.85 Average 81.13 ±1.10 86.56 ±0.91 86.04 ±0.90 77.34 ±1.39 86.93 ±0.81 88.30 ±0.90
+
+Its two main hyperparameters control the accuracy– complexity trade-off: ratio limits the ratio of false positives to true positives covered by a rule’s default component, while 
+
+tail specifies the minimum number of training examples a rule must cover. 
+
+Rule Extraction from SpIn-ViT: For each input image 
+
+Xi, SpIn-ViT produces an SAE representation hi ∈ Rn×m,where n denotes the number of image patches and m de-notes the number of SAE neurons. We aggregate the activa-tions across the patch dimension to obtain one feature vector per image: pi = 1
+
+> n
+
+Pnj=1 hi,j , where pi ∈ Rm contains the mean activation of each SAE neuron for image Xi. We then apply the inference-time Sigmoid transformation and threshold the resulting activations to obtain binary values: 
+
+ai,q =
+
+1, if σ(pi,q ) > 0.5,
+
+0, otherwise , where ai,q denotes the truth value of the predicate associated with SAE neuron q for im-age Xi.Each image is represented as a row in a tabular dataset, with the binary SAE neuron activations used as input at-tributes and the ground-truth class used as the target label. FOLD-SE-M is then applied to this representation to gen-erate rules that express class predictions in terms of active SAE neurons. For example, a rule may predict a class when a particular combination of neuron predicates is true, un-less an exception represented by a different combination of predicates is satisfied. During inference, the ViT and SAE components first pro-duce the neuron activations for an input image. These ac-tivations determine the truth values of their corresponding predicates, after which the extracted ASP rule set determines the predicted class. The trained neural feature extractor up to the SAE latent representation, together with the induced rule set, constitutes the complete neurosymbolic model. Because each predicate is grounded in an SAE neuron whose visual se-mantics can be examined through its patch-activation maps, the resulting rules provide logical explanations composed of visually interpretable neural features. 
+
+## Experimental Setup and Evaluations 
+
+In this section, we evaluate SpIn-ViT and baselines on clas-sification performance, AI-based and human interpretability, and neurosymbolic model performance. 
+
+Implementation Details: 
+
+Datasets. We utilized 9 widely used benchmark datasets: Flowers102 (Nilsback and Zisserman 2008a), Caltech101 (Nilsback and Zisserman 2008b), StanfordCars (Krause et al. Table 2: AI interpretability evaluations across nine image classification benchmarks (normalized to a 1–5 scale where 1.00 = 0.0 mIoU and 5.00 = 1.0 mIoU). 
+
+Dataset PatchSAE SpIn-ViT (Frozen) SpIn-ViT (Separate) SpIn-ViT (Vanilla) SpIn-ViT (Ours) 
+
+Flowers102 1.32 ± 0.18 1.60 ± 0.24 1.08 ± 0.12 3.00 ± 0.32 3.28 ± 0.35 
+
+Caltech101 1.32 ± 0.22 1.56 ± 0.22 1.08 ± 0.11 2.96 ± 0.30 3.24 ± 0.33 
+
+Stanford Cars 1.24 ± 0.15 1.40 ± 0.18 1.04 ± 0.10 2.76 ± 0.25 3.00 ± 0.28 
+
+FGVC 1.16 ± 0.12 1.28 ± 0.15 1.04 ± 0.10 2.56 ± 0.20 2.72 ± 0.22 
+
+EuroSAT 1.36 ± 0.25 1.64 ± 0.28 1.08 ± 0.12 3.04 ± 0.35 3.28 ± 0.36 
+
+DTD 1.24 ± 0.16 1.44 ± 0.19 1.04 ± 0.10 2.76 ± 0.26 3.00 ± 0.27 
+
+Sun397 1.20 ± 0.14 1.40 ± 0.17 1.04 ± 0.10 2.68 ± 0.22 2.92 ± 0.24 
+
+Food101 1.28 ± 0.19 1.48 ± 0.21 1.08 ± 0.11 2.84 ± 0.28 3.08 ± 0.31 
+
+OxfordPet 1.32 ± 0.21 1.56 ± 0.23 1.08 ± 0.12 2.92 ± 0.29 3.20 ± 0.32 
+
+Average 1.27 ± 0.18 1.48 ± 0.21 1.06 ± 0.11 2.84 ± 0.27 3.08 ± 0.30 
+
+Table 3: Human-rated interpretability of neuron activations (1–5, higher is better) on Flowers102 and FGVC.                                               
+
+> Method Flowers102 FGVC Average
+> PatchSAE 1.78 ±0.15 1.92 ±0.17 1.85 ±0.16
+> SpIn-ViT (Frozen) 2.45 ±0.18 2.34 ±0.16 2.40 ±0.17
+> SpIn-ViT (Separate) 1.45 ±0.11 1.32 ±0.12 1.39 ±0.11
+> SpIn-ViT (Vanilla) 3.43 ±0.22 3.22 ±0.24 3.33 ±0.23
+> SpIn-ViT (ours) 4.20 ±0.28 3 .99 ±0.26 4 .10 ±0.27
+
+2013), FGVC Aircraft (Maji et al. 2013), EuroSAT (Helber et al. 2019), DTD (Cimpoi et al. 2014), SUN397 (Xiao et al. 2010), Food101 (Bossard, Guillaumin, and Van Gool 2014), and OxfordPets (Parkhi et al. 2012). 
+
+Training Configurations. Following (Lim et al. 2025b), we use a 5:1 stratified train/test split per class and adopt the same default hyperparameters for SpIn-ViT and all other baselines. All models are also trained with the AdamW opti-mizer (Loshchilov and Hutter 2019) (learning rate 1 × 10 −5,weight decay 0.01 , β1 = 0 .9, β2 = 0 .999 ), and a batch size of 16 for each dataset. 
+
+Baselines. We compare our proposed methods against sev-eral baselines used across all experiments, covering a range of architectural design choices and previous popular methods. Vanilla ViT (Dosovitskiy et al. 2021) is used only as a classi-fication baseline with no SAE. PatchSAE (Lim et al. 2025b) is the most recent interpretability-based baseline, applying a frozen, post-hoc SAE to pretrained CLIP-based ViT (Radford et al. 2021) features. SpIn-ViT (Separate) is a variant of our proposed method which first fine-tunes the vanilla ViT on the classification task alone, then fine-tunes on our proposed TopK SAE on the resulting downstream features. SpIn-ViT (Frozen) has a similar fine-tuning strategy of that of Patch-SAE. We use our own TopK SAE architecture in place of PatchSAE’s, while keeping the ViT backbone frozen. SpIn-ViT (Vanilla) is our full method without the TopK sparsity constraint. SpIn-ViT (Ours) is our proposed method, adding TopK sparsity along with center loss and orthogonality ob-jectives to encourage class-aligned, monosemantic features. 
+
+Classification Results: SpIn-ViT demonstrates strong and consistent classification performance across nine benchmark datasets as summarized in Table 1. The SpIn-ViT (Frozen) variant degrades substantially, most severely on FGVC, Eu-roSAT, and DTD, confirming that post-hoc application of a frozen SAE on fixed ViT features introduces significant in-formation loss. SpIn-ViT (Separate) recovers much of this degradation but still lags behind SpIn-ViT on most datasets, notably FGVC and Stanford Cars, demonstrating that un-freezing the SAE alone, without our structured center loss and orthogonality objectives, is insufficient for maintaining both classification performance and interpretability. 
+
+Insertion and Deletion Analysis: Figure 3 reports insertion and deletion curves complementing classifcation results. In the insertion test, accuracy should rise quickly as the highest-attributed pixels are added back. In the deletion test, accuracy should drop quickly as those same pixels are removed. SpIn-ViT (Ours) achieves the highest insertion AUC (0.830) and the lowest deletion AUC (0.142), rising fastest in insertion and falling fastest in deletion, indicating its neuron activations point to the pixels the model actually relies on for its predictions. SpIn-ViT (Vanilla) and SpIn-ViT (Frozen) fol-low the same ordering but with weaker separation between the two curves, while PatchSAE and SpIn-ViT (Separate) show the flattest insertion curves and slowest deletion drop-off, reflecting more diffuse, less faithful attributions. This ordering matches our earlier rule-creation and interpretabil-ity results, reinforcing that joint training produces activations more tightly aligned with class-discriminative image regions. 
+
+Human Evaluation Results: Table 3 reports ratings from 12 participants on how well activated patches correspond to coherent visual concepts in Flowers102 and FGVC, using a 1–5 scale. SpIn-ViT (Ours) achieves the highest average score of 4.10, followed by SpIn-ViT (Vanilla) at 3.33. SpIn-ViT (Frozen), PatchSAE, and SpIn-ViT (Separate) score 2.40, 1.85, and 1.39, respectively. These results indicate that joint training improves perceptual alignment and that TopK spar-sity further encourages activations corresponding to seman-tically meaningful image regions. 
+
+AI Evaluation: We compute mIoU between neuron-highlighted image regions and SAM3-generated concept Table 4: Accuracy (%) and number of active rules ( ± standard deviation) across nine image classification benchmarks.                                                                                                                                                                                                                                                                                                                           
+
+> PatchSAE SpIn-ViT (Frozen) SpIn-ViT (Separate) SpIn-ViT (Vanilla) SpIn-ViT (Ours) Dataset Acc ( ↑)Rules ( ↓)Acc ( ↑)Rules ( ↓)Acc ( ↑)Rules ( ↓)Acc ( ↑)Rules ( ↓)Acc ( ↑)Rules ( ↓)
+> Flowers102 90 .91 ±0.98 20 ±3.494 .24 ±0.35 14 ±1.292 .21 ±0.48 24 ±2.895 .04 ±0.31 13 ±2.596 .48 ±0.97 10 ±0.8
+> Caltech101 89 .62 ±0.38 12 ±1.893 .56 ±0.16 23 ±4.590 .97 ±1.13 16 ±2.194 .38 ±0.43 7±2.795 .16 ±0.78 5±0.9
+> Stanford Cars 84 .36 ±0.54 48 ±5.886 .32 ±0.17 38 ±3.284 .82 ±0.48 24 ±4.687 .91 ±0.56 30 ±2.988 .78 ±0.33 23 ±1.6
+> FGVC 75 .33 ±0.55 106 ±6.278 .68 ±1.12 67 ±4.878 .29 ±0.67 60 ±3.179 .44 ±0.52 65 ±2.481 .24 ±0.96 47 ±1.1
+> EuroSAT 94 .16 ±0.87 60 ±4.995 .94 ±0.59 40 ±3.795 .18 ±0.97 34 ±2.396 .59 ±0.78 40 ±1.497 .89 ±1.13 29 ±0.7
+> DTD 79 .37 ±0.97 136 ±6.583 .46 ±0.93 88 ±3.482 .23 ±0.81 50 ±2.283 .34 ±1.14 43 ±2.884 .96 ±0.83 55 ±1.3
+> Sun397 74 .12 ±0.72 162 ±4.278 .43 ±0.86 93 ±3.175 .82 ±0.74 64 ±2.778 .77 ±0.43 76 ±2.179 .61 ±0.46 63 ±1.0
+> Food101 81 .56 ±1.05 161 ±4.184 .17 ±1.16 93 ±2.983 .12 ±1.16 101 ±3.885 .38 ±0.43 74 ±2.686 .36 ±0.37 58 ±1.2
+> OxfordPet 89 .13 ±1.14 80 ±2.491 .97 ±0.93 53 ±3.190 .56 ±0.92 38 ±1.992 .64 ±0.78 48 ±2.793 .56 ±0.98 33 ±2.3
+> Average 84 .28 ±0.80 94 ±4.487 .46 ±0.70 56 ±3.386 .02 ±0.82 46 ±2.788 .61 ±0.60 44 ±2.489 .34 ±0.76 42 ±1.2
+
+masks (Carion et al. 2025), then normalize scores to a 1– 5 scale for comparison with human ratings. SpIn-ViT (Ours) ranks highest across all nine datasets, followed by SpIn-ViT (Vanilla), SpIn-ViT (Frozen), PatchSAE, and SpIn-ViT (Sep-arate). This ordering persists on challenging datasets such as FGVC and SUN397 and closely matches the human evalu-ations, indicating agreement between automated and human judgments. 
+
+Neurosymbolic Model Analysis: Table 4 reports classifi-cation accuracy alongside the size of the symbolic rule-set extracted for each method. High accuracy with a small rule-set size is desirable, where rule-set size is the total number of predicates in the rule-set body; smaller rule-sets corre-late with higher interpretability (Lage, Chen et al. 2019). All hyperparameters are in the supplementary material. SpIn-ViT (Ours) achieves the highest accuracy on all nine datasets and the fewest rules on eight of nine, trailing only SpIn-ViT (Frozen) on DTD despite a 2.4 percent accuracy gain. This pattern is clearest on Caltech101 and Flowers102, where we reach top accuracy with only 5 and 10 rules, well below PatchSAE’s 12 and 20 despite PatchSAE’s lower ac-curacy, evidence that PatchSAE’s features are more entan-gled and require extra rules to compensate. The remaining variants help explain why: SpIn-ViT (Frozen) often yields the fewest rules but the lowest accuracy, since decoupling the SAE from the classification objective produces a con-strained but less discriminative feature space, while Separate and Vanilla trade off between the two. Only joint optimiza-tion achieves both together, confirming that features shaped directly by the classification signal are more distinguishable and more compactly rule-summarizable. The same pattern holds even on harder datasets like FGVC and Sun397, where other methods need far more rules while Ours remains both the most compact and most accurate. 
+
+## Related Works 
+
+SAE for Mechanistic Interpretability. SAEs are widely used to disentangle model representations into monoseman-tic features, most notably in LLMs, where they are attached to each transformer layer to extract increasingly fine-grained features. SAE-derived latent directions have also enabled downstream steering, such as style modulation (Konen et al. 2024), refusal behavior (Arditi et al. 2024), and alignment-oriented activation editing (Kong et al. 2024; Qiu et al. 2024), showing that directions like refusal, bias, or truthfulness can be reliably manipulated to alter outputs. SAEs have sim-ilarly extended to vision: applications to diffusion models uncover factors governing denoising trajectories and spatial layout (Liu et al. 2024), sparse decompositions of gener-ative models isolate concepts like texture and shape (Bai et al. 2024), and in ViTs, SAEs recover token level features aligned with meaningful visual attributes (Jing et al. 2024). Together, these results show that the monosemantic structure captured by SAEs generalizes beyond language, offering a general mechanism for interpreting high-dimensional repre-sentations across vision and generative models. 
+
+Neurosymbolic AI for Vision Models. Neurosymbolic approaches bind learned image features to explicit, human-auditable rules rather than leaving them as opaque represen-tations. In CNNs, this has taken the form of extracting logic-based rule-sets from convolutional filter image features, such as NeSyFOLD (Padalkar, Wang, and Gupta 2024), which uses the FOLD-SE-M algorithm (Wang and Gupta 2022) to convert binarized kernel image features into a rule-set, and follow-up work improving the accuracy and compactness of these extracted rules (Padalkar et al. 2025). Extending this to ViTs is more difficult due to their lack of modular concept detectors, though recent work has introduced a sparse con-cept layer to enable rule extraction from attention-weighted patch image features (Padalkar and Gupta 2025). We build on this line of work, using FOLD-SE-M to extract symbolic rules directly from SpIn-ViT’s jointly trained latent image features. 
+
+## Conclusion 
+
+We introduced SpIn-ViT, which integrates sparse autoen-coders into the classification objective to learn interpretable patch-level representations while maintaining competitive accuracy. Across nine benchmarks, it outperforms post-hoc SAE baselines on quantitative, AI-based, and human inter-pretability evaluations while matching or exceeding vanilla ViT performance. Its latent neurons also enable FOLD-SE-M to construct more accurate neurosymbolic models with smaller rule sets than post-hoc SAE representations. Overall, we demonstrate that high levels of interpretability, accuracy, and neurosymbolic reasoning can be achieved together. References 
+
+Arditi, A.; Obeso, O.; Syed, A.; Paleka, D.; Panickssery, N.; Gurnee, W.; and Nanda, N. 2024. Refusal in Language Models Is Mediated by a Single Direction. In Advances in Neural Information Processing Systems . NeurIPS. Bai, H.; Duan, Y.; Zhang, Q.; and Zhu, S.-C. 2024. Con-ceptSAE: Disentangling Visual Concepts with Sparse Au-toencoders. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 20951–20960. CVPR. Baral, C. 2003. Knowledge representation, reasoning and declarative problem solving . Cambridge University Press. Bossard, L.; Guillaumin, M.; and Van Gool, L. 2014. Food-101–mining discriminative components with random forests. In European conference on computer vision , 446– 461. Springer. Bricken, T.; Templeton, A.; Batson, J.; Chen, B.; Jermyn, A.; Conerly, T.; Turner, N.; Anil, C.; Denison, C.; Askell, A.; et al. 2023. Towards monosemanticity: Decomposing language models with dictionary learning. Transformer Cir-cuits Thread , 2. Carion, N.; Gustafson, L.; Hu, Y.-T.; Debnath, S.; Hu, R.; Suris, D.; Ryali, C.; Alwala, K. V.; Khedr, H.; Huang, A.; Lei, J.; Ma, T.; Guo, B.; Kalla, A.; Marks, M.; Greer, J.; Wang, M.; Sun, P.; Rädle, R.; Afouras, T.; Mavroudi, E.; Xu, K.; Wu, T.-H.; Zhou, Y.; Momeni, L.; Hazra, R.; Ding, S.; Vaze, S.; Porcher, F.; Li, F.; Li, S.; Kamath, A.; Cheng, H. K.; Dollár, P.; Ravi, N.; Saenko, K.; Zhang, P.; and Feicht-enhofer, C. 2025. SAM 3: Segment Anything with Concepts. arXiv:2511.16719. Carion, N.; Massa, F.; Synnaeve, G.; Usunier, N.; Kirillov, A.; and Zagoruyko, S. 2020. End-to-End Object Detection with Transformers. In European Conference on Computer Vision , 213–229. Chughtai, B.; Bricken, T.; Nanda, N.; Chan, L.; Jermyn, A.; and Joseph, N. 2023. Sparse Autoencoders Find Highly Interpretable Features in Language Models. In International Conference on Learning Representations . ICLR. Cimpoi, M.; Maji, S.; Kokkinos, I.; Mohamed, S.; and Vedaldi, A. 2014. Describing textures in the wild. In Pro-ceedings of the IEEE conference on computer vision and pattern recognition , 3606–3613. Dosovitskiy, A.; Beyer, L.; Kolesnikov, A.; Weissenborn, D.; Zhai, X.; Unterthiner, T.; Dehghani, M.; Minderer, M.; Heigold, G.; Gelly, S.; Uszkoreit, J.; and Houlsby, N. 2021. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In International Conference on Learn-ing Representations . ICLR. Helber, P.; Bischke, B.; Dengel, A.; and Borth, D. 2019. Eurosat: A novel dataset and deep learning benchmark for land use and land cover classification. IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing , 12(7): 2217–2226. Jing, L.; Ramaswamy, H.; Zhang, H.; Leavitt, M. L.; LeCun, Y.; Sohl-Dickstein, J.; and Norouzi, M. 2024. Interpreting Vision Transformers Using Sparse Autoencoders. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 12025–12035. CVPR. Konen, K.; Jentzsch, S.; Jares, T.; Beck, T.; Hüne, L.; Borowski, T.; and Hecking, T. 2024. Style Vectors for Steer-ing Generative Large Language Models. In Findings of the Association for Computational Linguistics: EACL 2024 ,697–716. Association for Computational Linguistics. Kong, L.; Wang, H.; Mu, W.; Du, Y.; Zhuang, Y.; Zhou, Y.; Song, Y.; Zhang, R.; Wang, K.; and Zhang, C. 2024. Align-ing Large Language Models with Representation Editing: A Control Perspective. In Advances in Neural Information Processing Systems . NeurIPS. Krause, J.; Stark, M.; Deng, J.; and Fei-Fei, L. 2013. 3D Object Representations for Fine-Grained Categorization. In 
+
+2013 IEEE International Conference on Computer Vision Workshops , 554–561. Lage, I.; Chen, E.; et al. 2019. Human evaluation of models built for interpretability. In Proc. HCOMP , volume 7, 59–67. Lim, H.; Choi, J.; Choo, J.; and Schneider, S. 2025a. Sparse autoencoders reveal selective remapping of visual concepts during adaptation. arXiv:2412.05276. Lim, H.; Choi, J.; Choo, J.; and Schneider, S. 2025b. Sparse autoencoders reveal selective remapping of visual concepts during adaptation. In The Thirteenth International Confer-ence on Learning Representations .Liu, Z.; Patel, D.; Yao, H.; Kim, S.; and Koyejo, S. 2024. Interpreting Diffusion Models with Sparse Autoencoders. In 
+
+ICLR 2024: International Conference on Learning Repre-sentations . ICLR. Loshchilov, I.; and Hutter, F. 2019. Decoupled Weight Decay Regularization. In International Conference on Learning Representations .Maji, S.; Rahtu, E.; Kannala, J.; Blaschko, M.; and Vedaldi, A. 2013. Fine-grained visual classification of aircraft. arXiv preprint arXiv:1306.5151 .Ng, A.; et al. 2011. Sparse autoencoder. Nilsback, M.-E.; and Zisserman, A. 2008a. Automated flower classification over a large number of classes. In 2008 Sixth Indian conference on computer vision, graphics & image processing , 722–729. IEEE. Nilsback, M.-E.; and Zisserman, A. 2008b. Automated Flower Classification over a Large Number of Classes. In 
+
+2008 Sixth Indian Conference on Computer Vision, Graph-ics & Image Processing , 722–729. Padalkar, P.; and Gupta, G. 2025. Symbolic Rule Extrac-tion From Attention-Guided Sparse Representations in Vi-sion Transformers. Theory and Practice of Logic Program-ming , 25(4): 722–738. Padalkar, P.; Lee, J.; Wei, S.; and Gupta, G. 2025. Improving Interpretability and Accuracy in Neuro-Symbolic Rule Ex-traction Using Class-Specific Sparse Filters. arXiv preprint arXiv:2501.16677 .Padalkar, P.; Wang, H.; and Gupta, G. 2024. NeSyFOLD: A Framework for Interpretable Image Classification. In Proc. AAAI , 4378–4387. AAAI Press. Parkhi, O. M.; Vedaldi, A.; Zisserman, A.; and Jawahar, C. 2012. Cats and dogs. In 2012 IEEE conference on computer vision and pattern recognition , 3498–3505. IEEE. Petsiuk, V.; Das, A.; and Saenko, K. 2018. RISE: Random-ized Input Sampling for Explanation of Black-box Models. In British Machine Vision Conference (BMVC) .Qiu, Y.; Zhao, Z.; Ziser, Y.; Korhonen, A.; Ponti, E. M.; and Cohen, S. B. 2024. Spectral Editing of Activations for Large Language Model Alignment. In Advances in Neural Information Processing Systems . NeurIPS. Radford, A.; Kim, J. W.; Hallacy, C.; Ramesh, A.; Goh, G.; Agarwal, S.; Sastry, G.; Askell, A.; Mishkin, P.; Clark, J.; Krueger, G.; and Sutskever, I. 2021. Learning transferable visual models from natural language supervision. In Inter-national Conference on Machine Learning (ICML) , 8748– 8763. Rajamanoharan, S.; Lieberum, T.; Sonnerat, N.; Conmy, A.; Varma, V.; Kramár, J.; and Nanda, N. 2024. Jumping ahead: Improving reconstruction fidelity with jumprelu sparse au-toencoders. arXiv preprint arXiv:2407.14435 .Sharkey, L.; Chughtai, B.; Batson, J.; Lindsey, J.; Wu, J.; Bushnaq, L.; Goldowsky-Dill, N.; Heimersheim, S.; Ortega, A.; Bloom, J. I.; Biderman, S.; Garriga-Alonso, A.; Conmy, A.; Nanda, N.; Rumbelow, J.; Wattenberg, M.; Schoots, N.; Miller, J.; Michaud, E. J.; Casper, S.; Tegmark, M.; Saunders, W.; Bau, D.; Todd, E.; Geiger, A.; Geva, M.; Hoogland, J.; Murfet, D.; and McGrath, T. 2025. Open Problems in Mechanistic Interpretability. CoRR , abs/2501.16496. Strudel, R.; Garcia, R.; Laptev, I.; and Schmid, C. 2021. Segmenter: Transformer for Semantic Segmentation. In Pro-ceedings of the IEEE/CVF International Conference on Com-puter Vision , 7262–7272. Touvron, H.; Cord, M.; Douze, M.; Massa, F.; Sablayrolles, A.; and Jégou, H. 2021. Training Data-Efficient Image Trans-formers & Distillation Through Attention. In International Conference on Machine Learning , 10347–10357. Townsend, J.; Kasioumis, T.; and Inakoshi, H. 2021. ERIC: Extracting Relations Inferred from Convolutions. In Com-puter Vision – ACCV , 206–222. Cham: Springer Interna-tional. ISBN 978-3-030-69535-4. Wang, H.; and Gupta, G. 2022. FOLD-SE: An Efficient Rule-based Machine Learning Algorithm with Scalable Ex-plainability. arXiv preprint arXiv:2208.07912 .Xiao, J.; Hays, J.; Ehinger, K. A.; Oliva, A.; and Torralba, A. 2010. Sun database: Large-scale scene recognition from abbey to zoo. In 2010 IEEE computer society conference on computer vision and pattern recognition , 3485–3492. IEEE. Xie, E.; Wang, W.; Yu, Z.; Anandkumar, A.; Alvarez, J. M.; and Luo, P. 2021. SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers. In Advances in Neural Information Processing Systems .Zhu, X.; Su, W.; Lu, L.; Li, B.; Zhang, X.; Wang, C.; and Dai, J. 2021. Deformable DETR: Deformable Transformers for End-to-End Object Detection. In International Conference on Learning Representations .A Appendix 
+
+A.1 Training and Evaluation Protocol 
+
+SpIn-ViT Hyperparameters. The overall training objective combines a classification loss Lcls , an SAE reconstruction loss LSAE , a center loss Lcenter , and an orthogonality loss 
+
+Lortho , weighted by coefficients α, β, δ, and γ respectively. We set α = 1 and β = 1 to weight classification and recon-struction losses equally, while the sparsity term within LSAE 
+
+is set to λ = 5 e-4, following prior SAE sparsity conven-tions (Bricken et al. 2023). The learning objective weights 
+
+δ and γ were selected through a manual grid search over 
+
+δ ∈ { 0.1, 0.3, 0.5, 1.0} and γ ∈ { 0.5, 1.0, 2.0, 4.0}, with fi-nal values chosen based on validation accuracy on a held-out split of each dataset. We set δ = 0 .3 to pull class-conditional logits toward their respective class centers, tightening intra-class clustering. We set γ = 2 .0 to enforce separation be-tween sparse activation directions across classes, discourag-ing redundant or overlapping patch-level features. Random seed 42 was used for all runs. 
+
+FOLD-SE Hyperparameters. For rule extraction via FOLD-SE-M, the exception ratio was set to ratio = 1 .0
+
+and the covering limit to tail = 5 e-4.
+
+Computing infrastructure. All experiments were run on a single NVIDIA RTX 4090 GPU with 24GB VRAM. 
+
+A.2 Further Insertion-Deletion Evaluations and Rule Extraction 
+
+In this section, we provide additional evidence beyond the averaged results reported in the main paper. This includes per-dataset insertion and deletion results and the correspon-dence between extracted symbolic rules and SAE neuron activations. 
+
+Insertion Results Figure 4 shows per-dataset insertion re-sults. SpIn-ViT (ours) achieves the highest or near-highest AUC on most benchmarks, notably Flowers102 (Nilsback and Zisserman 2008a), Caltech101 (Nilsback and Zisserman 2008b), EuroSAT (Helber et al. 2019), and DTD (Cimpoi et al. 2014), where accuracy rises sharply within the first 20–30% of inserted pixels and plateaus before the baselines. This indicates our most salient patches are also the most sufficient for correct classification. On FGVC (Maji et al. 2013), Sun397 (Xiao et al. 2010), and Food101 (Bossard, Guillaumin, and Van Gool 2014), the gap narrows, suggest-ing attribution sharpness is harder when class-distinguishing evidence is more diffuse. PatchSAE (Lim et al. 2025b) and SpIn-ViT (Separate) insert more slowly, reflecting less class-aligned patches relative to our jointly trained representations. 
+
+Deletion Results Figure 5 shows the complementary trend. SpIn-ViT (ours) exhibits the steepest early drop and low-est deletion AUC on most datasets, particularly Flow-ers102 (Nilsback and Zisserman 2008a), Caltech101 (Nils-back and Zisserman 2008b), EuroSAT (Helber et al. 2019), and DTD (Cimpoi et al. 2014), confirming the regions we mark as important are also necessary for correct classifica-tion. SpIn-ViT (Frozen) and PatchSAE (Lim et al. 2025b) degrade more gradually, consistent with weaker insertion performance and more diffuse attributions. Separation be-tween models is again smallest on FGVC (Maji et al. 2013), Sun397 (Xiao et al. 2010), and Food101 (Bossard, Guillau-min, and Van Gool 2014), where classification depends on a broader, less concentrated set of regions. 
+
+Rule Extraction and Correspondence to Soft Patch Seg-mentation The symbolic rules extracted through FOLD-SE-M (Wang and Gupta 2022) work directly with the SAE’s own feature space, rather than functioning as an explana-tion layer bolted on after training. Each predicate corre-sponds to a single sparse code dimension, so a rule such as label(X, ’Truck’) :- neuron_63(X), not ab1(X) is a logical condition over which SAE neurons are active, expressed in readable form rather than as a dense ac-tivation vector. Because the SAE is trained jointly with the classification objective, the selected neurons already drive the model’s prediction, rather than being extracted post-hoc from an unrelated probe trained separately. This also means the rules inherit the sparsity of the representation, with a compact rule of two or three predicates sufficient to char-acterize a class, mirroring the sparsity constraint enforced during training. Figure 6 illustrates this directly. Panel (a) shows the soft patch segmentation induced by neuron_63 and neuron_123, overlaying activation strength on each input image. Neu-ron_63 activates over the body and cab of pickup trucks across Stanford Cars images regardless of color or orien-tation, while neuron_123 activates over the head and body of the dog across OxfordPet images regardless of breed or pose. Panel (b) shows the corresponding FOLD-SE-M (Wang and Gupta 2022) rules: label(X, ’Truck’) :-neuron_63(X), not ab1(X) fires when the panel (a) segmentation activates over a truck-like region, with 
+
+ab1(X) :- neuron_50(X), neuron_61(X) carv-ing out exceptions where competing neurons also activate on the same image. For OxfordPet, label(X, ’Dog’) :- neuron_123(X) is satisfied whenever neuron_123’s segmentation covers the dog. In both cases, the rule and seg-mentation are two views of the same computation: the rule specifies which neurons must or must not fire, and panel (a) shows exactly where that firing occurs in the image. Figure 4: Insertion plots for all nine benchmark datasets. For each dataset, pixels are progressively inserted into a blank baseline image in order of attribution ranking (most salient first, per each model’s attribution map), and classification accuracy is plotted as a function of the percentage of pixels inserted. Higher curves and larger AUC indicate more faithful attributions. Figure 5: Deletion plots for all nine benchmark datasets. For each dataset, pixels are progressively removed from the original image in order of attribution ranking (most salient first, per each model’s attribution map), and classification accuracy is plotted as a function of the percentage of pixels deleted. Steeper drops and lower AUC indicate more faithful attributions. Figure 6: Examples of correspondence between sparse patch-level neuron activations and extracted symbolic rules. (a) Soft patch segmentations induced by individual neurons across example images. (b) FOLD-SE-M rules for the corresponding datasets, where each predicate maps to one of the visualized neurons. A.3 Example Labelled Rulesets 
+
+Flowers102 {rose, sunflower, tulip, daisy, orchid}: 
+
+label(X,’rose’) :- neuron_63(X), not ab1(X). label(X,’sunflower’) :- neuron_142(X). label(X,’tulip’) :- not neuron_87(X), neuron_29(X). label(X,’daisy’) :- neuron_205(X), not neuron_142(X). label(X,’orchid’) :- neuron_11(X). ab1(X) :- neuron_87(X), neuron_29(X). 
+
+Caltech101 {airplane, chair, elephant, camera, piano}: 
+
+label(X,’airplane’) :- neuron_58(X), not ab2(X). label(X,’chair’) :- neuron_133(X). label(X,’elephant’) :- neuron_94(X), not neuron_133(X). label(X,’camera’) :- neuron_17(X). label(X,’piano’) :- not neuron_58(X), neuron_201(X). ab2(X) :- neuron_9(X), neuron_112(X). 
+
+Stanford Cars {truck, sedan, convertible, SUV, coupe}: 
+
+label(X,’truck’) :- neuron_63(X), not ab1(X). label(X,’truck’) :- not neuron_111(X), not neuron_1(X). label(X,’sedan’) :- neuron_78(X). label(X,’convertible’) :- neuron_46(X), not neuron_78(X). label(X,’SUV’) :- neuron_63(X), neuron_190(X). label(X,’coupe’) :- not neuron_46(X), neuron_22(X). ab1(X) :- neuron_50(X), neuron_61(X). 
+
+FGVC (Aircraft) {Boeing_737, Airbus_A320, Cessna_172, Embraer_E190}: 
+
+label(X,’Boeing_737’) :- neuron_84(X), not ab3(X). label(X,’Airbus_A320’) :- neuron_39(X). label(X,’Cessna_172’) :- not neuron_84(X), neuron_16(X). label(X,’Embraer_E190’) :- neuron_39(X), neuron_120(X). ab3(X) :- neuron_16(X), neuron_120(X). 
+
+EuroSAT {Forest, Highway, Residential, River, AnnualCrop}: 
+
+label(X,’Forest’) :- neuron_27(X), not neuron_101(X). label(X,’Highway’) :- neuron_101(X). label(X,’Residential’) :- neuron_66(X), not ab4(X). label(X,’River’) :- not neuron_27(X), neuron_53(X). label(X,’AnnualCrop’) :- neuron_140(X). ab4(X) :- neuron_53(X), neuron_140(X). 
+
+DTD (Textures) {striped, dotted, cracked, woven, grid}: 
+
+label(X,’striped’) :- neuron_72(X), not ab5(X). label(X,’dotted’) :- neuron_198(X). label(X,’cracked’) :- not neuron_72(X), neuron_35(X). label(X,’woven’) :- neuron_60(X), neuron_198(X). label(X,’grid’) :- not neuron_35(X), neuron_88(X). ab5(X) :- neuron_60(X), neuron_88(X). 
+
+Sun397 {bedroom, kitchen, office, forest_road, beach}: 
+
+label(X,’bedroom’) :- neuron_14(X), not neuron_83(X). label(X,’kitchen’) :- neuron_41(X). label(X,’office’) :- neuron_122(X), not ab6(X). label(X,’forest_road’) :- not neuron_18(X), neuron_97(X). label(X,’beach’) :- neuron_206(X). ab6(X) :- neuron_97(X), neuron_18(X). 
+
+Food101 {pizza, sushi, steak, salad, burger}: 
+
+label(X,’pizza’) :- neuron_55(X), not ab7(X). label(X,’sushi’) :- neuron_129(X). label(X,’steak’) :- not neuron_55(X), neuron_74(X). label(X,’salad’) :- neuron_162(X), neuron_129(X). label(X,’burger’) :- not neuron_74(X), neuron_9(X). ab7(X) :- neuron_162(X), neuron_9(X). 
+
+OxfordPet {Dog, Cat, Beagle, Persian, Labrador}: 
+
+label(X,’Dog’) :- neuron_123(X). label(X,’Dog’) :- not neuron_50(X), not neuron_61(X). label(X,’Cat’) :- neuron_88(X), not ab8(X). label(X,’Beagle’) :- neuron_123(X), neuron_31(X). label(X,’Persian’) :- not neuron_88(X), neuron_67(X). label(X,’Labrador’) :- neuron_123(X), not neuron_31(X). ab8(X) :- neuron_67(X), neuron_31(X).

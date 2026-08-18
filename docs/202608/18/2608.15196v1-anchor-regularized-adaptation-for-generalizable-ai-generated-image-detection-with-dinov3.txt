@@ -1,0 +1,2222 @@
+Anchor-Regularized Adaptation for Generalizable AI-Generated
+Image Detection with DINOv3
+Hyeongjun Choi
+Sungkyunkwan University
+Suwon, Republic of Korea
+junhjun@g.skku.edu
+Juhun Lee
+Sungkyunkwan University
+Suwon, Republic of Korea
+josejhlee@g.skku.edu
+Davide Cozzolino
+University of Naples Federico II
+Naples, Italy
+davide.cozzolino@unina.it
+Luisa Verdoliva
+University of Naples Federico II
+Naples, Italy
+verdoliv@unina.it
+Simon S. Woo∗
+Sungkyunkwan University
+Suwon, Republic of Korea
+swoo@g.skku.edu
+Abstract
+Recent works in AI-generated image detection have shown that
+careful training data alignment can improve generalization by re-
+moving spurious correlations. However, linear probes on frozen
+DINOv3 representations achieve remarkably strong performance
+even when trained on misaligned datasets. Motivated by this result,
+we analyze the underlying rationale and the limits of this gener-
+alization. We find that frozen DINOv3 performs well because its
+decisions rely on features that faithfully represent the space of
+authentic images. At the same time, its final layer is less effective
+at capturing the subtle pixel-artifact cues that can be emphasized
+by aligned training data. We further observe that naively mixing
+aligned and misaligned data during adaptation improves sensitivity
+to such cues but at the cost of distorting the pre-trained represen-
+tation, limiting generalization. To address this issue, we propose
+Anchor-Regularized Adaptation (ARA). We apply Low-Rank Adap-
+tation to capture pixel-level artifacts while leveraging a frozen an-
+chor classifier to avoid deviations from the original representation
+structure. This allows the model to exploit pixel-artifact cues with-
+out sacrificing generalization. Our method achieves state-of-the-art
+performance on nine diverse and challenging benchmarks, indicat-
+ing that ARA enables complementary supervision from misaligned
+and aligned data for more effective detection.
+CCS Concepts
+• Computing methodologies →Computer vision tasks.
+Keywords
+AI-Generated Image Detection; Dataset Alignment; Generalization
+1
+Introduction
+The rapid advancement of generative models has made it increas-
+ingly difficult to distinguish real images from synthetic fakes. This
+trend raises serious societal concerns, including misinformation
+and digital fraud [3, 4, 12, 21]. Consequently, AI-generated im-
+age (AIGI) detection has emerged as a critical research problem.
+In response, the focus of AIGI detection has increasingly shifted
+beyond controlled benchmarks toward robustness on in-the-wild
+data [5, 9, 14, 19, 40].
+∗Also with Secure Machines Lab Inc.
+Recent research in AIGI detection has advanced along two dis-
+tinct trajectories. The first trajectory addresses the inherent vul-
+nerabilities of training data. Conventional training datasets can
+contain statistical discrepancies between real and fake samples,
+such as content, format, or resolution, leading models to rely on
+spurious shortcuts rather than forensic traces [13, 39, 46]. This
+has led to a widespread effort toward dataset alignment, primarily
+through VAE or diffusion-based reconstructions [6, 8, 14, 35]. The
+second trajectory relies on the scale and capacity of modern back-
+bones. While leveraging foundation models, particularly CLIP [31],
+is an established practice in the field [9, 23, 28, 36, 41], the recent
+emergence of DINOv3 [33] marks a notable shift. This refocuses
+attention on inherent backbone capabilities by showing that sim-
+ple linear probing over a frozen DINOv3 achieves state-of-the-art
+results on challenging benchmarks [16, 44]. In particular, Zhou et
+al. [44] achieve their breakthrough using GenImage [46], a dataset
+explicitly identified as misaligned in prior work [13]. Frozen DI-
+NOv3 detectors trained on such misaligned data outperform several
+carefully aligned frameworks. This observation calls into question
+the prevailing belief that dataset misalignment is the primary bot-
+tleneck for real-world generalization. It therefore raises a critical
+question: does data alignment still matter in the era of powerful
+vision foundation models?
+To answer this question, we systematically investigate the behav-
+ior of DINOv3-based detectors across misaligned and aligned data.
+Our analysis reveals two critical phenomena. First, we find that the
+remarkable generalization of frozen DINOv3 detectors is closely
+tied to a robust real-centric manifold. Pre-trained on hundreds of
+millions of natural images, DINOv3 leverages a well-defined rep-
+resentation of real images. Even with only 1% of the fake training
+samples retained, the model remains highly robust by identifying
+deviations from the well-defined real distribution. Second, we iden-
+tify a structural limitation termed the semantic bottleneck. When
+trained on strictly aligned data containing only subtle pixel-artifacts,
+a linear probe on the final layer features of frozen DINOv3 fails
+to fully capture these cues. Our layer-wise analysis shows that
+intermediate layers more effectively capture these low-level cues,
+but these cues are progressively suppressed during the semantic
+abstraction toward the final layer. This indicates that while DINOv3
+possesses the representational capacity to detect subtle forgeries,
+its semantically oriented architecture reduces the salience of cues
+needed to detect low-level artifacts (Figure 1(a)).
+arXiv:2608.15196v1  [cs.CV]  15 Aug 2026
+
+
+Hyeongjun Choi, Juhun Lee, Davide Cozzolino, Luisa Verdoliva, and Simon S. Woo
+Real-Centric Manifold
+Semantic Bottleneck
+(a) Frozen DINOv3
+Real
+Aligned Fake
+Misaligned Fake
+Anisotropic Collapse
+Loss of Generalization
+(b) Standard LoRA
+Preserved Manifold
+Artifacts Internalized
+(c) ARA (Ours)
+Figure 1: Conceptual illustration of the structural trade-off in adapting DINOv3 for AIGI detection. (a) Frozen DINOv3 provides
+a strong authenticity prior but struggles with fakes containing only subtle pixel-artifacts. (b) Naive fine-tuning can absorb such
+cues while distorting the pre-trained feature structure, degrading generalization. (c) ARA incorporates new artifact cues while
+better preserving the pre-trained structure.
+These findings reveal an architectural dilemma for universal de-
+tection across the forgery spectrum, from macroscopic semantic er-
+rors to microscopic pixel-artifacts. A naive attempt to overcome the
+semantic bottleneck involves decision fusion, which averages predic-
+tions of intermediate and final layers. While this approach demon-
+strates that intermediate features hold complementary cues, simple
+decision-level integration does not fully incorporate these subtle
+artifacts into the model’s core representation. Conversely, direct
+adaptation of the DINOv3 backbone through Low-Rank Adaptation
+(LoRA) [15] allows the model to capture subtle artifacts. However,
+this often perturbs the pre-trained feature space, weakening the real-
+side structure that supports in-the-wild generalization (Figure 1(b)).
+Thus, the challenge lies in capturing forgery artifacts without dis-
+rupting the feature geometry underlying robust generalization. To
+address this trade-off, we propose Anchor-Regularized Adap-
+tation (ARA). ARA introduces a frozen linear anchor classifier
+trained on the original DINOv3 representation to regularize back-
+bone adaptation. During fine-tuning, this anchor encourages the
+adapted features to remain compatible with the real-side structure
+learned before adaptation, thereby limiting destructive representa-
+tional drift. As a result, the model can encode subtle pixel-artifacts
+while preserving the feature geometry that underlies robust gen-
+eralization, rather than increasing anisotropy in the feature space
+(Figure 1(c)). Overall, we make the following contributions:
+• We characterize the real-centric manifold as an inherent strength
+of DINOv3-based detectors and the semantic bottleneck as a
+critical structural weakness through a systematic analysis under
+misaligned and aligned data configurations.
+• We identify the structural trade-off between capturing pixel-
+artifacts and preserving the feature space, and provide quanti-
+tative evidence that naive adaptation distorts the pre-trained
+geometry and limits generalization.
+• We propose ARA, a regularization-based framework that achieves
+state-of-the-art performance across four standard benchmarks
+and five challenging in-the-wild datasets.
+2
+Related Work
+2.1
+AIGI Detection and Dataset Alignment
+AI-generated image (AIGI) detection research has primarily focused
+on achieving robust generalization to unseen generators. Early stud-
+ies rely on conventional benchmark datasets [39, 46] and focus on
+exploiting traces left by the generation process, such as low-level
+artifacts [10, 38] or frequency inconsistencies [30, 37]. However,
+Grommelt et al. [13] expose a critical flaw in these convention-
+ally used training datasets, revealing that misalignment between
+real and fake data forces models to learn spurious cues, ultimately
+causing generalization failures in the wild. This finding leads to a
+growing line of work on dataset alignment. To compel models to
+learn forensic artifacts rather than dataset biases, subsequent stud-
+ies attempt to perfectly match resolution, semantic content, and
+compression characteristics. Representative works range from VAE
+reconstruction in Aligned [35] to advanced pipelines in DRCT [6],
+B-Free [14], and DDA [8]. Building on these efforts, recent works
+actively integrate aligned data to model real image distributions us-
+ing them as hard samples [25], enhance the perception capabilities
+of MLLMs [20], or construct expert branches for pixel-artifacts [7].
+Consequently, meticulously controlled aligned datasets now play a
+central role in the design of recent detection methodologies.
+2.2
+Leveraging Vision Foundation Models
+In parallel with this trend, numerous studies rely on pre-trained
+Vision Foundation Models (VFMs). Ojha et al. [28] pioneer this ap-
+proach by achieving high generalization performance through sim-
+ple linear probing on CLIP [31]. Subsequent research further lever-
+ages CLIP in AIGI detection [9] by adapting it to specific forgery
+cues [23, 41], injecting categorical concepts [36], supplementing
+CNN-based models with high-level semantic cues [40], or lever-
+aging representations from intermediate encoder blocks [17]. Fur-
+thermore, even dataset alignment studies [8, 14] adopt DINO [29]
+as their backbone, highlighting the growing importance of VFMs
+
+
+Anchor-Regularized Adaptation for Generalizable AI-Generated Image Detection with DINOv3
+(a) Real-Centric Manifold
+(b) Semantic Bottleneck
+(c) Decision Fusion Utility
+Figure 2: Empirical analysis of frozen DINOv3. (a) Reducing the amount of real training data substantially degrades performance,
+confirming reliance on a real-centric manifold. (b) Layer-wise probing on aligned data reveals a semantic bottleneck at the final
+layer. (c) Fusing predictions from intermediate experts compensates for this bottleneck, improving in-the-wild generalization.
+in detector design. Within this context, the recent emergence of
+DINOv3 [33] has substantially advanced detection performance.
+Zhou et al. [44] demonstrate that simple linear probing on DI-
+NOv3 surpasses prior state-of-the-art techniques. Concurrently,
+Huang et al. [16] show robust cross-generator generalization even
+with limited training samples. However, both studies report strong
+performance while relying on datasets previously identified as bi-
+ased, such as GenImage [46] and ForenSynth [39]. This outcome
+calls into question the narrative around dataset alignment. Conse-
+quently, these works primarily attribute detector performance to
+the backbone, emphasizing factors such as data exposure during pre-
+training [44] or a structural focus on low-level global features [16].
+However, these studies leave open how specific data alignment
+affects the representation space of DINOv3. To bridge this gap,
+our work shifts the focus from model architecture alone to the
+interaction between data alignment and DINOv3 representations.
+3
+Preliminary Analysis
+In this section, we conduct an in-depth analysis of DINOv3-based
+detectors to understand their behavior across two distinct data
+configurations: (1) a misaligned environment using the standard
+GenImage [46] benchmark, and (2) an aligned environment where
+pixel-level cues are rigorously controlled. While aligned datasets
+from prior studies (e.g., DDA [8], B-Free [14]) are valuable diagnos-
+tic tools, they often utilize real data from domains different from
+those in GenImage. This discrepancy potentially introduces domain
+shift as a confounding variable. To isolate the pure effect of dataset
+alignment on the feature space, we construct a domain-consistent
+AlignedGenImage dataset. We use the real samples from GenImage
+(i.e., ImageNet [11]) as the source for VAE-based reconstruction,
+ensuring a controlled comparison (see Section 5.1 for details).
+3.1
+Real-Centric Manifold
+We adopt the DINOv3-7B linear probing detector trained on Gen-
+Image [44] as our strong baseline. To identify the underlying mech-
+anism behind its robust generalization, we conduct an asymmetric
+data pruning experiment on the GenImage training set. Specifi-
+cally, we independently scale down the volume of either real or
+fake images while keeping the opposite category fixed at its full
+scale. The results reveal a stark asymmetry in how the detector
+depends on real and fake training samples. As shown in Figure 2(a),
+the average detection performance on in-the-wild datasets plum-
+mets from 93.37% to 53.18% when the proportion of real images is
+reduced to 1%, indicating that the model loses a stable reference
+for authenticity. Conversely, the performance remains remarkably
+stable at 90.13% even when the proportion of fake images is reduced
+to the same 1%. This empirical evidence suggests that real images
+do not merely represent one side of a binary classification. Rather,
+they anchor the model’s notion of natural image structure. Because
+DINOv3 is pre-trained on hundreds of millions of natural images,
+even minimal exposure to fake images (1%) appears sufficient for
+the model to distinguish departures from this pre-trained notion of
+realness. We term this phenomenon the real-centric manifold, and
+view it as a key factor behind the baseline’s robust generalization.
+3.2
+Semantic Bottleneck and Pixel-Artifacts
+Despite its generalization power, the baseline model exhibits a
+clear limitation in aligned settings, where detection performance
+significantly degrades for fake images containing only subtle pixel-
+artifacts [44]. To examine the degree of this limitation, we analyze
+whether the feature space of frozen DINOv3 can meaningfully
+capture fine-grained pixel-artifacts. Using our AlignedGenImage
+dataset, let 𝑧𝐿= Φ𝐿(𝑥) denote the feature vector extracted from
+the 𝐿-th layer of the frozen backbone Φ for an input image 𝑥. To
+evaluate the accessibility of pixel-artifact cues across layers, we
+independently optimize a linear head ℎ𝐿on these features 𝑧𝐿for
+𝐿∈{10, 20, 30, 40}. As shown in Figure 2(b), pixel-artifact informa-
+tion is strongest in the intermediate layers and markedly weaker at
+the final layer. Specifically, the convergence performance of linear
+heads follows the order: ℎ30 (95.85%) > ℎ20 (95.56%) > ℎ40 (89.04%) >
+ℎ10 (84.23%). This pattern indicates that while intermediate process-
+ing captures subtle pixel-artifacts, their salience is progressively
+
+
+Hyeongjun Choi, Juhun Lee, Davide Cozzolino, Luisa Verdoliva, and Simon S. Woo
+Figure 3: Explained variance ratios of the top 10 principal
+components computed from real features. The increasing
+𝑃𝐶1/𝑃𝐶2 ratio in Cases 2 and 3 indicates stronger anisotropic
+distortion under backbone adaptation.
+reduced during deeper semantic abstraction. We refer to this struc-
+tural limitation as the semantic bottleneck of DINOv3.
+Building on this observation, we examine whether these pixel-
+artifacts can provide complementary cues for the baseline’s blind
+spots. For each layer 𝐿∈{10, 20, 30, 40}, we treat the linear head
+optimized on AlignedGenImage as an expert head, ℎ𝐿. We perform
+decision fusion by averaging the probabilities from the baseline head
+ℎbaseline (trained on standard GenImage) and the respective expert
+head ℎ𝐿as follows:
+𝑃fusion = 1
+2 (𝜎(ℎbaseline(𝑧40)) + 𝜎(ℎ𝐿(𝑧𝐿))) ,
+(1)
+where 𝜎denotes the softmax function. As shown in Figure 2(c),
+explicitly integrating predictions from heads that capture subtle
+pixel-level cues improves in-the-wild detection, peaking at 94.38%
+(up from 93.37%) when utilizing ℎ30. Notably, the improvement
+tracks the convergence of the expert head, following the order: ℎ30
+(+1.01%) > ℎ20 (+0.65%) > ℎ40 (+0.03%) > ℎ10 (-1.04%). This consistent
+pattern, also observed on DDA and B-Free, supports the view that
+fine-grained pixel-artifacts provide complementary cues for robust
+in-the-wild detection (see Supplementary Material A.1).
+4
+Proposed Method
+4.1
+Motivation
+The findings in Sections 3.1 and 3.2 suggest a critical dilemma
+in detector design. While frozen DINOv3 provides a robust real-
+centric manifold, its semantic bottleneck limits the detection of subtle
+forgery traces. To overcome this limitation, the model should better
+encode fine-grained pixel-artifacts in the final layer. However, be-
+cause the frozen backbone lacks the capacity to exploit such cues at
+the final layer, doing so requires backbone adaptation. We therefore
+introduce LoRA [15] and train it on a hybrid composition that
+Table 1: Quantitative analysis of feature space geometry.
+Method
+Manifold Integrity (↓)
+Fisher Ratio (↑)
+𝑃𝐶1/𝑃𝐶2
+Drift
+Dispersion
+𝐹real,original fake
+𝐹real,aligned fake
+𝐹original fake,aligned fake
+Case 1
+1.19
+0.00
+8.85
+21.36
+5.53
+17.03
+Case 2
+2.02
+5.24
+8.74
+107.71
+5.98
+15.21
+Case 3
+3.11
+2.83
+9.60
+43.88
+9.79
+11.38
+ARA (Ours)
+1.40
+0.38
+8.66
+49.41
+8.06
+12.41
+Table 2: Comparison of balanced accuracy (%) on diverse
+benchmarks.
+Method
+AIGC
+Detect
+AIGI-
+Holmes
+AIGI-
+Now
+Synth
+buster
+In-the-
+Wild
+Avg.
+Case 1
+93.4
+97.0
+85.8
+94.9
+93.4
+92.9
+Case 2
+94.9
+97.0
+74.5
+98.3
+92.7
+91.5
+Case 3
+96.3
+96.8
+80.7
+96.2
+92.7
+92.5
+ARA (Ours)
+98.5
+98.2
+87.1
+98.5
+96.9
+95.8
+pairs the original real images with a mixture of 50% standard Gen-
+Image fakes and 50% AlignedGenImage fakes. This setup allows
+the model to incorporate the hybrid forgery spectrum into a shared
+latent space. The key question is therefore whether this adaptation
+process preserves the geometric structure of real embeddings iden-
+tified in Section 3.1. In our setting, a more isotropic distribution
+of real features is preferable because it preserves variation across
+multiple directions rather than concentrating it along a narrow
+set of dominant directions [1]. However, if adaptation is driven
+too strongly toward separating real images from the full hybrid
+forgery spectrum, it can overwrite the pre-trained real-side struc-
+ture that supports robust discrimination between real and original
+fake images. As the feature space becomes increasingly specialized
+for this new objective, the real distribution may lose its original
+geometry and become more anisotropically distorted, weakening
+generalization. To examine this, we compare the representation
+space across three configurations: (Case 1) the frozen baseline, (Case
+2) LoRA fine-tuning on GenImage, and (Case 3) LoRA fine-tuning
+on hybrid data. We characterize the structural changes using Princi-
+pal Component Analysis (PCA) alongside three geometric metrics.
+We define a set of categories C = {real, original fake, aligned fake},
+where each category 𝑐∈C corresponds to a feature subset Z𝑐. Let
+𝜇(𝑘)
+𝑐
+, 𝐷(𝑘)
+𝑐
+, and Σ(𝑘)
+𝑐
+denote the centroid, intra-class dispersion, and
+covariance matrix of category 𝑐in Case 𝑘, respectively. For two
+categories 𝑐𝑖and 𝑐𝑗, we further define the pooled covariance as
+˜Σ(𝑘)
+𝑐𝑖,𝑐𝑗= Σ(𝑘)
+𝑐𝑖
++ Σ(𝑘)
+𝑐𝑗. Our geometric metrics are defined as follows:
+• Relative Drift (Δ𝜇(𝑘)
+real = ∥𝜇(𝑘)
+real −𝜇(1)
+real∥2) measures the ℓ2 dis-
+placement of the real feature centroid relative to the frozen
+baseline (Case 1).
+• Intra-Class Dispersion (𝐷(𝑘)
+𝑐
+=
+1
+𝑁𝑐
+Í
+𝑧𝑖∈Z𝑐∥𝑧𝑖−𝜇(𝑘)
+𝑐
+∥2) quan-
+tifies the average ℓ2 distance of samples from their category
+centroid to assess the tightness of each distribution.
+• Fisher Ratio (𝐹(𝑘)
+𝑐𝑖,𝑐𝑗=
+√︃
+(𝜇(𝑘)
+𝑐𝑖
+−𝜇(𝑘)
+𝑐𝑗)⊤( ˜Σ(𝑘)
+𝑐𝑖,𝑐𝑗)−1(𝜇(𝑘)
+𝑐𝑖
+−𝜇(𝑘)
+𝑐𝑗))
+measures class separation between two categories 𝑐𝑖,𝑐𝑗∈C
+while accounting for their within-class covariance. We report
+the square root form for readability.
+
+
+Anchor-Regularized Adaptation for Generalizable AI-Generated Image Detection with DINOv3
+Stage 1: Construction of the Real-Centric Anchor
+Anchor Construction
+Real
+Misaligned Fake
+Misaligned Dataset
+Stage 2: Regularized Adaptation
+Manifold Preservation
+Real
+Misaligned Fake Aligned Fake
+Hybrid Dataset
+Artifacts Internalization
+Figure 4: Overview of the Anchor-Regularized Adaptation (ARA) framework. In Stage 1, a linear anchor head ℎanchor is trained
+on frozen DINOv3 final layer features using GenImage and then fixed as a geometric reference. In Stage 2, the DINOv3 backbone
+is adapted with LoRA on the hybrid dataset, where standard GenImage fakes and AlignedGenImage fakes are both treated
+as the binary fake class. The resulting features are supervised by both a main classification loss Lmain through ℎmain and an
+anchor regularization loss Lanchor through the frozen head ℎanchor.
+Additional details on the PCA protocol and geometric metric com-
+putation are provided in Supplementary Material A.2.
+In our subsequent analysis, we analyze the PCA eigenvalue dis-
+tributions, the relative drift and dispersion of real features, and the
+Fisher ratios between category pairs. This allows us to evaluate
+how backbone adaptation alters the stability and cohesion of the
+real-side representation, as shown in Figure 3 and Table 1:
+Case 1: Geometric Baseline. Serving as our geometric baseline,
+Case 1 exhibits a relatively isotropic space, as indicated by a low
+𝑃𝐶1/𝑃𝐶2 ratio of 1.19. However, this structural integrity coincides
+with limited sensitivity to fine-grained pixel-artifacts, as reflected
+by the low Fisher ratio 𝐹(1)
+real,aligned fake = 5.53.
+Case 2: Initial Adaptation. The introduction of LoRA within the
+GenImage environment already modifies the representation struc-
+ture. 𝑃𝐶1 increases by approximately 2.4×, causing the 𝑃𝐶1/𝑃𝐶2
+ratio to rise to 2.02. This shift suggests that the manifold begins to
+stretch along a single dominant axis. Furthermore, a real drift of
+5.24 indicates that even simple fine-tuning can substantially alter
+the original pre-trained coordinate system.
+Case 3: Anisotropic Collapse. The most pronounced structural
+distortion appears under LoRA adaptation on the hybrid data. Al-
+though the model better captures pixel-artifacts, as reflected by the
+increased Fisher ratio 𝐹(3)
+real,aligned fake = 9.79, this gain is accompa-
+nied by substantial geometric distortion. The 𝑃𝐶1/𝑃𝐶2 ratio rises
+to 3.11, indicating that the representation is becoming increasingly
+concentrated along a narrow set of dominant directions. At the
+same time, the dispersion of real features increases to 9.60, suggest-
+ing reduced cohesion of the real-side structure. We refer to this
+combination of improved separation of aligned fakes and distorted
+real-side geometry as anisotropic collapse.
+These cases show that naive adaptation progressively distorts the
+real-side geometry, with drops in downstream performance across
+five benchmarks (Table 2). Case 2 already reduces the average accu-
+racy from 92.9% to 91.5%, including a drop of 11.3 percentage points
+on AIGI-Now, and even hybrid training in Case 3 fails to recover
+the frozen baseline on the most challenging in-the-wild datasets.
+This pattern indicates that unconstrained backbone adaptation can
+over-specialize the representation toward training-specific artifacts
+and impair stability in out-of-distribution environments.
+Across the analysis, three observations emerge: (1) the general-
+ization of DINOv3-based detectors trained on misaligned data is
+strongly tied to a robust real-centric manifold, (2) a semantic bottle-
+neck suppresses subtle pixel-artifact cues at the final layer, despite
+their potential to complement the model’s blind spots, and (3) di-
+rect backbone adaptation can induce anisotropic collapse, which
+is associated with weaker generalization. This highlights the core
+challenge of improving forensic sensitivity without destabilizing
+the geometry that supports generalization. Consequently, adapta-
+tion requires a geometric constraint that accounts for subtle forgery
+artifacts while limiting distortion of the real-centric manifold.
+4.2
+Anchor-Regularized Adaptation
+To address this challenge, we propose Anchor-Regularized Adap-
+tation (ARA). ARA is a simple yet effective learning framework
+that mitigates anisotropic collapse by using the real-centric mani-
+fold as an explicit regularization target during adaptation. Specifi-
+cally, it constrains backbone fine-tuning with a frozen anchor classi-
+fier derived from the original DINOv3 representation. An overview
+of the framework is illustrated in Figure 4.
+Stage 1: Construction of the Real-Centric Anchor. The first
+stage aims to construct a frozen anchor classifier grounded in the
+real-centric manifold of DINOv3 features. To this end, we use the
+misaligned GenImage dataset to optimize a linear head ℎanchor on
+top of the final layer features of DINOv3. As established in Sec-
+tion 3.1, this classifier is trained on a representation that already
+exhibits a strong real-centric structure, rather than relying solely on
+dataset-specific forgery patterns. Once optimized, the parameters
+of ℎanchor remain fixed, allowing the frozen classifier to serve as
+a geometric anchor during the subsequent fine-tuning stage. This
+anchor constrains representational drift away from the real-centric
+manifold established by the frozen model.
+
+
+Hyeongjun Choi, Juhun Lee, Davide Cozzolino, Luisa Verdoliva, and Simon S. Woo
+Table 3: Comparison of balanced accuracy (%) on AIGCDetect.
+Method
+ADM
+DALLE2 GLIDE Midjour. VQDM
+Big-
+GAN
+Cycle-
+GAN
+Gau-
+GAN
+Pro-
+GAN
+SDXL
+SD1.4
+SD1.5
+Star-
+GAN
+Style-
+GAN
+Style-
+GAN2
+WFR
+Wukong
+Avg.
+NPR [38]
+43.8
+20.0
+41.2
+53.4
+48.4
+53.1
+76.6
+42.2
+58.7
+59.6
+55.1
+55.0
+67.4
+57.9
+54.6
+58.8
+57.4
+53.1
+UnivFD [28]
+62.5
+50.0
+61.3
+55.1
+76.9
+87.5
+96.9
+98.8
+99.4
+58.2
+55.6
+55.7
+95.1
+80.0
+69.4
+69.2
+61.1
+72.5
+FatFormer [23]
+80.2
+68.5
+91.1
+54.4
+88.0
+99.2
+99.5
+99.1
+98.5
+71.7
+67.5
+67.2
+99.4
+98.0
+98.8
+88.3
+75.6
+85.0
+SAFE [18]
+49.5
+49.5
+53.0
+49.0
+50.2
+52.2
+51.9
+50.0
+50.0
+49.8
+49.7
+49.8
+50.1
+50.0
+50.0
+49.8
+50.3
+50.3
+C2P-CLIP [36]
+71.6
+52.3
+73.5
+56.6
+73.7
+98.4
+96.8
+98.8
+99.3
+62.3
+77.5
+76.9
+99.6
+93.1
+79.4
+94.8
+79.4
+81.4
+AIDE [40]
+52.9
+51.1
+60.2
+49.8
+69.3
+70.1
+93.6
+60.6
+89.0
+49.6
+51.6
+51.0
+72.1
+66.5
+59.0
+80.6
+54.5
+63.6
+DRCT [6]
+53.6
+83.0
+61.6
+97.7
+64.5
+48.8
+48.8
+49.2
+50.2
+96.8
+98.6
+98.5
+43.2
+48.5
+49.4
+50.0
+98.0
+67.1
+B-Free [14]
+76.4
+74.9
+70.8
+94.3
+89.2
+91.5
+66.7
+96.1
+95.4
+99.6
+99.4
+99.3
+81.0
+75.4
+71.0
+58.9
+99.4
+84.7
+DDA [8]
+90.7
+93.9
+88.8
+93.9
+67.8
+81.1
+64.8
+81.6
+73.1
+98.0
+96.7
+96.7
+67.9
+67.8
+76.7
+49.8
+96.8
+81.5
+REM [25]
+98.1
+99.3
+98.6
+96.5
+99.3
+99.4
+98.1
+99.8
+97.4
+99.8
+99.3
+99.5
+90.2
+95.1
+96.3
+98.4
+99.5
+97.9
+MIRROR [24]
+75.6
+88.9
+93.1
+92.5
+95.9
+97.2
+73.3
+95.8
+96.8
+99.8
+99.9
+99.8
+87.6
+91.9
+91.1
+78.9
+99.8
+91.6
+ARA (Ours)
+99.3
+99.8
+98.3
+99.0
+99.7
+99.4
+94.0
+96.0
+99.6
+99.8
+99.7
+97.2
+96.3
+96.8
+99.7
+99.4
+99.7
+98.5
+Stage 2: Regularized Adaptation. The second stage involves joint
+optimization aimed at capturing pixel-artifacts while preserving
+the real-centric manifold. Training occurs on the hybrid dataset de-
+signed in Section 4.1, where standard GenImage fakes and Aligned-
+GenImage fakes share the same binary fake label. To account for
+pixel-artifacts, we introduce LoRA to the DINOv3 backbone. For an
+input image 𝑥, let 𝑧= ΦLoRA(𝑥) denote the feature vector extracted
+from the final layer. This vector is passed to two independent clas-
+sification heads to compute the following losses:
+(1) Main Objective (Lmain): The feature vector 𝑧passes through
+a newly initialized main linear head ℎmain, where the cross-
+entropy loss Lmain drives the model to capture the wide spec-
+trum of forgery artifacts in the hybrid dataset.
+(2) Geometric Regularizer (Lanchor): Simultaneously, 𝑧passes
+through the frozen anchor ℎanchor. The resulting cross-entropy
+loss Lanchor regularizes adaptation toward the structure defined
+by the frozen anchor over real and original fake samples. In
+doing so, it helps preserve the feature geometry that supports
+generalization, while encouraging aligned fake samples to be
+incorporated into the existing fake distribution.
+The final loss function is defined as:
+Ltotal = Lmain + 𝜆Lanchor,
+(2)
+where the hyperparameter 𝜆balances forgery sensitivity and man-
+ifold preservation. During inference, we leverage the fine-tuned
+backbone and the main head ℎmain to predict image authenticity.
+While naive LoRA fine-tuning on the hybrid data can capture
+new forgery cues, it also induces the anisotropic collapse identified
+as Case 3 in Section 4.1. In contrast, ARA counteracts this geomet-
+ric distortion through the Lanchor term. As shown in Figure 3 and
+Table 1, ARA preserves a more stable feature geometry than Case 3
+while still retaining sensitivity to subtle forgery cues. This geomet-
+ric advantage is reflected in the substantially stronger in-the-wild
+results of ARA in Table 2.
+5
+Experiments
+5.1
+Experimental Setup
+Datasets. We evaluate performance on nine different datasets,
+comprising four standard benchmarks (AIGCDetect [42], Synth-
+buster [2], AIGI-Holmes [45], and AIGI-Now [7]) and five in-the-
+wild benchmarks (Chameleon [40], WildRF [5], SynthWildX [9],
+Table 4: Comparison of balanced accuracy (%) on Synthbuster.
+Method
+DALLE2 DALLE3 Firefly
+GLIDE Midjour.
+SD1.3
+SD1.4
+SD2
+SDXL
+Avg.
+NPR [38]
+51.1
+49.3
+46.5
+48.5
+52.8
+51.4
+51.8
+46.0
+52.8
+50.0
+UnivFD [28]
+83.5
+47.4
+89.9
+53.3
+52.5
+70.4
+69.9
+75.7
+68.0
+67.8
+FatFormer [23]
+59.4
+39.5
+60.3
+72.7
+44.4
+53.7
+54.0
+52.3
+69.1
+56.2
+SAFE [18]
+58.0
+9.9
+10.3
+52.2
+56.7
+59.4
+59.1
+53.0
+59.5
+46.5
+C2P-CLIP [36]
+55.6
+63.2
+59.5
+86.7
+52.9
+75.2
+76.7
+69.2
+77.7
+68.5
+AIDE [40]
+34.9
+33.7
+24.8
+65.0
+57.5
+74.1
+73.7
+53.2
+68.4
+53.9
+DRCT [6]
+3.9
+36.8
+13.5
+21.6
+98.9
+94.9
+93.8
+99.9
+96.4
+62.2
+B-Free [14]
+89.9
+93.7
+99.2
+45.8
+98.8
+100.0
+99.8
+99.5
+99.9
+91.8
+DDA [8]
+80.7
+92.5
+95.3
+84.3
+100.0
+99.5
+99.5
+99.8
+100.0
+94.6
+MIRROR [24]
+98.0
+99.9
+91.6
+96.5
+98.3
+99.8
+100.0
+99.2
+99.5
+98.1
+ARA (Ours)
+98.2
+99.3
+92.8
+99.3
+98.7
+99.6
+99.6
+99.3
+99.6
+98.5
+AIGIBench [19], and B-Free-Viral [14]). Standard benchmarks cover
+a broad range of generative model families, including GANs, diffu-
+sion models, and autoregressive models, and are used to evaluate
+cross-generator generalization. In contrast, in-the-wild benchmarks
+assess robustness under unconstrained real-world conditions. They
+consist of internet-sourced images with often-unknown genera-
+tion and post-processing histories, providing challenging out-of-
+distribution evaluations under diverse real-world degradations.
+Evaluation Protocol. We report balanced accuracy following the
+convention adopted in most prior AIGI detection studies [8, 14, 44].
+For the in-the-wild benchmarks, AIGCDetect, and Synthbuster, we
+adopt the evaluation protocol of MIRROR [24]. Our comparison
+includes multiple general detectors (NPR [38], UnivFD [28], Fat-
+Former [23], SAFE [18], C2P-CLIP [36], and AIDE [40]), dataset
+alignment approaches (DRCT [6], B-Free [14], and DDA [8]), and re-
+cent methods such as REM [25] and MIRROR [24]. To avoid inconsis-
+tencies from unofficial reproductions, we rely on benchmark results
+measured with official checkpoints whenever such results are avail-
+able in the literature. Specifically, we source general detector per-
+formances from REM [25], supplementing the omitted B-Free-Viral
+results with data from DDA [8]. We draw results for the alignment
+approaches directly from MIRROR [24]. Additionally, we evaluate
+performance on the recently published AIGI-Holmes and AIGI-Now
+benchmarks by following the evaluation protocol of our primary
+baseline [44]. For these datasets, we compare our method against a
+broader suite of detectors, including CNNSpot [39], FreqNet [37],
+Gram-Net [26], NPR [38], UnivFD [28], SAFE [18], LaDeDa [5],
+Effort [41], DDA [8], OMAT [43], and AIDE [40].
+
+
+Anchor-Regularized Adaptation for Generalizable AI-Generated Image Detection with DINOv3
+Table 5: Comparison of balanced accuracy (%) on AIGI-Holmes.
+Method
+FLUX
+Infinity
+Janus
+Janus-
+Pro-1B
+Janus-
+Pro-7B
+LlamaGen
+PixArt-XL
+SD3.5-L
+Show-o
+VAR
+Avg.
+CNNSpot [39]
+62.6
+58.9
+50.8
+53.1
+52.2
+60.4
+66.8
+56.8
+60.8
+50.4
+57.3
+FreqNet [37]
+89.4
+92.4
+44.3
+43.9
+43.3
+87.5
+88.5
+89.4
+91.0
+68.8
+73.9
+Gram-Net [26]
+69.6
+60.4
+49.1
+49.1
+49.1
+62.7
+62.7
+70.1
+77.1
+55.7
+60.6
+NPR [38]
+96.8
+98.3
+49.5
+49.5
+49.5
+94.7
+89.9
+93.7
+98.8
+73.0
+79.4
+LaDeDa [5]
+68.2
+66.4
+49.8
+49.7
+49.7
+81.0
+64.1
+69.5
+75.5
+72.4
+64.6
+UnivFD [28]
+86.8
+89.8
+57.5
+67.4
+57.5
+91.5
+92.5
+89.8
+91.1
+59.7
+78.4
+SAFE [18]
+93.2
+96.5
+48.2
+48.2
+48.3
+91.3
+89.6
+94.0
+96.2
+91.1
+79.7
+Effort [41]
+79.4
+80.4
+48.3
+65.0
+56.9
+79.8
+80.4
+76.5
+79.3
+76.4
+72.2
+DDA [8]
+97.2
+98.9
+98.5
+99.3
+98.7
+99.3
+99.4
+97.0
+94.8
+80.4
+96.4
+OMAT [43]
+94.7
+95.5
+65.1
+75.6
+64.1
+96.7
+96.9
+95.7
+96.9
+95.9
+87.7
+AIDE [40]
+94.4
+98.7
+91.2
+98.9
+97.8
+99.4
+98.6
+99.4
+98.0
+93.6
+97.0
+ARA (Ours)
+91.0
+99.7
+99.8
+99.6
+99.8
+99.7
+99.8
+93.5
+99.6
+99.7
+98.2
+Table 6: Comparison of balanced accuracy (%) on AIGI-Now.
+Method
+FLUX Dev
+FLUX Krea
+FLUX Kontext
+FLUX Pro
+GPT-4o
+Jimeng
+Keling
+Minimax
+Nano Banana
+Avg.
+Pix
+Sem
+Pix
+Sem
+Pix
+Sem
+Pix
+Sem
+Pix
+Sem
+Pix
+Sem
+Pix
+Sem
+Pix
+Sem
+Pix
+Sem
+CNNSpot [39]
+91.9
+50.0
+55.0
+50.0
+84.3
+50.2
+53.5
+50.0
+99.0
+50.1
+52.3
+50.0
+97.3
+50.1
+60.3
+50.4
+98.5
+49.9
+63.5
+FreqNet [37]
+87.5
+46.8
+69.7
+44.3
+76.9
+47.9
+49.2
+50.1
+92.3
+51.0
+45.9
+53.0
+92.2
+54.3
+82.4
+51.1
+90.7
+48.7
+63.0
+Gram-Net [26]
+93.3
+52.8
+66.7
+52.2
+86.4
+55.5
+60.8
+56.9
+76.3
+50.8
+50.8
+50.3
+95.5
+55.4
+71.7
+52.1
+90.5
+52.8
+65.0
+NPR [38]
+94.4
+50.0
+50.8
+50.0
+78.5
+50.2
+50.2
+50.2
+96.6
+50.0
+49.7
+50.1
+95.7
+50.0
+54.8
+50.0
+93.0
+50.0
+61.9
+LaDeDa [5]
+58.6
+49.8
+49.7
+49.7
+56.0
+50.2
+49.6
+49.5
+74.5
+49.9
+49.5
+49.7
+66.1
+50.1
+50.9
+50.2
+76.6
+50.5
+54.5
+UnivFD [28]
+54.2
+57.9
+51.4
+53.8
+49.2
+54.5
+51.6
+54.4
+52.9
+53.2
+47.5
+50.4
+63.1
+53.9
+50.1
+53.9
+50.1
+51.6
+53.0
+SAFE [18]
+90.3
+49.0
+53.2
+49.2
+83.1
+49.4
+52.1
+48.6
+97.7
+48.8
+50.9
+48.6
+96.0
+48.7
+59.0
+49.1
+96.1
+48.4
+62.1
+Effort [41]
+78.9
+67.9
+79.6
+66.9
+72.8
+61.0
+68.8
+69.0
+75.3
+58.0
+52.2
+55.5
+78.2
+67.7
+77.2
+68.7
+79.6
+65.7
+69.1
+DDA [8]
+91.6
+51.2
+59.4
+49.9
+82.7
+52.9
+76.6
+55.0
+92.3
+65.4
+87.0
+65.4
+96.1
+64.6
+83.3
+50.5
+81.6
+56.2
+70.1
+OMAT [43]
+91.1
+47.5
+64.9
+46.9
+84.7
+50.7
+59.1
+51.5
+74.4
+45.2
+49.1
+46.5
+93.6
+52.6
+69.9
+46.7
+89.1
+46.8
+61.7
+AIDE [40]
+99.1
+59.0
+50.4
+56.9
+97.9
+80.6
+60.1
+53.8
+74.7
+51.8
+63.9
+51.4
+98.2
+55.4
+51.4
+54.1
+98.9
+51.8
+67.2
+ARA (Ours)
+91.3
+95.8
+78.0
+84.5
+77.1
+84.9
+84.6
+94.7
+83.1
+97.0
+85.4
+95.8
+88.8
+94.6
+68.4
+82.7
+87.0
+94.5
+87.1
+AlignedGenImage Dataset Construction. The standard GenIm-
+age [46] exhibits spurious differences between real images (Ima-
+geNet [11]) and fake images (Stable Diffusion 1.4 [32]), such as varia-
+tions in resolution, file format, and compression [13]. To encourage
+the model to focus more directly on pixel-artifacts, we construct a
+strictly controlled AlignedGenImage dataset. Since existing aligned
+datasets from DDA [8] and B-Free [14] use MSCOCO [22] as their
+real source, generating a new ImageNet-based dataset is essential
+for domain-consistent analysis. Following the methodology of DDA,
+we construct aligned fake samples by passing ImageNet images
+through the f8-ft-MSE VAE [34] while preserving their original
+resolution under the required 8× spatial constraints. Furthermore,
+we eliminate shortcuts caused by compression rate discrepancies.
+We achieve this by matching the JPEG compression level of each
+reconstructed image to that of its corresponding ImageNet source
+image, using the metadata provided by [13].
+Dataset Configuration for Fair Analysis. While our primary
+datasets are GenImage and AlignedGenImage, we additionally con-
+sider prior aligned datasets (DDA and B-Free) in Section 3 to identify
+common trends across different data configurations. To ensure fair-
+ness, we establish a baseline scale of 51K real images, matching
+B-Free, the smallest dataset considered in our analysis. We sub-
+sample all datasets to contain exactly 51K real images and sample
+the same number of fake images. For aligned datasets, we sample
+fake images in direct pairs with their real counterparts, whereas we
+apply random sampling for the misaligned GenImage dataset. Con-
+sequently, all experimental datasets maintain a balanced ratio of
+51K real and 51K fake images. The hybrid dataset used to train our
+method contains 51K real GenImage samples and an equal number
+of fake samples, with the fake set composed of a 50/50 mixture of
+standard GenImage and AlignedGenImage.
+Implementation Details. We employ DINOv3-ViT-7B, the largest
+model in the DINOv3 family, as the backbone for all experiments. All
+training and inference are conducted on a single NVIDIA RTX PRO
+6000 Blackwell GPU. The training process consists of two stages.
+In Stage 1, we attach a linear head to the frozen DINOv3 backbone
+and train it on the standard GenImage dataset to construct the real-
+centric anchor. In Stage 2, we fine-tune the DINOv3 backbone using
+LoRA with a rank of 8 on the hybrid dataset. Both stages employ
+the AdamW [27] optimizer with a batch size of 128, with learning
+rates of 1e-3 for Stage 1 and 1e-4 for Stage 2. We train Stage 1 for
+5 epochs, which is sufficient for the anchor head to reach stable
+convergence. We train Stage 2 for 1 epoch, as LoRA adaptation
+converges rapidly in our setting and longer training does not yield
+meaningful gains. Following [44], we resize and center-crop all
+input images to 224×224 without any data augmentation.
+
+
+Hyeongjun Choi, Juhun Lee, Davide Cozzolino, Luisa Verdoliva, and Simon S. Woo
+Table 7: Comparison of balanced accuracy (%) on in-the-wild benchmarks.
+Method
+Chameleon
+SynthWildX
+WildRF
+AIGIBench
+B-Free
+Viral
+Avg.
+DALLE3
+Firefly
+Midjour.
+Facebook
+Reddit
+Twitter
+SocialRF
+CommunityAI
+NPR [38]
+59.9
+43.6
+61.3
+44.5
+78.1
+61.0
+51.3
+53.3
+55.1
+49.5
+55.8
+UnivFD [28]
+50.7
+45.4
+65.3
+46.2
+49.1
+60.2
+56.5
+54.6
+51.4
+49.0
+52.8
+FatFormer [23]
+51.2
+46.5
+61.6
+48.3
+54.1
+68.1
+54.4
+56.9
+51.9
+50.0
+54.3
+SAFE [18]
+59.2
+49.4
+48.2
+49.6
+50.9
+74.1
+37.5
+58.4
+54.5
+50.5
+53.2
+C2P-CLIP [36]
+51.1
+56.9
+61.4
+53.0
+54.4
+68.4
+55.9
+56.4
+51.0
+50.0
+55.9
+AIDE [40]
+63.1
+63.4
+48.8
+51.9
+57.8
+71.5
+45.8
+57.3
+53.7
+53.1
+56.6
+DRCT [6]
+79.8
+85.9
+58.9
+90.5
+90.3
+66.8
+79.6
+71.3
+84.6
+77.1
+78.5
+Aligned [35]
+61.3
+49.6
+53.9
+52.4
+48.4
+54.0
+40.6
+51.0
+60.2
+38.1
+51.0
+B-Free [14]
+78.3
+96.1
+92.3
+95.3
+95.6
+85.5
+96.7
+84.9
+79.7
+87.1
+89.2
+DDA [8]
+83.5
+91.1
+84.7
+91.6
+85.3
+82.5
+89.3
+79.9
+88.9
+81.2
+85.8
+REM [25]
+91.3
+96.5
+92.8
+96.9
+97.2
+98.1
+98.2
+92.2
+90.4
+-
+94.8
+MIRROR [24]
+90.7
+95.9
+88.4
+94.9
+97.1
+96.6
+96.4
+87.6
+93.4
+83.0
+92.4
+ARA (Ours)
+95.4
+97.8
+95.2
+97.6
+97.8
+98.3
+98.5
+96.8
+97.0
+94.9
+96.9
+5.2
+Experimental Results
+Performance on Standard Benchmarks. As shown in Table 3
+and Table 4, ARA achieves state-of-the-art performance on both
+benchmarks, with average accuracies of 98.5% on AIGCDetect and
+98.5% on Synthbuster. We further evaluate ARA on the recently
+introduced AIGI-Holmes and AIGI-Now benchmarks, which cover
+the most recent generative models. As shown in Table 5 and Table 6,
+ARA achieves 98.2% on AIGI-Holmes. Most notably, ARA achieves
+87.1% average accuracy on AIGI-Now, a benchmark designed to
+reflect the latest and most difficult generative models. This out-
+performs the closest competitor, DDA, by a significant margin of
+17.0 percentage points. These results show high robustness against
+recent diffusion and autoregressive models.
+Performance on Challenging Benchmarks. These benchmarks
+evaluate real-world robustness using images from the web that con-
+tain unpredictable and complex degradations. As shown in Table 7,
+ARA consistently achieves the highest average accuracy of 96.9%
+across all five in-the-wild datasets. Our method achieves better
+results than MIRROR (92.4%) and achieves the highest reported
+average performance on these benchmarks. Notably, ARA achieves
+the highest accuracy on every individual sub-dataset, indicating
+that the gain transfers consistently across heterogeneous in-the-
+wild settings rather than being confined to a single source. This
+suggests that ARA improves sensitivity to aligned forgery cues
+without sacrificing robustness under real-world distribution shift,
+further supporting the effectiveness of geometric regularization.
+5.3
+Ablation Study
+Impact of the Aligned Fake Ratio. We first investigate the opti-
+mal composition of the hybrid training dataset by varying the ratio
+𝑟of AlignedGenImage fakes within the fake portion of the hybrid
+set (𝜆= 1.0). Table 8(a) shows that a balanced ratio of 0.5 yields the
+highest performance at 96.9%. Performance drops sharply to 91.5%
+when no aligned fakes are used (𝑟= 0.00), confirming that stan-
+dard GenImage alone is insufficient to exploit subtle pixel-artifacts,
+while raising the ratio to 𝑟= 0.75 slightly reduces performance to
+96.5%. These results support a balanced hybrid composition as the
+best trade-off between artifact sensitivity and generalization.
+Table 8: Comparison of balanced accuracy (%) under different
+ablation settings on the in-the-wild benchmark average.
+(a) Aligned Fake Ratio
+𝑟= 0.00
+91.5
+𝑟= 0.25
+94.4
+𝑟= 0.50
+96.9
+𝑟= 0.75
+96.5
+(b) Anchor Weight
+𝜆= 0.0
+92.7
+𝜆= 0.5
+96.4
+𝜆= 1.0
+96.9
+𝜆= 2.0
+96.4
+Efficacy of the Anchor Weight. We next analyze the effect of the
+geometric regularizer by varying the anchor weight 𝜆(Table 8(b)).
+Setting 𝜆= 0 (naive LoRA without geometric constraints) yields
+the lowest performance at 92.7%, supporting the instability of un-
+constrained adaptation discussed in Section 4.1. Introducing the
+regularizer substantially improves performance, peaking at 96.9%
+at 𝜆= 1.0. Increasing 𝜆beyond 1.0 slightly reduces performance,
+implying that excessive regularization restricts the model’s capacity
+to adapt to subtle pixel-level cues. These results show that both the
+hybrid data composition and the anchor regularizer are necessary
+to reach the best in-the-wild performance.
+Additional Analyses. We provide further analyses in the Sup-
+plementary Material to examine our findings beyond the main
+ablations. Section A.3 studies alternative anchor loss configurations
+and regularized adaptation and preservation baselines. Section A.4
+investigates the effect of backbone scale across different DINOv3
+variants, while Section A.5 evaluates robustness to post-processing.
+6
+Conclusion
+This paper provides a systematic analysis of DINOv3 for AIGI
+detection. We show that direct fine-tuning aimed at overcoming
+DINOv3’s semantic bottleneck can distort the real-centric manifold
+that supports its robust generalization. Driven by this observation,
+we develop Anchor-Regularized Adaptation (ARA), which combines
+hybrid data adaptation with an anchor regularizer to capture subtle
+forgery cues while limiting distortion of the original feature space.
+Our results suggest that DINOv3 can be further improved through
+the complementary use of misaligned and aligned training data and
+an appropriate adaptation strategy.
+
+
+Anchor-Regularized Adaptation for Generalizable AI-Generated Image Detection with DINOv3
+Acknowledgments
+This work was supported by Institute of Information & Commu-
+nications Technology Planning & Evaluation (IITP) grant funded
+by the Korea government (MSIT) (No.RS-2024-00441762, Global
+Advanced Cybersecurity Human Resources Development).
+References
+[1] Randall Balestriero and Yann LeCun. 2025. Lejepa: Provable and scalable self-
+supervised learning without the heuristics. arXiv preprint arXiv:2511.08544
+(2025).
+[2] Quentin Bammey. 2023. Synthbuster: Towards detection of diffusion model
+generated images. IEEE Open Journal of Signal Processing 5 (2023), 1–9.
+[3] Clark Barrett, Brad Boyd, Elie Bursztein, Nicholas Carlini, Brad Chen, Jihye Choi,
+Amrita Roy Chowdhury, Mihai Christodorescu, Anupam Datta, Soheil Feizi, et al.
+2023. Identifying and mitigating the security risks of generative ai. Foundations
+and Trends® in Privacy and Security 6, 1 (2023), 1–52.
+[4] Kalina Bontcheva, Symeon Papadopoulous, Filareti Tsalakanidou, Riccardo Gal-
+lotti, Lidia Dutkiewicz, Noémie Krack, Denis Teyssou, Francesco Severio Nucci,
+Jochen Spangenberg, Ivan Srba, et al. 2024. Generative AI and disinformation:
+recent advances, challenges, and opportunities. (2024).
+[5] Bar Cavia, Eliahu Horwitz, Tal Reiss, and Yedid Hoshen. 2024. Real-time deepfake
+detection in the real-world. arXiv preprint arXiv:2406.09398 (2024).
+[6] Baoying Chen, Jishen Zeng, Jianquan Yang, and Rui Yang. 2024. Drct: Diffusion
+reconstruction contrastive training towards universal detection of diffusion
+generated images. In Forty-first International Conference on Machine Learning.
+[7] Ruoxin Chen, Jiahui Gao, Kaiqing Lin, Keyue Zhang, Yandan Zhao, Isabel Guan,
+Taiping Yao, and Shouhong Ding. 2025. Task-Model Alignment: A Simple Path
+to Generalizable AI-Generated Image Detection. arXiv preprint arXiv:2512.06746
+(2025).
+[8] Ruoxin Chen, Junwei Xi, Zhiyuan Yan, Ke-Yue Zhang, Shuang Wu, Jingyi Xie,
+Xu Chen, Lei Xu, Isabel Guan, Taiping Yao, and Shouhong Ding. 2025. Dual
+Data Alignment Makes AI-Generated Image Detector Easier Generalizable. In
+Advances in Neural Information Processing Systems, Vol. 38. Curran Associates,
+Inc., 106475–106500.
+[9] Davide Cozzolino, Giovanni Poggi, Riccardo Corvi, Matthias Nießner, and Luisa
+Verdoliva. 2024. Raising the bar of ai-generated image detection with clip. In Pro-
+ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition.
+4356–4366.
+[10] Davide Cozzolino and Luisa Verdoliva. 2019. Noiseprint: A CNN-based camera
+model fingerprint. IEEE Transactions on Information Forensics and Security 15
+(2019), 144–159.
+[11] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. 2009. Im-
+agenet: A large-scale hierarchical image database. In 2009 IEEE conference on
+computer vision and pattern recognition. Ieee, 248–255.
+[12] Ziv Epstein, Aaron Hertzmann, Investigators of Human Creativity, Memo Akten,
+Hany Farid, Jessica Fjeld, Morgan R Frank, Matthew Groh, Laura Herman, Neil
+Leach, et al. 2023. Art and the science of generative AI. Science 380, 6650 (2023),
+1110–1111.
+[13] Patrick Grommelt, Louis Weiss, Franz-Josef Pfreundt, and Janis Keuper. 2024.
+Fake or jpeg? revealing common biases in generated image detection datasets.
+In European Conference on Computer Vision. Springer, 80–95.
+[14] Fabrizio Guillaro, Giada Zingarini, Ben Usman, Avneesh Sud, Davide Cozzolino,
+and Luisa Verdoliva. 2025. A bias-free training paradigm for more general ai-
+generated image detection. In Proceedings of the Computer Vision and Pattern
+Recognition Conference. 18685–18694.
+[15] Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean
+Wang, Liang Wang, Weizhu Chen, et al. 2022. Lora: Low-rank adaptation of large
+language models. Iclr 1, 2 (2022), 3.
+[16] Zhenglin Huang, Jason Li, Haiquan Wen, Tianxiao Li, Xi Yang, Lu Qi, Bei Peng,
+Xiaowei Huang, Ming-Hsuan Yang, and Guangliang Cheng. 2025. Rethinking
+Cross-Generator Image Forgery Detection through DINOv3. arXiv preprint
+arXiv:2511.22471 (2025).
+[17] Christos Koutlis and Symeon Papadopoulos. 2024. Leveraging representations
+from intermediate encoder-blocks for synthetic image detection. In European
+Conference on computer vision. Springer, 394–411.
+[18] Ouxiang Li, Jiayin Cai, Yanbin Hao, Xiaolong Jiang, Yao Hu, and Fuli Feng.
+2025. Improving synthetic image detection towards generalization: An image
+transformation perspective. In Proceedings of the 31st ACM SIGKDD Conference
+on Knowledge Discovery and Data Mining V. 1. 2405–2414.
+[19] Ziqiang Li, Jiazhen Yan, Ziwen He, Kai Zeng, Weiwei Jiang, Lizhi Xiong, and
+Zhangjie Fu. 2026. Is artificial intelligence generated image detection a solved
+problem? Advances in neural information processing systems 38 (2026).
+[20] Kaiqing Lin, Zhiyuan Yan, Ruoxin Chen, Junyan Ye, Ke-Yue Zhang, Yue Zhou,
+Peng Jin, Bin Li, Taiping Yao, and Shouhong Ding. 2025. Seeing before reasoning:
+A unified framework for generalizable and explainable fake image detection.
+arXiv preprint arXiv:2509.25502 (2025).
+[21] Li Lin, Neeraj Gupta, Yue Zhang, Hainan Ren, Chun-Hao Liu, Feng Ding, Xin
+Wang, Xin Li, Luisa Verdoliva, and Shu Hu. 2024. Detecting multimedia generated
+by large ai models: A survey. arXiv preprint arXiv:2402.00045 (2024).
+[22] Tsung-Yi Lin, Michael Maire, Serge Belongie, James Hays, Pietro Perona, Deva
+Ramanan, Piotr Dollár, and C Lawrence Zitnick. 2014. Microsoft coco: Common
+objects in context. In European conference on computer vision. Springer, 740–755.
+[23] Huan Liu, Zichang Tan, Chuangchuang Tan, Yunchao Wei, Jingdong Wang, and
+Yao Zhao. 2024. Forgery-aware adaptive transformer for generalizable synthetic
+image detection. In Proceedings of the IEEE/CVF Conference on Computer Vision
+and Pattern Recognition. 10770–10780.
+[24] Ruiqi Liu, Manni Cui, Ziheng Qin, Zhiyuan Yan, Ruoxin Chen, Yi Han, Zhiheng
+Li, Junkai Chen, ZhiJin Chen, Kaiqing Lin, et al. 2026. MIRROR: Manifold Ideal
+Reference ReconstructOR for Generalizable AI-Generated Image Detection. arXiv
+preprint arXiv:2602.02222 (2026).
+[25] Ruiqi Liu, Yi Han, Zhengbo Zhang, Liwei Yao, Zhiyuan Yan, Jialiang Shen, ZhiJin
+Chen, Boyi Sun, Lubin Weng, Jing Dong, et al. 2025. Beyond Artifacts: Real-
+Centric Envelope Modeling for Reliable AI-Generated Image Detection. arXiv
+preprint arXiv:2512.20937 (2025).
+[26] Zhengzhe Liu, Xiaojuan Qi, and Philip HS Torr. 2020. Global texture enhancement
+for fake face detection in the wild. In Proceedings of the IEEE/CVF conference on
+computer vision and pattern recognition. 8060–8069.
+[27] Ilya Loshchilov and Frank Hutter. 2017. Decoupled weight decay regularization.
+arXiv preprint arXiv:1711.05101 (2017).
+[28] Utkarsh Ojha, Yuheng Li, and Yong Jae Lee. 2023. Towards universal fake image
+detectors that generalize across generative models. In Proceedings of the IEEE/CVF
+conference on computer vision and pattern recognition. 24480–24489.
+[29] Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy Vo, Marc Szafraniec,
+Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-
+Nouby, et al. 2023. Dinov2: Learning robust visual features without supervision.
+arXiv preprint arXiv:2304.07193 (2023).
+[30] Yuyang Qian, Guojun Yin, Lu Sheng, Zixuan Chen, and Jing Shao. 2020. Think-
+ing in frequency: Face forgery detection by mining frequency-aware clues. In
+European conference on computer vision. Springer, 86–103.
+[31] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sand-
+hini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al.
+2021. Learning transferable visual models from natural language supervision. In
+International conference on machine learning. PmLR, 8748–8763.
+[32] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn
+Ommer. 2022. High-resolution image synthesis with latent diffusion models. In
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition.
+10684–10695.
+[33] Oriane Siméoni, Huy V Vo, Maximilian Seitzer, Federico Baldassarre, Maxime
+Oquab, Cijo Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michaël Rama-
+monjisoa, et al. 2025. Dinov3. arXiv preprint arXiv:2508.10104 (2025).
+[34] Stability AI. 2022. sd-vae-ft-mse. https://huggingface.co/stabilityai/sd-vae-ft-
+mse. Hugging Face model card, accessed March 30, 2026.
+[35] Anirudh Sundara Rajan, Utkarsh Ojha, Jedidiah Schloesser, and Yong Jae Lee.
+2025. Aligned Datasets Improve Detection of Latent Diffusion-Generated Images.
+In International Conference on Learning Representations, Vol. 2025. 63304–63322.
+[36] Chuangchuang Tan, Renshuai Tao, Huan Liu, Guanghua Gu, Baoyuan Wu, Yao
+Zhao, and Yunchao Wei. 2025. C2p-clip: Injecting category common prompt in
+clip to enhance generalization in deepfake detection. In Proceedings of the AAAI
+Conference on Artificial Intelligence, Vol. 39. 7184–7192.
+[37] Chuangchuang Tan, Yao Zhao, Shikui Wei, Guanghua Gu, Ping Liu, and Yunchao
+Wei. 2024. Frequency-aware deepfake detection: Improving generalizability
+through frequency space domain learning. In Proceedings of the AAAI Conference
+on Artificial Intelligence, Vol. 38. 5052–5060.
+[38] Chuangchuang Tan, Yao Zhao, Shikui Wei, Guanghua Gu, Ping Liu, and Yunchao
+Wei. 2024. Rethinking the up-sampling operations in cnn-based generative
+network for generalizable deepfake detection. In Proceedings of the IEEE/CVF
+conference on computer vision and pattern recognition. 28130–28139.
+[39] Sheng-Yu Wang, Oliver Wang, Richard Zhang, Andrew Owens, and Alexei A
+Efros. 2020. CNN-generated images are surprisingly easy to spot... for now. In
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition.
+8695–8704.
+[40] Shilin Yan, Ouxiang Li, Jiayin Cai, Yanbin Hao, Xiaolong Jiang, Yao Hu, and
+Weidi Xie. 2025. A sanity check for ai-generated image detection. In International
+Conference on Learning Representations, Vol. 2025. 70702–70720.
+[41] Zhiyuan Yan, Jiangming Wang, Peng Jin, Ke-Yue Zhang, Chengchun Liu, Shen
+Chen, Taiping Yao, Shouhong Ding, Baoyuan Wu, and Li Yuan. 2025. Orthogonal
+Subspace Decomposition for Generalizable AI-Generated Image Detection. In
+Proceedings of the 42nd International Conference on Machine Learning (Proceedings
+of Machine Learning Research, Vol. 267). PMLR, 70268–70288. https://proceedings.
+mlr.press/v267/yan25b.html
+[42] Nan Zhong, Yiran Xu, Sheng Li, Zhenxing Qian, and Xinpeng Zhang. 2023.
+Patchcraft: Exploring texture patch for efficient ai-generated image detection.
+arXiv preprint arXiv:2311.12397 (2023).
+
+
+Hyeongjun Choi, Juhun Lee, Davide Cozzolino, Luisa Verdoliva, and Simon S. Woo
+[43] Yue Zhou, Xinan He, Kaiqing Lin, Bing Fan, Feng Ding, and Bin Li. 2025. Break-
+ing Latent Prior Bias in Detectors for Generalizable AIGC Image Detection. In
+Advances in Neural Information Processing Systems, Vol. 38. Curran Associates,
+Inc., 30649–30679.
+[44] Yue Zhou, Xinan He, Kaiqing Lin, Bing Fan, Feng Ding, and Bin Li. 2026. Simplic-
+ity Prevails: The Emergence of Generalizable AIGI Detection in Visual Foundation
+Models. arXiv preprint arXiv:2602.01738 (2026).
+[45] Ziyin Zhou, Yunpeng Luo, Yuanchen Wu, Ke Sun, Jiayi Ji, Ke Yan, Shouhong Ding,
+Xiaoshuai Sun, Yunsheng Wu, and Rongrong Ji. 2025. Aigi-holmes: Towards
+explainable and generalizable ai-generated image detection via multimodal large
+language models. In Proceedings of the IEEE/CVF International Conference on
+Computer Vision. 18746–18758.
+[46] Mingjian Zhu, Hanting Chen, Qiangyu Yan, Xudong Huang, Guanyu Lin, Wei Li,
+Zhijun Tu, Hailin Hu, Jie Hu, and Yunhe Wang. 2023. Genimage: A million-scale
+benchmark for detecting ai-generated image. Advances in neural information
+processing systems 36 (2023), 77771–77782.
+
+
+Anchor-Regularized Adaptation for Generalizable AI-Generated Image Detection with DINOv3
+A
+Supplementary Material
+A.1
+Cross-Dataset Validation
+B-Free
+(a) Semantic Bottleneck
+DDA
+Figure 5: Layer-wise probing on B-Free and DDA also reveals
+a semantic bottleneck.
+To verify that the observations in Section 3.2 of the main paper are
+not specific to AlignedGenImage, we repeat the same analysis on
+two additional aligned datasets, B-Free [14] and DDA [8]. Figure 5
+reports the probing performance obtained by training independent
+linear heads on features extracted from different DINOv3 layers.
+In both datasets, the weakest performance appears at the shallow-
+est layer, improves markedly in the intermediate layers, and then
+drops again at the final layer. On B-Free, the best probing result is
+achieved at 𝐿30, with clear drops at both 𝐿10 and 𝐿40. DDA exhibits
+a similar pattern, with the strongest performance at 𝐿20–𝐿30 and a
+significant decrease at 𝐿40. These results provide further evidence
+that fine-grained pixel-artifact cues can be exploited more effec-
+tively in intermediate layers than at the final layer, supporting the
+semantic bottleneck interpretation.
+Figure 6 further shows that intermediate layer features can be
+used to improve in-the-wild detection through decision fusion.
+Specifically, we fuse the predictions of the baseline head trained on
+standard GenImage final layer features with those of expert heads
+B-Free
+(b) Decision Fusion Utility
+DDA
+Figure 6: Fusing predictions from intermediate experts com-
+pensates for this bottleneck, improving generalization.
+trained on intermediate layer features from B-Free or DDA. On
+both datasets, this fusion yields consistent gains over the no-fusion
+baseline, reaching a maximum value at 𝐿30 (+1.35%) on B-Free and
+𝐿30 (+1.77%) on DDA. In contrast, fusion with the shallowest head
+(𝐿10) slightly degrades performance in both cases, and the gain at
+𝐿40 remains smaller than that of the best intermediate layer. This
+consistent pattern across all three aligned settings supports the
+view that fine-grained pixel-artifact cues provide complementary
+traces for robust in-the-wild detection when combined with the
+stronger final layer semantics.
+A.2
+Detailed Protocol for Geometric Analysis
+For the geometric analyses in Section 4.1, we use the hybrid com-
+position described in the main paper, consisting of the original real
+images paired with a 50/50 mixture of standard GenImage fakes
+and AlignedGenImage fakes. We sample 2,000 test images from
+each category (real, GenImage fake, and AlignedGenImage fake),
+and use the same sampled instances across all evaluated settings
+to ensure a controlled comparison of representation changes. For
+each case, features are extracted from the final layer of DINOv3-7B
+with its default pre-trained LayerNorm applied. PCA is performed
+separately for each case using the real-image features only. Un-
+less otherwise noted, all geometric metrics, including relative drift,
+intra-class dispersion, and Fisher ratio, are computed in the orig-
+inal feature space after the backbone’s final layer normalization,
+without additional normalization.
+A.3
+Analysis of Regularization Variants
+In the main paper, we show that naive backbone adaptation can
+capture subtle forgery cues, but often at the cost of distorting the
+real-side structure that supports robust generalization. ARA is de-
+signed to address this trade-off by combining hybrid data adapta-
+tion with an anchor-based regularizer. In this section, we analyze
+the regularization strategy at two complementary levels. First, we
+modify the form and support of the regularizer while keeping the
+backbone adaptation and hybrid training setup unchanged. Second,
+we compare the full ARA formulation with broader regularized
+adaptation strategies under the same controlled DINOv3-7B setting.
+All results are reported using the average performance across the
+five in-the-wild benchmarks.
+Internal Regularization Variants. We first compare ARA with
+three related variants. Real Feature Matching modifies the form
+of the regularizer, whereas the remaining two variants modify the
+subset of training samples on which the anchor loss is applied.
+• Real Feature Matching. This variant tests whether the gain
+of ARA can be explained by generic feature preservation on
+real samples. It keeps Lmain unchanged and replaces Lanchor
+with an ℓ2 penalty on real features. Specifically, for each real
+sample, we penalize the distance between the feature extracted
+by the adapted backbone and the corresponding feature from
+the frozen backbone.
+• Anchor Loss on Real Only. This variant tests whether preserv-
+ing the real-side structure alone is sufficient, without explicitly
+constraining fake samples. It keeps the total objective in Eq. 2
+
+
+Hyeongjun Choi, Juhun Lee, Davide Cozzolino, Luisa Verdoliva, and Simon S. Woo
+unchanged except for the support of Lanchor. The main classifi-
+cation loss is still computed on all samples, but the anchor loss
+is evaluated only on the real subset of each mini-batch.
+• Anchor Loss on Real and Original Fake. This variant tests
+whether extending the anchor loss from real images to standard
+GenImage fakes is beneficial. It keeps the total objective in Eq. 2
+unchanged and applies Lanchor to real images and standard
+GenImage fakes, while AlignedGenImage fakes are optimized
+only through Lmain.
+Naive LoRA denotes the 𝜆= 0 setting, where backbone adapta-
+tion is performed on the hybrid data without the anchor regularizer.
+Table 9: Comparison of internal regularization variants in
+balanced accuracy (%), averaged over the five in-the-wild
+benchmarks.
+Method
+Avg.
+Naive LoRA (𝜆= 0)
+92.7
+Real Feature Matching
+93.5
+Anchor Loss on Real Only
+94.3
+Anchor Loss on Real and Original Fake
+94.8
+ARA (Ours)
+96.9
+As shown in Table 9, all three variants improve over naive LoRA,
+but none matches the full ARA formulation. Real Feature Matching
+reaches 93.5%, indicating that limiting feature deviation from the
+frozen backbone is beneficial. Anchor Loss on Real Only reaches
+94.3%, while expanding the support to real and original fake sam-
+ples increases performance to 94.8%. The highest performance of
+96.9% is obtained when the anchor loss is applied to the full hybrid
+training set, including aligned fake samples. These results show
+that both the form and support of the regularizer affect the resulting
+generalization performance.
+Comparison with Adaptation and Preservation Baselines.
+The preceding experiments examine alternative regularization con-
+figurations within the ARA training framework. We next compare
+ARA with broader adaptation and preservation baselines, including
+Feature Distillation, Output Distillation, L2-SP, LP-FT, and WiSE-
+FT. To ensure a controlled comparison, all methods follow the
+same two-model setup and hybrid-data adaptation protocol as ARA.
+Specifically, the Stage 1 detector, obtained by training a linear head
+on the frozen DINOv3-7B backbone using GenImage, is kept fixed
+and used as a common reference. Separately, a DINOv3-based de-
+tector with a newly initialized linear head is adapted with LoRA
+using the same hybrid dataset as ARA, consisting of real GenImage
+samples and a fake set composed equally of standard GenImage
+and AlignedGenImage fakes. Thus, all methods share the same
+frozen Stage 1 reference and the same adaptation data, while differ-
+ing in how information from the reference model is preserved or
+incorporated during adaptation.
+For Feature Distillation, the adapted backbone is constrained by
+an ℓ2 feature-matching loss against the frozen Stage 1 backbone over
+all samples in the hybrid training set. This differs from Real Feature
+Matching in the preceding internal ablation, where the main classi-
+fication objective is likewise optimized on the full hybrid dataset,
+but the feature-matching constraint is applied only to real samples.
+Feature Distillation therefore evaluates conventional feature-level
+preservation under the same full hybrid support used for adapta-
+tion, whereas Real Feature Matching specifically examines whether
+preserving the real-side representation alone is sufficient. The other
+baselines follow the same controlled setup while replacing ARA’s
+anchor-based regularization with their respective adaptation or
+preservation strategies.
+In addition to balanced accuracy (BACC), we report the area
+under the receiver operating characteristic curve (AUROC), the
+area under the precision-recall curve (AUPRC), equal error rate
+(EER), and the false-positive rate at a 95% true-positive rate (FPR95).
+Each metric is averaged over the five in-the-wild benchmarks.
+Table 10: Comparison of regularized adaptation baselines,
+averaged over the five in-the-wild benchmarks.
+Method
+BACC↑
+AUROC↑
+AUPRC↑
+EER↓
+FPR95↓
+Feature Dist.
+89.8
+98.5
+98.6
+5.1
+8.7
+Output Dist.
+92.9
+98.3
+98.8
+4.8
+12.6
+L2-SP
+95.1
+98.8
+98.7
+4.0
+3.6
+LP-FT
+79.2
+96.0
+97.1
+9.3
+22.0
+WiSE-FT
+90.2
+98.5
+98.7
+4.6
+7.2
+ARA (Ours)
+96.9
+99.3
+99.0
+2.7
+1.9
+As shown in Table 10, ARA achieves the best performance across
+all reported metrics, reaching 96.9% BACC, 99.3% AUROC, and
+99.0% AUPRC, with an EER of 2.7% and an FPR95 of 1.9%. Among
+the evaluated baselines, L2-SP provides the strongest balanced ac-
+curacy at 95.1%, but remains 1.8 percentage points below ARA.
+Compared with L2-SP, ARA also reduces EER and FPR95 by 1.3 and
+1.7 percentage points, respectively. Output Distillation achieves
+the highest AUPRC among the baselines at 98.8%, but exhibits a
+substantially higher FPR95 of 12.6%. The remaining methods show
+larger gaps in balanced accuracy or false-positive control.
+Taken together, these results show that both the design and sup-
+port of the anchor constraint are important, and that its gains are
+not reproduced by the evaluated feature-, output-, or parameter-
+level adaptation strategies. Under the controlled DINOv3-7B setting,
+ARA provides the best overall balance between detection perfor-
+mance and false-positive control.
+A.4
+Effect of Backbone Scale
+The main experiments use DINOv3-7B, whose strong frozen linear-
+probing performance motivates our analysis of how aligned super-
+vision can be incorporated without degrading the representation
+structure that supports generalization. We further examine whether
+the adaptation behavior observed in this setting extends to smaller
+DINOv3 variants. Specifically, we evaluate DINOv3-H+, DINOv3-L,
+and DINOv3-B under the same training and evaluation protocol. Ta-
+ble 11 reports balanced accuracy averaged over the five in-the-wild
+benchmarks.
+For each backbone, the linear probe is trained only on GenImage,
+whereas naive LoRA and ARA use the same hybrid training data.
+The comparison between naive LoRA and ARA therefore isolates
+the effect of the anchor regularizer under the same adaptation
+
+
+Anchor-Regularized Adaptation for Generalizable AI-Generated Image Detection with DINOv3
+Figure 7: Balanced accuracy (%) under JPEG compression, resizing, and Gaussian blur on Synthbuster. We compare the frozen
+DINOv3 linear probing baseline with our ARA.
+Table 11: Comparison of balanced accuracy (%) across DINOv3
+backbone scales on the in-the-wild benchmark average.
+Backbone
+Linear Probe
+Naive LoRA
+ARA (Ours)
+DINOv3-7B
+93.4
+92.7
+96.9
+DINOv3-H+
+87.5
+84.4
+93.2
+DINOv3-L
+78.6
+88.3
+91.4
+DINOv3-B
+73.3
+62.8
+63.5
+setting. As shown in Table 11, ARA consistently outperforms naive
+LoRA across all evaluated backbone scales. The gains over naive
+LoRA are 4.2, 8.8, 3.1, and 0.7 percentage points for DINOv3-7B,
+DINOv3-H+, DINOv3-L, and DINOv3-B, respectively. ARA also
+outperforms the corresponding frozen linear probe for DINOv3-
+7B, DINOv3-H+, and DINOv3-L. DINOv3-B exhibits a different
+pattern: both hybrid adaptation methods perform below the linear
+probe, although ARA partially mitigates the degradation observed
+with naive LoRA. These results show that the anchor regularizer
+consistently improves over unconstrained hybrid adaptation across
+the evaluated DINOv3 variants, while the overall benefit of hybrid
+adaptation becomes limited at the smallest backbone scale.
+A.5
+Robustness to Post-Processing
+We further evaluate robustness under common post-processing
+perturbations on Synthbuster [2]. Since the frozen DINOv3 linear
+probing detector serves as both the empirical starting point and the
+analytical baseline of our study, we compare ARA directly against
+this baseline under JPEG compression, resizing, and Gaussian blur.
+Following the robustness protocol of B-Free [14], we adopt the
+same perturbation types and severity settings, and report balanced
+accuracy (%) averaged over the Synthbuster generators.
+As shown in Figure 7, ARA consistently outperforms the frozen
+DINOv3 baseline across all perturbation types and severity levels.
+The average balanced accuracy improves from 93.96% to 97.77%,
+with gains of 4.31% under JPEG compression, 2.99% under resizing,
+and 4.00% under blur. Notably, this improvement is maintained as
+corruption strength increases, suggesting that the benefits of ARA
+are not limited to lightly degraded inputs. These results further
+support our main findings by showing that complementary su-
+pervision from misaligned and aligned data can improve detection
+performance while remaining robust under realistic post-processing
+conditions.

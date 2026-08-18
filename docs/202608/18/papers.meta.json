@@ -1,0 +1,39 @@
+{
+  "label": "2026-08-18",
+  "date": "2026-08-18",
+  "generated_at": "2026-08-18T20:55:57",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202608/18/2608.14922v1-spin-vit-designing-a-sparsity-induced-vision-transformer-that-is-mechanistically-interpretable",
+      "section": "deep",
+      "title_en": "SpIn-ViT: Designing a Sparsity-Induced Vision Transformer That Is Mechanistically Interpretable",
+      "authors": "Philip H. Lee, Parth Padalkar",
+      "date": "2026-08-14",
+      "pdf": "https://arxiv.org/pdf/2608.14922v1",
+      "score": "8.0",
+      "evidence": "用于图像分类的视觉Transformer架构，具备稀疏可解释表示",
+      "tldr": "后验SAE在冻结表示上训练，与分类目标不对齐，限制了可解释性。SpIn-ViT联合训练预训练ViT和修改的SAE，端到端对齐稀疏patch表示与图像分类。在九个基准上准确率提升8.84%，可解释性分数提升近4倍，神经符号规则集缩小58.8%。该方法学习到语义连贯的神经元激活，兼顾性能与可解释性。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Mechanistic interpretability has recently expanded to Vision Transformers (ViTs), with Sparse Autoencoders (SAEs) increasingly used as post-hoc tools to decompose internal representations into sparse and more interpretable features. However, because post-hoc SAEs are trained on frozen representations after the ViT has already been optimized, their latent features are not directly aligned with the downstream classification objective. We introduce SpIn-ViT, a framework that jointly trains a pretrained ViT and a modified SAE end-to-end, directly aligning sparse patch-level representations with image classification. SpIn-ViT learns semantically coherent neuron activations that localize meaningful image regions while maintaining competitive predictive performance. We evaluate SpIn-ViT across nine image-classification benchmarks using classification accuracy, quantitative interpretability metrics, AI-based and Human evaluations. Compared with the previous state-of-the-art post-hoc SAE method, SpIn-ViT achieves 8.84% higher average classification accuracy, an AI-based interpretability score nearly four times as high, and a human-evaluation score more than twice as high. We further extract interpretable rule-sets using the SAE neurons to create neurosymbolic models which achieve 5.97% higher average classification accuracy while requiring a 58.8\\% smaller rule-set than the neurosymbolic models created from the SOTA post-hoc SAE method.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/18/2608.15196v1-anchor-regularized-adaptation-for-generalizable-ai-generated-image-detection-with-dinov3",
+      "section": "quick",
+      "title_en": "Anchor-Regularized Adaptation for Generalizable AI-Generated Image Detection with DINOv3",
+      "authors": "Hyeongjun Choi, Juhun Lee, Davide Cozzolino, Luisa Verdoliva, Simon S. Woo",
+      "date": "2026-08-15",
+      "pdf": "https://arxiv.org/pdf/2608.15196v1",
+      "score": "7.0",
+      "evidence": "使用DINOv3冻结表征进行可泛化的AI生成图像检测，将DINO基础模型用于图像分类任务",
+      "tldr": "AI生成图像检测中，训练数据对齐可去除虚假相关、提升泛化，但冻结DINOv3的线性探针即便在不对齐数据上训练也表现突出。本文剖析其机制：DINOv3决策依赖于真实图像空间的特征，却对像素级伪影线索不敏感；简单混合对齐与不对齐数据虽能增强敏感性，但会扭曲预训练表示。为此提出锚定正则化适应ARA，以低秩适应捕获像素伪影，并用冻结锚定分类器约束表示结构。在九个基准上取得最优结果，证明其能互补利用多源监督，实现更稳健的检测。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Recent works in AI-generated image detection have shown that careful training data alignment can improve generalization by removing spurious correlations. However, linear probes on frozen DINOv3 representations achieve remarkably strong performance even when trained on misaligned datasets. Motivated by this result, we analyze the underlying rationale and the limits of this generalization. We find that frozen DINOv3 performs well because its decisions rely on features that faithfully represent the space of authentic images. At the same time, its final layer is less effective at capturing the subtle pixel-artifact cues that can be emphasized by aligned training data. We further observe that naively mixing aligned and misaligned data during adaptation improves sensitivity to such cues but at the cost of distorting the pre-trained representation, limiting generalization. To address this issue, we propose Anchor-Regularized Adaptation (ARA). We apply Low-Rank Adaptation to capture pixel-level artifacts while leveraging a frozen anchor classifier to avoid deviations from the original representation structure. This allows the model to exploit pixel-artifact cues without sacrificing generalization. Our method achieves state-of-the-art performance on nine diverse and challenging benchmarks, indicating that ARA enables complementary supervision from misaligned and aligned data for more effective detection.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
