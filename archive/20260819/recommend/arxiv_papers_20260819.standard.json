@@ -1,0 +1,131 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-19T20:47:07.336886+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 0,
+    "deep_cap": 6,
+    "deep_selected": 0,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2608.16384v1",
+      "source": "arxiv",
+      "title": "Self-Routed Tensor Adapters for Parameter-Efficient Universal Visual Adaptation",
+      "abstract": "Universal visual representations require adaptation mechanisms that adapt across heterogeneous domains without fragmenting knowledge into domain-specific modules. Parameter-efficient fine-tuning adapts frozen visual foundation models efficiently, but standard low-rank adapters use a fixed subspace for all inputs, which can be restrictive when domains differ in style, background, and semantic context. MoE-based adapters improve specialization through multiple expert pathways, but often rely on external routers and large expert banks, adding parameters and separating routing from adaptation. We propose \\textbf{Self-Routed Tensor Adapters}, a compact framework for multi-domain visual adaptation. SRTA projects each input into a low-rank space, computes routing weights from this representation using a learnable domain matrix, and uses these weights to blend slices of a shared Tucker core. This produces a sample-specific adaptation matrix without an external gating network, allowing shared visual factors to be reused while supporting domain-aware specialization. To strengthen pathway learning, we introduce a progressive depth-weighted routing objective that supervises routing decisions across adapter layers. Across five heterogeneous multi-domain visual classification benchmarks, SRTA achieves competitive or slightly stronger average accuracy than MoE-style PEFT baselines while using substantially fewer trainable parameters. At rank 64, SRTA uses 2.77M parameters in the 4-domain setting compared with 9.52M for MoLoRA, and 3.00M in the 6-domain setting compared with 14.31M. Overall, SRTA offers an effective accuracy-parameter trade-off for adapting visual foundation models toward universal multi-domain representations. \\href{https://github.com/surajyadav-research/SRTA}{GitHub}",
+      "authors": [
+        "Suraj Yadav"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-08-17T10:35:36+00:00",
+      "link": "https://arxiv.org/pdf/2608.16384v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Proposes Self-Routed Tensor Adapters for parameter-efficient adaptation of frozen visual foundation models, enabling deployment of foundation models for downstream classification tasks",
+      "llm_evidence_cn": "提出自路由张量适配器SRTA，用于冻结视觉基础模型的参数高效通用视觉自适应，可支撑下游图像分类任务",
+      "llm_evidence": "提出自路由张量适配器SRTA，用于冻结视觉基础模型的参数高效通用视觉自适应，可支撑下游图像分类任务",
+      "canonical_evidence": "提出自路由张量适配器SRTA，用于冻结视觉基础模型的参数高效通用视觉自适应，可支撑下游图像分类任务",
+      "llm_tldr_en": "Proposes Self-Routed Tensor Adapters (SRTA), a compact framework projecting inputs into low-rank space and combining routing with adaptation for parameter-efficient universal visual adaptation of frozen visual foundation models.",
+      "llm_tldr_cn": "针对标准低秩适配器固定子空间难以适应多种域风格、MoE适配器依赖外部路由器和大专家库的问题，提出自路由张量适配器SRTA，将每个输入投影到低秩空间并紧凑地融合路由与适配，实现冻结视觉基础模型上的参数高效通用视觉自适应。SRTA避免了领域知识碎片化，可在风格、背景和语义多样的下游任务上取得高效迁移效果，为视觉基础模型在细粒度分类等任务上的微调提供了轻量且通用的适配方案。",
+      "llm_tldr": "针对标准低秩适配器固定子空间难以适应多种域风格、MoE适配器依赖外部路由器和大专家库的问题，提出自路由张量适配器SRTA，将每个输入投影到低秩空间并紧凑地融合路由与适配，实现冻结视觉基础模型上的参数高效通用视觉自适应。SRTA避免了领域知识碎片化，可在风格、背景和语义多样的下游任务上取得高效迁移效果，为视觉基础模型在细粒度分类等任务上的微调提供了轻量且通用的适配方案。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.16958v1",
+      "source": "arxiv",
+      "title": "ORViT-DR: Ordinally-Robust Hybrid ViT for Low-Resolution Diabetic Retinopathy Grading",
+      "abstract": "Diabetic retinopathy (DR) is one of the main causes of impaired vision. A good and reliable automated grading system can make the screening process safer and more accurate. Because DR stages progress gradually, the task of grading disease severity naturally follows an ordinal structure in which neighboring classes share similar visual characteristics. In this study, ORViT-DR, a hybrid deep learning framework, is designed to improve DR grading from low-resolution retinal images. The proposed approach combines convolutional feature extraction with transformer-based global context modeling through a pre-trained ViT-Hybrid backbone, which integrates BiT-ResNetv2 with a Vision Transformer architecture. The approach is tested on the RetinaMNIST subset of the MedMNISTv2 dataset, which contains 28x28 retinal fundus images annotated with five levels of disease severity. To promote stable training and better feature learning, the training strategy applies progressive layer unfreezing, layer-wise learning rate decay, exponential moving average (EMA) parameter updates, and ensemble-based prediction during inference. Experimental results on the official RetinaMNIST test set show that the proposed method achieves 57.00% classification accuracy, along with a quadratic weighted kappa score of 0.5963 and a macro-F1 score of 0.4293. These results suggest that hybrid CNN-Transformer architectures can provide effective representations for ordinal retinal image analysis.",
+      "authors": [
+        "Soumit Kumar Kundu",
+        "Nabil Ashab",
+        "Bidhan Biswas",
+        "Shahadat Hossain Sohag",
+        "Saif Mahmud Parvez",
+        "Souvik Kumar Kundu",
+        "Zunayed Ahmed Rafi"
+      ],
+      "primary_category": "eess.IV",
+      "categories": [
+        "eess.IV",
+        "cs.CV"
+      ],
+      "published": "2026-08-16T16:35:07+00:00",
+      "link": "https://arxiv.org/pdf/2608.16958v1",
+      "tags": [
+        "keyword:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Hybrid ViT for medical image classification; transferable to fine-grained classification",
+      "llm_evidence_cn": "混合ViT用于医学图像分类，可迁移至细粒度分类",
+      "llm_evidence": "混合ViT用于医学图像分类，可迁移至细粒度分类",
+      "canonical_evidence": "混合ViT用于医学图像分类，可迁移至细粒度分类",
+      "llm_tldr_en": "A hybrid CNN-ViT framework for ordinal diabetic retinopathy grading from low-resolution images, tested on RetinaMNIS. Inspired by vision transformer classification.",
+      "llm_tldr_cn": "该论文针对低分辨率眼底图像上的糖尿病视网膜病变分级问题，提出ORViT-DR混合深度学习框架，结合卷积特征提取与基于Transformer的全局上下文建模，并利用预训练的ViT-Hybrid骨干（集成BiT-ResNetv2与Vision Transformer）来建模相邻等级间的相似性。实验在RetinaMNIS上进行验证，表明该架构能有效提升分级性能。这项工作展示了视觉Transformer在医学细粒度等级分类中的可迁移性，与需求3的视觉Transformer分类架构主题相关。",
+      "llm_tldr": "该论文针对低分辨率眼底图像上的糖尿病视网膜病变分级问题，提出ORViT-DR混合深度学习框架，结合卷积特征提取与基于Transformer的全局上下文建模，并利用预训练的ViT-Hybrid骨干（集成BiT-ResNetv2与Vision Transformer）来建模相邻等级间的相似性。实验在RetinaMNIS上进行验证，表明该架构能有效提升分级性能。这项工作展示了视觉Transformer在医学细粒度等级分类中的可迁移性，与需求3的视觉Transformer分类架构主题相关。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.17872v1",
+      "source": "arxiv",
+      "title": "DistillPath: An Efficient 22M Distilled Pathology Encoder Approaching Large Foundation Model Performance",
+      "abstract": "Many high-performing pathology tile encoders are now foundation models with hundreds of millions to over a billion parameters. Encoding and storing the thousands of tiles in each whole-slide image with such models is costly on commodity hardware, so compact encoders that retain useful downstream performance are a valuable alternative. We present DistillPath-KS16, which starts from the existing 22M kaiko ViT-S/16 encoder and improves it by distilling from released pathology encoders used as frozen teachers. The recipe reads only the teachers' final class and patch tokens and trains on 6,000 public slides, needing neither their DINO nor iBOT pretraining heads nor a billion-tile corpus, so it applies to any released encoder that exposes backbone tokens. We distill four teachers spanning 86M to 1.1B parameters into the same student. Every variant improves the kaiko baseline on all three benchmarks we use, EVA, HEST, and PLISM, and the strongest teacher is task-dependent. On the seven-task EVA mean, DistillPath-KS16-Virchow2 reaches $0.795$, within $0.015$ points of Virchow2, the top-scoring model in our evaluation, at about $29\\times$ fewer parameters; it also scores above H0-mini and GPFM on this aggregate metric, though that advantage is task-concentrated rather than uniform. Because it remains a 22M ViT-S/16 with 384-dimensional features, DistillPath-KS16 runs more than $25\\times$ faster than Virchow2. Code is available at https://github.com/RamonKaspar/DistillPath, and released model weights are available at https://huggingface.co/collections/RamonK/distillpath.",
+      "authors": [
+        "Ramon Kaspar",
+        "Andrey Ignatov",
+        "Valentina Boeva"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-18T15:06:35+00:00",
+      "link": "https://arxiv.org/pdf/2608.17872v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Distills compact ViT encoder from pathology foundation models, explicitly referencing DINO/iBOT heads; relevant to DINO/ViT-based image classification.",
+      "llm_evidence_cn": "从大型病理基础模型蒸馏紧凑ViT编码器，明确提及DINO/iBOT预训练头，与DINO/ViT图像分类相关。",
+      "llm_evidence": "从大型病理基础模型蒸馏紧凑ViT编码器，明确提及DINO/iBOT预训练头，与DINO/ViT图像分类相关。",
+      "canonical_evidence": "从大型病理基础模型蒸馏紧凑ViT编码器，明确提及DINO/iBOT预训练头，与DINO/ViT图像分类相关。",
+      "llm_tldr_en": "DistillPath-KS16 distills the 22M kaiko ViT-S/16 encoder from frozen large pathology foundation models using only class and patch tokens, without DINO/iBOT heads or a billion-tile corpus, approaching large-model performance. Relevant to efficient DINO/ViT encoders for image classification.",
+      "llm_tldr_cn": "病理切片编码器常用上亿参数的基础模型，在普通硬件上编码数千个切片成本过高。作者从已发布的病理编码器中蒸馏出一个22M ViT-S/16紧凑编码器，只读取教师模型的类别与块token，并训练于6000张公开切片，无需DINO/iBOT预训练头或大规模语料。结果表明其性能接近大型基础模型，为病理图像分类提供了高效可复用的DINO/ViT式编码器。",
+      "llm_tldr": "病理切片编码器常用上亿参数的基础模型，在普通硬件上编码数千个切片成本过高。作者从已发布的病理编码器中蒸馏出一个22M ViT-S/16紧凑编码器，只读取教师模型的类别与块token，并训练于6000张公开切片，无需DINO/iBOT预训练头或大规模语料。结果表明其性能接近大型基础模型，为病理图像分类提供了高效可复用的DINO/ViT式编码器。",
+      "llm_tags": [
+        "query:dino-fg:composite"
+      ],
+      "matched_query_tag": "query:dino-fg:composite",
+      "matched_query_text": "Papers central to 基础模型DINO系列在细粒度分类上的论文, especially work that connects or combines: DINO model for fine-grained classification; fine-grained classification using vision transformers; vision transformer architecture for classification; foundation model for image classification; DINO fine grained classification papers; Self supervised vision transformers for fine grained classification; Foundation models for fine grained visual classification.",
+      "matched_requirement_id": "req-composite-dino-fg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -1,0 +1,252 @@
+Title: ORViT-DR: Ordinally-Robust Hybrid ViT for Low-Resolution Diabetic Retinopathy Grading
+
+URL Source: https://arxiv.org/pdf/2608.16958v1
+
+Published Time: Wed, 19 Aug 2026 00:02:15 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# ORViT-DR: Ordinality-Aware Hybrid ViT for Low-Resolution Diabetic Retinopathy Grading 
+
+# Accepted at ECCT 2026 
+
+Soumit Kumar Kundu 1, Nabil Ashab 1, Bidhan Biswas 1, Shahadat Hossain Sohag 1, Saif Mahmud Parvez 1, Souvik Kumar Kundu 2, and Zunayed Ahmed Rafi 3 
+
+> 1
+
+Department of Computer Science and Engineering, Dhaka International University, Dhaka, Bangladesh soumitkumar4@gmail.com, nabilashab@gmail.com, bidhan.biswas970@gmail.com, shahadat.h.sohag8@gmail.com, saif.mahmud.parvez@gmail.com  
+
+> 2
+
+KUET, Khulna, Bangladesh souvik3.cse@gmail.com  
+
+> 3
+
+Bangladesh Bank, Dhaka, Bangladesh zunayed.ahmedrafi@gmail.com 
+
+Abstract. Diabetic retinopathy (DR) is one of the main causes of im-paired vision. A good and reliable automated grading system can make the screening process safer and more accurate. Because DR stages progress gradually, the task of grading disease severity naturally follows an ordi-nal structure in which neighboring classes share similar visual charac-teristics. In this study, ORViT-DR, a hybrid deep learning framework, is designed to improve DR grading from low-resolution retinal images. The proposed approach combines convolutional feature extraction with transformer-based global context modeling through a pre-trained ViT-Hybrid backbone, which integrates BiT-ResNetv2 with a Vision Trans-former architecture. The approach is tested on the RetinaMNIST subset of the MedMNISTv2 dataset, which contains 28 ×28 retinal fundus im-ages annotated with five levels of disease severity. To promote stable training and better feature learning, the training strategy applies pro-gressive layer unfreezing, layer-wise learning rate decay, exponential mov-ing average (EMA) parameter updates, and ensemble-based prediction during inference. Experimental results on the official RetinaMNIST test set show that the proposed method achieves 57.00% classification accu-racy, along with a quadratic weighted kappa score of 0.5963 and a macro-F1 score of 0.4293. These results suggest that hybrid CNN–Transformer architectures can provide effective representations for DR grading with with competitive ordinal agreement measured by QWK. 
+
+Keywords: Diabetic retinopathy; RetinaMNIST; Hybrid vision trans-former; BiT; Transfer learning; Ordinal classification; Quadratic weighted kappa; Ensemble; Test-time augmentation. 
+
+# 1 Introduction 
+
+Diabetes mellitus is a critical health condition. It occurs from the body’s inability to produce a proper amount of insulin to absorb glucose. Diabetic Retinopathy arXiv:2608.16958v1 [eess.IV] 16 Aug 2026 2 Kundu et al. 
+
+(DR) is the result of damaging blood-vessels of the retina due to diabetes. It causes low vision. If it is not noticed early, it can lead to vision impairment. For detection, ophthalmologists examine retinal fundus images to find lesions and other visual signs associated with DR. As screening initiatives can generate a huge number of images, these make evaluation lengthy. Screening them manually takes a lot of time. Automated grading systems can be useful here. They can help reduce the workload of doctors and help critical patients who may need better care. In spite of recent progress, building reliable DR grading models is still not easy. Many important signs in retinal images can be missed as they are very subtle. Also, image quality is not always consistent—lighting, noise, and capture conditions often change them. It becomes more challenging when the dataset is class-imbalanced, small or low-resolution. The RetinaMNIST subset of MedM-NISTv2 [1,2] is a good example. The images are only 28 ×28 pixels, which have five severity levels with unevenly distributed classes. Deep learning models[3,4] plays a vital role in medical image classification. Convolutional neural networks (CNNs) [5,6] are widely used because they catch local spatial features from images effectively. More recently, Vision Transformers (ViTs) [7] have drawn significant interest because of their self-attention mecha-nisms. They can capture the global context of different regions of an image. But, as they are transformer-based, they require large amounts of training data and often struggle with limited or low-resolution datasets. Another approach is using hybrid architectures. A combination of CNN feature extraction and transformer-based global reasoning[8,9] introduces a new approach. ORVit-DR is introduced to study the feasibility of these types of hybid CNN-Tranformer framework. It’s a pretrained CNN-ViT backbone with local and global feature extraction, which could leverage the benefits from low-resolution rental images for grading diabetic retinopathy effectively. And for this investigation, RetinaMNIST could be very useful due to its limited training data and low-resolution images. 
+
+# 2 Related Work 
+
+2.1 Benchmark Datasets for Medical Image Classification 
+
+Benchmark Datasets e.g MedMNIST [1,2] dataset collection plays a vital role in deep learning research. Images in this dataset is downscaled to 28 ×28 pixel resolution. It helps researchers with low computation power to use deep learning models. MedMNISTv2[1] is another dataset with both 2D and 3D images. It contains a group of datasets such as retinal fundus images, blood cell microscopy, breast ultrasound, and histopathology images. It has become a great tool to compare models, AutoML systems, and transfer learning methods in biomedical image analysis[10]. 
+
+2.2 Convolutional Neural Networks in Medical Imaging 
+
+Convolutional Neural Networks (CNNs) and other deep learning models are now used a lot in medical imaging. The main reason is because they can find pat-Ordinality-Aware Hybrid ViT for Low-Resolution DR Grading 3
+
+terns from images in a layered way. They catch simple features first, then grad-ually move to the complex ones. This works great for medical image data. Pre-trained models like ResNet, DenseNet, and other convolutional neural networks (CNNs) [3,4,11]have shown considerable efficacy in different types of medical image classification. CNNs excel at recognizing localized patterns and textures in images[6,3], which is beneficial for detecting lesions or structural anomalies. But over-dependence on local context often hampers CNN-based models’ ability to capture global context. 
+
+2.3 Vision Transformers in Computer Vision 
+
+In the last few years, transformer-based models are being used in computer vision effectively. Vision Transformers (ViTs)[7,12] convert input images as sequences of patches, uses self-attention for interaction among patches. This design help network’s capacity to effectively understand the global context of an image. This feature is unique and helps to get overall insight in medical image classification. 
+
+2.4 Transfer Learning with Pretrained ViT Models 
+
+ViT models are computation heavy. So, they aren’t usually trained from scratch. Pre-trained models on extensive datasets[11,12] help in this case. This transfer learning strategy helps the model to use previously acquired knowledge in new architecture with minimal fine-tuning. 
+
+2.5 Hybrid CNN–Transformer Architectures 
+
+Instead of depending only on convolutional or transformer-based designs, hy-brid models[8,9] can be a great solution. These architectures frequently contain convolutional layers in the initial phases to extract local features, transformer modules to fetch global contextual information. The idea here is fairly simple. Convolutional networks are good at learning structured, local features, while transformers are better at handling global relationships. By combining both, the model can benefit from each side. For this reason hybrid CNN–Transformer approaches are getting more attention in medical imaging tasks. This is espe-cially true when datasets are small. It also helps when visual differences are very subtle. 
+
+2.6 Evaluation Metrics and Training Strategies in DR Analysis 
+
+Another important thing in diabetic retinopathy (DR) analysis is that the disease stages follow an order. The severity does not jump randomly; it increases step by step. If a model predicts a nearby stage, the mistake is usually less serious than predicting a stage that is far off. So, accuracy alone is not always enough. Metrics like quadratic weighted kappa (QWK) are also used, since they consider how close the predicted label is to the actual one and helps to get real clinical grading. 4 Kundu et al. 
+
+Another issue is with smaller and class-imbalanced datasets like RetinaMNIST. Training can become unstable, and models may not generalize well. To deal with this, data augmentation, adjusting the learning rate over time, regularization, and using methods like exponential moving averages are used. All of these help make the model more stable and improve its overall performance. Ordinal regression methods explicitly model ordered class relationships. Rep-resentative approaches include ranking-based formulations, cumulative proba-bility methods, and distance-aware losses that penalize larger label gaps more strongly than adjacent errors. Such methods are well suited to medical grad-ing problems where neighboring mistakes are clinically less severe than distant misclassifications. In the present work, weighted cross-entropy is employed for optimization and QWK is used as an ordinal-sensitive evaluation metric, while explicit ordinal objectives remain an important direction for future study. 
+
+# 3 Research Motivation and Objectives 
+
+Diabetes is an increasing concern in the world right now because of its ability to badly affect different organs. Early detection and treatment can be very effective against it. Among them, diabetic retinopathy is one of the most common and dangerous conditions because it can easily advance into blindness. So a diagnosis is very crucial for it, and an inaccurate assessment can lead to a catastrophic dis-aster. Deep learning has already proven super accurate and robust performance in some of the sectors of image classification. But their performance can be very limited in medical image diagnosis because of a limited dataset and low, noisy captured images. Another reason is that publicly available datasets are heavily imbalanced and often represent bias towards specific portions. Effective classi-fication despite these limitations is the key to medical image diagnosis. That’s why RetinaMNIST is fit for this because it shows all the limitations described above, like low resolution image (28x28), an uneven dataset, etc. Motivated by these challenges, this work proposes ORViT-DR, a hybrid CNN–Transformer framework designed to improve DR severity grading under constrained data conditions. This study investigates whether combining convo-lutional feature extraction with transformer-based global context modeling can improve classification accuracy, without needing extensive retraining on large datasets. In particular, the work is guided by the following research questions: 
+
+– Can a hybrid CNN–Transformer backbone outperform conventional CNN and AutoML baselines on RetinaMNIST without requiring large-scale re-training from scratch? 
+
+– Which fine-tuning and stabilization choices (progressive unfreezing, layer-wise learning rate decay, EMA, MixUp/CutMix) contribute most to stable learning in low-data regimes? 
+
+– Does ensemble-based inference improve ordinal agreement (QWK) in addi-tion to overall classification accuracy? Ordinality-Aware Hybrid ViT for Low-Resolution DR Grading 5
+
+# 4 Datasets Utilized in This Research 
+
+The dataset used in this research is RetinaMNIST from MedMNISTv2 via the Hugging Face dataset identifier albertvillanova/MedMNISTv2 with configura-tion RetinaMNIST. The dataset comprises 1,600 fundus images(split mentioned in Table I ) labeled into five ordinal DR grades.         
+
+> Table I. Baseline dataset statistics
+> Split Samples Classes Image Resolution
+> Train 1080 5 (No DR, Mild, Moderate, Severe, Proliferative) 28 ×28 (resized to 384 ×384 by the model processor) Validation 120 Test 400
+
+Different training class distribution of RetinaMNIST is shown in Fig. 1 . No DR dominates other classes significantly.  
+
+> Fig. 1. Class distribution of the RetinaMNIST training split (imbalanced toward No DR).
+
+# 5 Methodology and Implementation 
+
+5.1 Data Pre-processing 
+
+Although RetinaMNIST images are 28 ×28, the hybrid backbone vit-hybrid-base-bit-384 expects 384 ×384 inputs. Images are resized using the model processor 6 Kundu et al. 
+
+for input compatibility and transfer-learning alignment. This resizing step heps effective adaptation of the pretrained backbone to the target benchmark. The model’s image processor is used to resize and normalize each image. Augmen-tations (RandAugment, color jitter, affine transforms, flips) are applied before processor resizing. To improve robustness, MixUp and CutMix are used during fine-tuning [13,14]. Weighted cross-entropy (with smoothing). With class weights wc, one-hot labels yc, and predicted probabilities pc, the objective is: 
+
+LCE = −
+
+> C
+
+X
+
+> c=1
+
+wc yc log( pc) (1) Label smoothing replaces hard one-hot targets with a convex combination of the one-hot label and a uniform prior. 
+
+5.2 Proposed Architecture 
+
+The ORViT-DR architecture, as proposed, employs a hybrid CNN–Transformer pipe-line, which is structured to extract both local spatial characteristics and global contextual relationships inherent in retinal fundus images. This compre-hensive framework is organized into five principal stages: input processing, pre-processing and augmentation, feature encoding via dual encoders, classification, and inference stabilization. The process begins with retinal fundus images from the RetinaMNIST dataset. Each image is a 28 × 28 RGB representation, corresponding to one of five ordinal diabetic retinopathy grades. Because the selected pretrained backbone operates on 384 ×384 inputs, images are resized to match that. This step is used for archi-tectural compatibility rather than to generate additional visual detail. Normal-ization follows with previously fixed parameters after image resizing. Stability of the training process is ensured with this distribution. The whole architecture is shown in Fig. 2 .
+
+5.3 Core Settings 
+
+Core settings of the ORViT-DR architecture. 
+
+– Task: 5-class diabetic retinopathy grading using RetinaMNIST. 
+
+– Data split: train/val/test = 1080/120/400 
+
+– Input: Images are originally 28 ×28, but resized to 384 ×384 for the model. 
+
+– Model: Hybrid ViT (vit-hybrid-base-bit-384): BiT-ResNetV2 feature ex-tractor, ViT-base transformer encoder 
+
+– Learning rate: Around 5e-4 in the first stage, then smaller (3e-5 backbone, 3e-4 head) with decay across layers. 
+
+– Loss & metrics: Weighted cross-entropy loss. Evaluation uses accuracy, macro-F1, and QWK. Ordinality-Aware Hybrid ViT for Low-Resolution DR Grading 7 
+
+> Fig. 2. ORViT-DR whole architecture. It is based on a hybrid CNN–Transformer back-bone.
+
+5.4 Training 
+
+The training procedure is divided into two phases: 
+
+– Head-only training: Initially, only the classification head is trained while the backbone remains frozen. 
+
+– Backbone training: Subsequently, part of the backbone is unfrozen and training continues. A batch size of 8 is used in this phase, along with a cosine learning rate schedule. 
+
+5.5 Regularization 
+
+Label smoothing is done to prevent the model from becoming overconfident. Also dropout is applied to keep the model from relying too much of specific features, and gradient clipping is applied to keep the ongoing training stable. 
+
+5.6 Augmentation 
+
+To reduce overfitting and maximize generalization due to a heavy dataset. 
+
+– RandAugment:[15] It is used to induce alterations to the images. Slightly changing color or intensity randomly helps the model generalize better. 
+
+– Color jitter: Adding a slight variation of brightness, contrast, and color of the images helps to handle different visual conditions. 8 Kundu et al. 
+
+5.7 Fine Tuning 
+
+Different fine-tuning approaches have been taken after analyzing the training progress and the progression of epochs. Continuous monitoring and observation have been made to check if any overfitting is occurring or not. 
+
+– Cutmix: [14] In this approach, a small patch from one image is taken and pasted onto another image. The label is also adjusted. It encourages the model to pay attention to different regions instead of depending on just one part. 
+
+– Mixup:[13] Two images as well as their labels are blended together. This makes the model become smoother and less noise-prone. 
+
+5.8 Inference 
+
+During inference, predictions from several high-performing checkpoints are aver-aged to improve stability. In addition, test-time augmentation (TTA) is applied by generating slightly modified versions of the same input image and averaging their predictions. This combination helps reduce variance in the final outputs and leads to more consistent predictions. The hybrid design of ORViT-DR, which in-tegrates both local and global feature representations, further supports robust decision-making on low-resolution retinal images. 
+
+5.8.1 vit-hybrid-base-bit-384 Here google/vit-hybrid-base-bit-384 model has been used as hybrid setup. BiT-style ResNetV2 is used to extract local textures, features, tiny lesions. Then ViT-base transformer encoder is to used for global context. The ViT-base linked information from different regions. Thus, the model gets a mix of both local and global feature extraction which especially help for low-resolution images. 
+
+5.8.2 Key Components of the Hybrid ViT Architecture The architec-ture uses a convolutional stem, such as BiT or ResNetV2 [16,17], to extract local features and improve translation robustness[18]. 
+
+– Transformer encoder for long-range dependency modeling across the image grid. 
+
+– Lightweight classification head (Dropout + Linear) to mitigate overfitting in low-data regimes. 
+
+5.9 Fine-Tuning Strategy 
+
+The proposed ORViT-DR framework is trained using a two-stage fine-tuning strategy designed to stabilize optimization while adapting the pretrained back-bone to the target retinal dataset.Layer-wise learning rate decay (LLRD) is applied so earlier pretrained layers receive smaller updates while later layers adapt more rapidly. Exponential moving average (EMA) with decay 0.999 is Ordinality-Aware Hybrid ViT for Low-Resolution DR Grading 9
+
+maintained during training to smooth parameter updates and improve gener-alization. A practical consideration for implementation is using full precision (FP32) training, because mixed precision can lead to numerical instability. The GroupNorm layers in the BiT backbone are more likely to overflow when using half precision. This can cause NaN values during training. So, to make sure that convergence is dependable, FP32 is used for all testing. Training configuration and fine-tuning strategy is given in Table II                   
+
+> Table II. Training configuration and fine-tuning strategy
+> Component Setting (from implementation)
+> Stage 1 Head-only training (warmup + cosine), learning rate 5 ×10 −4, batch size 8 Stage 2 Partial unfreezing of transformer encoder + LayerNorm + head LLRD Decay factor 0.85, base LR 3 ×10 −5, head LR 3 ×10 −4
+> Regularization Label smoothing 0.1, dropout in head, gradient clipping (1.0) MixUp/CutMix MixUp α= 0 .3; CutMix α= 1 .0, randomly sampled per batch EMA Decay 0.999 (applied on trainable parameters) Ensemble Uniform logit averaging over top checkpoints; optional TTA views
+
+In the first stage, only the classification head is trained while keeping the backbone networks frozen. This head-only training phase acts as a warm-up step that allows the classifier to adapt to the target task without disrupting the pretrained representations. During this stage, a cosine learning rate schedule is applied with an initial learning rate of (5 ×10 −4), and training is performed with a batch size of 8. In the subsequent phase, partial unfreezing is implemented to facilitate a more profound adaptation of the model. More precisely, the transformer encoder and its corresponding LayerNorm layers are unfrozen, alongside the classification head. This prevents the model from not losing what it already learned from pretraining and adapting that knowledge for DR grading. For stable training, layer-wise learning rate decay (LLRD) is introduced. This means the earlier layers change more slowly, while the later layers are allowed to adjust more. A decay factor of 0.85 is used and a learning rate of (3 × 10 −5)for the backbone and (3 × 10 −4) for the classification head. Label smoothing (0.1) slightly softens the target labels. Dropout is added to the classification head, and gradient clipping (with a max norm of 1.0) is used to avoid unstable updates. These helps reduce overfitting. For data augmentation, both MixUp and CutMix are used. MixUp ( α = 0 .3) blends two images together, while CutMix (α = 1 .0) swaps patches between images. Both are not used at once, only one is chosen randomly for each batch, which helps the model learn more general patterns. EMA with decay 0.999 are maintained during training. This keeps the parameter updates smoother and keeps slightly more consistent performance. 10 Kundu et al. 
+
+This leads to increased stability and often results shows better generalization performance during evaluation. 
+
+5.10 Ablation Protocol 
+
+To assess the contribution of key components, controlled ablations for layer-wise learning rate decay (LLRD), EMA, and checkpoint ensembling were done. For the LLRD control, seed and initialization were fixed and Phase-2 fine-tuning was reran with LLRD disabled while keeping all other settings unchanged. This allowed isolating the effect of each component without confounding factors. 
+
+# 6 Evaluation Approach 
+
+Evaluation is done using three complementary metrics: 
+
+– Accuracy to match MedMNIST benchmark reporting. 
+
+– Macro-F1 [19] to account for class imbalance. 
+
+– QWK to measure ordinal agreement and penalize distant misclassifications. For ROC analysis, one-vs-rest ROC curves is computed [20] per class using the ensemble softmax probabilities and report per-class AUC. To assess training stability, additional experiments were conducted across three independent random seeds. Moderate variability was observed, which is expected given the limited size and low resolution of the dataset. While individ-ual runs vary, the best-performing configuration achieves the peak performance reported in the main results. A more comprehensive multi-seed evaluation and statistical analysis is considered for future work. 
+
+# 7 Result Analysis 
+
+7.1 Confusion Matrix 
+
+The confusion matrices in Fig. 3 . indicate that most errors occur between ad-jacent grades (e.g., Mild ↔ Moderate, Moderate ↔ Severe), consistent with the ordinal nature of DR. The ensemble improves stability in moderate and severe predictions but remains challenged on the minority proliferative class. 
+
+7.2 ROC Curve 
+
+The top-3 ensemble yields strong separability for No-DR and Severe classes (AUC ≈ 0.83), while Mild remains harder (AUC ≈ 0.68), likely due to subtle visual cues and class imbalance. This is mentioned in ROC curve Fig. 5 .Ordinality-Aware Hybrid ViT for Low-Resolution DR Grading 11         
+
+> Fig. 3. Confusion matrices for the best single checkpoint (56.25%) and top-3 uniform ensemble (57.00%).
+> Table III. Ablation study under a fixed seed setting (seed 42). Results are reported as relative performance changes. Configuration ∆Single + TTA (pp) ∆Ensemble + TTA (pp) No LLRD vs. With LLRD -8.00 -2.25
+
+7.3 Ablation Study 
+
+Removing LLRD led to a substantial performance drop (–8 pp for single-model accuracy), confirming its importance for stable fine-tuning. Checkpoint ensem-bling consistently improved performance, while EMA contributed to training stability. These findings validate the role of key components in the proposed framework. 
+
+# 8 Grad-CAM Analysis 
+
+To improve model interpretability, Gradient-weighted is applied Class Activation Mapping (Grad-CAM) to visualize image regions that most strongly influence class decisions. Grad-CAM produces a class-specific saliency map by combining feature activations from a target convolutional layer with gradient-based impor-tance weights. In this work, Grad-CAM is generated from a deep convolutional layer in the hybrid retina classifier, and heatmaps are upsampled and overlaid on the 12 Kundu et al. 
+
+Fig. 4. Training curves produced by the implementation: (a) validation accuracy and (b) train/validation loss across stages. 
+
+corresponding fundus images. These visualizations is then used to verify that high-response regions align with clinically relevant retinal structures and lesion patterns. Figure 6 shows representative examples of original images, Grad-CAM maps, and overlays. 
+
+# 9 Comparison with Benchmark Approaches 
+
+Table IV compares ORViT-DR against standard CNN and AutoML baselines reported for RetinaMNIST in the MedMNIST benchmark literature. Compared to CNN/AutoML[21,22] baselines ( ≈50–53% accuracy), ORViT-DR improves test accuracy by up to 4 pp and improves ordinal agreement as reflected by QWK. The hybrid backbone achieves transformer-level performance while benefiting from CNN inductive biases. 
+
+Table IV. Benchmark comparison on RetinaMNIST 
+
+Method RetinaMNIST Acc (%) Notes 
+
+ResNet-18 (28) 52.4 Baseline from MedMNIST ResNet-18 (224) 49.3 Baseline with 224-resized input ResNet-50 (28) 52.8 Baseline from MedMNIST ResNet-50 (224) 51.1 Baseline with 224-resized input auto-sklearn 51.5 Classical AutoML baseline AutoKeras 50.3 Neural search AutoML baseline Google AutoML Vision 53.1 Strong AutoML baseline 
+
+ORViT-DR (best single checkpoint) 
+
+56.25 Hybrid ViT backbone; Dropout head; QWK=0.6052 
+
+ORViT-DR (top-3 uni-form ensemble) 
+
+57.0 Logit averaging; Macro-F1=0.4293; QWK=0.5963 Ordinality-Aware Hybrid ViT for Low-Resolution DR Grading 13  
+
+> Fig. 5. One-vs-rest ROC curves for the top-3 ensemble. The per-class AUCs are shown in the legend.
+
+# 10 Conclusion & Future Works 
+
+This manuscript presents ORViT-DR, a hybrid CNN–Transformer approach for low-resolution DR grading on RetinaMNIST. The method combines a pre-trained hybrid backbone with progressive unfreezing, layer-wise learning-rate decay, EMA stabilization, and ensemble inference. ORViT-DR achieves 57.00% test accuracy, macro-F1[19] 0.4293, and QWK 0.5963, outperforming conven-tional CNN and AutoML baselines reported for RetinaMNIST. Future work will focus on (i) improved imbalance handling (ordinal loss, class-balanced sampling) (ii) more comprehensive evaluation through repeated runs and statistical analysis (iii) additional comparisons with transformer-only and other modern backbones will also be explored. 14 Kundu et al. 
+
+Fig. 6. Representative Grad-CAM visualizations on RetinaMNIST samples. From left to right: original image, Grad-CAM heatmap, and heatmap overlay. Warmer regions indicate a stronger positive contribution to the predicted class. 
+
+# References 
+
+1. Yang, J., Shi, R., Ni, B.: Medmnist v2: A large-scale lightweight benchmark for biomedical image classification. Scientific Data 10, 41 (2023) 2. Yang, J., Shi, R., Ni, B.: Medmnist classification decathlon: A lightweight au-toml benchmark for medical image analysis. In: IEEE International Symposium on Biomedical Imaging (ISBI). pp. 191–195 (2021) 3. Khan, R., Zhang, X., Aboagye, E.O.: Evaluating the performance of resnet model based on image recognition. In: International Conference on Computing and Arti-ficial Intelligence (ICCAI). pp. 86–90 (2018) 4. Abai, Z., Rajmalwar, N.: Densenet for tiny imagenet. arXiv preprint arXiv:1904.10429 (2019) 5. LeCun, Y., Bottou, L., Bengio, Y., Haffner, P.: Gradient-based learning applied to document recognition. Proceedings of the IEEE 86(11), 2278–2324 (1998) 6. Sultana, F., Sufian, A., Dutta, P.: Advancements in image classification using con-volutional neural network. In: International Conference on Research in Computa-tional Intelligence and Communication Networks (ICRCICN). pp. 122–129 (2018) 7. Dosovitskiy, A., Beyer, L., Kolesnikov, A., et al.: An image is worth 16x16 words: Transformers for image recognition at scale. In: International Conference on Learn-ing Representations (ICLR) (2021) 8. Nejati Manzari, O., Ahmadabadi, H., Kashiani, H., Shokouhi, S.B., Ahmadabadi, A.: Medvit: A robust vision transformer for generalized medical image classifica-tion. arXiv preprint arXiv:2302.09462 (2023) 9. Karomat, A., Han, J.H., Kim, H.G.: Hybrid transformer architecture for medical image classification. IEEE Access 12, 4516–4526 (2024) 10. Ghalati, R.Z., et al.: Texture analysis and its applications in biomedical imaging: A survey. IEEE Reviews in Biomedical Engineering 15, 222–246 (2022) 11. Russakovsky, O., et al.: Imagenet large scale visual recognition challenge. Interna-tional Journal of Computer Vision 115, 211–252 (2015) 12. Ridnik, T., Ben-Baruch, E., Noy, A., Zelnik-Manor, L.: Imagenet-21k pretraining for the masses. arXiv preprint arXiv:2104.10972 (2021) 13. Zhang, H., Cisse, M., Dauphin, Y.N., Lopez-Paz, D.: mixup: Beyond empirical risk minimization. In: International Conference on Learning Representations (ICLR) (2018) Ordinality-Aware Hybrid ViT for Low-Resolution DR Grading 15 14. Yun, S., Han, D., Oh, S.J., Chun, S., Choe, J., Yoo, Y.: Cutmix: Regularization strategy to train strong classifiers with localizable features. In: IEEE International Conference on Computer Vision (ICCV). pp. 6022–6031 (2019) 15. Cubuk, E.D., Zoph, B., Shlens, J., Le, Q.V.: Randaugment: Practical automated data augmentation with a reduced search space. In: CVPR Workshops. pp. 702– 703 (2020) 16. Kolesnikov, A., Beyer, L., Zhai, X., et al.: Big transfer (bit): General visual repre-sentation learning. In: ECCV (LNCS). pp. 491–507 (2020) 17. He, K., Zhang, X., Ren, S., Sun, J.: Identity mappings in deep residual networks. In: ECCV (LNCS). pp. 630–645 (2016) 18. Xu, M., Zhang, T., Zhang, D.: Medrdf: A robust and retrain-less diagnostic frame-work for medical pretrained models against adversarial attack. IEEE Transactions on Medical Imaging 41(8), 2130–2143 (2022) 19. Yacouby, R., Axman, D.: Probabilistic extension of precision, recall, and f1 score for more thorough evaluation. In: Eval4NLP. pp. 79–91 (2020) 20. Bradley, A.P.: The use of the area under the roc curve in the evaluation of machine learning algorithms. Pattern Recognition 30(7), 1145–1159 (1997) 21. He, X., Zhao, K., Chu, X.: Automl: A survey of the state-of-the-art. Knowledge-Based Systems 212, 106622 (2021) 22. Jin, H., Song, Q., Hu, X.: Auto-keras: An efficient library for automated machine learning. In: KDD. pp. 1946–1956 (2019)

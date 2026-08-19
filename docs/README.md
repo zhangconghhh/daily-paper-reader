@@ -6,26 +6,30 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-18
-- 运行时间：2026-08-18 20:55:52 UTC
+- 最新运行日期：2026-08-19
+- 运行时间：2026-08-19 20:49:05 UTC
 - 运行状态：成功
-- 本次总论文数：2
-- 精读区：1
-- 速读区：1
+- 本次总论文数：3
+- 精读区：0
+- 速读区：3
 
 ### 今日简报（AI）
-今日精读1篇、速读1篇，重点关注可解释性稀疏视觉Transformer与AI生成图像检测。最值得看的是《SpIn-ViT》提出的机制可解释稀疏设计，获8分高分；DINOv3下的锚点正则化检测也值得参考。建议普通读者优先阅读精读论文，后续可深入对比两方法在不同任务上的泛化表现。
-- 详情：[/202608/18/README](/202608/18/README)
+今日速读3篇论文，聚焦视觉适配、医学影像与病理编码，但无精读深度分析。最值得关注的是《Self-Routed Tensor Adapters》（7分），探索参数高效的通用视觉适配方法。建议普通读者优先浏览该文摘要与图表，并留意后续精读版本。
+- 详情：[/202608/19/README](/202608/19/README)
 
 ### 精读区论文标签
-1. [SpIn-ViT: Designing a Sparsity-Induced Vision Transformer That Is Mechanistically Interpretable](/202608/18/2608.14922v1-spin-vit-designing-a-sparsity-induced-vision-transformer-that-is-mechanistically-interpretable)  
-   标签：评分：8.0/10、query:dino-fg
-   evidence：用于图像分类的视觉Transformer架构，具备稀疏可解释表示
+- 本次无精读推荐。
 
 ### 速读区论文标签
-1. [Anchor-Regularized Adaptation for Generalizable AI-Generated Image Detection with DINOv3](/202608/18/2608.15196v1-anchor-regularized-adaptation-for-generalizable-ai-generated-image-detection-with-dinov3)  
+1. [Self-Routed Tensor Adapters for Parameter-Efficient Universal Visual Adaptation](/202608/19/2608.16384v1-self-routed-tensor-adapters-for-parameter-efficient-universal-visual-adaptation)  
    标签：评分：7.0/10、query:dino-fg
-   evidence：使用DINOv3冻结表征进行可泛化的AI生成图像检测，将DINO基础模型用于图像分类任务
+   evidence：提出自路由张量适配器SRTA，用于冻结视觉基础模型的参数高效通用视觉自适应，可支撑下游图像分类任务
+2. [ORViT-DR: Ordinally-Robust Hybrid ViT for Low-Resolution Diabetic Retinopathy Grading](/202608/19/2608.16958v1-orvit-dr-ordinally-robust-hybrid-vit-for-low-resolution-diabetic-retinopathy-grading)  
+   标签：评分：6.0/10、query:dino-fg
+   evidence：混合ViT用于医学图像分类，可迁移至细粒度分类
+3. [DistillPath: An Efficient 22M Distilled Pathology Encoder Approaching Large Foundation Model Performance](/202608/19/2608.17872v1-distillpath-an-efficient-22m-distilled-pathology-encoder-approaching-large-foundation-model-performance)  
+   标签：评分：6.0/10、query:dino-fg
+   evidence：从大型病理基础模型蒸馏紧凑ViT编码器，明确提及DINO/iBOT预训练头，与DINO/ViT图像分类相关。
 
 
 <div class="dpr-home-promo-card">

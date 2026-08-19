@@ -1,0 +1,394 @@
+Title: Self-Routed Tensor Adapters for Parameter-Efficient Universal Visual Adaptation
+
+URL Source: https://arxiv.org/pdf/2608.16384v1
+
+Published Time: Tue, 18 Aug 2026 01:55:00 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# Self-Routed Tensor Adapters for Parameter-Efficient Universal Visual Adaptation 
+
+Suraj Yadav 
+
+Indraprastha Institute of Information Technology Delhi 
+
+suraj24098@iiitd.ac.in 
+
+Abstract. Universal visual representations require adaptation mech-anisms that adapt across heterogeneous domains without fragmenting knowledge into domain-specific modules. Parameter-efficient fine-tuning adapts frozen visual foundation models efficiently, but standard low-rank adapters use a fixed subspace for all inputs, which can be restrictive when domains differ in style, background, and semantic context. MoE-based adapters improve specialization through multiple expert pathways, but often rely on external routers and large expert banks, adding parame-ters and separating routing from adaptation. We propose Self-Routed Tensor Adapters , a compact framework for multi-domain visual adap-tation. SRTA projects each input into a low-rank space, computes routing weights from this representation using a learnable domain matrix, and uses these weights to blend slices of a shared Tucker core. This produces a sample-specific adaptation matrix without an external gating network, allowing shared visual factors to be reused while supporting domain-aware specialization. To strengthen pathway learning, we introduce a progressive depth-weighted routing objective that supervises routing de-cisions across adapter layers. Across five heterogeneous multi-domain visual classification benchmarks, SRTA achieves competitive or slightly stronger average accuracy than MoE-style PEFT baselines while using substantially fewer trainable parameters. At rank 64, SRTA uses 2.77M parameters in the 4-domain setting compared with 9.52M for MoLoRA, and 3.00M in the 6-domain setting compared with 14.31M. Overall, SRTA offers an effective accuracy-parameter trade-off for adapting vi-sual foundation models toward universal multi-domain representations. GitHub 
+
+1 Introduction 
+
+Building universal visual representations [2, 16] requires models that remain ef-fective across heterogeneous domains, tasks, and distribution shifts. In practice, however, adapting a large pre-trained vision backbone to multiple downstream domains remains challenging. Different domains may vary in visual style, back-ground context, acquisition conditions, and object appearance. A useful adapta-tion mechanism should therefore preserve the reusable knowledge of the frozen foundation model while allowing compact, input-dependent specialization. arXiv:2608.16384v1 [cs.CV] 17 Aug 2026 2 S. Yadav 
+
+Parameter-efficient fine-tuning has emerged as a practical approach for adapt-ing large pre-trained models while keeping the backbone frozen. LoRA [4] and related methods [5, 8, 15] learn compact low-rank updates, but they usually ap-ply the same adaptation subspace to every input. In heterogeneous multi-domain settings, this fixed subspace can be too restrictive: some domains require shared factors, while others require domain-specific adaptation. This may lead to neg-ative transfer and uneven optimization across domains. Recent work has addressed this limitation by combining PEFT with Mixture-of-Experts (MoE) architectures [17]. MoE-based adapters, such as MoLoRA [22], MOELoRA [14], and MALoRA [21], improve specialization by assigning inputs to multiple low-rank expert pathways. However, these methods typically com-pute routing probabilities using a separate gating network [14, 17, 22]. This in-troduces additional routing-specific parameters and separates expert selection from the low-rank representation used for adaptation. As a result, routing deci-sions may become decoupled from the geometry of the learned adapter features, leading to redundant experts, unstable routing behavior, and inefficient sharing across related domains. Motivated by this limitation, we ask whether routing can instead be derived directly from the adapter representation itself. In this paper, we study multi-domain visual adaptation from the perspective of universal representation learning. Instead of treating each domain as requir-ing an isolated expert, we ask whether heterogeneous domains can be organized within a shared, structured adaptation space. To this end, we propose Self-Routed Tensor Adapters (SRTA) , a parameter-efficient adaptation frame-work that formulates the update space as a Tucker-decomposed tensor [7, 19]. SRTA replaces discrete externally routed experts with a shared core tensor whose domain-indexed slices are dynamically blended for each input. The key idea behind SRTA is intrinsic domain-aware routing . Rather than introducing a separate gating network, SRTA derives routing probabilities di-rectly from the interaction between the adapter’s low-rank input projection and a learnable domain-coordinate matrix. This allows the adapter to route itself us-ing the same representation that is used for adaptation. From a representation-learning perspective, the Tucker core serves as a shared adaptation basis, while the domain-coordinate matrix provides domain-aware coordinates over it. As a result, SRTA can reuse common visual factors across domains while softly specializing to domain-specific variations. To encourage the learned pathways to remain both reusable and discrimi-native, we introduce a structural training objective. Specifically, we apply pro-gressive depth-weighted routing supervision [9] across adapter layers, providing direct learning signals to intermediate routing decisions and mitigating weak su-pervision in early layers. This objective helps reduce domain interference while preserving a compact shared adaptation space. Our contributions are summarized as follows. 
+
+– Self-routed tensor adapters. We introduce SRTA, a parameter-efficient adapter that computes routing probabilities directly from the adapter’s low-rank representation, removing the need for a separate MoE gating network. Self-Routed Tensor Adapters 3
+
+– Input-conditioned Tucker adaptation. We represent the adaptation space using a shared Tucker core tensor. For each input, SRTA dynamically blends core slices to produce a sample-specific low-rank adaptation matrix. 
+
+– Progressive routing supervision. We introduce a progressive depth weighted routing loss that improves domain-aware pathway learning across adapter layers. 
+
+– Accuracy-parameter trade-off. Across five multi-domain visual classi-fication benchmarks, SRTA achieves competitive or slightly better average accuracy than MoE-style PEFT baselines while requiring substantially fewer parameters than MoLoRA. 
+
+2 Related Work 
+
+2.1 Universal Visual Representations and Multi-Domain Adaptation 
+
+A central goal of modern foundation models is to learn representations that re-main transferable across tasks, domains, and distribution shifts. In visual recog-nition, this is closely related to domain generalisation, where models are trained on multiple source domains and expected to perform well under heterogeneous or unseen domain conditions. Benchmarks such as PACS [11], VLCS [18], Office-Home [20], Digits-DG [24], and NICO++ [23] expose this challenge through variations in style, object appearance, background, acquisition conditions, and visual context. Although large pre-trained vision transformers provide strong general-purpose features [2], adapting them to multiple downstream domains remains non-trivial: full fine-tuning can overwrite useful pre-trained knowledge, while a single shared adaptation module may be insufficient for domains with conflicting visual statistics. This motivates adaptation mechanisms that preserve reusable representations while allowing controlled domain-specific specialization. Our work follows this direction by introducing a self-routed Tucker-decomposed adaptation space that blends shared and domain-aware factors. 
+
+2.2 Parameter-Efficient Fine-Tuning 
+
+Parameter-Efficient Fine-Tuning (PEFT) adapts large pre-trained models by up-dating only a small subset of parameters while keeping the backbone frozen. Prompt-based methods, such as Prefix-Tuning [12] and Prompt-Tuning [10], optimize continuous prompts, while Low-Rank Adaptation (LoRA) [4] learns trainable low-rank updates to frozen weight matrices and has become a widely used PEFT technique. Several extensions improve efficiency or adaptation qual-ity: DoRA [15] decomposes updates into magnitude and direction components, while VeRA [8] and VB-LoRA [13] reduce trainable parameters through shared or reused adaptation components. However, most PEFT methods rely on static adaptation spaces, which can be limiting in multi-domain settings where a single low-rank update may suffer from negative transfer and domain interference. In contrast, our method introduces an input-dependent self-routing mechanism that dynamically blends adaptation pathways while remaining parameter-efficient. 4 S. Yadav 
+
+2.3 Mixture-of-Experts for Multi-Domain Adaptation 
+
+Mixture-of-Experts (MoE) [3] architectures improve multi-domain adaptation by assigning inputs to specialized expert modules. In PEFT, MoE-based adapters combine low-rank efficiency with expert specialization: MoLoRA [22] extends LoRA with multiple low-rank experts and a routing mechanism, MOELoRA [14] introduces task-conditioned gating to combine LoRA experts for multi-task adap-tation, and MALoRA [21] improves parameter efficiency by sharing parts of the low-rank structure across experts. Despite their effectiveness, these methods commonly rely on external gating networks to compute routing probabilities, creating a separation between the adapter representation space and the rout-ing mechanism. This decoupling can add parameters, increase computation, and lead to redundant expert assignments. Our work removes the external router and derives routing probabilities directly from the low-rank adapter representa-tion through its interaction with a learnable domain-coordinate matrix, aligning expert blending with the representation geometry used for adaptation. 
+
+2.4 Tensor Decompositions and Factorized Adapters 
+
+Tensor decompositions provide a principled way to represent high-dimensional parameter spaces using compact multilinear factors. Classical decompositions such as CP [1] and Tucker decomposition [7, 19] have been widely used for com-pression, factor analysis, and efficient parameterization. In neural adaptation, tensor and factorized methods have also been explored to reduce fine-tuning cost; for example, FacT [6] applies tensor-based factorization to lightweight adap-tation in vision transformers. Most tensor-based adaptation methods use de-composition primarily as a compression mechanism. In contrast, our work uses a Tucker-decomposed parameter space as a dynamic routing structure, where the shared core tensor captures reusable adaptation factors and the domain-coordinate matrix defines domain-aware coordinates for blending them. This enables both shared and domain-specific structure to be represented within a single compact adaptation module. 
+
+3 Methodology 
+
+3.1 Problem Setup 
+
+We consider multi-domain parameter-efficient adaptation of a frozen pre-trained vision model. Let W0 ∈ Rdin ×dout denote a frozen weight matrix in a transformer layer, and let x ∈ RB×T ×din be an input sequence with batch size B and sequence length T . During training, each sample is associated with a class label y∗ and a domain label d∗. The class label supervises the main recognition objective, while the domain label is used only as auxiliary supervision for routing. At inference time, SRTA does not require the domain label; routing probabilities are computed directly from the input representation. Self-Routed Tensor Adapters 5
+
+The goal is to learn a compact input-conditioned adaptation module that supports heterogeneous domains while preserving a shared representation space. In standard Low-Rank Adaptation (LoRA), the update is parameterized as 
+
+∆W = AB,  (1) where A ∈ Rdin ×r and B ∈ Rr×dout are trainable low-rank matrices. The adapted layer output is then 
+
+y = xW 0 + s(xAB ), (2) where s is a scaling factor. While this static low-rank update is efficient, it uses the same adaptation subspace for all inputs. This can be restrictive in het-erogeneous multi-domain settings, where different domains may require partially shared but also domain-specific adaptation pathways. MoE-based LoRA methods address this limitation by introducing N low-rank experts: 
+
+y = xW 0 + s
+
+> N
+
+X
+
+> t=1
+
+αt(xA tBt), (3) where αt denotes the routing probability for expert t. These routing probabil-ities are usually produced by an external gating network. Although this enables input-dependent specialization, the router is separated from the adapter repre-sentation itself. This introduces additional routing-specific parameters and may decouple expert selection from the low-rank representation being adapted. 
+
+3.2 Self-Routed Tensor Adapters 
+
+To avoid external routing while still enabling domain-aware specialization, we propose Self-Routed Tensor Adapters (SRTA) . The key idea is to formu-late the adaptation space as a Tucker-decomposed tensor and derive routing probabilities intrinsically from the adapter’s own low-rank representation. Instead of representing the update using a single low-rank matrix product, SRTA introduces four trainable components: 
+
+– an input projection matrix V ∈ Rdin ×r1 ,
+
+– an output projection matrix U ∈ Rr2×dout ,
+
+– a shared Tucker core tensor G ∈ Rr3×r1×r2 ,
+
+– a domain-coordinate matrix C ∈ Rr1×r3 .Here, r1 and r2 are the low-rank input and output dimensions, while r3
+
+denotes the number of domain-aware adaptation pathways. In our experiments, 
+
+r3 is set to the number of domains in the benchmark. The columns of C act as learnable pathway coordinates in the low-rank adapter space. 6 S. Yadav y
+
++
+
+> B r × dout
+> y
+
++ 
+
+> Frozen Linear Layer W0
+> Frozen Linear Layer W0 SRTA (Δ)
+> Adin × r
+> x
+> y = xW0 + xAB
+> (a) LoRA
+> Frozen
+> Adapter/ parameters
+> x
+> y = xW0 + s ⋅ Δ
+> (b) Self-Routed Tensor Adapters (SRTA)
+> Routing / Probabilities
+> Domain / Core Tensors
+> scale s
+
+... 
+
+> U r2 × dout
+
+... 
+
+> task matrix C r1 × r3
+
+... 
+
+> V din × r1
+> x
+> (c) Zoom-in of SRTA internal components
+> Z
+
+Fig. 1: Overview of the Self-Routed Tensor Adapter pipeline . The input pro-jection V and domain-coordinate matrix C generate intrinsic routing probabilities, which are used to blend slices of the shared Tucker core tensor G. This removes the need for an external MoE gating network. 
+
+From a representation-learning perspective, the shared core tensor G stores reusable adaptation factors, while the domain-coordinate matrix C provides co-ordinates for routing over this shared basis. This allows SRTA to softly combine shared and domain-specific factors instead of allocating each input to a fully isolated expert. 
+
+3.3 Intrinsic Self-Routing 
+
+Given an input sequence x, SRTA first projects it into the low-rank adapter space: 
+
+z = xV, z ∈ RB×T ×r1 . (4) Instead of relying only on the global classification token, we compute a rout-ing signature by averaging the projected patch-token representations. Using zero-based indexing, we treat token 0 as the [CLS] token, we omit this token and aggregate over the remaining patch tokens: 
+
+zroute = 1
+
+T − 1 
+
+> T−1
+
+X
+
+> i=1
+
+z[: , i, :] , zroute ∈ RB×r1 . (5) This routing signature encourages routing decisions to depend on distributed patch-level visual evidence rather than a single global token representation. Self-Routed Tensor Adapters 7
+
+Routing logits are then computed by comparing the pooled low-rank repre-sentation with the learnable domain-coordinate matrix: 
+
+q = zroute Cτ , q ∈ RB×r3 , (6) where τ is a temperature hyperparameter that controls the sharpness of the routing distribution. The routing probabilities are obtained using a softmax func-tion: 
+
+α = Softmax( q), α ∈ RB×r3 . (7) Unlike MoE-based adapters, SRTA does not introduce a separate gating net-work. The routing probabilities are computed from the same low-rank represen-tation that is used for adaptation. Therefore, routing and feature adaptation are coupled within the same representation space. 
+
+3.4 Dynamic Tucker Core Blending 
+
+The routing probabilities α are used to dynamically blend the domain-pathway slices of the shared Tucker core tensor. Let Gt ∈ Rr1×r2 denote the t-th slice of the core tensor. For each input sample b, SRTA constructs a sample-specific core matrix: 
+
+Σb(x) = 
+
+> r3
+
+X
+
+> t=1
+
+αb,t Gt, Σb(x) ∈ Rr1×r2 . (8) The adapter output for sample b is then computed as 
+
+yadapt ,b = ( zbΣb(x)) U,  (9) where zb ∈ RT ×r1 is the low-rank projected representation of sample b. The final adapted layer output is 
+
+yb = xbW0 + s · yadapt ,b , (10) where s is the adapter scaling factor. This formulation can be viewed as an input-conditioned Tucker factorization of the adapter update. Instead of selecting from independent expert matrices, SRTA learns a shared tensor basis and constructs a sample-specific adaptation matrix by softly blending core slices. This allows related domains to share adap-tation factors while still permitting domain-specific specialization. 
+
+3.5 Progressive Depth-Weighted Routing Supervision 
+
+Routing decisions are computed independently at each adapter layer. However, if routing is supervised only through the final classification loss, the routing parameters in earlier layers may receive weak or delayed learning signals. To address this, we introduce progressive depth-weighted routing supervision. 8 S. Yadav 
+
+Let M denote the total number of adapter layers. For adapter layer ℓ, let q(ℓ)
+
+be the routing logits and let d∗ be the ground-truth domain label. We define the layer-wise routing loss as 
+
+L(ℓ)route = LCE 
+
+
+
+q(ℓ), d ∗
+
+, (11) where LCE is the cross-entropy loss. Each layer is assigned a progressive depth weight: 
+
+wℓ = ℓM . (12) This assigns smaller weights to shallow layers and larger weights to deeper layers, reflecting the intuition that deeper representations are more semanti-cally abstract and more suitable for domain-discriminative routing. The weighted routing supervision provides direct learning signals to intermediate routing de-cisions while keeping inference unchanged. 
+
+3.6 Training Objective 
+
+The final training objective combines the main classification loss with the aux-iliary depth-weighted routing loss: 
+
+Ltotal = LCE (ˆ y, y ∗) + λroute 
+
+1
+
+M
+
+> M
+
+X
+
+> ℓ=1
+
+wℓL(ℓ)route . (13) Here, ˆy is the model prediction, y∗ is the ground-truth class label, d∗ is the domain label used inside the routing loss, and λroute controls the strength of the auxiliary routing supervision. The domain label is used only during training for the progressive depth-weighted routing loss. During inference, SRTA computes routing probabilities directly from the input representation and does not require domain labels. There-fore, the auxiliary routing supervision improves pathway learning without adding inference-time inputs or parameters. 
+
+4 Experiments 
+
+4.1 Experimental Setup 
+
+Datasets. We conduct experiments on five widely used multi-domain visual benchmarks: PACS [11], VLCS [18], Office-Home [20], Digits-DG [24], and NICO++ [23]. These datasets contain heterogeneous domains with variations in visual style, ob-ject appearance, background context and semantic overlap. For each dataset, we treat every domain as a distinct task or domain pathway, allowing us to evaluate whether SRTA can learn reusable adaptation factors while maintaining domain-aware routing behavior. PACS, VLCS, Office-Home, and Digits-DG contain four domains, while NICO++ contains six domains in our experimental setup. Self-Routed Tensor Adapters 9
+
+Data Split. For each benchmark, we use an 80/20 train-test split. From the training portion, we uniformly sample 2400 images, using 2000 images for train-ing and 400 images for validation. This controlled setup allows us to evaluate adaptation under limited data while maintaining balanced domain supervision. 
+
+Backbone. All methods use a frozen vit-base-patch16-224-in21k [2] back-bone. Only the adaptation modules and the classification head are trained. This setting isolates the effect of each PEFT method and evaluates its ability to adapt a shared pre-trained representation to heterogeneous visual domains. 
+
+Baselines. We compare SRTA against representative PEFT and MoE-PEFT baselines: 
+
+– LoRA [4]: standard low-rank adaptation. 
+
+– DoRA [15]: weight-decomposed low-rank adaptation. 
+
+– MOELoRA [14]: MOE-LoRA with task-conditioned expert routing. 
+
+– MALoRA [21]: MoE-LoRA with shared low-rank structure. 
+
+– MoLoRA [22]: MoE-based LoRA with multiple low-rank experts. 
+
+Implementation Details. Adapters are injected into the Query and Value pro-jection matrices of all transformer layers unless otherwise specified. All models are trained for 30 epochs using the AdamW optimizer with a batch size of 64. The learning rate is set to 5 × 10 −4 with a weight decay of 0.01 and a warmup ratio of 0.1.For SRTA, the routing temperature is set to τ = 0 .1, and the adapter scaling factor is set to s = 4 .0. The routing loss coefficient is set to λroute = 1 . Unless otherwise stated, the Tucker ranks are set to r1 = 64 and r2 = 64 , while r3 is set to the number of domains in the dataset. 
+
+4.2 Main Results 
+
+Table 1 reports the classification accuracy across five heterogeneous multi-domain visual benchmarks at rank 64. SRTA achieves the highest average accuracy of 
+
+88 .1% , slightly outperforming MoLoRA. While the absolute accuracy gain is modest, SRTA achieves this result without an external gating network, suggest-ing that its main advantage lies in the accuracy-parameter trade-off rather than a large standalone accuracy improvement. The results show that static PEFT methods, such as LoRA and DoRA, perform competitively on PACS and Digits-DG, but are weaker on more het-erogeneous benchmarks such as Office-Home and NICO++. This suggests that a single static low-rank adaptation subspace may be insufficient when domains exhibit diverse visual styles, backgrounds, and semantic contexts. MoE-based methods improve performance on these harder benchmarks by introducing mul-tiple expert pathways, with MoLoRA and MOELoRA performing strongly on Office-Home and NICO++. 10 S. Yadav 
+
+Table 1: Accuracy (%) across heterogeneous multi-domain visual benchmarks (Rank 64). 
+
+Method PACS VLCS Office-Home Digits-DG NICO++ Average 
+
+LoRA 95 .1±0.1 82 .8±0.7 77 .3±0.3 93 .8±0.3 77 .6±0.3 85 .3
+
+DoRA 95 .0±0.2 82 .8±0.3 77 .3±0.3 93 .8±0.4 77 .4±0.3 85 .3
+
+MALoRA 94 .3±0.5 82 .8±0.1 85 .0±0.0 90 .2±0.4 82 .3±0.3 86 .9
+
+MOELoRA 94 .5±0.3 84 .2±0.5 85 .2±0.0 88 .9±1.3 83 .3±1.0 87 .2
+
+MoLoRA 95 .1±0.3 84 .4±0.9 85 .3±0.6 91 .7±0.5 83 .3±0.3 88 .0
+
+SRTA 95 .2±0.7 84 .7±0.3 84 .8±0.7 92 .7±0.6 83 .0±0.4 88 .1
+
+SRTA remains competitive with these MoE-based methods while using in-trinsic self-routing and a shared Tucker core instead of an external router or independent expert banks. It achieves the best results on PACS and VLCS, and strong performance on Digits-DG and NICO++. Although MoLoRA performs slightly better on Office-Home, SRTA achieves the best overall average accuracy while maintaining a more compact adaptation structure. These results indicate that input-conditioned Tucker-based routing can effectively organize heteroge-neous domains within a shared adaptation space. 
+
+4.3 Parameter Efficiency 
+
+A key advantage of SRTA is that it avoids the parameter overhead introduced by externally routed MoE adapters. Table 2 compares the number of trainable parameters across different rank settings for both 4-domain and 6-domain config-urations, excluding the classifier to reflect only the cost of the adaptation mod-ules. At rank 64, SRTA requires 2.77M trainable parameters in the 4-domain setting and 3.00M parameters in the 6-domain setting, whereas MoLoRA re-quires 9.52M and 14.31M parameters, respectively. This corresponds to about 
+
+3.4× fewer parameters than MoLoRA in the 4-domain setting and about 4.8×
+
+fewer parameters in the 6-domain setting. These results show that SRTA’s main advantage is not simply accuracy, but achieving MoE-level adaptation performance with a substantially smaller param-eter budget. Compared with LoRA and DoRA, SRTA introduces only a modest parameter increase while enabling input-dependent domain-aware routing. Over-all, these results show that strong multi-domain adaptation does not require large independent expert banks; instead, a compact Tucker-decomposed shared tensor space can provide an effective accuracy-parameter trade-off by reusing common adaptation factors while supporting domain-specific specialization. 
+
+4.4 Ablation on Loss Components 
+
+We evaluate the effect of the progressive depth-weighted routing supervision by varying the auxiliary routing loss coefficient λroute . Table 3 compares SRTA with-out routing supervision (λroute = 0 .0) and with routing supervision (λroute = 1 .0) Self-Routed Tensor Adapters 11 
+
+Table 2: Parameter comparison across ranks for 4-domain and 6-domain settings. Parameter counts exclude the classifier. Method 4 Domains 6 Domains 
+
+r=8 r=16 r=32 r=64 r=8 r=16 r=32 r=64 LoRA 0.29M 0.59M 1.18M 2.36M 0.29M 0.59M 1.18M 2.36M DoRA 0.31M 0.61M 1.20M 2.38M 0.31M 0.61M 1.20M 2.38M MALoRA 0.53M 0.98M 1.90M 3.82M 0.75M 1.35M 2.59M 5.17M MOELoRA 0.30M 0.59M 1.18M 2.36M 0.44M 0.89M 1.77M 3.54M MoLoRA 1.26M 2.44M 4.80M 9.52M 1.93M 3.70M 7.23M 14.31M SRTA 0.31M 0.62M 1.29M 2.77M 0.35M 0.68M 1.38M 3.00M 
+
+Table 3: Ablation of SRTA loss components at rank 64 .
+
+λroute PACS VLCS Office-Home Digits-DG NICO++ Average 
+
+0.0 95 .2±0.3 82 .3±0.9 83 .5±0.3 92 .6±0.4 81 .7±0.6 87 .1
+
+1.0 95 .2±0.7 84 .7±0.4 84 .8±0.8 92 .7±0.7 83 .0±0.4 88 .1
+
+at rank 64. Adding the routing loss improves the average accuracy from 87 .1% 
+
+to 88 .1% , showing that direct supervision of intermediate routing decisions helps the adapter learn more effective domain-aware pathways. The improvement is especially clear on VLCS, Office-Home, and NICO++, while PACS remains un-changed, suggesting that routing supervision is most useful when domains are more heterogeneous or semantically overlapping. These results confirm that pro-gressive depth-weighted routing supervision strengthens domain-aware pathway learning and improves the overall stability of SRTA without adding inference-time parameters. 
+
+4.5 Ablation on Adapter Ranks 
+
+To analyze the trade-off between adaptation capacity and parameter efficiency, we evaluate all PEFT and MoE-PEFT methods under different rank configura-tions. For LoRA and DoRA, we vary the low-rank dimension r. For MALoRA, we vary the shared rank and expert rank. For MoELoRA, we vary the number of routed low-rank expert dimensions following its baseline configuration. For MoLoRA, we vary the expert rank. For SRTA, we vary the Tucker ranks r1
+
+and r2, while keeping r3 equal to the number of domains. Table 4 reports the accuracy across all benchmarks. Across static PEFT methods, increasing the rank generally improves perfor-mance, but the gains saturate at higher ranks. LoRA and DoRA show steady improvements from rank 8 to rank 64, but they remain weaker on more heteroge-neous datasets such as Office-Home and NICO++, where a single static low-rank subspace is less effective. MoE-based methods perform strongly by introducing multiple expert pathways, but their improvements are not always monotonic 12 S. Yadav 
+
+Table 4: Rank ablation across all PEFT and MoE-PEFT methods. Results are re-ported as mean ± standard deviation across multiple runs. For SRTA, r1 and r2 denote Tucker ranks, while r3 is set to the number of domains. 
+
+Method Rank-1 Rank-2 Extra Rank PACS VLCS Office-Home Digits-DG NICO++ 
+
+LoRA 8 – – 93 .4±0.6 81 .1±0.7 71 .7±1.2 91 .6±0.7 67 .9±1.4
+
+LoRA 16 – – 94 .1±0.5 81 .5±0.6 75 .9±1.4 92 .2±0.9 71 .5±0.8
+
+LoRA 32 – – 94 .7±0.4 82 .4±0.3 77 .1±0.6 92 .9±0.4 75 .2±0.9
+
+LoRA 64 – – 95 .1±0.1 82 .8±0.7 77 .3±0.3 93 .8±0.3 77 .6±0.3
+
+DoRA 8 – – 93 .5±0.7 80 .8±1.1 72 .1±1.2 91 .4±0.7 67 .1±1.2
+
+DoRA 16 – – 93 .9±0.3 81 .9±0.8 76 .1±1.4 92 .2±0.5 71 .7±0.5
+
+DoRA 32 – – 94 .8±0.5 82 .3±0.6 77 .3±0.3 92 .9±0.3 74 .8±1.0
+
+DoRA 64 – – 95 .0±0.2 82 .8±0.3 77 .3±0.3 93 .8±0.4 77 .4±0.3
+
+MALoRA 8 4 – 94 .6±0.6 83 .8±0.6 84 .6±0.3 88 .7±0.3 82 .4±0.7
+
+MALoRA 16 8 – 94 .7±0.6 83 .3±0.4 85 .0±1.0 90 .4±0.5 82 .5±0.2
+
+MALoRA 32 16 – 94 .5±0.5 84 .4±0.8 84 .8±0.8 89 .2±0.2 82 .4±0.2
+
+MALoRA 64 32 – 94 .3±0.5 82 .8±0.1 85 .0±0.0 90 .2±0.4 82 .3±0.3
+
+MOELoRA 8 4 – 93 .6±0.5 84 .1±0.6 85 .3±0.1 88 .6±1.4 83 .8±0.9
+
+MOELoRA 16 8 – 94 .0±1.1 83 .3±1.9 84 .7±0.3 89 .0±1.7 83 .5±0.1
+
+MOELoRA 32 16 – 93 .4±1.7 84 .6±0.9 85 .0±0.4 88 .9±1.1 83 .5±1.2
+
+MOELoRA 64 32 – 94 .5±0.3 84 .2±0.5 85 .2±0.0 88 .9±1.3 83 .3±1.0
+
+MoLoRA 8 – – 95 .2±0.2 84 .7±0.8 85 .5±0.4 91 .3±1.0 83 .3±0.3
+
+MoLoRA 16 – – 95 .0±0.2 84 .1±0.6 85 .4±0.3 92 .2±0.6 83 .8±0.5
+
+MoLoRA 32 – – 95 .3±0.3 85 .4±0.7 85 .6±0.5 92 .4±0.2 83 .9±0.5
+
+MoLoRA 64 – – 95 .1±0.3 84 .4±0.9 85 .3±0.6 91 .7±0.5 83 .3±0.3
+
+SRTA 8 8 – 93 .5±0.6 84 .4±0.4 83 .8±0.4 88 .7±0.8 82 .8±0.3
+
+SRTA 16 16 – 94 .6±0.4 84 .8±0.3 84 .2±0.3 90 .0±0.3 82 .7±0.6
+
+SRTA 32 32 – 94 .6±0.5 84 .3±0.8 84 .4±0.5 91 .7±0.5 82 .9±0.8
+
+SRTA 64 64 – 95 .2±0.7 84 .7±0.3 84 .8±0.7 92 .7±0.6 83 .0±0.4
+
+with rank. For example, MoLoRA achieves highly competitive results at rank 32, but its performance does not consistently improve at rank 64, suggesting that simply increasing expert capacity does not necessarily resolve multi-domain in-terference. SRTA shows a more stable scaling trend as the Tucker ranks increase from 8 to 64. The rank-32 configuration already achieves competitive performance, while the rank-64 configuration gives the strongest overall result for SRTA. This indicates that SRTA can increase adaptation capacity smoothly through its shared Tucker-decomposed representation space, without relying on a large bank of independent experts or an external gating network. Overall, the rank ablation demonstrates that SRTA provides a favorable balance between capacity, stability, and parameter efficiency across heterogeneous visual domains. 
+
+4.6 Routing Behavior Analysis 
+
+To better understand intrinsic routing, we visualize the average routing probabil-ities assigned to each Tucker core slice for every domain in Fig. 2. The heatmaps show that SRTA learns domain-consistent routing patterns under auxiliary do-main supervision. For visually distinct datasets such as PACS and Digits-DG, the Self-Routed Tensor Adapters 13 
+
+routing distributions are sharp and nearly diagonal, indicating that each domain strongly activates a specific core slice. VLCS also shows largely domain-specific routing, with some sharing between related domains. For more overlapping datasets such as Office-Home and NICO++, the rout-ing distributions are softer, indicating greater sharing across domains. This sup-ports the design of SRTA: visually separable domains can activate distinct path-ways, while related domains can reuse shared Tucker core slices within a com-pact adaptation space. Since routing is supervised during training using domain labels, these visualizations should be interpreted as evidence of learned domain-aware routing rather than unsupervised domain discovery. Art Painting Cartoon Photo Sketch Art Painting Cartoon Photo Sketch                                                                               
+
+> 0.98 0.00 0.01 0.00 0.01 0.98 0.00 0.00 0.03 0.00 0.97 0.00 0.00 0.00 0.00 1.00
+> PACS
+> Caltech101 LabelMe SUN09 VOC2007 Caltech101 LabelMe SUN09 VOC2007
+> 0.99 0.00 0.00 0.01 0.01 0.86 0.06 0.07 0.01 0.04 0.80 0.16 0.02 0.04 0.12 0.82
+> VLCS
+> Product Clipart Art Real World Product Clipart Art Real World
+> 0.06 0.03 0.37 0.54 0.04 0.06 0.33 0.57 0.03 0.07 0.32 0.58 0.05 0.05 0.35 0.55
+> Office-Home
+> MNIST MNIST-M SVHN SYN MNIST MNIST-M SVHN SYN
+> 1.00 0.00 0.00 0.00 0.00 1.00 0.00 0.00 0.00 0.00 0.98 0.02 0.00 0.00 0.01 0.99
+> Digits-DG
+> Autumn Dim Grass Outdoor Rock Water Autumn Dim Grass Outdoor Rock Water
+> 0.73 0.06 0.06 0.07 0.04 0.04 0.05 0.73 0.03 0.08 0.04 0.07 0.12 0.06 0.36 0.30 0.06 0.09 0.07 0.06 0.11 0.45 0.12 0.19 0.05 0.06 0.06 0.20 0.48 0.15 0.03 0.05 0.03 0.20 0.06 0.63
+> NICO++
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Routing Probability ( )
+
+Fig. 2: Intrinsic routing probabilities ( α) across core tensor slices. 
+
+5 Conclusion 
+
+In this paper, we introduced Self-Routed Tensor Adapters (SRTA) , a com-pact parameter-efficient adaptation framework for heterogeneous multi-domain visual representation learning. SRTA removes the need for an external MoE router by deriving routing probabilities directly from the adapter’s low-rank representation. These probabilities are used to blend slices of a shared Tucker core tensor, producing input-conditioned adaptation within a compact shared parameter space. Experiments across five multi-domain visual classification benchmarks show that SRTA achieves competitive or slightly stronger average accuracy than MoE-style PEFT baselines while using substantially fewer trainable parameters. At rank 64, SRTA uses about 3.4× fewer parameters than MoLoRA in the 4-domain setting and about 4.8× fewer parameters in the 6-domain setting. These results suggest that SRTA’s main strength is its accuracy-parameter trade-off: it pro-vides MoE-level adaptation performance without relying on large independent expert banks or an external gating network. The routing analysis further shows that SRTA learns interpretable domain-aware pathways, with sharper routing for visually distinct domains and softer sharing for overlapping domains. Overall, SRTA demonstrates that universal vi-sual adaptation can be supported through a shared tensor-factorized adaptation space rather than through separate expert modules, making self-routed tensor adapters a promising building block for scalable adaptation of visual foundation models. 14 S. Yadav 
+
+6 Limitations 
+
+While SRTA shows strong results on multi-domain image classification bench-marks, its application to broader visual tasks such as detection, segmentation, video understanding, and vision-language learning remains an important direc-tion for future work. Our current experiments also use known domain labels for routing supervision, whereas real-world settings may involve unknown or continuously changing domains. Future extensions can explore unsupervised or adaptive routing mechanisms that discover domain structure automatically. 
+
+7 LLM Usage 
+
+The authors used an LLM to assist with grammatical and stylistic editing only. All changes were reviewed by the authors, who take full responsibility for the final manuscript. 
+
+8 Acknowledgement 
+
+The author acknowledges the GPU compute support provided by the Infosys Center for Artificial Intelligence at IIIT-Delhi. The author also thanks Siddharth Yadav from IIIT-Delhi for his support in creating the plots for this paper and Parth Goyal from IIIT-Delhi for his valuable review and suggestions that helped improve the writing of the paper. Self-Routed Tensor Adapters 15 
+
+References 
+
+1. Carroll, J.D., Chang, J.J.: Analysis of individual differences in multidimensional scaling via an n-way generalization of “eckart-young” decomposition. Psychome-trika 35 (3), 283–319 (1970) 2. Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., et al.: An image is worth 16x16 words: Transformers for image recognition at scale. arXiv preprint arXiv:2010.11929 (2020) 3. Fedus, W., Zoph, B., Shazeer, N.: Switch transformers: Scaling to trillion parameter models with simple and efficient sparsity. Journal of Machine Learning Research 
+
+23 (120), 1–39 (2022) 4. Hu, E.J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W., et al.: Lora: Low-rank adaptation of large language models. Iclr 1(2), 3 (2022) 5. Jia, M., Tang, L., Chen, B.C., Cardie, C., Belongie, S., Hariharan, B., Lim, S.N.: Visual prompt tuning. In: European conference on computer vision. pp. 709–727. Springer (2022) 6. Jie, S., Deng, Z.H.: Fact: Factor-tuning for lightweight adaptation on vision trans-former. In: Proceedings of the AAAI conference on artificial intelligence. vol. 37, pp. 1060–1068 (2023) 7. Kolda, T.G., Bader, B.W.: Tensor decompositions and applications. SIAM Review 
+
+51 (3), 455–500 (2009). https://doi.org/10.1137/07070111X , https://doi.org/ 10.1137/07070111X 
+
+8. Kopiczko, D., Blankevoort, T., Asano, Y.: Vera: Vector-based random matrix adap-tation. In: International Conference on Learning Representations. vol. 2024, pp. 6815–6835 (2024) 9. Lee, C.Y., Xie, S., Gallagher, P., Zhang, Z., Tu, Z.: Deeply-supervised nets. In: Artificial intelligence and statistics. pp. 562–570. Pmlr (2015) 10. Lester, B., Al-Rfou, R., Constant, N.: The power of scale for parameter-efficient prompt tuning. In: Proceedings of the 2021 conference on empirical methods in natural language processing. pp. 3045–3059 (2021) 11. Li, D., Yang, Y., Song, Y.Z., Hospedales, T.M.: Deeper, broader and artier domain generalization. In: Proceedings of the IEEE international conference on computer vision. pp. 5542–5550 (2017) 12. Li, X.L., Liang, P.: Prefix-tuning: Optimizing continuous prompts for generation. In: Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Pro-cessing (Volume 1: Long Papers). pp. 4582–4597 (2021) 13. Li, Y., Han, S., Ji, S.: Vb-lora: Extreme parameter efficient fine-tuning with vector banks. Advances in Neural Information Processing Systems 37 , 16724–16751 (2024) 14. Liu, Q., Wu, X., Zhao, X., Zhu, Y., Xu, D., Tian, F., Zheng, Y.: When moe meets llms: Parameter efficient fine-tuning for multi-task medical applications. In: Proceedings of the 47th international ACM SIGIR conference on research and development in information retrieval. pp. 1104–1114 (2024) 15. Liu, S.Y., Wang, C.Y., Yin, H., Molchanov, P., Wang, Y.C.F., Cheng, K.T., Chen, M.H.: Dora: Weight-decomposed low-rank adaptation. In: Forty-first International Conference on Machine Learning (2024) 16. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al.: Learning transferable visual models from natural language supervision. In: International conference on machine learning. pp. 8748–8763. PmLR (2021) 16 S. Yadav 17. Shazeer, N., Mirhoseini, A., Maziarz, K., Davis, A., Le, Q., Hinton, G., Dean, J.: Outrageously large neural networks: The sparsely-gated mixture-of-experts layer. arXiv preprint arXiv:1701.06538 (2017) 18. Torralba, A., Efros, A.A.: Unbiased look at dataset bias. In: CVPR 2011. pp. 1521–1528. IEEE (2011) 19. Tucker, L.R.: Some mathematical notes on three-mode factor analysis. Psychome-trika 31 (3), 279–311 (1966) 20. Venkateswara, H., Eusebio, J., Chakraborty, S., Panchanathan, S.: Deep hashing network for unsupervised domain adaptation. In: Proceedings of the IEEE confer-ence on computer vision and pattern recognition. pp. 5018–5027 (2017) 21. Wang, X., Zhao, H., Wang, S., Wang, H., Liu, Z.: Malora: Mixture of asymmetric low-rank adaptation for enhanced multi-task learning. In: Findings of the Associ-ation for Computational Linguistics: NAACL 2025. pp. 5609–5626 (2025) 22. Zadouri, T., Üstün, A., Ahmadian, A., Ermis, B., Locatelli, A., Hooker, S.: Pushing mixture of experts to the limit: Extremely parameter efficient moe for instruction tuning. In: International Conference on Learning Representations. vol. 2024, pp. 25401–25420 (2024) 23. Zhang, X., He, Y., Xu, R., Yu, H., Shen, Z., Cui, P.: Nico++: Towards better benchmarking for domain generalization. In: Proceedings of the IEEE/CVF con-ference on computer vision and pattern recognition. pp. 16036–16047 (2023) 24. Zhou, K., Yang, Y., Hospedales, T., Xiang, T.: Deep domain-adversarial image generation for domain generalisation. In: Proceedings of the AAAI conference on artificial intelligence. vol. 34, pp. 13025–13032 (2020)

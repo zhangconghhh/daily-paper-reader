@@ -1,0 +1,54 @@
+{
+  "label": "2026-08-19",
+  "date": "2026-08-19",
+  "generated_at": "2026-08-19T20:49:12",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202608/19/2608.16384v1-self-routed-tensor-adapters-for-parameter-efficient-universal-visual-adaptation",
+      "section": "quick",
+      "title_en": "Self-Routed Tensor Adapters for Parameter-Efficient Universal Visual Adaptation",
+      "authors": "Suraj Yadav",
+      "date": "2026-08-17",
+      "pdf": "https://arxiv.org/pdf/2608.16384v1",
+      "score": "7.0",
+      "evidence": "提出自路由张量适配器SRTA，用于冻结视觉基础模型的参数高效通用视觉自适应，可支撑下游图像分类任务",
+      "tldr": "通用视觉适配需兼顾多域差异，但固定子空间低秩适配器表达受限，MoE类方法又因外部路由和专家库导致参数膨胀。SRTA在低秩空间内计算路由权重，直接对共享Tucker核切片加权融合，生成样本专属适配矩阵，并加入深度加权路由监督。在五个多域基准上，SRTA以远少于MoLoRA等方法的参数（4域2.77M对9.52M，6域3.00M对14.31M）取得相当或略优精度，实现精度-参数更优平衡。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Universal visual representations require adaptation mechanisms that adapt across heterogeneous domains without fragmenting knowledge into domain-specific modules. Parameter-efficient fine-tuning adapts frozen visual foundation models efficiently, but standard low-rank adapters use a fixed subspace for all inputs, which can be restrictive when domains differ in style, background, and semantic context. MoE-based adapters improve specialization through multiple expert pathways, but often rely on external routers and large expert banks, adding parameters and separating routing from adaptation. We propose \\textbf{Self-Routed Tensor Adapters}, a compact framework for multi-domain visual adaptation. SRTA projects each input into a low-rank space, computes routing weights from this representation using a learnable domain matrix, and uses these weights to blend slices of a shared Tucker core. This produces a sample-specific adaptation matrix without an external gating network, allowing shared visual factors to be reused while supporting domain-aware specialization. To strengthen pathway learning, we introduce a progressive depth-weighted routing objective that supervises routing decisions across adapter layers. Across five heterogeneous multi-domain visual classification benchmarks, SRTA achieves competitive or slightly stronger average accuracy than MoE-style PEFT baselines while using substantially fewer trainable parameters. At rank 64, SRTA uses 2.77M parameters in the 4-domain setting compared with 9.52M for MoLoRA, and 3.00M in the 6-domain setting compared with 14.31M. Overall, SRTA offers an effective accuracy-parameter trade-off for adapting visual foundation models toward universal multi-domain representations. \\href{https://github.com/surajyadav-research/SRTA}{GitHub}",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/19/2608.16958v1-orvit-dr-ordinally-robust-hybrid-vit-for-low-resolution-diabetic-retinopathy-grading",
+      "section": "quick",
+      "title_en": "ORViT-DR: Ordinally-Robust Hybrid ViT for Low-Resolution Diabetic Retinopathy Grading",
+      "authors": "Soumit Kumar Kundu, Nabil Ashab, Bidhan Biswas, Shahadat Hossain Sohag, Saif Mahmud Parvez, Souvik Kumar Kundu, Zunayed Ahmed Rafi",
+      "date": "2026-08-16",
+      "pdf": "https://arxiv.org/pdf/2608.16958v1",
+      "score": "6.0",
+      "evidence": "混合ViT用于医学图像分类，可迁移至细粒度分类",
+      "tldr": "糖尿病视网膜病变（DR）自动分级对临床筛查至关重要，其严重程度呈渐进式序数变化，相邻级别视觉特征高度相似，且低分辨率图像进一步加剧判读难度。针对此问题，本文提出ORViT-DR混合深度学习框架，采用BiT-ResNetv2卷积骨干提取局部特征，结合Vision Transformer建模全局上下文，同时利用渐进式层解冻、层间学习率衰减、EMA参数更新与集成预测等策略保证稳定训练。在RetinaMNIST官方测试集上，该方法取得57.00%的准确率、0.5963的二次加权kappa以及0.4293的宏F1分数。实验表明，混合CNN-Transformer架构能够有效学习序数病变表示，为低分辨率视网膜图像分析提供了可行的新方案。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Diabetic retinopathy (DR) is one of the main causes of impaired vision. A good and reliable automated grading system can make the screening process safer and more accurate. Because DR stages progress gradually, the task of grading disease severity naturally follows an ordinal structure in which neighboring classes share similar visual characteristics. In this study, ORViT-DR, a hybrid deep learning framework, is designed to improve DR grading from low-resolution retinal images. The proposed approach combines convolutional feature extraction with transformer-based global context modeling through a pre-trained ViT-Hybrid backbone, which integrates BiT-ResNetv2 with a Vision Transformer architecture. The approach is tested on the RetinaMNIST subset of the MedMNISTv2 dataset, which contains 28x28 retinal fundus images annotated with five levels of disease severity. To promote stable training and better feature learning, the training strategy applies progressive layer unfreezing, layer-wise learning rate decay, exponential moving average (EMA) parameter updates, and ensemble-based prediction during inference. Experimental results on the official RetinaMNIST test set show that the proposed method achieves 57.00% classification accuracy, along with a quadratic weighted kappa score of 0.5963 and a macro-F1 score of 0.4293. These results suggest that hybrid CNN-Transformer architectures can provide effective representations for ordinal retinal image analysis.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/19/2608.17872v1-distillpath-an-efficient-22m-distilled-pathology-encoder-approaching-large-foundation-model-performance",
+      "section": "quick",
+      "title_en": "DistillPath: An Efficient 22M Distilled Pathology Encoder Approaching Large Foundation Model Performance",
+      "authors": "Ramon Kaspar, Andrey Ignatov, Valentina Boeva",
+      "date": "2026-08-18",
+      "pdf": "https://arxiv.org/pdf/2608.17872v1",
+      "score": "6.0",
+      "evidence": "从大型病理基础模型蒸馏紧凑ViT编码器，明确提及DINO/iBOT预训练头，与DINO/ViT图像分类相关。",
+      "tldr": "病理切片编码常依赖数十亿参数的大模型，存储与计算成本高昂。DistillPath从22M的kaiko ViT-S/16出发，利用多个开源病理编码器作为冻结教师进行蒸馏，仅需6000张公开切片与最终token。在EVA等基准上，蒸馏后模型接近Virchow2性能，参数减少29倍，推理快25倍以上。该方法无需大型预训练头，为高效病理编码提供了实用方案。",
+      "tags": "query:dino-fg",
+      "abstract_en": "Many high-performing pathology tile encoders are now foundation models with hundreds of millions to over a billion parameters. Encoding and storing the thousands of tiles in each whole-slide image with such models is costly on commodity hardware, so compact encoders that retain useful downstream performance are a valuable alternative. We present DistillPath-KS16, which starts from the existing 22M kaiko ViT-S/16 encoder and improves it by distilling from released pathology encoders used as frozen teachers. The recipe reads only the teachers' final class and patch tokens and trains on 6,000 public slides, needing neither their DINO nor iBOT pretraining heads nor a billion-tile corpus, so it applies to any released encoder that exposes backbone tokens. We distill four teachers spanning 86M to 1.1B parameters into the same student. Every variant improves the kaiko baseline on all three benchmarks we use, EVA, HEST, and PLISM, and the strongest teacher is task-dependent. On the seven-task EVA mean, DistillPath-KS16-Virchow2 reaches $0.795$, within $0.015$ points of Virchow2, the top-scoring model in our evaluation, at about $29\\times$ fewer parameters; it also scores above H0-mini and GPFM on this aggregate metric, though that advantage is task-concentrated rather than uniform. Because it remains a 22M ViT-S/16 with 384-dimensional features, DistillPath-KS16 runs more than $25\\times$ faster than Virchow2. Code is available at https://github.com/RamonKaspar/DistillPath, and released model weights are available at https://huggingface.co/collections/RamonK/distillpath.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
