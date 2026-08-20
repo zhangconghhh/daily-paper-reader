@@ -1,0 +1,204 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-20T20:35:52.854692+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 3,
+    "quick_skim_target": 11,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2608.13751v1",
+      "source": "arxiv",
+      "title": "CAST: Closed-form Analytic Semantic Transfer for Zero-Shot Classifier Extension",
+      "abstract": "Large pre-trained models have become foundational components of modern machine learning systems. Yet adapting these models to novel categories typically requires examples from the target distribution. In many domains, however, such data are unavailable. Zero-shot learning (ZSL) permits recognition under these limitations through relying on auxiliary semantic information such as textual descriptions. We introduce CAST (Closed-form Analytic Semantic Transfer), a training-free, image-free framework for extending a pre-trained classifier to previously unseen classes through weight injection. We provide a theoretical foundation for CAST and derive a finite-sample error decomposition that identifies the \\emph{semantic extrapolation residual} $ρ_u$. The residual is a computable, model-agnostic measure and provides a principled criterion for dataset curation and benchmark design. Experiments on standard zero-shot learning benchmarks demonstrate that CAST matches or exceeds existing image-free approaches and approaches the performance of few-shot adaptation methods, while requiring neither iterative optimization nor examples from the target distribution.",
+      "authors": [
+        "William Heyden",
+        "Habib Ullah",
+        "Muhammad Salman Siddiqui",
+        "Fadi Al Machot"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-13T20:20:07+00:00",
+      "link": "https://arxiv.org/pdf/2608.13751v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Training-free semantic transfer for extending pre-trained classifiers to unseen classes, relevant to foundation model image classification",
+      "llm_evidence_cn": "基于语义迁移的免训练分类器扩展，适用于基础模型图像分类",
+      "llm_evidence": "基于语义迁移的免训练分类器扩展，适用于基础模型图像分类",
+      "canonical_evidence": "基于语义迁移的免训练分类器扩展，适用于基础模型图像分类",
+      "llm_tldr_en": "CAST is a training-free, image-free framework that extends a pre-trained classifier to unseen classes via weight injection, with theoretical error decomposition and zero-shot classification results.",
+      "llm_tldr_cn": "针对预训练模型难以快速适应新类别的问题，本文提出CAST，一种无训练、无图像的闭式解析语义迁移框架。它通过权重注入将分类器扩展到未见类别，并给出有限样本误差分解与语义外推残差的理论刻画。实验证明CAST在零样本分类扩展中高效且有效，为基础模型在细粒度分类中的新类别适应提供了通用工具。",
+      "llm_tldr": "针对预训练模型难以快速适应新类别的问题，本文提出CAST，一种无训练、无图像的闭式解析语义迁移框架。它通过权重注入将分类器扩展到未见类别，并给出有限样本误差分解与语义外推残差的理论刻画。实验证明CAST在零样本分类扩展中高效且有效，为基础模型在细粒度分类中的新类别适应提供了通用工具。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "foundation model for image classification",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.19078v1",
+      "source": "arxiv",
+      "title": "Subgroup performance analysis of adaptation strategies for chest X-ray foundation models",
+      "abstract": "Foundation models are increasingly adapted for downstream medical imaging tasks, yet the influence of the chosen adaptation strategy on subgroup fairness remains poorly understood. We investigate how three parameter-efficient adaptation techniques, including linear heads on the raw CLS token, an MLP, and an attention-pooling module over multi-layer patch features, affect both pathology classification performance and subgroup disparities when applied to the frozen Rad-DINO chest X-ray encoder. Using MIMIC-CXR, we evaluate eight pathologies across race, sex, and imaging-view subgroups on a prevalence-preserving, demographically balanced test set, and additionally probe how strongly each adapter encodes protected attributes. We find that attention pooling achieves the strongest overall discriminative performance and encodes attributes, particularly race, most strongly, but that improved overall performance does not consistently reduce subgroup disparities. Notably, stronger attribute encoding did not correspond to larger disparities: early network layers encoded race most weakly yet produced the largest subgroup performance gaps. Exploring different attention-pooling layer combinations further revealed no consistent relationship between the layers pooled, attribute encoding strength, and subgroup fairness. Our results indicate that richer, more expressive representations can improve accuracy while leaving fairness implications task-dependent and unpredictable, which must be assessed directly and per-task rather than inferred from encoding strength or overall performance alone.",
+      "authors": [
+        "Dhruv Gupta",
+        "Emma A. M. Stanley",
+        "Fabio De Sousa Ribeiro",
+        "Sujal Desai",
+        "Ben Glocker"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-19T16:25:44+00:00",
+      "link": "https://arxiv.org/pdf/2608.19078v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Rad-DINO frozen encoder with classification adapters for eight chest X-ray pathologies; applies DINO to medical fine-grained classification",
+      "llm_evidence_cn": "使用冻结Rad-DINO编码器结合分类适配器进行胸部X射线八种病理分类，是DINO在细粒度医学分类上的应用",
+      "llm_evidence": "使用冻结Rad-DINO编码器结合分类适配器进行胸部X射线八种病理分类，是DINO在细粒度医学分类上的应用",
+      "canonical_evidence": "使用冻结Rad-DINO编码器结合分类适配器进行胸部X射线八种病理分类，是DINO在细粒度医学分类上的应用",
+      "llm_tldr_en": "Analyzes how linear, MLP, and attention-pooling adapters on frozen Rad-DINO affect chest X-ray pathology classification and subgroup fairness across race, sex, and view.",
+      "llm_tldr_cn": "基础模型在下游医学任务中的适配策略对亚组公平性影响尚不明确。本文基于冻结的Rad-DINO胸部X射线编码器，比较线性头、MLP和注意力池化三种参数高效适配方法在八种病理分类上的表现，并在种族、性别和投照体位亚组上评估公平性。结果表明不同适配器的分类性能与亚组差异存在权衡，提示DINO类基础模型在医学细粒度分类时需关注适配策略选择。",
+      "llm_tldr": "基础模型在下游医学任务中的适配策略对亚组公平性影响尚不明确。本文基于冻结的Rad-DINO胸部X射线编码器，比较线性头、MLP和注意力池化三种参数高效适配方法在八种病理分类上的表现，并在种族、性别和投照体位亚组上评估公平性。结果表明不同适配器的分类性能与亚组差异存在权衡，提示DINO类基础模型在医学细粒度分类时需关注适配策略选择。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "DINO model for fine-grained classification",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.12698v1",
+      "source": "arxiv",
+      "title": "Class Geometry as Supervision for Sample-Efficient Open-World Detection",
+      "abstract": "Open-world object detection requires models to recognize known categories, reject unfamiliar objects, and incorporate new classes over time. This is especially challenging in scarce-data settings such as biomedical and scientific imaging, where rare categories may have only a few annotated examples and fine-grained classes differ by subtle morphology. Prototype-based detectors are natural for this regime, but they typically learn class prototypes as independent anchors, ignoring relational structure among classes. We propose class-geometry supervision (CGS), a general framework that constrains learned prototype or class-representation spaces to preserve visual or semantic class dissimilarities estimated from training data. CGS introduces a dissimilarity-preserving objective that aligns pairwise distances among learned class representations with a target class-geometry matrix while retaining the standard task loss. We instantiate the same objective across prototype recognition, few-shot biomedical object detection, open-set detection, novel-class insertion, and OWOD adaptation on COCO. Experiments show that CGS improves sample efficiency in recognition and ova detection, substantially strengthens novel-class insertion, and improves unknown recall on COCO while retaining much of the known-class detection performance. Ablations show that meaningful visual geometry provides the most reliable gains, while random geometry can help novel separation but is less consistent for few-shot detection. These results suggest that relational class geometry is an effective supervisory signal for building calibrated and extensible open-world detectors under limited supervision.",
+      "authors": [
+        "Akash Rao",
+        "Zhou Chen",
+        "Revanth Reddy Palem",
+        "Udhav Ramachandran",
+        "Ruth Scimeca",
+        "Sathyanarayanan N. Aakur"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-13T01:20:47+00:00",
+      "link": "https://arxiv.org/pdf/2608.12698v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "class geometry supervision for sample-efficient detection of fine-grained classes; transferable representation method",
+      "llm_evidence_cn": "针对细粒度类别样本稀缺的开放世界检测，提出类别几何监督约束类别表征，可迁移至细粒度分类",
+      "llm_evidence": "针对细粒度类别样本稀缺的开放世界检测，提出类别几何监督约束类别表征，可迁移至细粒度分类",
+      "canonical_evidence": "针对细粒度类别样本稀缺的开放世界检测，提出类别几何监督约束类别表征，可迁移至细粒度分类",
+      "llm_tldr_en": "Proposes class-geometry supervision to preserve inter-class dissimilarities in prototype spaces for sample-efficient open-world detection, with fine-grained classes in scarce-data biomedical imaging.",
+      "llm_tldr_cn": "开放世界检测在稀缺数据下难以区分形态差异微小的细粒度类别，现有原型检测器往往把类别原型当作独立锚点。本文提出类别几何监督，在训练中约束原型或类别表征空间以保持类别间的视觉或语义不相似度。该方法能提升样本效率并适用于生物医学等科学图像领域，为细粒度类别建模提供可迁移的表示学习思路。",
+      "llm_tldr": "开放世界检测在稀缺数据下难以区分形态差异微小的细粒度类别，现有原型检测器往往把类别原型当作独立锚点。本文提出类别几何监督，在训练中约束原型或类别表征空间以保持类别间的视觉或语义不相似度。该方法能提升样本效率并适用于生物医学等科学图像领域，为细粒度类别建模提供可迁移的表示学习思路。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.18185v1",
+      "source": "arxiv",
+      "title": "H$^2$EDL: Hyper Evidential Deep Learning for Hierarchical Classification",
+      "abstract": "Fine-grained recognition often involves hierarchical label spaces, where a model may be confident about a coarse semantic concept while remaining uncertain among its descendant classes. Such structured ambiguity requires uncertainty representations that capture both fine-grained classes and intermediate concepts. However, existing tools each capture only half of it: flat evidential classifiers quantify total ignorance with a single vacuity on the leaf frame, and hierarchical classifiers propagate point probabilities with no notion of evidence. Hyper-opinions would unify the two, but their general form is exponential in the label count, and existing hyper-evidential networks either require composite labels to be supplied in the training data or read them off an unstructured weight pattern, with no principled notion of which composites deserve mass. We observe that the taxonomy itself is the missing hyperdomain. Its subtrees and leaf singletons form a linear-size focal family, and one local Dirichlet opinion per branching node induces every composite mass in closed form. The resulting model, H$^2$EDL, can be interpreted in two complementary ways using the same set of parameters. From a prediction perspective, it functions as a hierarchical classifier that preserves consistency across different levels of the label tree. From a probabilistic perspective, it defines a valid tree-structured hyper-opinion, where the mass assigned to each node represents the belief that reaches that node but does not provide sufficient confidence to further specialize into its descendants. On FGVC-Aircraft and DERM12345, H$^2$EDL reduces calibration error by approximately half compared with cross-entropy baselines, with the improvement becoming more pronounced at deeper hierarchy levels and under larger training budgets.",
+      "authors": [
+        "Yuanye Liu",
+        "Xiahai Zhuang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-08-18T08:42:32+00:00",
+      "link": "https://arxiv.org/pdf/2608.18185v1",
+      "tags": [
+        "keyword:dino-fg",
+        "query:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Fine-grained hierarchical classification with uncertainty modeling",
+      "llm_evidence_cn": "面向层次细粒度分类的不确定性建模",
+      "llm_evidence": "面向层次细粒度分类的不确定性建模",
+      "canonical_evidence": "面向层次细粒度分类的不确定性建模",
+      "llm_tldr_en": "Proposes hyper evidential deep learning for hierarchical classification, estimating evidence at leaf and intermediate levels without composite labels, improving uncertainty modeling for fine-grained recognition.",
+      "llm_tldr_cn": "细粒度识别常涉及层次化标签空间，模型可能对粗粒度概念有把握而对子类间区分感到不确定。现有平坦证据分类器只能给出单一认知不确定性，层次分类器则仅传播点概率而缺乏证据。本文提出超证据深度学习H²EDL，在不要求训练数据提供复合标签的情况下，同时估计叶类与中间概念的证据，统一细粒度与层次的模糊性建模。实验表明该方法在层次细粒度分类基准上提升了不确定度质量与分类性能，为精细识别中的可靠决策提供了新工具。",
+      "llm_tldr": "细粒度识别常涉及层次化标签空间，模型可能对粗粒度概念有把握而对子类间区分感到不确定。现有平坦证据分类器只能给出单一认知不确定性，层次分类器则仅传播点概率而缺乏证据。本文提出超证据深度学习H²EDL，在不要求训练数据提供复合标签的情况下，同时估计叶类与中间概念的证据，统一细粒度与层次的模糊性建模。实验表明该方法在层次细粒度分类基准上提升了不确定度质量与分类性能，为精细识别中的可靠决策提供了新工具。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "fine-grained classification using vision transformers",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.18399v1",
+      "source": "arxiv",
+      "title": "What Does Attention Transfer Transfer? Attention Structure and Robustness in Vision Transformers",
+      "abstract": "Vision transformers (ViTs) trained to copy a pretrained teacher's attention maps recover most of fine-tuning's in-distribution accuracy yet fall measurably short of it under distribution shift, as recent work has shown. What the copy delivers has never been measured directly in the attention structure and tied to robustness. We build that instrumentation for ViT-S students of a self-supervised teacher on ImageNet-100, and report three findings that triangulate one conclusion. First, the transfer is essentially perfect and permanently so: the distilled student's attention ends up roughly two orders of magnitude closer to the teacher's than fine-tuning does, and does not drift with additional training. Second, the gap is real at 14$\\times$ fewer parameters and 10$\\times$ less data than previously studied, but it has a time axis. It tracks training maturity, and completing the schedules that the stopping rule interrupted closes it below our pre-registered threshold in two of three seeds, with comparisons at equal accuracy giving the same result. The endpoint gap at this scale is substantially a training-maturity artifact: robustness matures later than accuracy, and stopping rules tuned to accuracy undersample it. Third, forcing cross-row redundancy down by half the structural separation between the distilled and fine-tuned conditions produces no detectable robustness response under two registered ways of matching accuracy. Verified transfer, a gap that closes while the structure never moves, and a null under direct intervention are together consistent with the deficit residing in features, not in the visible attention structure. This is elimination plus intervention, and its scope is the regime we measured. In this regime, attention overlays show where a model looks, not what it knows.",
+      "authors": [
+        "Jesse Ponnock"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-08-19T00:10:38+00:00",
+      "link": "https://arxiv.org/pdf/2608.18399v1",
+      "tags": [
+        "keyword:dino-fg"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Studies ViT-S classification students of a self-supervised teacher on ImageNet-100; attention transfer and robustness in vision transformer classifiers",
+      "llm_evidence_cn": "研究ImageNet-100上自监督教师指导的ViT-S学生分类模型，关注注意力迁移与鲁棒性",
+      "llm_evidence": "研究ImageNet-100上自监督教师指导的ViT-S学生分类模型，关注注意力迁移与鲁棒性",
+      "canonical_evidence": "研究ImageNet-100上自监督教师指导的ViT-S学生分类模型，关注注意力迁移与鲁棒性",
+      "llm_tldr_en": "Measures attention structure of ViT-S students that copy a self-supervised teacher's attention maps on ImageNet-100. Attention transfer is nearly perfect and permanent, yet underperforms fine-tuning under distribution shift, linking attention structure to ViT robustness.",
+      "llm_tldr_cn": "视觉Transformer（ViT）通过复制自监督教师模型的注意力图进行知识迁移，虽能恢复大部分分布内精度，但在分布偏移下仍明显落后于微调。本文构建了注意力结构度量，系统比较了注意力迁移与微调对ViT-S学生模型的影响。结果表明注意力迁移几乎完美且持久，但鲁棒性差距真实存在。该发现把注意力结构与ViT的分布鲁棒性联系起来，为理解DINO类自监督基础模型在下游分类中的行为提供了依据。",
+      "llm_tldr": "视觉Transformer（ViT）通过复制自监督教师模型的注意力图进行知识迁移，虽能恢复大部分分布内精度，但在分布偏移下仍明显落后于微调。本文构建了注意力结构度量，系统比较了注意力迁移与微调对ViT-S学生模型的影响。结果表明注意力迁移几乎完美且持久，但鲁棒性差距真实存在。该发现把注意力结构与ViT的分布鲁棒性联系起来，为理解DINO类自监督基础模型在下游分类中的行为提供了依据。",
+      "llm_tags": [
+        "query:dino-fg"
+      ],
+      "matched_query_tag": "query:dino-fg",
+      "matched_query_text": "vision transformer architecture for classification",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

@@ -6,30 +6,37 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-08-19
-- 运行时间：2026-08-19 20:49:05 UTC
+- 最新运行日期：2026-08-20
+- 运行时间：2026-08-20 20:38:23 UTC
 - 运行状态：成功
-- 本次总论文数：3
-- 精读区：0
+- 本次总论文数：5
+- 精读区：2
 - 速读区：3
 
 ### 今日简报（AI）
-今日速读3篇论文，聚焦视觉适配、医学影像与病理编码，但无精读深度分析。最值得关注的是《Self-Routed Tensor Adapters》（7分），探索参数高效的通用视觉适配方法。建议普通读者优先浏览该文摘要与图表，并留意后续精读版本。
-- 详情：[/202608/19/README](/202608/19/README)
+今日精读2篇、速读3篇，共5篇论文，聚焦零样本分类器扩展与医学影像基础模型评估。  
+最值得关注：CAST方法以闭式解析实现零样本分类器扩展（8.0分），以及胸部X光基础模型在不同适应策略下的亚组表现分析（8.0分）。  
+建议普通读者优先精读这两篇高分论文，并留意论文中关于语义迁移效率与模型公平性的具体结论。
+- 详情：[/202608/20/README](/202608/20/README)
 
 ### 精读区论文标签
-- 本次无精读推荐。
+1. [CAST: Closed-form Analytic Semantic Transfer for Zero-Shot Classifier Extension](/202608/20/2608.13751v1-cast-closed-form-analytic-semantic-transfer-for-zero-shot-classifier-extension)  
+   标签：评分：8.0/10、query:dino-fg
+   evidence：基于语义迁移的免训练分类器扩展，适用于基础模型图像分类
+2. [Subgroup performance analysis of adaptation strategies for chest X-ray foundation models](/202608/20/2608.19078v1-subgroup-performance-analysis-of-adaptation-strategies-for-chest-x-ray-foundation-models)  
+   标签：评分：8.0/10、query:dino-fg
+   evidence：使用冻结Rad-DINO编码器结合分类适配器进行胸部X射线八种病理分类，是DINO在细粒度医学分类上的应用
 
 ### 速读区论文标签
-1. [Self-Routed Tensor Adapters for Parameter-Efficient Universal Visual Adaptation](/202608/19/2608.16384v1-self-routed-tensor-adapters-for-parameter-efficient-universal-visual-adaptation)  
+1. [Class Geometry as Supervision for Sample-Efficient Open-World Detection](/202608/20/2608.12698v1-class-geometry-as-supervision-for-sample-efficient-open-world-detection)  
    标签：评分：7.0/10、query:dino-fg
-   evidence：提出自路由张量适配器SRTA，用于冻结视觉基础模型的参数高效通用视觉自适应，可支撑下游图像分类任务
-2. [ORViT-DR: Ordinally-Robust Hybrid ViT for Low-Resolution Diabetic Retinopathy Grading](/202608/19/2608.16958v1-orvit-dr-ordinally-robust-hybrid-vit-for-low-resolution-diabetic-retinopathy-grading)  
-   标签：评分：6.0/10、query:dino-fg
-   evidence：混合ViT用于医学图像分类，可迁移至细粒度分类
-3. [DistillPath: An Efficient 22M Distilled Pathology Encoder Approaching Large Foundation Model Performance](/202608/19/2608.17872v1-distillpath-an-efficient-22m-distilled-pathology-encoder-approaching-large-foundation-model-performance)  
-   标签：评分：6.0/10、query:dino-fg
-   evidence：从大型病理基础模型蒸馏紧凑ViT编码器，明确提及DINO/iBOT预训练头，与DINO/ViT图像分类相关。
+   evidence：针对细粒度类别样本稀缺的开放世界检测，提出类别几何监督约束类别表征，可迁移至细粒度分类
+2. [H$^2$EDL: Hyper Evidential Deep Learning for Hierarchical Classification](/202608/20/2608.18185v1-h2edl-hyper-evidential-deep-learning-for-hierarchical-classification)  
+   标签：评分：7.0/10、query:dino-fg
+   evidence：面向层次细粒度分类的不确定性建模
+3. [What Does Attention Transfer Transfer? Attention Structure and Robustness in Vision Transformers](/202608/20/2608.18399v1-what-does-attention-transfer-transfer-attention-structure-and-robustness-in-vision-transformers)  
+   标签：评分：7.0/10、query:dino-fg
+   evidence：研究ImageNet-100上自监督教师指导的ViT-S学生分类模型，关注注意力迁移与鲁棒性
 
 
 <div class="dpr-home-promo-card">

@@ -1,0 +1,738 @@
+Title: CAST: Closed-form Analytic Semantic Transfer for Zero-Shot Classifier Extension
+
+URL Source: https://arxiv.org/pdf/2608.13751v1
+
+Published Time: Mon, 17 Aug 2026 00:10:06 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# CAST: C LOSED -FORM ANALYTIC SEMANTIC TRANSFER FOR 
+
+# ZERO -S HOT CLASSIFIER EXTENSION 
+
+William Heyden ∗
+
+, Habib Ullah, M. Salman Siddiqui, Fadi Al Machot 
+
+Faculty of Science and Technology (REALTEK) Norwegian University of Life Sciences NMBU 1430 Ås, Norway 
+
+## ABSTRACT 
+
+Large pre-trained models have become foundational components of modern machine learning systems. Yet adapting these models to novel categories typically requires examples from the target distribution. In many domains, however, such data are unavailable. Zero-shot learning (ZSL) permits recognition under these limitations through relying on auxiliary semantic information such as textual descriptions. We introduce CAST (Closed-form Analytic Semantic Transfer), a training-free, image-free framework for extending a pre-trained classifier to previously unseen classes through weight injection. We provide a theoretical foundation for CAST and derive a finite-sample error decomposition that identifies the semantic extrapolation residual ρu. The residual is a computable, model-agnostic measure and provides a principled criterion for dataset curation and benchmark design. Experiments on standard zero-shot learning benchmarks demonstrate that CAST matches or exceeds existing image-free approaches and approaches the performance of few-shot adaptation methods, while requiring neither iterative optimization nor examples from the target distribution. 
+
+Keywords Zero-Shot learning, CLIP, Weigth Injection, Classifier Extension 
+
+## 1 Introduction 
+
+Image classification has achieved widespread real-world deployment through large-scale supervised training. However, extending a classifier to new categories demand collecting additional labeled images and retraining the model [32, 50]. In many scientific and industrial applications, however, acquiring data for novel classes is expensive, impractical, or impossible [41]. Zero-shot learning (ZSL) addresses this challenge by transferring knowledge through auxiliary semantic information instead of images [42, 45]. The central premise of ZSL is that knowledge about unseen categories can be transferred through semantic representations such as textual descriptions, attribute vectors, or structured relational information. Recent advances in vision–language models have considerably improved semantic representations, enabling effective transfer to unseen classes [23]. However, existing ZSL methods dependent on either image-based optimization or iterative training to learn the semantic transfer, limiting their efficiency and applicability in data-scarce settings. In this work, we present Closed-form Analytic Semantic Transfer (CAST), an image-free and training-free framework for extending arbitrary pretrained classifiers to previously unseen categories. CAST uses CLIP text embeddings to synthesize classifier weights directly through a closed-form ridge projection. This requirers neither target-domain images nor gradient-based optimization. We further provide a geometric theory showing that zero-shot transfer is governed by semantic extrapolation, leading to the semantic extrapolation residual ρu, a computable, model-agnostic measure of class-specific transfer difficulty. It provides a principled criterion for semantic data selection and benchmark curation. Experiments demonstrate that CAST achieves competitive zero-shot performance while eliminating the image collection and optimization costs required by existing approaches. 
+
+> ∗
+
+Corresponding author: William Heyden (e-mail: william.heyden@nmbu.no) arXiv:2608.13751v1 [cs.CV] 13 Aug 2026 CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+Our contributions are summarized as follows: • Image-free, training-free classifier extension. A closed-form analytical solver for synthesising classifier weights for unseen classes from text descriptions. No target-domain images, no gradient-based optimization. • A geometric theory of semantic transfer. We show the CLIP-text-to-weight-space mapping is the natural linear transformation between two near-optimal semantic representations. By unifying Neural Collapse, cross-modal alignment, and the Linear Representation Hypothesis into one explanation, we derive image-free weight synthesis. • A data-centric measure of transferability. A finite-sample error bound identifies the semantic extrapolation residual ρu, a computable, model-agnostic predictor of per-class transfer difficulty and a criterion for semantic data selection and benchmark curation. • Competitive, efficient zero-shot learning. CAST matches or exceeds image-free baselines across standard ZSL benchmarks and diverse classifier architectures, while eliminating both image collection and iterative training. 
+
+## 2 Related Work 
+
+Embedding-based zero-shot learning established the canonical ZSL paradigm by learning a shared embedding space between visual features and semantic descriptors [1, 2, 3]. Early work reduced projection domain shift via bidirectional mappings [22], preserved embedding geometry [18], formulated ZSL as cross-domain matching [49], and used attention for discriminative representations [53]. 
+
+Generative-based zero-shot learning instead synthesizes visual features for unseen classes from semantic descriptions, reducing ZSL to a supervised problem trainable on real and generated data alike [45]. Early GAN-based synthesis [4] was followed by hybrid objectives for quality and stability [46, 38], class-discriminative generation [21], feature diversity [13], and structured external knowledge [6]. 
+
+Shared limitations. Both paradigms require seen-class images and task-specific optimization to learn a projection or generative model [45], so adapting to a new classifier or domain typically means retraining. Embedding-based methods further suffer projection hubness [11] and seen-class bias [31, 39, 48]; generative methods trade these for an expensive two-stage pipeline where feature-synthesis errors propagate to the classifier [5]. 
+
+Weight imprinting and image-free ZSL. Weight imprinting assigns classifier weights directly from feature prototypes, which coincide with the optimal classifier geometry under Neural Collapse [33, 29]. Image-free ZSL extends this by synthesizing unseen weights from semantic information alone by a combinations of seen classes [28, 26] or a learned semantic-to-weight mapping [9], most recently via LLM-generated class descriptions [24] or counterfactual attribute separation [43]. However, a task-specific optimization is required to learn that mapping. CAST derives it analytically instead. 
+
+Closed-form ZSL. A separate line of work solves ZSL via closed-form linear estimators. ESZSL [36] regularizes a bilinear compatibility function while Shigeto et al. [37] regress semantic labels onto visual prototypes, rather than the reverse, to curb hubness. The seminar work in SAE [19] adds an autoencoder reconstruction constraint solvable via a Sylvester equation. CAST shares this closed-form approach. 
+
+CLIP and vision-language models. CLIP [34] aligns images and text in a shared embedding space via large-scale contrastive learning [12], later improved through prompt learning and lightweight adaptation [52, 51, 15]. CAST instead uses CLIP purely as a semantic text encoder, projecting its embeddings analytically into an arbitrary pre-trained classifier’s weight space without modifying the vision model or fine-tuning on additional data. 
+
+## 3 Preliminaries 
+
+Supervised classifiers are trained on large-scale datasets D = {(xn, y n)}Nn=1 of image-label pairs xn ∈ X and yn ∈ Y s.Extensive research has demonstrated that trained classifiers admits a canonical decomposition into a feature extractor and a linear classification head [17, 35, 7, 10]: 
+
+f (x) = W L ◦ ϕ(x), (1) where ϕ : X → Rd maps an input to its penultimate representation and W L ∈ R|Y s|× d is the classification head whose 
+
+c-th row wc ∈ Rd is the learned weight vector for class c.2CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+Zero-Shot Learning. In Zero-Shot Learning (ZSL) the class space is partitioned into seen classes Ys, observed during training, and unseen classes Yu, with Ys ∩ Y u = ∅. Because the classifier is trained exclusively on Ys, the head 
+
+W L contains no row for any u ∈ Y u, making direct classification of unseen classes impossible. ZSL resolves this by associating each class c ∈ Y s ∪ Y u with a semantic descriptor ac. Under this framing, extending f to Yu reduces to estimating one weight vector ˆwu ∈ Rd per unseen class. 
+
+Neural Collapse. Recent work on Neural Collapse (NC) [29] shows classifiers trained to the terminal phase converge to a structured geometric space in the penultimate layer. Letting μc = E[ϕ(x) | y = c] denote the class-conditional mean, NC predicts class means and classifier weights co-align into an Equiangular Tight Frame (ETF) and self-duality: 
+
+wc
+
+∥wc∥ = μc
+
+∥μc∥ ∀ c ∈ Y s. (2) This means the classifier weight for any class is recoverable from its mean feature vector, which is a well-defined geometric target in Rd.
+
+Weight Imprinting. When labeled images of an new class are available, NC directly motivates weight imprinting [33]. The synthesised weight is the empirical mean of normalised features, 
+
+ˆwu ← ¯ϕu
+
+∥ ¯ϕu∥ , ¯ϕu = 1
+
+n
+
+> n
+
+X
+
+> i=1
+
+ϕ(x(i) 
+
+> u
+
+)
+
+∥ϕ(x(i) 
+
+> u
+
+)∥ , (3) and the new row is appended to the head ˜W L = [ W L; wu]. This represents the few-shot limit. In the zero-shot limit we address requires the same synthesis with no images of Yu, but using only descriptor au. Given this, we predict the weight vector, wu, the classifier would have learned had it seen images of u.
+
+CLIP. Predicting wu from au alone demands a text encoder whose output space produce a consistent geometric relationship to the classifier’s representation space Rd. A Contrastive Language-Image Pre-training (CLIP) model [34] satisfies this by construction. By training two parametric encoders, 
+
+h : X → Rm, g : A → Rm, (4) via a contrastive objective, CLIP maximise cosine similarity between matched image-text pairs and minimising it for mismatched pairs. This yields a joint embedding space where geometric structure reflects semantic relatedness across modalities. We write zc = g(ac)/∥g(ac)∥ ∈ Sm−1 for the unit-normalised text encoding of class c.
+
+## 4 Method 
+
+With CAST, we imprint weight vectors for unseen classes into a pre-trained classifier, without sample images or re-training. Seen-class weight vectors wc and their CLIP encoding zc ← g(ac) are predictably structured geometrically, and we aim to learn the map P : Rm → Rd taking zc 7 → wc. Section 4.2 establishes why such a map should exist and generalise to unseen classes; Section 4.3 derives the closed-form Ridge estimator from seen-class pairs and applies it to synthesize unseen weights (Section 4.4). 
+
+4.1 Problem Formulation 
+
+Our image-free ZSL setting assumes a pre-trained classifier f and a contrastive image-language text encoder g, the class cu ∈ Y u we aim to update our classifier f with, and their associate textual description au. No image of cu is available. We stack the seen-class pairs column-wise into the descriptor matrix Z ∈ Rm×|Y s| and the weight matrix 
+
+W ∈ Rd×|Y s| (where W = ( W L)⊤ from Eq. (1)), both of which are observed. The goal is to synthesize our target weights wu ∈ Rd for each u ∈ Y u.
+
+4.2 Why the bridge exists 
+
+We argue why a single linear map P : Rm → Rd from CLIP text embeddings to classifier weights should exist and generalise to unseen classes. The argument rests on three results. 
+
+Neural Collapse makes μc the target. Under NC3, wc/∥wc∥ = μc/∥μc∥: the classifier weight for class c is recoverable from the class-conditional feature mean μc ← ϕ(xc). Synthesizing wc from zc therefore reduces to predicting μc from zc.3CAST - Z ERO -S HOT CLASSIFIER EXTENSION 𝑣 ! − 𝑐𝑎𝑛 𝑓𝑙𝑦 𝑣 " − 𝑡𝑒𝑟𝑟𝑒𝑠𝑡𝑟𝑖𝑎𝑙 
+
+> 𝑐𝑜𝑙 𝑍 : 𝑆𝑒𝑒𝑛 𝑠𝑒𝑚𝑎𝑛𝑡𝑖𝑐 𝑠𝑢𝑏𝑠𝑝𝑎𝑐𝑒
+> 𝐷𝑜𝑙𝑝ℎ𝑖𝑛𝑒
+> 𝐴𝑢𝑠𝑡𝑟𝑖𝑐ℎ 𝐸𝑎𝑔𝑙𝑒
+
+𝒛 𝒖 ∥
+
+𝒛 𝒖 0
+
+> 𝜃
+
+𝐶𝐿𝐼𝑃 𝑇𝑒𝑥𝑡 𝐸𝑚𝑏𝑒𝑑𝑑𝑖𝑛𝑔 𝑠𝑝𝑎𝑐𝑒 ∈ ℝ ! 
+
+> ∥ 𝑧 ∥= 1
+> 𝑣 #− 𝑓𝑜𝑢𝑟 𝑙𝑒𝑔𝑔𝑒𝑑
+> 𝑃𝑒𝑛𝑔𝑢𝑖𝑛
+
+𝐶𝑙𝑎𝑠𝑠𝑖𝑓𝑖𝑒𝑟 𝑤𝑒𝑖𝑔ℎ𝑡 𝑠𝑝𝑎𝑐𝑒 ∈ ℝ "
+
+𝜇 5 𝜇 5
+
+𝜇 5
+
+> ∥ 𝑤 $ ∥≈ 𝑐𝑜𝑛𝑠𝑡.
+> 𝑤 !
+> ∥ 𝑤 ! ∥ ≈ 𝜇 !
+> ∥ 𝜇 ! ∥
+
+#𝑤 6
+
+𝜇 6∗   
+
+> 𝜼 + 𝜹
+> 𝑷 ∗ 𝒐𝒑 𝝆 𝒖 “A penguin is a semi-aquatic, flightless sea bird …”
+> CLIP
+> 5𝑷 = 𝑾𝒁 𝑻 𝒁𝒁 𝑻 + 𝝀𝑰 V𝟏
+> 𝐶𝑙𝑜𝑠𝑒𝑑 𝑓𝑜𝑟𝑚 𝑐𝑜𝑟𝑑𝑖𝑛𝑎𝑡𝑒 𝑐ℎ𝑎𝑛𝑔𝑒
+
+Figure 1: Geometric overview of CAST. Left: an unseen class’s CLIP text embedding zu (e.g. Penguin ) decomposes into an in-span component and an out-of-span residual (Eq. (20)). Middle: the Ridge estimator ˆP (Eq. (12)) is the closed-form coordinate change between the two spaces. Right: seen-class weights obey a predictable structure; the synthesized ˆwu differs from the true, unobserved 
+
+w∗ 
+
+> u
+
+by the intrinsic gap and the extrapolation penalty (Proposition 1). 
+
+CLIP cross-modal alignment gives P on seen classes. Near-optimal contrastive training provably yields a linear map from CLIP text embeddings to visual class prototypes: building on the transferability analysis of Chen et al. [8], there exists a linear map P such that 
+
+∥P z c − μc∥ ≤ δ ∀ c ∈ Y s, δ = O(ε1/2
+
+> CLIP
+
+), (5) where εCLIP is the gap of the CLIP model from the global minimum of its contrastive loss. The contrastive training absorbs the nonlinear alignment of text and image representations. The remaining between text embeddings and classifier weights is a simple linear relationship, consistent with the successful implementations of linear probing on CLIP features [16]. 
+
+The Linear Representation Hypothesis explains why P generalises. Eq. (5) only enables P to be accurate for the classes it was estimated on. Generalisation to an unseen class u requires P to act as a stable, concept-level map rather than a seen-class-specific lookup table. Under the LRH [30], a semantic property corresponds to a fixed direction in embedding space rather than a region, the same principle behind embedding arithmetic such as 
+
+king − man + woman ≈ queen [40]. Formally, for each semantic concept k ∈ K there exists a direction vk ∈ Rm
+
+such that 
+
+δ(x) = X
+
+> k∈K (x)
+
+αk(x) · vk + ε(x) (6) for a neural encoder δ, where K(x) is the set of concepts expressed in x, αk(x) is the degree of presence of concept vk,and ε is noise. Applying Eq. (6) to the text encoder g and the classifier’s feature extractor ϕ gives, for each class c,
+
+zc = X
+
+> k∈K (c)
+
+αck vCLIP  
+
+> k
+
++ ε(ac), μc = X
+
+> k∈K (c)
+
+αck vvis  
+
+> k
+
++ ε(x). (7) A class is described by its concept composition, what changes between modalities is the geometric realisation of those concepts. Combined with Eq. (5), this means P acts as a map between concept bases, 
+
+P v CLIP  
+
+> k
+
+= vvis  
+
+> k
+
+∀ k, (8) Any class whose concept composition lies in the span of concepts already expressed by seen classes is covered by the same P , whether or not that specific class was observed. 4CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+Representation Equivalence is the convergence of these results. Given two networks δ1 : X → Rd1 and δ2 : X → 
+
+Rd2 trained to near-optimal representations of the same task, representation equivalence [20] states that they are linearly related up to a bounded error, 
+
+Ex∼X 
+
+∥δ2(x) − M δ 1(x)∥2 ≤ ε, (9) for some linear map M . CLIP’s text encoder g and the classifier’s feature extractor ϕ are both near-optimal representa-tions of the same visual-semantic concepts. This is the same principle under the linear bound of Eq. (5) hence, not an empirical coincidence. 
+
+Conclusion. Combining NC3 with Eq. (5), 
+
+wc ≈ μc ≈ P z c, (10) and the LRH argument above justifies that the same P , estimated from seen-class pairs, is the right object to apply unchanged to unseen classes. This is further explored in Section 4.3. 
+
+4.3 Ridge Regression and Semantic Regularization ( λ)
+
+A linear map P is identifiable from seen-class pairs {(zc, w c)}c∈Y s by minimizing the seen-class residual ∥P Z − W ∥2 
+
+> F
+
+.The unregularized solution ˆPols = W Z ⊤(ZZ ⊤)† is ill-conditioned as Z ∈ Rm×|Y s| has |Y s| ≪ m, and CLIP embeddings concentrate in a low-effective-rank subspace. Therefore, the pseudoinverse amplifies small singular values by 1/σ i where the training signal is weakest. We therefore add a Frobenius-norm penalty on P ,
+
+ˆP = arg min  
+
+> P
+
+∥P Z − W ∥2 
+
+> F
+
++ λ∥P ∥2 
+
+> F
+
+, (11) whose unique closed-form minimiser 
+
+ˆP = W Z ⊤(ZZ ⊤ + λI )−1 (12) replaces 1/σ i amplification with the shrinkage factor σi/(σ2 
+
+> i
+
++ λ) (full derivation in the supplementary material). Writing Z = U ΣV ⊤, the left singular vectors uk are, under the LRH, the principal semantic axes of the seen-class concepts (Eq. 6), and the shrinkage form 
+
+ˆPλ = W V diag 
+
+ σk
+
+σ2 
+
+> k
+
++ λ
+
+
+
+U ⊤ (13) assigns each direction uk a weight γk = σ2
+
+> k
+
+/(σ2 
+
+> k
+
++ λ). Consistently expressed concepts ( σk large) ensures γk → 1
+
+while sparsely expressed ones ensures γk → 0. Thus λ is a control on how much evidence a concept direction needs before being trusted and because CLIP embeddings are ℓ2-normalised ( tr( ZZ ⊤) = |Y s|, average non-zero eigenvalue 
+
+1), λ = 1 is a principled choice. In the limit, concept directions entirely absent from the seen-class vocabulary have 
+
+σk = 0 and are mapped to zero by ˆP . This blind spot is shared by any linear estimator trained on seen-class pairs, which we formalise in Section 5.2 as the semantic extrapolation residual ρu.
+
+4.4 Inference 
+
+At test time, synthesizing a weight vector for an unseen class u requires only its textual description au. The description is encoded through the frozen CLIP text encoder to give zu = g(au) ∈ Rm, and the projected weight is obtained by a single matrix–vector product: 
+
+ˆwu = ˆP z u ∈ Rd. (14) 
+
+In the Generalised Zero-shot setting (GZSL), test images may belong to either seen or unseen classes. Naively concatenating ˆW u = [ ˆ wu]u∈Y u with W L and taking a joint arg max introduces a systematic bias towards seen classes as the rows of W L are estimated by cross-entropy training, whereas the rows of ˆW u are Ridge projections which inhabit differently scaled geometric structures. We therefore classify with two independent heads. Let 
+
+ℓs = W L ϕ(x) ∈ R|Y s|, ℓu = ˆW u ϕ(x) ∈ R|Y u| (15) be the seen and unseen logit vectors for a test image x. A temperature-scaled softmax is applied independently to each head, 
+
+ps = softmax( ℓs/τ s) , pu = softmax( ℓu/τ u) , (16) converting raw scores into within-head confidence distributions that are comparable regardless of weight scale. The image is assigned to the group whose head is more confident, and predicted within that group: 
+
+ˆy =
+
+
+
+arg max  
+
+> c∈Y s
+
+psc if max c psc ≥ max c puc ,
+
+arg max  
+
+> c∈Y u
+
+puc otherwise. (17) 5CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+Setting τs = τu = 1 recovers a parameter-free baseline; the temperatures provide a post-hoc calibration lever when held-out seen classes are available. No images of class u, no gradient computation, and no modification to the backbone are required at any stage. 
+
+In Conventional Zero-shot setting (ZSL) we know that the test image belongs to an unseen class, hence the inference problem reduces to replacing W L with ˆW u entirely. 
+
+## 5 Theoretical Analysis 
+
+The argument chain of Section 4.2 justifies why the linear bridge exists. In this section we justify how accurately it can be estimated from a finite set of seen classes and validating each assumption empirically. Throughout, ˆμc
+
+denotes the finite-sample estimate of the class-conditional mean μc = E[ϕ(x) | y = c]; for an unseen class u, ˆμu is the (never directly observed) estimate that would be obtained from images of u, were any available. We work under three assumptions, corresponding to the three results of Section 4.2: (A1) NC3 holds with rate η: ∥wc − ˆμc∥ ≤ η
+
+for all c, including unseen c [29]; (A2) there exists an ideal map P ∗ established via CLIP cross-modal alignment (Eq. (5)) with ∥P ∗zc − ˆμc∥ ≤ δ on seen classes, where δ = O(ε1/2
+
+> CLIP
+
+) [8]; (A3) under the LRH (Eq. (8)), the same 
+
+P ∗ extrapolates beyond the seen span: ∥P ∗zu − ˆμu∥ ≤ δ + ∥P ∗∥op ρu, where ∥P ∗∥op < ∞ and ρu (formalised in Section 5.2) measures how far zu lies outside the span of seen-class embeddings. In Figure 2 we show that both A1 and A2 are supported empirically. In Figure 2a we observe that cos( wc, μ c)
+
+shifts towards 1 for architectures satisfying NC3 by design. However complete NC3 is not necessary for reasonable performance, but rather sets a ceiling on CAST’s accuracy. Moderately aligned architectures still work, at the cost of a larger residual. In Figure 2b its evident that unseen accuracy rises monotonically as CLIP validation loss falls, tracking 
+
+δ(ε) → 0. The last assumption is shown in Figure 3 and further discussed in Section 5.2. 0.2 0.0 0.2 0.4 0.6 0.8 1.0 
+
+cos( wc, c)
+
+> 0246810
+> Density
+> ResNet-50 ViT-B/16 Swin-V2-B EfficientNetV2-M MLP-Custom
+
+(a) (b) Figure 2: Empirical validation of A1 and A2 on AWA2. (a) Cosine alignment cos( wc, μ c) across five architectures (NC3): architectures satisfying NC3 by design concentrate near cos = 1 . (b) Unseen accuracy vs. CLIP validation loss during training, rising monotonically as ε → 0 (A2). 
+
+5.1 Error Decomposition Proposition 1 (CAST error bound) Under the above assumptions, the weight synthesis error satisfies 
+
+∥ ˆwu − w∗
+
+> u
+
+∥ ≤ O
+
+ η
+
+|{z} 
+
+> Classifier gap (NC)
+
++ δ|{z} 
+
+> CLIP gap
+
++ ∥P ∗∥op ρu
+
+| {z }
+
+> Unseen extrapolation
+
+ (18) The three terms follow from the argument chain. By insert P ∗zu and ˆμu we can simultaneously pivot the equation: 
+
+∥ ˆwu − w∗
+
+> u
+
+∥ ≤ ∥ ( ˆP − P ∗)zu∥
+
+| {z }
+
+> (i)
+
++ ∥P ∗zu − ˆμu∥
+
+| {z }
+
+> (ii )
+
++ ∥ˆμu − w∗
+
+> u
+
+∥
+
+| {z }
+
+> (iii )
+
+(19) 6CAST - Z ERO -S HOT CLASSIFIER EXTENSION     
+
+> Figure 3: Unseen accuracy vs. mean semantic extrapolation residual ¯ρuacross AWA2, CUB, APY, and FLO. Higher ¯ρuconsistently predicts lower accuracy (A3), independently of architecture.
+
+It follows that 
+
+(iii ) ≤ η (NC3, A1) 
+
+(ii ) ≤ δ + ∥P ∗∥op ρu (LRH generalisation to unseen u, A3) 
+
+(i) ≤ ∥ P ∗∥op ρu ( ˆP 7 → z⊥ 
+
+> u
+
+= 0 ; P ∗ does not, gap =∥ P ∗z⊥ 
+
+> u
+
+∥)Summing gives ∥ ˆwu − w∗
+
+> u
+
+∥ ≤ η + δ + 2 ∥P ∗∥op ρu, i.e. Eq. (18) once the constant factor is absorbed into the O(·). Note that this makes it clear that ρu binds from two directions (terms (i) and (ii)). The fully explicit derivation, including the residual conditioning term the O(·) absorbs here, is given in the supplementary material. 
+
+5.2 The Semantic Extrapolation Residual 
+
+The extrapolation term of Eq. (18) is the most critical for ZSL. This is demonstrated by decompose zu = z∥ 
+
+> u
+
++ z⊥ 
+
+> u
+
+.Here, z∥ 
+
+> u
+
+= ZZ †zu ∈ col( Z) is the in-span component the bridge ˆP has learned from seen-class data, and ∥z⊥ 
+
+> u
+
+∥ = ρu
+
+is the out-of-span, untrained direction. For any v ⊥ col( Z), Z⊤v = 0 implies ˆP v = W Z ⊤(ZZ ⊤ + λI )−1v = 0 : the Ridge estimator is blind to z⊥ 
+
+> u
+
+.We define the semantic extrapolation residual as this blind component’s magnitude, 
+
+ρu = ∥(I − ZZ †)zu∥ = ∥z⊥ 
+
+> u
+
+∥. (20) Since CLIP embeddings are ℓ2-normalised, ρu = sin( θu), the sine of the angle between zu and its nearest point in 
+
+col( Z), so ρu ∈ [0 , 1] : near 0 for classes lying in the seen-class semantic subspace and recovered by interpolation, approaching 1 for classes semantically orthogonal to everything seen, where the bridge must extrapolate blindly. This is the more critical, class-varying term of the bound (A3), and Figure 3 confirms it empirically: mean unseen accuracy versus mean ¯ρu across all four benchmarks falls on a clear decreasing trend. The mechanism is visible directly in weight space. Figure 4 projects seen weights, the true w∗ 
+
+> u
+
+from a classifier retrained on each held-out class and ˆwu into a shared t-SNE embedding for the AWA2 unseen classes, with the ˆwu-to-w∗ 
+
+> u
+
+segment coloured by ρu. Near-zero-ρu classes (Dolphin, Bobcat, Giraffe, Seal) synthesise almost on top of their true weight, while Blue+whale, the ρu outlier, shows the largest displacement. 
+
+A property of the problem, not of CAST. The blind-spot argument is not specific to Ridge. Any linear estimator 
+
+ˆP = f (W, Z ) shares the same null space col( Z)⊥. Consequently ρu is a lower bound on the extrapolation difficulty. This offers two practical uses. First, as a per-description screen where ρ(k) 
+
+> u
+
+= ∥(I −ZZ †)g(a(k) 
+
+> u
+
+)∥ indicates descriptions that will lead to a poor synthesis regardless of semantic precision. Second, as a benchmark diagnostic measure by averaging over all unseen classes, 
+
+¯ρ = 1
+
+|Y u|
+
+X
+
+> u∈Y u
+
+ρu ∈ [0 , 1] (21) we characterises how much of a benchmark’s unseen semantic space lies outside the seen-class span, independently of method. Both uses hold up empirically (Figure 5a–5b). Since CLIP maps different textual descriptions of the same concept to different embedding points, a description determines where zu lands relative to the fixed span col( Zseen ). Figure 5a 7CAST - Z ERO -S HOT CLASSIFIER EXTENSION          
+
+> Figure 4: Geometry of ˆwuvs. the true w∗
+> uin weight space (AWA2, t-SNE). Stars: w∗
+> ufrom a classifier retrained per held-out class. Crosses: synthesised ˆwu. Segment colour: ρu. Low-ρuclasses synthesise close to their true weight; Blue+whale, the highest-ρu
+> class, shows the largest gap.
+
+shows this with a fixed bridge, measured by the class average reconstruction-fidelity score. This estimates how well-conditioned the text-to-weight bridge is for a given description style. Looping through eight descriptions (listed in the supplementary material) while holding Zseen fixed produces up to ∼8 points of accuracy variation, from differences in both ρu and the discriminativeness of z∥
+
+> u
+
+. Fixing the descriptions instead, ρu characterises how hard each unseen class is for any linear method. Figure 5b confirms this, with an inverse relationship between accuracy and ρu.
+
+## 6 Experiments 
+
+We evaluate CAST on four standard ZSL benchmarks , the AWA2 [45], the CUB [44], APY [14], and FLO [27]. Using their conventional proposed splits [45] under both the conventional ZSL setting and the Generalised ZSL (GZSL) setting. Under GZSL performance is measured by the harmonic mean H = 2×s×us+u of seen ( s) and unseen ( u) accuracies. All pre-trained classifiers are from PyTorch’s Computer Vision library [25]; CLIP models are from the OpenAI library [34]. 
+
+6.1 Cross-Architecture Generalisation 
+
+CAST’s theoretical argument makes no assumption about the specific classifier or CLIP backbone, since the linear bridge follows from near-optimal representations of a shared visual-semantic world. We test this across a grid of 11 
+
+pre-trained classifiers and 4 CLIP text encoders on AWA2 (Table 1; full CUB grid in the supplementary material). CAST generalises consistently on AWA2 (60–80% unseen accuracy across most pairings), with seen-class reconstruction closely tracking each classifier’s baseline (e.g. ResNet50: 94.29 vs. 94.2). No single CLIP backbone dominates, so backbone choice is secondary. The AWA2-vs-CUB gap (60–80% vs. 22–36%) mirrors semantic extrapolation difficulty (Section 5): AWA2 unseen classes share broad attributes well-covered by the seen vocabulary, while CUB’s fine-grained distinctions largely are not.     
+
+> (a) (b) Figure 5: Effect of unseen-class description on ρuand synthesis quality, on AWA2. (a) Accuracy vs. bridge quality across description templates (listed in the supplementary material). (b) Per-class accuracy vs. ρu.
+
+8CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+AWA2 CLIP Classifier Baseline ViT-b32 ViT-b16 RN50 RN101 AlexNet 92.68 63.5 (92.4) 64.0 (92.1) 60.1 (92.6) 68.3 (92.5) ConvNext B 96.13 72.1 (96.3) 78.5 (96.3) 74.9 (96.2) 75.7 (96.2) DensNet161 95.49 72.0 (95.4) 68.9 (95.3) 64.8 (95.4) 73.2 (95.4) EfficientNet-v2-M 89.49 72.5 (89.4) 71.1 (89.2) 71.5 (89.5) 72.1 (89.4) GoogLeNet 89.17 67.9 (89.2) 68.3 (88.9) 61.5 (89.2) 68.3 (89.2) MobileNet v2 92.20 72.5 (92.1) 68.9 (92.0) 64.9 (92.1) 74.5 (92.2) ShuffleNet v2 x1 42.98 47.8 (41.5) 54.4 (37.3) 39.2 (42.2) 25.4 (40.7) ResNet 50 94.29 76.5 (94.2) 72.0 (94.0) 74.9 (94.2) 79.4 (94.2) Swin v2 B 95.47 69.1 (95.6) 76.7 (95.2) 73.6 (95.6) 79.8 (95.4) ViT-b16 95.41 65.9 (95.3) 59.7 (95.3) 63.4 (95.3) 68.5 (95.3) Wide ResNet 50 93.77 71.9 (93.7) 64.9 (93.6) 63.9 (93.7) 71.5 (93.7) Table 1: Zero-shot classification performance on unseen classes using our proposed CAST method, in the conventional zero-shot setting. Red and blue values indicates best and second best performance of classifier per CLIP model. Parenthetical values report top-1 accuracy for synthesized seen-class weights, reflecting bridge reconstruction quality. AWA2 CUB APY FLO Method S U H S U H S U H S U H
+
+CLIP Base 41.9 61.3 49.8 35.4 43.1 38.9 21.4 11.2 14.7 50.6 37.3 42.9 
+
+ConSE [28] 96.1 3.0 5.7 88.0 0.5 0.9 90.5 2.8 5.5 98.5 0.3 0.7 COSTA [26] 96.1 0.0 0.0 87.6 0.0 0.0 90.2 0.0 0.0 98.7 0.0 0.0 SMO [47] 92.4 31.8 47.3 52.3 39.2 44.8 80.9 17.7 29.0 94.7 18.8 31.4 WAvg [47] 92.4 5.5 10.4 52.3 1.9 3.7 77.9 7.4 13.5 94.5 7.4 7.1 ICIS [9] 93.3 35.6 51.6 73.7 45.8 56.5 87.9 7.6 14.1 97.6 23.4 37.8 Ours 89.6 46.2 60.9 85.2 32.4 46.9 77.9 18.2 29.6 85.4 51.3 64.1 Table 2: Generalized zero-shot learning results. The compared methods are image-free only, i.e. they are trained through gradient descent. Our model is the only training-free approach. CLIP linear prope is shown for reference. Best and second-best results per dataset are shown in red and blue, respectively. 
+
+6.2 Comparison with Baseline Methods 
+
+Table 2 reports GZSL performance against image-free baselines that, unlike CAST, require gradient-based training to learn the visual-semantic mapping. CAST leads on AWA2 ( H=60 .9) and FLO ( H=64 .1), ahead of the strongest baseline ICIS [9] by 9.3 and 23.7 points, driven mainly by unseen-class accuracy ( U =46 .2 vs. 35 .6 on AWA2; U =51 .3
+
+vs. 23 .4 on FLO). ConSE [28] and COSTA [26] reach high seen accuracy but near-zero unseen accuracy, collapsing to seen-class predictions. On CUB, where fine-grained distinctions impose an extrapolation penalty a gradient-based encoder can partly capture but a linear bridge cannot, ICIS leads ( H=56 .5 vs. CAST’s 46 .9); APY is similar, with CAST ( H=29 .6) comparable to SMO [47] ( 29 .0), ahead of ICIS ( 14 .1). 
+
+(a) (b) Figure 6: Imprinting oracle experiment on AWA2. (a) Accuracy vs. k for k-shot imprinting against CAST and the oracle ( k = ∞). (b) Per-class breakdown, tracking ρu (Section 5.2). 
+
+9CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+6.3 Comparison to k-shot Imprinting 
+
+k-shot imprinting generates class weights by averaging penultimate-layer embeddings of k labeled examples [33]; CAST is represents the k = 0 limit. Figure 6a traces accuracy from CAST through k = 1 , . . . to the oracle on AWA2. CAST (ViT-B/16) reaches ≈70% unseen accuracy with zero labeled images, with a semantic data equivalence of 
+
+k∗ ≈ 2. While k-shot rises steeply to k ≈ 5 before levelling off, where the bottleneck shifts from data scarcity to representational capacity. The semantic encoder matters, a 2-layer CAST trained on this dataset’s own attributes trails ViT-B/16 by ≈11 points, confirming bridge quality drives performance. The per-class breakdown (Figure 6b) reveals the non uniformly description quality. CAST matches or exceeds the oracle on some classes (giraffe, rat, walrus) but lags on others (blue whale, bat), tracking ρu.
+
+## 7 Conclusion 
+
+We introduced CAST, an image-free, training-free method for extending pre-trained classifiers to unseen categories via a closed-form Ridge projection. Neither sample images nor iterative training or optimisation are required. A mapping from CLIP text embeddings to a classifier weight space is geometrically account for by unifying Neural Collapse, CLIP cross-modal alignment, and the Linear Representation Hypothesis. A finite-sample bound whose extrapolation term, the 
+
+semantic extrapolation residual ρu, is computable from text embeddings alone, independent of classifier or synthesis method. Across four ZSL benchmarks and eleven architectures, CAST matches or exceeds gradient-trained image-free baselines with no target-domain images or iterative optimization, and ρu predicts where synthesis succeeds or fails, per class and benchmark. The same analysis marks CAST’s boundary. As the bridge is linear, it inherits the null space of the seen-class span, so fine-grained benchmarks (CUB) remain harder than broad-coverage ones (AWA2). Closing this gap while keeping CAST closed-form and training-free, via richer maps or ρu-guided curation, is future work. 10 CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+## References 
+
+[1] Akata, Z., Perronnin, F., Harchaoui, Z., Schmid, C.: Label-embedding for attribute-based classification. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 819–826 (2013) [2] Akata, Z., Reed, S., Walter, D., Lee, H., Schiele, B.: Evaluation of output embeddings for fine-grained image classification. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 2927–2936 (2015) [3] Bucher, M., Herbin, S., Jurie, F.: Improving semantic embedding consistency by metric learning for zero-shot classiffication. In: European Conference on Computer Vision. pp. 730–746. Springer (2016) [4] Bucher, M., Herbin, S., Jurie, F.: Generating visual representations for zero-shot classification. In: Proceedings of the IEEE International Conference on Computer Vision Workshops. pp. 2666–2673 (2017) [5] Chen, D., Shen, Y., Zhang, H., Torr, P.H.: Deconstructed generation-based zero-shot model. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 37, pp. 295–303 (2023) [6] Chen, J., Geng, Y., Chen, Z., Horrocks, I., Pan, J.Z., Chen, H.: Knowledge-aware zero-shot learning: Survey and perspective. arXiv preprint arXiv:2103.00070 (2021) [7] Chen, L., Li, S., Bai, Q., Yang, J., Jiang, S., Miao, Y.: Review of image classification algorithms based on convolutional neural networks. Remote Sensing 13 (22), 4712 (2021) [8] Chen, Z., Deng, Y., Li, Y., Gu, Q.: Understanding transferable representation learning and zero-shot transfer in clip. In: International Conference on Learning Representations. vol. 2024, pp. 55415–55444 (2024) [9] Christensen, A., Mancini, M., Koepke, A., Winther, O., Akata, Z.: Image-free classifier injection for zero-shot classification. In: Proceedings of the IEEE/CVF international conference on computer vision. pp. 19072–19081 (2023) [10] Ciresan, D.C., Meier, U., Masci, J., Maria Gambardella, L., Schmidhuber, J.: Flexible, high performance convolutional neural networks for image classification. In: IJCAI proceedings-international joint conference on artificial intelligence. vol. 22, p. 1237. Barcelona, Spain: (2011) [11] Dinu, G., Lazaridou, A., Baroni, M.: Improving zero-shot learning by mitigating the hubness problem. arXiv preprint arXiv:1412.6568 (2014) [12] Dong, H., Sheng, L., Liang, J., He, R., Chatzi, E., Fink, O.: Adapting vision-language models without labels: A comprehensive survey. arXiv preprint arXiv:2508.05547 (2025) [13] Elhoseiny, M., Yi, K., Elfeki, M.: Cizsl++: Creativity inspired generative zero-shot learning. arXiv preprint arXiv:2101.00173 (2021) [14] Farhadi, A., Endres, I., Hoiem, D., Forsyth, D.: Describing objects by their attributes. In: IEEE Conference on Computer Vision and Pattern Recognition. pp. 1778–1785 (2009) [15] Gao, P., Geng, S., Zhang, R., Ma, T., Fang, R., Zhang, Y., Li, H., Qiao, Y.: Clip-adapter: Better vision-language models with feature adapters. International Journal of Computer Vision 132 , 581–595 (2024) [16] Hentschel, S., Kobs, K., Hotho, A.: Clip knows image aesthetics. Frontiers in Artificial Intelligence 5, 976235 (2022) [17] Hild, K.E., Erdogmus, D., Torkkola, K., Principe, J.C.: Feature extraction using information-theoretic learning. IEEE Transactions on Pattern Analysis and Machine Intelligence 28 (9), 1385–1392 (2006) [18] Jiang, H., Wang, R., Shan, S., Chen, X.: Learning class prototypes via structure alignment for zero-shot recognition. In: Proceedings of the European conference on computer vision (ECCV). pp. 118–134 (2018) [19] Kodirov, E., Xiang, T., Gong, S.: Semantic autoencoder for zero-shot learning. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition. pp. 4447–4456 (2017) [20] Lenc, K., Vedaldi, A.: Understanding image representations by measuring their equivariance and equivalence. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 991–999 (2015) [21] Li, J., Jing, M., Lu, K., Zhu, L., Yang, Y., Huang, Z.: Alleviating feature confusion for generative zero-shot learning. In: Proceedings of the 27th ACM international conference on multimedia. pp. 1587–1595 (2019) [22] Li, Y., Wang, D., Hu, H., Lin, Y., Zhuang, Y.: Zero-shot recognition using dual visual-semantic mapping paths. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 3279–3287 (2017) [23] Lv, F., Zhang, J., Yang, G., Feng, L., Yu, Y., Duan, L.: Learning cross-domain semantic-visual relationships for transductive zero-shot learning. Pattern Recognition 141 , 109591 (2023) 11 CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+[24] Lyu, D., Wang, X., Ban, T., Chen, L., Zhou, X., Chen, H.: Expanding the category of classifiers with LLM supervision. In: Proceedings of the Thirty-Fourth International Joint Conference on Artificial Intelligence (IJCAI). pp. 5905–5913 (2025) [25] maintainers, T., contributors: Torchvision: Pytorch’s computer vision library. https://github.com/pytorch/ vision (2016) [26] Mensink, T., Gavves, E., Snoek, C.G.M.: Costa: Co-occurrence statistics for zero-shot classification. In: IEEE Conference on Computer Vision and Pattern Recognition. pp. 2441–2448 (2014) [27] Nilsback, M.E., Zisserman, A.: Automated flower classification over a large number of classes. In: Indian Conference on Computer Vision, Graphics & Image Processing. pp. 722–729 (2008) [28] Norouzi, M., Mikolov, T., Bengio, S., Singer, Y., Shlens, J., Frome, A., Corrado, G.S., Dean, J.: Zero-shot learning by convex combination of semantic embeddings. arXiv preprint arXiv:1312.5650 (2013) [29] Papyan, V., Han, X., Donoho, D.L.: Prevalence of neural collapse during the terminal phase of deep learning training. Proceedings of the National Academy of Sciences 117 (40), 24652–24663 (2020) [30] Park, K., Choe, Y.J., Veitch, V.: The linear representation hypothesis and the geometry of large language models. arXiv preprint arXiv:2311.03658 (2023) [31] Paul, A., Krishnan, N.C., Munjal, P.: Semantically aligned bias reducing zero shot learning. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 7056–7065 (2019) [32] Pittaras, N., Markatopoulou, F., Mezaris, V., Patras, I.: Comparison of fine-tuning and extension strategies for deep convolutional neural networks. In: International conference on multimedia modeling. pp. 102–114. Springer (2016) [33] Qi, H., Brown, M., Lowe, D.G.: Low-shot learning with imprinted weights. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 5822–5830 (2018) [34] Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al.: Learning transferable visual models from natural language supervision. In: International conference on machine learning. pp. 8748–8763. PmLR (2021) [35] Rawat, W., Wang, Z.: Deep convolutional neural networks for image classification: A comprehensive review. Neural computation 29 (9), 2352–2449 (2017) [36] Romera-Paredes, B., Torr, P.: An embarrassingly simple approach to zero-shot learning. In: International Conference on Machine Learning. pp. 2152–2161. PMLR (2015) [37] Shigeto, Y., Suzuki, I., Hara, K., Shimbo, M., Matsumoto, Y.: Ridge regression, hubness, and zero-shot learning. In: Joint European Conference on Machine Learning and Knowledge Discovery in Databases. pp. 135–151. Springer (2015) [38] Song, J., Shen, C., Yang, Y., Liu, Y., Song, M.: Transductive unbiased embedding for zero-shot learning. In: Proceedings of the IEEE conference on computer vision and pattern recognition. pp. 1024–1033 (2018) [39] Thong, W., Snoek, C.G.: Bias-awareness for zero-shot learning the seen and unseen. arXiv preprint arXiv:2008.11185 (2020) [40] Vylomova, E., Rimell, L., Cohn, T., Baldwin, T.: Take and took, gaggle and goose, book and read: Evaluating the utility of vector differences for lexical relation learning. In: Proceedings of the 54th annual meeting of the association for computational linguistics (volume 1: long papers). pp. 1671–1682 (2016) [41] Wang, D., Prabhat, S., Sambasivan, N.: Whose ai dream? in search of the aspiration in data annotation. In: Proceedings of the 2022 CHI conference on human factors in computing systems. pp. 1–16 (2022) [42] Wang, W., Zheng, V.W., Yu, H., Miao, C.: A survey of zero-shot learning: Settings, methods, and applications. ACM Transactions on Intelligent Systems and Technology (TIST) 10 (2), 1–37 (2019) [43] Wang, X., Gao, Y., Rong, C., Chen, L., Lyu, D., Zhou, X., Ban, T., Chen, H.: Counterfactual-driven zero-shot classifier expansion. In: Proceedings of the AAAI Conference on Artificial Intelligence. vol. 40, pp. 26508–26516 (2026) [44] Welinder, P., Branson, S., Mita, T., Wah, C., Schroff, F., Belongie, S., Perona, P.: Caltech-ucsd birds 200. Tech. Rep. CNS-TR-2010-001, California Institute of Technology (2010) [45] Xian, Y., Lampert, C.H., Schiele, B., Akata, Z.: Zero-shot learning—a comprehensive evaluation of the good, the bad and the ugly. IEEE transactions on pattern analysis and machine intelligence 41 (9), 2251–2265 (2018) 12 CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+[46] Xian, Y., Sharma, S., Schiele, B., Akata, Z.: f-vaegan-d2: A feature generating framework for any-shot learning. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 10275–10284 (2019) [47] Xu, W., Xian, Y., Wang, J., Schiele, B., Akata, Z.: Vgse: Visually-grounded semantic embeddings for zero-shot learning. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 9316–9325 (2022) [48] Zhang, C., Jin, M., Yu, Q., Xue, H., Gowda, S.N., Jin, X.: Bridging the projection gap: Overcoming projection bias through parameterized distance learning. In: Proceedings of the Asian Conference on Computer Vision. pp. 3327–3343 (2024) [49] Zhang, L., Wang, P., Liu, L., Shen, C., Wei, W., Zhang, Y., Van Den Hengel, A.: Towards effective deep embedding for zero-shot learning. IEEE Transactions on Circuits and Systems for Video Technology 30 (9), 2843–2852 (2020) [50] Zhou, D.W., Cai, Z.W., Ye, H.J., Zhan, D.C., Liu, Z.: Revisiting class-incremental learning with pre-trained models: Generalizability and adaptivity are all you need. International Journal of Computer Vision 133 (3), 1012–1032 (2025) [51] Zhou, K., Yang, J., Loy, C.C., Liu, Z.: Conditional prompt learning for vision-language models. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 16816–16825 (2022) [52] Zhou, K., Yang, J., Loy, C.C., Liu, Z.: Learning to prompt for vision-language models. International journal of computer vision 130 (9), 2337–2348 (2022) [53] Zhu, Y., Xie, J., Tang, Z., Peng, X., Elgammal, A.: Semantic-guided multi-attention localization for zero-shot learning. Advances in Neural Information Processing Systems 32 (2019) 13 CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+## A Supplementary Material 
+
+This supplementary material provides the two derivations from Sections 4.3 and 5 of the main paper – the shrinkage form of the Ridge estimator (Eq. (13)) and the full error bound behind Proposition 1 – together with additional experimental results and configuration details referenced there. 
+
+A.1 From the Ridge Objective to the Shrinkage Form 
+
+Differentiating the Ridge objective (Eq. (11)) with respect to P and setting the gradient to zero, 
+
+2( P Z − W )Z⊤ + 2 λP = 0 =⇒ P (ZZ ⊤ + λI ) = W Z ⊤, (22) which rearranges directly to the closed form ˆP = W Z ⊤(ZZ ⊤ + λI )−1 (Eq. (12)). To see how ˆP treats each semantic direction, write the thin SVD Z = U ΣV ⊤, with U ∈ Rm×r, V ∈ R|Y s|× r
+
+orthonormal ( U ⊤U = V ⊤V = Ir) and Σ = diag( σ1, . . . , σ r ). Since ZZ ⊤ = U Σ2U ⊤ acts as Σ2 on col( U ) and as 0
+
+on its orthogonal complement, 
+
+(ZZ ⊤ + λI )−1 = U (Σ 2 + λI )−1U ⊤ + 1 
+
+> λ
+
+(I − U U ⊤). (23) Left-multiplying by Z⊤ = V ΣU ⊤ and using U ⊤U = Ir kills the second term entirely ( U ⊤(I − U U ⊤) = 0 ), leaving 
+
+Z⊤(ZZ ⊤ + λI )−1 = V Σ(Σ 2 + λI )−1U ⊤ = V diag 
+
+ σk
+
+σ2 
+
+> k
+
++ λ
+
+
+
+U ⊤. (24) Substituting into ˆP = W Z ⊤(ZZ ⊤ + λI )−1 gives exactly the shrinkage form of Eq. (13): ˆPλ =
+
+W V diag  σk/(σ2 
+
+> k
+
++ λ) U ⊤. Each seen-class semantic direction uk is therefore weighted by σk/(σ2 
+
+> k
+
++ λ) rather than the raw 1/σ k used by the unregularised solution. This is exactly the shrinkage behaviour discussed in Section 4.3. 
+
+A.2 Full Derivation of the CAST Error Bound 
+
+Proposition 1 states ∥ ˆwu − w∗
+
+> u
+
+∥ ≤ O(η + δ + ∥P ∗∥op ρu). We now derive this bound in full, including the constant factor and one additional term that the O(·) in the main text absorbs. 
+
+Two sources of error. Inserting P ∗zu as a pivot splits the total error into two independent pieces: 
+
+∥ ˆwu − w∗
+
+> u
+
+∥ = ∥ ˆP z u − w∗
+
+> u
+
+∥ ≤ ∥ ˆP z u − P ∗zu∥
+
+| {z } 
+
+> E1(estimation error)
+
++ ∥P ∗zu − w∗
+
+> u
+
+∥
+
+| {z } 
+
+> E2(model error)
+
+. (25) 
+
+E2 is the error we would still pay even with perfect knowledge of the ideal map P ∗; E1 is the extra cost of only having the Ridge estimate ˆP computed from seen classes. 
+
+Model error E2. Inserting ˆμu as a second pivot and applying A3 then A1 (as in Section 5), 
+
+E2 ≤ ∥ P ∗zu − ˆμu∥ + ∥ˆμu − w∗
+
+> u
+
+∥ ≤  δ + ∥P ∗∥op ρu
+
+ + η. (26) 
+
+Estimation error E1. Using the span decomposition zu = z∥ 
+
+> u
+
++ z⊥ 
+
+> u
+
+and the blind-spot fact ˆP z ⊥ 
+
+> u
+
+= 0 from Section 5.2, 
+
+E1 ≤ ∥ ( ˆP − P ∗)z∥
+
+> u
+
+∥
+
+| {z }
+
+> in-span disagreement
+
++ ∥P ∗z⊥ 
+
+> u
+
+∥
+
+| {z } 
+
+> ≤ ∥ P∗∥op ρu
+
+. (27) The in-span term measures how much ˆP and P ∗ disagree on directions both can see. Writing Z = U ΣV ⊤ as in Section A.1, this disagreement is controlled by (i) how well-spread the seen-class embeddings are, via σmin (Z), and (ii) 
+
+ξ = ∥W (I − V V ⊤)∥F , which measures whether classes that look similar in CLIP text space are also similarly related in weight space, i.e. how tightly representation equivalence holds. A standard Ridge bias-variance argument gives 
+
+∥( ˆP − P ∗)z∥
+
+> u
+
+∥ ≤ 
+
+ ξ + p|Y s| δ∥zu∥
+
+σmin (Z) + λ∥W ∥ ∥ zu∥
+
+σmin (Z) σ2min (Z) + λ , (28) where the second term is the Ridge shrinkage bias, negligible whenever λ ≪ σ2min (Z).14 CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+CUB CLIP Classifier Baseline RN50 RN101 ViT-B-32 ViT-B-16 AlexNet 78.34 30.1 (76.3) 30.9 (74.9) 30.74 (74.2) 30.1 (74.6) ConvNext 54.99 30.0 (54.1) 29.2 (54.1) 32.9 (51.5) 29.4 (54.0) DenseNet 67.60 33.3 (66.9) 36.1 (66.4) 36.2 (66.0) 35.5 (65.8) EfficientNet-v2-M 43.20 22.0 (43.3) 23.1 (42.9) 24.3 (42.5) 21.7 (43.1) GoogLeNet 44.66 25.2 (43.5) 25.6 (42.9) 24.4 (42.5) 22.4 (42.6) MobileNet v2 58.80 30.7 (58.7) 31.9 (58.2) 30.4 (57.5) 30.8 (57.9) ResNet 50 63.53 32.1 (62.8) 32.8 (62.9) 35.5 (61.5) 31.2 (61.8) ShuffleNet v2 x1 17.91 5.6 (15.6) 8.7 (12.1) 7.3 (17.0) 6.0 (11.2) Swin v2 B 49.45 29.6 (49.1) 28.7 (48.2) 30.1 (47.8) 27.2 (48.3) ViT-b16 56.52 28.0 (56.5) 28.9 (55.3) 34.8 (54.9) 29.6 (56.7) Wide Resnet 50 55.37 22.2 (55.4) 25.9 (55.1) 25.8 (54.4) 24.1 (53.7) Table 3: Zero-shot classification performance on unseen CUB classes, in the same format as Table 1. The consistently lower absolute accuracy relative to AWA2 reflects CUB’s higher semantic extrapolation difficulty ¯ρ (Section 5.2), not a failure specific to any classifier or CLIP backbone. 
+
+Combining. Summing E1 and E2,
+
+∥ ˆwu − w∗
+
+> u
+
+∥ ≤ η + δ
+
+| {z } 
+
+> intrinsic
+
++ 2 ∥P ∗∥op ρu
+
+| {z }
+
+> extrapolation
+
++ (ξ + p|Y s| δ)∥zu∥
+
+σmin (Z)
+
+| {z }
+
+> conditioning
+
+. (29) This is the bound in full: the extrapolation penalty carries a factor of 2 because z⊥ 
+
+> u
+
+costs twice – once because ˆP
+
+cannot see it at all, and once because even the ideal P ∗ only bounds its own error there by ∥P ∗∥op ρu. The third conditioning term reduces to O(δ) in practice as CLIP’s contrastive training spreads embeddings roughly uniformly (the ETF geometry from NC and CLIP alignment ensures this). The main text does not carry this conditioning term explicitly. 
+
+Recovering Proposition 1. The conditioning term vanishes under one further, mild assumption: (A4) the seen-class embeddings are not near-collinear, σmin (Z) = Ω( p|Y s|), and ξ ≈ 0. Both hold in practice. CLIP’s contrastive training spreads text embeddings roughly uniformly across the semantic space (a consequence of the same near-optimality behind A2 and A3), so σmin (Z) collapsing would require many seen classes to be near-synonymous, an easily detected labelling pathology rather than a property of realistic benchmarks. Under A4, the conditioning term in Eq. (29) is O(δ),and the constant factor on the extrapolation term is absorbed into the asymptotic notation, giving exactly 
+
+∥ ˆwu − w∗
+
+> u
+
+∥ ≤ O η + δ + ∥P ∗∥op ρu
+
+, (30) i.e. Proposition 1. 
+
+A.3 Additional Cross-Architecture Results 
+
+Table 3 gives the full CUB cross-architecture grid, evaluating the same 11 pre-trained classifiers against 4 CLIP text encoders summarised in Section 6.1 of the main paper and reported for AWA2 in Table 1; both use the same format, with parenthetical values reporting the seen-class reconstruction accuracy. 
+
+A.4 Description Templates 
+
+Table 4 lists the eight description templates used in the description-ablation study of Section 5.2 of the main paper (Figure 5a). 15 CAST - Z ERO -S HOT CLASSIFIER EXTENSION 
+
+Variant Example description 
+
+1 name_only “a photo of a antelope” 2 image_of “an image of an antelope” 3 photo_context “a wildlife photo of an antelope” 4 bare_name “antelope” 5 full_line “antelope: skin/coat: furry, toughskin; size: big; body features: lean, hooves, . . . ” 6 attrs_only “skin/coat: furry, toughskin; size: big; body features: lean, hooves, . . . ” 7 name_attrs “a photo of an antelope. skin/coat: furry, toughskin; size: big; . . . ” 8 animal_known_as “an animal known as antelope” 
+
+> Table 4: Textual description variants evaluated for encoding unseen classes via CLIP. Each variant represents a different design choice for how semantic information is presented.
+
+16

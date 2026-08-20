@@ -1,0 +1,424 @@
+Title: H^2EDL: Hyper Evidential Deep Learning for Hierarchical Classification
+
+URL Source: https://arxiv.org/pdf/2608.18185v1
+
+Published Time: Thu, 20 Aug 2026 00:04:12 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# H2EDL: Hyper Evidential Deep Learning for Hierarchical Classification 
+
+## Yuanye Liu 1, Xiahai Zhuang 1 
+
+> 1
+
+School of Data Science, Fudan University 
+
+Abstract 
+
+Fine-grained recognition often involves hierarchical label spaces, where a model may be confident about a coarse seman-tic concept while remaining uncertain among its descendant classes. Such structured ambiguity requires uncertainty repre-sentations that capture both fine-grained classes and interme-diate concepts. However, existing tools each capture only half of it: flat evidential classifiers quantify total ignorance with a single vacuity on the leaf frame, and hierarchical classi-fiers propagate point probabilities with no notion of evidence. Hyper-opinions would unify the two, but their general form is exponential in the label count, and existing hyper-evidential networks either require composite labels to be supplied in the training data or read them off an unstructured weight pattern, with no principled notion of which composites deserve mass. We observe that the taxonomy itself is the missing hyperdo-main. Its subtrees and leaf singletons form a linear-size focal family, and one local Dirichlet opinion per branching node induces every composite mass in closed form. The result-ing model, H 2EDL, can be interpreted in two complementary ways using the same set of parameters. From a prediction per-spective, it functions as a hierarchical classifier that preserves consistency across different levels of the label tree. From a probabilistic perspective, it defines a valid tree-structured hyper-opinion, where the mass assigned to each node repre-sents the belief that reaches that node but does not provide suf-ficient confidence to further specialize into its descendants. On FGVC-Aircraft and DERM12345, H 2EDL reduces calibra-tion error by approximately half compared with cross-entropy baselines, with the improvement becoming more pronounced at deeper hierarchy levels and under larger training budgets. Despite achieving similar leaf-level accuracy, it preserves the correct coarse category 19% more often when making fine-grained mistakes. Code will be released. 
+
+## Introduction 
+
+Uncertainty-aware classification asks a model to report not only a label but how much its prediction can be trusted, and a substantial literature now supplies that number through cali-bration, Bayesian approximation, or evidential parameteriza-tions (Guo et al. 2017; Gal and Ghahramani 2016; Lakshmi-narayanan, Pritzel, and Blundell 2017; Sensoy, Kaplan, and Kandemir 2018). When the label space is a hierarchy, how-ever, a single number cannot carry that message. Consider a model that classifies aircraft assigning 0.4 to the Boeing 737-800 (Fig. 1). It may be in either of two very different Hierarchy Level Uncertainty at this level Local opinion   
+
+> L0 L1 L2 L3
+> Root Manufacturer Family Variant
+> Aircraft
+> Boeing
+> 737 family 737-700 737-800 737-900
+> ……
+> certain certain medium uncertain highly uncertain
+
+# H EDL 
+
+Figure 1: Uncertainty on a label hierarchy has a location. H2EDL carries a local opinion at every branching decision, so it reports a separate vacuity for each level: the evidence is decisive about the manufacturer ( u1 = 0 .2), already thinner about the family ( u2 = 0 .5), and runs out among the 737 
+
+variants ( u3 = 0 .7), where a flat evidential model has one vacuity for the entire leaf level. states: it may have settled that the aircraft is a 737 and be undecided only among the -700, -800 and -900 variants, or it may be spreading the remaining mass across unrelated man-ufacturers. The confidence is identical; the two predictions are not. What separates them is not how much uncertainty the model holds but where that uncertainty sits. Flat evidential deep learning (EDL) (Sensoy, Kaplan, and Kandemir 2018) can estimate the uncertainty, but it attaches to the leaf level only, where one global scalar cannot depict hierarchy. Hierarchical classifiers (Silla and Freitas 2011; Bertinetto et al. 2020) incorporate the label tree into predic-tion, but typically still rely on flat probability normalization within local decisions. Subjective Logic supplies the object that would unify them, the hyper-opinion (Jøsang 2016), which assigns mass to composite subsets. Its general form admits up to 2L − 1 focal sets. Existing hyper-evidential net-works rely on composite labels that must be manually spec-ified in the training set, despite the absence of an inherent structure to define such labels (Li et al. 2024), or by letting the composites fall out of the network’s own weight structure arXiv:2608.18185v1 [cs.LG] 18 Aug 2026 (Qu et al. 2024). Both operate on a flat frame, which offers no principled way to say which composites deserve mass. A taxonomy naturally provides the required hyperdomain. The sets of descendant leaves associated with internal nodes, together with leaf singletons, define a focal family with size at most L + |B| , which grows linearly with the tree structure rather than exponentially with the number of labels. More-over, each element of this family corresponds to a meaningful concept already represented in the taxonomy. Additionally, a local Dirichlet opinion at each branching node determines the complete hyper-opinion in closed form. Standard leaf super-vision naturally trains these local opinions, since predicting a leaf label is equivalent to making a sequence of decisions along the tree. Thus, the taxonomy simultaneously provides the hyperdomain, the parameterization, and the supervision signal. No additional label construction, auxiliary prediction network, or post-hoc calibration procedure is required. Concretely, H 2EDL places an evidential head at each branching node and computes leaf probabilities by multi-plying conditional means along root-to-leaf paths. The same concentration parameters admit two complementary inter-pretations. Predictively, they define a normalized and hier-archically consistent leaf classifier, from which predictions at any coarse level can be obtained directly. From an un-certainty perspective, they induce a tree-structured hyper-opinion, where the mass at node v represents belief that reaches v but lacks sufficient evidence to descend further. We prove that this mass assignment is valid, that the pre-dictive distribution lies within the belief–plausibility bounds of the induced hyper-opinion for every subset of leaves, and that non-specific mass can be decomposed exactly across hierarchy depths. The model can therefore identify where evidence becomes insufficient along each prediction path without additional inference procedures. Unlike flat models that compare all L leaf classes at once, H2EDL makes a sequence of local decisions. Each decision is trained with all samples in its subtree, so uncertainty should increase gradually at deeper levels. Ancestor decisions also restrict the possible error region, encouraging errors to re-main within nearby subtrees. We evaluate both properties experimentally. We first examine whether existing bench-marks can distinguish hierarchical classifiers and find that their leaf accuracy is often dominated by a single coarse decision, which can obscure gains from fine-grained hierar-chical modeling. 
+
+Contributions. (i) A tractable hyper-evidential formulation, in which a taxonomy supplies a linear-size focal family on which composite belief is induced rather than predicted. This removes the composite-label requirement that has confined prior hyper-evidential networks to prescribed label groups. (ii) An operational classifier that is hierarchically coherent by construction and exposes a vacuity at every individual deci-sion. (iii) Theory linking the two readings: validity of the in-duced hyper-opinion (Prop. 1), containment of the predictor in its credal set (Prop. 2), and an exact depth decomposition of non-specific mass (Prop. 3). (iv) An evaluation matched to the problem. Having established that leaf accuracy mea-sures one coarse decision common to all methods, we score every level, and find H 2EDL ahead of all baselines at both intermediate DERM12345 levels. 
+
+## Related Work 
+
+Hierarchical classification. Label taxonomies (Silla and Freitas 2011) are exploited by encoding the tree in the loss or in embedding geometry (Bertinetto et al. 2020), by minimiz-ing a hierarchical risk post hoc over an unchanged probability vector (Karthik et al. 2021), or by hedging a prediction up-ward to an ancestor (Deng et al. 2012). All of these act on point probabilities. The tree constrains or rescores a distribu-tion that contains no notion of evidence, so ambiguity con-fined to one subtree and ambiguity spread across the frame remain the same object. Our aim is to give the prediction a structured uncertainty that the tree makes both meaningful and cheap. 
+
+Evidential deep learning. EDL (Sensoy, Kaplan, and Kandemir 2018) predicts Dirichlet concentrations and ob-tains closed-form epistemic uncertainty in a single forward pass. Prior networks (Malinin and Gales 2018), the fam-ily surveyed by Ulmer, Hardmeier, and Frellsen (2023), and refinements that relax the prior weight and variance term (Chen, Gao, and Xu 2024) or reweight by Fisher infor-mation (Deng et al. 2023) all share that design, and all keep a flat frame with a single vacuity for the entire label set. Closest to us, HENN (Li et al. 2024) reaches hyper-opinions through grouped Dirichlets over a prescribed collection of composite labels, which must be given in the training data; HEDL (Qu et al. 2024) instead lets the composites emerge from the sign pattern of the final linear layer, and then projects the hyper-opinion back to a flat multinomial opinion for training and prediction. Both methods operate on an unstructured class frame, where no mechanism determines which composite hypotheses should receive mass. Consequently, composite masses merely reflect uncertainty over arbitrary class sub-sets without revealing what those subsets represent. 
+
+## Method 
+
+H2EDL assigns every branching node of the taxonomy a local Dirichlet opinion over its children and multiplies these opinions along root-to-leaf paths. One parameter set then supports two readings: an operational classifier whose levels cannot disagree, and a tree-structured hyper-opinion in which composite mass is induced rather than predicted. After fixing notation we develop the two readings in turn. 
+
+Notation and Evidential Background 
+
+We classify over a label hierarchy given as a rooted tree T
+
+with root r. Leaves L (|L| = L) are the fine-grained targets; internal nodes are coarser concepts. Node v has children 
+
+C(v), Kv = |C (v)|; it is branching if Kv ≥ 2 and pass-through if Kv = 1 , and B denotes the branching nodes. Each leaf ℓ has a unique root-to-leaf path π(ℓ) inducing a set of branching decisions D(ℓ) = {(v, c v ) : v ∈ B ∩ π(ℓ)},where cv indexes the child of v on the path; pass-through nodes carry no decision. Evidential Deep Learning (Sensoy, Kaplan, and Kandemir 2018) treats a K-way prediction as a Dirichlet over the sim-plex: the network emits non-negative evidence e ∈ RK
+
+> ≥0
+
+and forms α = e + W a with prior weight W > 0, base rate a ∈ ∆K−1 and strength S = P 
+
+> k
+
+αk. In Subjective Logic (Jøsang 2016) this is an opinion (b, u, a ) with 
+
+bk = ek
+
+S , u = WS ∈ (0 , 1] , ˆpk = αk
+
+S = bk + aku, 
+
+(1) and P 
+
+> k
+
+bk + u = 1 . Vacuity u is large when total evidence is small: the model “does not know.” Sensoy EDL is the case 
+
+W = K, ak = 1 /K . We exploit vacuity per node to reason about granularity. 
+
+Operational Hierarchical Classifier 
+
+Rather than one Dirichlet over L leaves, H 2EDL attaches a lightweight evidential head to every branching node. From the shared backbone feature f = ϕ(x) each head produces a local opinion over the Kv children, 
+
+ev = softplus  W ⊤ 
+
+> v
+
+f + bv
+
+, αv = ev + W a v , (2) with bv,k , u v , ˆpv,k following Eq. (1). Crucially ˆpv is read as the conditional P (child | v, x ). Setting av = 1 
+
+> Kv
+
+1, W = Kv
+
+recovers the standard EDL prior. For imbalanced children we also allow a tempered inverse-frequency base rate, av,k ∝
+
+(nv,k + s)−τ over the training counts nv,k with smoothing s,temperature τ ∈ [0 , 1] (τ = 0 uniform) and W = wscale Kv :rarer children start from a higher baseline belief, so less evidence is needed to predict them. It is a fixed buffer adding no parameters; we refer to it as the base-rate variant. Pass-through nodes receive neither head nor loss. Local opinions compose into a leaf distribution by multiplying projected means along each path, 
+
+P (ℓ | x) = Y
+
+> (v,c )∈D (ℓ)
+
+ˆpv,c = Y
+
+> (v,c )∈D (ℓ)
+
+αv,c 
+
+Sv
+
+, (3) and the probability of any internal concept is recovered ex-actly by the telescoping partial product, 
+
+P (v | x) = X
+
+> ℓ∈leaves( v)
+
+P (ℓ | x) = Y
+
+> (u,c )∈D (v)
+
+ˆpu,c . (4) 
+
+Proposition 0 (normalization & coherence) . For any local means ˆpv ∈ ∆Kv −1: (i) P 
+
+> ℓ
+
+P (ℓ | x) = 1 ; (ii) coarse prob-abilities equal Eq. (4); (iii) if v is an ancestor of v′ then 
+
+P (v′ | x) ≤ P (v | x).Coarse-level evaluation therefore needs no separate head, and the model is hierarchically coherent by construction. We show next that {αv } carries strictly more structure than the point distribution of Eq. (3). 
+
+The Induced Tree-Structured Hyper-Opinion 
+
+A hyper-opinion (Jøsang 2016) assigns mass to singleton and composite subsets of a frame; a leaf frame admits 2L − 1
+
+of them, impractical to parameterize or supervise. H 2EDL instead lets the taxonomy select the focal family 
+
+FT = {ℓ} : ℓ ∈ L ∪ leaves( v) : v ∈ B , (5) so |F T | ≤ L + |B| is linear in the tree and every focal set is a named concept. Prior evidential work requires compos-ite sets to be given as training labels on a flat frame (Li et al. 2024); here all masses are induced from ordinary leaf supervision, with zero mass outside Eq. (5). Writing each local opinion in belief form and defining the reach mass 
+
+mv = Q 
+
+> (w,c )∈D (v)
+
+bw,c (so mr = 1 ), assign 
+
+m({ℓ}) = Y
+
+> (v,c )∈D (ℓ)
+
+bv,c , m leaves( v) = mv uv . (6) Each subtree mass mv uv is the share of belief that reaches v
+
+but cannot be committed to any child; at the root m(L) = ur .Pass-through nodes create no focal set, having no uncertain decision. Note the operational predictor multiplies means, whereas singleton mass here is a product of beliefs; the latter are smaller and need not sum to one over leaves. 
+
+Proposition 1 (validity) . All masses in Eq. (6) are nonnega-tive and P 
+
+> ℓ
+
+m({ℓ}) + P 
+
+> v∈B
+
+mv uv = 1 ; i.e. {αv } induces a valid, tree-supported belief mass assignment, which is a sparse Subjective-Logic hyper-opinion on FT .
+
+Proposition 2 (credal containment) . With bel( A) =P  
+
+> F⊆A
+
+m(F ) and pl( A) = P  
+
+> F∩A̸=∅
+
+m(F ), both summed over F ∈ F T , the H 2EDL distribution satisfies bel( A) ≤
+
+P (A | x) ≤ pl( A) for every A ⊆ L : it lies in the credal set of the induced hyper-opinion. Taking A = {ℓ} gives bel( ℓ) = 
+
+m({ℓ}) and pl( ℓ) = m({ℓ}) + P  
+
+> v:ℓ∈leaves( v)
+
+mv uv .
+
+Proposition 3 (depth decomposition) . The total non-specific mass U = 1 − P 
+
+> ℓ
+
+bel( ℓ) decomposes exactly by depth: 
+
+U = P 
+
+> d
+
+Ud with Ud = P  
+
+> v∈B :d(v)= d
+
+mv uv .Proposition 2 turns Eq. (3) into a projection of the hyper-opinion: the per-leaf imprecision band pl( ℓ) − bel( ℓ) = P 
+
+> v∋ℓ
+
+mv uv is driven by ancestral vacuities weighted by reach mass, where a flat evidential model has one global width u. Proposition 3 gives a depth-resolved profile: Ud is the mass that refuses to descend past depth d, computed per sample at no extra cost. It is the formal counterpart of “how far down the tree did the evidence carry?”, and we treat it as a structural decomposition of where belief stops rather than a calibrated epistemic-uncertainty estimate. 
+
+Hierarchical Evidential Objective 
+
+We supervise only the branching nodes on each sample’s ground-truth path, mirroring the conditional factorization of Eq. (3). For node v with one-hot child target yv we use the Bayes-risk EDL loss (Sensoy, Kaplan, and Kandemir 2018), 
+
+Ledl  
+
+> v
+
+= P
+
+> k
+
+(yv,k − ˆpv,k )2 + P 
+
+> k
+
+ˆpv,k (1 − ˆpv,k )/(Sv + 1) . To suppress evidence on wrong children we add an annealed KL term that pulls the off-target Dirichlet toward the prior: mask-ing the target class to its prior value, ˜αv = yv ⊙ (W a v ) + (1 −yv )⊙αv , we penalize Lkl  
+
+> v
+
+= KL(Dir( ˜ αv )∥Dir( W a v )) ,which reduces to the standard Sensoy regularizer for uniform 
+
+av . The per-sample hierarchical loss sums over the ground-truth path with depth weights wd (we use wd = 1 ): 
+
+Lpath = X
+
+> (v,c )∈D (ℓ⋆)
+
+wd(v)
+
+ Ledl  
+
+> v
+
++ λt Lkl 
+
+> v
+
+, (7) with λt annealed from 0 to λmax so evidence can accumulate before regularization. We additionally optimize the quantity the model is evaluated on by adding a negative log-likelihood on the differentiable path product, Lleaf = − log P (ℓ⋆ |
+
+x) = P 
+
+> (v,c )∈D (ℓ⋆)
+
+− log ˆ pv,c . The identity makes its role precise: the leaf NLL is separable into per-node log-losses, so it adds no interaction between heads beyond the shared backbone, only a cross-entropy on each on-path ˆpv,c along-side the Bayes-risk term. The objective is L = Lpath +βLleaf 
+
+with β = 0 .1. An optional tree-consistency regularizer, pe-nalizing vacuity that increases from a parent to a confidently selected child, is referred to as the consistency variant. 
+
+Partial hierarchical supervision. Because supervision enters Eq. (7) as a set of decisions rather than a leaf index, an annotation naming only an ancestor v⋆ is not a degraded label but a shorter one: the sum runs over D(v⋆). No archi-tectural or objective change is needed, and heads below v⋆
+
+stay free to express vacuity rather than being taught a fab-ricated target. A flat model, by contrast, must either discard the sample or invent a distribution over v⋆’s descendants. 
+
+What the Factorization Predicts 
+
+Two consequences follow, and we test both. Each path fac-tor is fit against a decision that every sample in its subtree supervises, whereas a flat softmax resolves the whole L-way competition at once; miscalibration should therefore accu-mulate gradually along a path rather than appear all at once at the leaves, so the gap over flat models should widen with depth. Each ancestor factor gates its entire subtree, so by Prop. 0(iii) no leaf can exceed its ancestor’s mass and errors should stay within-subtree. One prediction is negative: evi-dential shrinkage moves ˆpv,k toward av,k without reordering samples, so ranking-based uses of confidence such as selec-tive prediction should not improve, and we claim no gain there. 
+
+## Experiments 
+
+Experimental Setup 
+
+We evaluate on two hierarchies of very different character. DERM12345 (Yilmaz et al. 2024) is a long-tailed dermato-scopic benchmark with a 4-level diagnostic taxonomy, 40 
+
+leaves and 15 branching nodes. We use its official patient-disjoint split and hold out 10% of patients for validation. FGVC-Aircraft (Maji et al. 2013) is a 3-level fine-grained benchmark with 30 manufacturers, 70 families and 100 vari-ants on its official split. All models share an ImageNet-pretrained ResNet-50 (He et al. 2016) and an identical budget of 100 AdamW epochs (Loshchilov and Hutter 2019), are se-lected on validation leaf balanced accuracy, and are scored once on test. We report mean ± std over 3 seeds with paired 
+
+t-tests, and coarse-level metrics always aggregate leaf prob-abilities through Eq. (4). The baselines share the backbone and the recipe. Flat-CE and Flat-EDL (Sensoy, Kaplan, and Kandemir 2018) are the two flat references. Hier-CE is the softmax twin of H 2EDL, with one local softmax per branch-ing node and the same path product, which isolates the evi-dential machinery from the hierarchy itself. HENN (Li et al. 2024) is a flat Group-Dirichlet hyper-evidential model over singletons plus a disjoint composite partition. I-EDL (Deng et al. 2023) is a popular flat-EDL variant. 
+
+Overview. The evaluation proceeds in five steps, in the order of the subsections below. (i) Classification accuracy 
+
+scores the predictor at the leaf and at the intermediate levels. 
+
+(ii) Calibration and (iii) mistake severity test the two posi-tive predictions of the previous section, and carry most of the empirical weight. (iv) Partial supervision exercises the set-ting the path parameterization was built for, in which labels stop at an interior node. (v) An ablation isolates the con-tribution of each component and of the baselines’ published constants. 
+
+Hierarchical Classification Accuracy 
+
+To demonstrate that a set of local evidential opinions yields an effective hierarchical classifier, we compare against the five baselines at the leaf level (Table 1) and at the intermediate levels of the DERM12345 taxonomy (Table 2). As shown in Table 1, at the leaf level no method sepa-rates itself by a significant margin, but H 2EDL is the only method that is top-two in bAcc on both datasets, and an H2EDL variant places first or second in every one of the six columns of Table 1, holding both places in four of them. Each baseline instead has an axis on which it falls away: HENN leads DERM bAcc but is fourth on FGVC, I-EDL ties for second on FGVC bAcc at 45 .6% ECE, and Flat-EDL pairs the lowest DERM ECE with the lowest accuracy of any method. On FGVC-Aircraft H 2EDL+leaf-path+base-rate reaches 55 .3% bAcc, nominally +1 .7 over Flat-CE and 
+
++1 .1 over Hier-CE, with a sixth of the seed variance of the plain model ( ±0.3 against ±1.7), so the base-rate prior is stabilizing training and not only shifting the mean. HENN is nonetheless indistinguishable from either plain H 2EDL (p = 0 .47 ) or Flat-CE ( p = 0 .27 ). On DERM12345 HENN attains the highest bAcc ( 35 .8±1.4), exceeding plain H 2EDL (p = 0 .021 ) though not Flat-CE ( p = 0 .062 ), and our best vari-ant at 34 .5% stays tied with Flat-CE ( p = 0 .10 ). Two facts here are worth naming. The softmax hierarchy alone buys nothing: Hier-CE reaches 32 .0 against Flat-CE’s 32 .9. And on the shallow, near-balanced FGVC taxonomy a well-tuned flat evidential head is already an excellent recognizer: re-tuned I-EDL matches our plain model at 54 .9. This parity is a property of the benchmarks rather than of any method: forcing the ground-truth branching decision down to depth 
+
+d and re-taking the argmax within the surviving subtree lifts DERM12345 leaf accuracy from ∼0.57 to ∼0.79 the mo-ment the super-class decision is supplied, while at any fixed depth the methods differ by at most 0.013 . One 4-way de-cision commits 70 –74% of all leaf errors, so leaf accuracy on these benchmarks is largely a proxy for a coarse routing decision that no fine-level machinery moves. Scored where the factorization actually operates (Table 2), DERM12345 separates cleanly: every H 2EDL variant beats every baseline at both intermediate levels. The consistency variant leads Main-2 at 48 .8% against the best baseline’s 46 .6
+
+and Main-1 at 59 .7 against 57 .7, with +2 .2 and +2 .0 over the strongest competitor at each level, +3 .7 and +4 .2 over Flat-CE, clearing p < 0.05 against Flat-CE ( p = 0 .028 and 
+
+0.012 ), Hier-CE ( p = 0 .005 ) and I-EDL ( p = 0 .002 ). The two remaining comparisons are limited by the baselines’ own in-stability: HENN trails by the same 2.2 at p = 0 .082 , and Flat-Table 1: Main comparison at leaf-level. bAcc and ECE in %, NLL in nats; best in bold , second best underlined. Hier. marks a predictor defined over the label tree, Unc. one that emits an epistemic uncertainty; only H 2EDL has both, HENN being evidential but flat (its composite focal sets are a supplied partition, not the taxonomy). An H 2EDL variant ranks first or second in every column, taking both places in four of the six, and H 2EDL is the only method top-two in bAcc on both datasets; each baseline instead falls away on at least one axis. The bAcc margins sit inside seed noise, whereas ECE and NLL separate decisively. 
+
+> †
+
+I-EDL uses its validation-retuned Fisher weight ( c = 0 .02 at K = 100 , c = 0 .05 at K = 40 ); its published default drops to 16 .9% 
+
+bAcc on FGVC. FGVC-Aircraft DERM12345 Method Hier. Unc. bAcc ↑ ECE ↓ NLL ↓ bAcc ↑ ECE ↓ NLL ↓
+
+Flat-CE × × 53.6 ±0.5 19.5 ±1.9 2.00 ±.10 32.9 ±0.9 31.4 ±1.2 2.48 ±.21 
+
+Flat-EDL × ✓ 50.1 ±2.0 10.1 ±3.9 2.36 ±.10 29.3 ±6.3 14.9 ±4.1 2.17 ±.05 
+
+Hier-CE ✓ × 54.2 ±1.2 21.0 ±1.3 2.09 ±.01 32.0 ±0.4 31.7 ±0.7 2.58 ±.18 
+
+HENN × ✓ 54.2 ±0.8 8.6 ±2.8 1.95 ±.03 35.8 ±1.4 18.1 ±2.6 1.99 ±.02 
+
+I-EDL † × ✓ 54.9 ±0.7 45.6 ±0.7 3.16 ±.02 30.0 ±1.9 32.8 ±0.7 2.36 ±.02 
+
+H2EDL ✓ ✓ 54.9 ±1.7 8.8 ±2.3 1.95 ±.06 32.1 ±2.2 16.4 ±2.5 1.80 ±.04 
+
++ leaf-path ✓ ✓ 53.2 ±0.6 7.0 ±2.0 1.93 ±.04 33.8 ±2.9 17.3 ±1.8 1.78 ±.02 
+
++ consistency ✓ ✓ 53.0 ±0.4 10.1 ±2.1 2.01 ±.03 34.5 ±1.8 16.0 ±3.5 1.78 ±.08 
+
++ leaf-path+base-rate ✓ ✓ 55.3 ±0.3 8.5 ±0.3 1.91 ±.01 33.6 ±5.1 19.1 ±1.9 2.09 ±.09 
+
+Table 2: Balanced accuracy (%) at the intermediate levels of the DERM12345 taxonomy (same runs as Table 1). Every H2EDL variant is above every baseline at Main-1 and Main-2; leaf-level bAcc, where H 2EDL does not lead, is in Table 1. Best in bold , second best underlined. 
+
+Method Super Main-1 Main-2 Flat-CE 86.8 ±1.9 55.5 ±1.5 45.1 ±1.0 
+
+Flat-EDL 84.9 ±1.1 57.7 ±5.2 46.6 ±2.8 
+
+Hier-CE 87.0 ±1.2 55.2 ±2.7 44.9 ±1.0 
+
+HENN 87.9 ±0.7 57.3 ±1.7 46.6 ±0.9 
+
+I-EDL 74.0 ±1.1 47.9 ±1.0 41.0 ±0.7 
+
+H2EDL 88.0 ±0.5 59.3 ±1.2 48.1 ±0.6 
+
++ leaf-path 88.6 ±0.3 59.2 ±2.4 48.3 ±2.1 
+
++ consistency 86.7 ±0.2 59.7 ±0.7 48.8 ±0.6 
+
++ leaf-path+base-rate 88.2 ±0.5 58.7 ±0.7 48.2 ±0.8 
+
+EDL’s seed variance at these levels is four to seven times ours (±5.2 against ±0.7 at Main-1), so an equal gap over it cannot be resolved. Consistency across seeds is itself part of what the factorization buys. At the super-class level three of four variants still top every baseline ( 88 .6, 88 .2 and 88 .0 against HENN’s 87 .9), on a level where everything above I-EDL already sits near 88% and the margins are correspondingly inside seed noise ( p ≥ 0.12 ). On FGVC-Aircraft we remain ahead at both coarse levels (78 .0 against Flat-CE’s 77 .1 at manufacturer, 65 .3 against 
+
+64 .0 at family). 
+
+Calibration Across Hierarchy Levels 
+
+To test the first prediction of the factorization, that the ad-vantage over flat models has a specific shape rather than merely an existence, we report ECE at every level of both taxonomies, and under a doubled training budget. Each path factor is supervised by every sample in its subtree, whereas a flat softmax resolves the whole L-way competition at once. The gap should therefore be small where the decision is easy and well populated, and should grow as the tree deepens and the evidence thins. Table 3 puts the two models side by side on FGVC-Aircraft at both budgets. H 2EDL is better calibrated at the leaf level by 2.2× at the standard schedule ( 8.8 against 19 .5% ECE) and by 2.8× when it is doubled ( 8.6 against 24 .1, p = 0 .009 ), with the same ordering on NLL ( 1.95 against 2.00 , then 
+
+1.99 against 2.25 , p = 0 .006 ). The extra budget buys neither method accuracy, but Flat-CE converts it into 4.6 points of ECE and 0.25 nats, while H 2EDL moves by −0.2 and +0 .04 :the gap widens with training rather than closing. This mat-ters for durability. An advantage that shrank as the baseline trained longer would be an artifact of an under-trained com-parison, whereas one that grows reflects a structural differ-ence in what the two objectives do with extra capacity to fit. The vacuity term gives each local decision a data-dependent floor on how confident it may become; cross-entropy has no such floor and spends the budget sharpening leaf logits it already gets right. That advantage resolves into a depth profile rather than an offset. At the coarsest level of either tree, where the decision is easy and well populated, the two models are statistically indistinguishable ( p ≥ 0.20 on FGVC-Aircraft), and they separate only as the evidence thins: 2.8× at FGVC’s finest level (Table 3), and on DERM12345 a leaf ECE of 31 .4 and 
+
+31 .7% for Flat-CE and Hier-CE against our 16 .4 (Table 1). Every variant roughly halves the CE models’ leaf ECE on that dataset and cuts their NLL by about 30% , for all three seeds. A uniform advantage, or any constant post-hoc temperature, would have shown up at all levels alike. Against the flat evidential baselines the result is carried by the proper scoring rule. H 2EDL has the best leaf NLL on both datasets ( 1.78 against HENN’s 1.99 and Flat-EDL’s 2.17 on DERM12345, 1.91 against 1.95 on FGVC-Aircraft), and all Table 3: Calibration under a doubled training budget (FGVC-Aircraft; paired t-test on the 200 -epoch pair). The extra bud-get buys neither method accuracy, but Flat-CE converts it into overconfidence and H 2EDL does not, so the gap widens with training. 
+
+100 ep 200 ep ∆
+
+bAcc ↑ Flat-CE 53.6 ±0.5 53.1 ±0.7 −0.5
+
+H2EDL 54.9 ±1.7 52.9 ±1.2 −2.0
+
+ECE ↓
+
+Flat-CE 19.5 ±1.9 24.1 ±1.8 +4 .6
+
+H2EDL 8.8 ±2.3 8.6 ±1.7 −0.2
+
+ratio 2.2× 2.8× p = 0 .009 
+
+NLL ↓
+
+Flat-CE 2.00 ±.10 2.25 ±.05 +0 .25 
+
+H2EDL 1.95 ±.06 1.99 ±.04 +0 .04 
+
+gap 0.05 0.26 p = 0 .006 
+
+Table 4: Mistake severity, conditioned on the prediction being wrong (paired t-test vs. Flat-CE). Leaf accuracy is statisti-cally tied on both datasets ( p = 0 .21 / p = 0 .73 ), so these differences are in the kind of error, not the amount.                 
+
+> Flat-CE H2EDL p
+> DERM mean first-error depth 1.207 ±.028 1.277 ±.035 0.003
+> keeps correct main-1 25.6 ±2.5 30.0 ±2.5 0.022
+> FGVC mean first-error depth 0.590 ±.018 0.713 ±.031 0.036
+> keeps correct manufacturer 38.9 ±0.8 46.2 ±2.6 0.060
+
+four variants beat all five baselines on super-class ECE. At the two intermediate levels, Flat-EDL and HENN are better calibrated. On leaf ECE Flat-EDL is lower, 14 .9 against our 
+
+16 .0. That comparison should be read with what it costs: ECE is minimized by never becoming confident, and Flat-EDL buys its calibration at 29 .3% leaf bAcc, the lowest of any method here, carrying the largest seed variance in Table 1 on both axes ( ±6.3 and ±4.1). NLL prices miscalibration and vagueness together, and on it the ordering reverses by a wide margin. We therefore claim the depth profile against the cross-entropy baselines and the proper-scoring-rule result against the flat evidential ones — and neither flat model supplies a coherent coarse read-out at any level. 
+
+Severity of the Remaining Errors 
+
+To test the second prediction of the factorization, that an-cestor gating confines errors to the correct coarse region, we measure two quantities, both conditioned on the prediction being wrong so that neither restates accuracy: the depth of the first incorrect branching decision, and the share of errors that still retain the correct ancestor at a given level (Bertinetto et al. 2020). The motivation is that leaf accuracy treats every error identically and a taxonomy does not. Confusing two nevus subtypes and calling a melanoma benign are the same event to a 0/1 loss and quite different events in a clinic. Since the number of errors is fixed by a coarse decision no method improves, what is left to differ is the kind. The effect (Table 4) holds on both datasets, and it is Table 5: Coarse-label supervision on DERM12345 ( 40 -epoch budget). f is the fraction of training labels coarsened to super-class only. H 2EDL is ahead on every metric already at f = 0 and stays ahead as labels are coarsened; the quantity of interest is each method’s degradation from its own full-supervision score, so read down each column. Best in bold .                                                        
+
+> f= 0 0.25 0.50 0.75
+> super bAcc ↑
+> Flat-CE soft 86.6 ±1.9 83.4 ±1.5 84.7 ±1.9 82.9 ±3.7
+> Flat-CE drop 86.6 ±1.9 84.3 ±1.4 85.3 ±2.9 82.8 ±3.6
+> H2EDL 87.4 ±1.4 88.0 ±0.6 86.2 ±1.5 87.0 ±1.9
+> leaf Acc ↑
+> Flat-CE soft 55.8 ±1.3 51.4 ±3.7 45.3 ±2.5 37.6 ±4.8
+> Flat-CE drop 55.8 ±1.3 55.3 ±0.8 55.7 ±1.2 52.0 ±1.0
+> H2EDL 56.2 ±0.5 56.3 ±1.5 55.7 ±2.1 51.2 ±3.1
+> leaf ECE ↓
+> Flat-CE soft 30.7 ±1.0 17.5 ±2.5 16.6 ±0.5 20.5 ±1.8
+> Flat-CE drop 30.7 ±1.0 27.5 ±6.4 29.8 ±0.6 28.5 ±1.9
+> H2EDL 12.1 ±4.0 12.8 ±3.7 12.1 ±1.0 7.2 ±2.6
+> leaf NLL ↓
+> Flat-CE soft 2.26 ±.10 2.14 ±.18 2.41 ±.14 2.82 ±.25
+> Flat-CE drop 2.26 ±.10 2.15 ±.49 2.31 ±.02 2.24 ±.21
+> H2EDL 1.75 ±.03 1.74 ±.05 1.79 ±.05 1.88 ±.10
+
+larger on the bigger label set. On FGVC-Aircraft, 46 .2% of H2EDL’s errors still name the correct manufacturer against 
+
+38 .9% for Flat-CE, a 19% relative improvement in how re-coverable its mistakes are, at indistinguishable leaf accuracy. This is the mechanism of the factorization showing up in the errors. Each ancestor factor gates its whole subtree at once, so a leaf outside the plausible region has to overcome a penalty at every level it crosses. A flat softmax couples nothing, and its objective contains no term that distinguishes a near miss from a distant one, so the wider the label set the more room its argmax has to wander out of the correct coarse concept. 
+
+Learning from Partially Labeled Hierarchies 
+
+To demonstrate that the path parameterization absorbs coarse annotations without modification, we coarsen a fraction f of DERM12345 training labels to super-class only and compare against the two standard flat fallbacks. Everything so far assumes every training image carries a leaf. Dermatology archives do not work that way: a case confirmed as melanocytic but never subtyped is a real anno-tation, not a missing one. Supervision enters Eq. (7) as a set of decisions, so a label naming only an ancestor v⋆ shortens the sum instead of degrading it, and the heads below stay free to express vacuity. No architectural change is involved. We choose the coarsened subset by a hash of each sample’s stable identifier so that it is identical across methods, seeds and fractions and nested as f grows. Any difference is then attributable to how a coarse label is used, not to which sam-ples were coarsened. A flat model has two standard options and we run both: soft , training on the uniform distribution over v⋆’s descendants, and drop , discarding the sample. The effect appears where the parameterization says it should, at the level the retained prefix supervises (Table 5). Coarsening three quarters of the labels costs H 2EDL 0.4
+
+points of super-class balanced accuracy ( 87 .4 → 87 .0)against 3.7 for soft and 3.8 for drop. A coarse annotation is a complete label for the super-class decision, and only a model whose supervision is a path of decisions can spend it that way. Against soft, the standard way a flat model absorbs a coarse label, we win every metric at every f ≥ 0.25 and the gap grows with f : at f = 0 .75 we hold 51 .2% leaf ac-curacy against 37 .6% , having lost 5.0 points from our own full-supervision score where soft lost 18 .2. Fabricating a uni-form target over v⋆’s descendants corrupts the fine-grained heads, and the damage compounds. Calibration is the most robust effect: leaf ECE never exceeds 12 .8% and improves to 
+
+7.2% at f = 0 .75 as vacuity absorbs the supervision that is no longer there, while drop never falls below 27 .5% (p = 0 .002 ). Drop is the harder baseline and we do not beat it on ac-curacy. It matches us on leaf accuracy at every fraction and leads at f = 0 .75 (52 .0 against 51 .2). Training on a quarter of the leaf labels is evidently close to training on all of them at this scale, which caps what any hierarchy-native use of the discarded labels can add. What drop cannot do is stay calibrated, holding 28 .5% leaf ECE and 2.24 nats where we hold 7.2% and 1.88 . The narrow claim these numbers sup-port is that a coarse annotation is a complete label for the level it names: coarsening three quarters of the leaves costs H2EDL 0.4 points of super-class accuracy against 3.7 for the flat fallback that keeps those samples, while the fallback that matches our accuracy does so only by discarding them and never falls below 27 .5% leaf ECE where we reach 7.2.
+
+Ablation Study and Hyperparameter Transfer 
+
+To assess how the individual components contribute, we read Table 1 as a component ablation, and then examine how each baseline’s published constants transfer across class counts. Which components help turns out to be dataset-dependent in an informative way. On FGVC-Aircraft the base-rate prior is the single most effective addition, giving the best accuracy, the best calibration and most of the variance reduction. On DERM12345 it does not transfer. There it raises seed vari-ance (bAcc ±5.1 against ±1.8–2.9) and worsens both ECE and NLL, which leaves the parameter-free consistency vari-ant as the strongest DERM configuration. The mirror image holds: on FGVC-Aircraft that same consistency term is the weakest H 2EDL variant ( 53 .0 ± 0.4 bAcc, ECE 10 .1 ± 2.1), below the plain model on all three metrics and, notably, not even more path-consistent at test time ( 0.923 against 
+
+0.931 without it; path consistency is the label-free fraction of test samples whose argmax at every level agrees with the leaf argmax projected to that level); neither component is a free addition. We attribute the base-rate reversal to DERM’s short, heavily long-tailed frame, in which a tempered inverse-frequency prior over-corrects the rare leaves. End-to-end leaf coupling is a mild but reliable gain on both datasets. A parallel lesson applies to the flat evidential references. Flat-EDL and HENN transfer with no retuning at all. I-EDL’s Fisher weight, by contrast, must scale with the class count: its published c = 0 .05 drives all evidence to zero at K = 100 ,leaving 16 .9% bAcc, and needs c = 0 .02 before it becomes competitive. This is a systematic consequence of the class count. Alongside our own base-rate result it is a second re-minder that constants published for one class count do not port to a 40 - or 100 -way fine-grained tree. The ablation there-fore points one way: most of what the hierarchy has to offer is already supplied by the path factorization itself, the base-rate prior and the consistency term each help on exactly one of the two benchmarks, and neither they nor a baseline’s published constant survives a change of class count unchanged. 
+
+## Conclusion 
+
+H2EDL makes hyper-evidential uncertainty tractable on tree-structured label spaces, by observing that the taxonomy is already the right hyperdomain. Its subtrees and leaf sin-gletons form a linear-size focal family on which the belief masses are induced in closed form, by one ordinary Dirichlet opinion per branching decision, instead of being predicted. What comes out is a single parameter set with two read-ings: an operational classifier with exact coarse marginals, and a valid tree-structured hyper-opinion whose composite mass at a node is the belief that reached it and declined to descend, with a path-local imprecision band (Prop. 2) and a per-sample depth profile {Ud} (Prop. 3) that a flat eviden-tial model cannot express. No second network is required, nor composite annotations, nor a post-hoc calibration stage. Empirically, leaf accuracy on both benchmarks is dominated by one coarse decision that no method improves, so parity there says more about the data than about the model. Scored at the levels the factorization governs, every variant leads all five baselines at both intermediate DERM12345 levels, the ECE of the cross-entropy baselines is roughly halved by a margin that grows with depth and with training budget, and the remaining errors stay inside the correct coarse category far more often at indistinguishable accuracy. Of these the depth profile is the stronger test, since a constant post-hoc rescaling could reproduce the average but not the shape. 
+
+## References 
+
+Bertinetto, L.; Mueller, R.; Tertikas, K.; Samangooei, S.; and Lord, N. A. 2020. Making Better Mistakes: Leveraging Class Hierarchies with Deep Networks. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) .Chen, M.; Gao, J.; and Xu, C. 2024. R-EDL: Relaxing Nonessential Settings of Evidential Deep Learning. In Inter-national Conference on Learning Representations (ICLR) .Deng, D.; Chen, G.; Yu, Y.; Liu, F.; and Heng, P.-A. 2023. Uncertainty Estimation by Fisher Information-based Eviden-tial Deep Learning. In International Conference on Machine Learning (ICML) .Deng, J.; Krause, J.; Berg, A. C.; and Fei-Fei, L. 2012. Hedg-ing Your Bets: Optimizing Accuracy-Specificity Trade-offs in Large Scale Visual Recognition. In IEEE Conference on Computer Vision and Pattern Recognition (CVPR) .Gal, Y.; and Ghahramani, Z. 2016. Dropout as a Bayesian Approximation: Representing Model Uncertainty in Deep Learning. In International Conference on Machine Learning (ICML) , volume 48, 1050–1059. Guo, C.; Pleiss, G.; Sun, Y.; and Weinberger, K. Q. 2017. On Calibration of Modern Neural Networks. In International Conference on Machine Learning (ICML) .He, K.; Zhang, X.; Ren, S.; and Sun, J. 2016. Deep Residual Learning for Image Recognition. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , 770–778. Jøsang, A. 2016. Subjective Logic: A Formalism for Reason-ing Under Uncertainty . Cham, Switzerland: Springer. Karthik, S.; Prabhu, A.; Dokania, P. K.; and Gandhi, V. 2021. No Cost Likelihood Manipulation at Test Time for Making Better Mistakes in Deep Networks. In International Confer-ence on Learning Representations (ICLR) .Lakshminarayanan, B.; Pritzel, A.; and Blundell, C. 2017. Simple and Scalable Predictive Uncertainty Estimation us-ing Deep Ensembles. In Advances in Neural Information Processing Systems , volume 30, 6402–6413. Li, C.; Li, K.; Ou, Y.; Kaplan, L. M.; Jøsang, A.; Cho, J.-H.; Jeong, D. H.; and Chen, F. 2024. Hyper Evidential Deep Learning to Quantify Composite Classification Uncertainty. In International Conference on Learning Representations (ICLR) .Loshchilov, I.; and Hutter, F. 2019. Decoupled Weight Decay Regularization. In International Conference on Learning Representations (ICLR) .Maji, S.; Rahtu, E.; Kannala, J.; Blaschko, M.; and Vedaldi, A. 2013. Fine-Grained Visual Classification of Aircraft. arXiv:1306.5151. Malinin, A.; and Gales, M. 2018. Predictive Uncertainty Estimation via Prior Networks. In Advances in Neural Infor-mation Processing Systems (NeurIPS) .Qu, J.; Chen, Y.; Yue, X.; Fu, W.; and Huang, Q. 2024. Hyper-opinion Evidential Deep Learning for Out-of-Distribution Detection. In Advances in Neural Information Processing Systems (NeurIPS) , volume 37, 84645–84668. Sensoy, M.; Kaplan, L.; and Kandemir, M. 2018. Evidential Deep Learning to Quantify Classification Uncertainty. In Ad-vances in Neural Information Processing Systems (NeurIPS) ,3179–3189. Silla, C. N.; and Freitas, A. A. 2011. A Survey of Hierarchical Classification Across Different Application Domains. Data Mining and Knowledge Discovery , 22: 31–72. Ulmer, D.; Hardmeier, C.; and Frellsen, J. 2023. Prior and Posterior Networks: A Survey on Evidential Deep Learn-ing Methods for Uncertainty Estimation. Transactions on Machine Learning Research .Yilmaz, A.; Yasar, S. P.; Gencoglan, G.; and Temelkuran, B. 2024. DERM12345: A Large, Multisource Dermatoscopic Skin Lesion Dataset with 40 Subclasses. Scientific Data ,11(1): 1302.
